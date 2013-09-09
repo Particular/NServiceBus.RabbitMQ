@@ -2,6 +2,7 @@ build
 build32
 binaries
 obj
+logs
 bin
 .nu
 _ReSharper.*
