@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
+    using global::RabbitMQ.Client;
     using Settings;
 
     public class RabbitMqQueueCreator : ICreateQueues
@@ -13,6 +14,8 @@
             using (var channel = ConnectionManager.GetAdministrationConnection().CreateModel())
             {
                 channel.QueueDeclare(address.Queue, durable, false, false, null);
+                channel.ExchangeDeclare(address.Queue, ExchangeType.Direct, true);
+                channel.QueueBind(address.Queue, address.Queue, string.Empty);
             }
 
         }
