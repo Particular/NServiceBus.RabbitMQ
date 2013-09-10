@@ -8,6 +8,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyProduct("NServiceBus.RabbitMQ.Tests")]
 [assembly: AssemblyCompany("NServiceBus Ltd.")]
 [assembly: AssemblyConfiguration("release")]
-[assembly: ComVisible(false)]		
-[assembly: CLSCompliant(true)]
+[assembly: ComVisible(false)]
 
