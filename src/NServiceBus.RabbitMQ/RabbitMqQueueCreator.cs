@@ -1,11 +1,13 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
-    using global::RabbitMQ.Client;
+    using Routing;
     using Settings;
 
     public class RabbitMqQueueCreator : ICreateQueues
     {
         public IManageRabbitMqConnections ConnectionManager { get; set; }
+
+        public IRoutingTopology RoutingTopology { get; set; }
 
         public void CreateQueueIfNecessary(Address address, string account)
         {
@@ -14,8 +16,8 @@
             using (var channel = ConnectionManager.GetAdministrationConnection().CreateModel())
             {
                 channel.QueueDeclare(address.Queue, durable, false, false, null);
-                channel.ExchangeDeclare(address.Queue, ExchangeType.Direct, true);
-                channel.QueueBind(address.Queue, address.Queue, string.Empty);
+
+                RoutingTopology.Initialize(channel, address.Queue);
             }
 
         }

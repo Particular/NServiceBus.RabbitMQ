@@ -4,7 +4,6 @@
     using System.Collections.Concurrent;
     using System.Linq;
     using global::RabbitMQ.Client;
-    using Settings;
 
     /// <summary>
     /// Implements the RabbitMQ routing topology as described at http://codebetter.com/drusellers/2011/05/08/brain-dump-conventional-routing-in-rabbitmq/
@@ -25,7 +24,6 @@
     {
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {
-            CreateQueueAndExchangeForSubscriber(channel, subscriberName);
             if (type == typeof(IEvent))
             {
                 // Make handlers for IEvent handle all events whether they extend IEvent or not
@@ -35,17 +33,6 @@
             channel.ExchangeBind(subscriberName, ExchangeName(type), string.Empty);
         }
 
-        void CreateQueueAndExchangeForSubscriber(IModel channel, string subscriberName)
-        {
-            if (endpointSubscriptionConfiguredSet.ContainsKey(subscriberName))
-            {
-                return;
-            }
-            CreateQueue(channel, subscriberName);
-            CreateExchange(channel, subscriberName);
-            channel.QueueBind(subscriberName, subscriberName, string.Empty);
-            endpointSubscriptionConfiguredSet[subscriberName] = null;
-        }
 
         public void TeardownSubscription(IModel channel, Type type, string subscriberName)
         {
@@ -71,40 +58,23 @@
             channel.BasicPublish(subscriberName, String.Empty, true, false, properties, message.Body);
         }
 
-        private readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
-        private readonly ConcurrentDictionary<string, string> endpointSubscriptionConfiguredSet = new ConcurrentDictionary<string, string>();
+        public void Initialize(IModel channel, string mainQueue)
+        {
 
-        private static string ExchangeName(Type type)
+            CreateExchange(channel, mainQueue);
+            channel.QueueBind(mainQueue, mainQueue, string.Empty);
+
+        }
+
+        
+        static string ExchangeName(Type type)
         {
             return type.Namespace + ":" + type.Name;
         }
 
-        private static void CreateQueue(IModel channel, string queueName)
-        {
-            try
-            {
-                var durable = SettingsHolder.Get<bool>("Endpoint.DurableMessages");
-                channel.QueueDeclare(queueName, durable, false, false, null);
-            }
-            catch (Exception)
-            {
-                // TODO: Any better way to make this idempotent?
-            }
-        }
 
-        private static void CreateExchange(IModel channel, string exchangeName)
-        {
-            try
-            {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
-            }
-            catch (Exception)
-            {
-                // TODO: Any better way to make this idempotent?
-            }
-        }
 
-        private void SetupTypeSubscriptions(IModel channel, Type type)
+        void SetupTypeSubscriptions(IModel channel, Type type)
         {
             if (type == typeof(Object) || IsTypeTopologyKnownConfigured(type))
             {
@@ -132,14 +102,29 @@
             MarkTypeConfigured(type);
         }
 
-        private void MarkTypeConfigured(Type eventType)
+        void MarkTypeConfigured(Type eventType)
         {
             typeTopologyConfiguredSet[eventType] = null;
         }
 
-        private bool IsTypeTopologyKnownConfigured(Type eventType)
+        bool IsTypeTopologyKnownConfigured(Type eventType)
         {
             return typeTopologyConfiguredSet.ContainsKey(eventType);
         }
+
+        static void CreateExchange(IModel channel, string exchangeName)
+        {
+            try
+            {
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
+            }
+            catch (Exception)
+            {
+                // TODO: Any better way to make this idempotent?
+            }
+        }
+
+        readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
+
     }
 }

@@ -33,6 +33,11 @@
             channel.BasicPublish(string.Empty, address.Queue, true, false, properties, message.Body);
         }
 
+        public void Initialize(IModel channel, string main)
+        {
+            //nothing needs to be done for direct routing
+        }
+
         string ExchangeName()
         {
             return ExchangeNameConvention(null,null);

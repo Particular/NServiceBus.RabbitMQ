@@ -16,30 +16,11 @@
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
                 channel.QueuePurge(queueName);
-                MakeSureExchangeExists(queueName);
-                channel.QueueBind(queueName, queueName, string.Empty);
-            }
-        }
 
-        protected void MakeSureExchangeExists(string exchangeName)
-        {
-            if (exchangeName == "amq.topic")
-                return;
+                //to make sure we kill old subscriptions
+                DeleteExchange(queueName);
 
-            var connection = connectionManager.GetAdministrationConnection();
-            DeleteExchange(exchangeName);
-
-            using (var channel = connection.CreateModel())
-            {
-                try
-                {
-                    channel.ExchangeDeclare(exchangeName, "topic", true);
-                }
-                catch (Exception)
-                {
-
-                }
-
+                routingTopology.Initialize(channel,queueName);
             }
         }
 
@@ -62,7 +43,7 @@
         [SetUp]
         public void SetUp()
         {
-            var routingTopology = new ConventionalRoutingTopology();
+            routingTopology = new ConventionalRoutingTopology();
             receivedMessages = new BlockingCollection<TransportMessage>();
 
             var config = new ConnectionConfiguration();
@@ -81,9 +62,6 @@
             
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
-            DeleteExchange(ReceiverQueue);
-            MakeSureExchangeExists(ExchangeNameConvention(Address.Parse(ReceiverQueue),null));
-            
             
 
             MessagePublisher = new RabbitMqMessagePublisher
@@ -139,6 +117,7 @@
 
         BlockingCollection<TransportMessage> receivedMessages;
 
+        protected ConventionalRoutingTopology routingTopology;
         protected const string ReceiverQueue = "testreceiver";
         protected RabbitMqDequeueStrategy dequeueStrategy;
         protected RabbitMqConnectionManager connectionManager;

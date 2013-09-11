@@ -9,7 +9,6 @@
     using Unicast.Queuing;
 
     [TestFixture]
-    [Explicit("requires rabbit node")]
     public class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
         
