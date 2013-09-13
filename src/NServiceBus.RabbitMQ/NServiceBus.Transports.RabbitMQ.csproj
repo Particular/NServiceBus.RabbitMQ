@@ -95,14 +95,8 @@
   <ItemGroup>
     <Content Include="EasyNetQ\licence.txt" />
     <Content Include="EasyNetQ\readme.txt" />
-    <Content Include="FodyWeavers.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Fody.targets" />
-    <None Include="packages.config" />
-    <None Include="ripple.dependencies.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="Fody.targets" />
-  <Import Project="..\packages\RippleRestoreTask.0.1.1\build\RippleRestoreTask.targets" Condition="Exists('..\packages\RippleRestoreTask.0.1.1\build\RippleRestoreTask.targets')" />
+  <Import Project="..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets" Condition="Exists('..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets')" />
 </Project>

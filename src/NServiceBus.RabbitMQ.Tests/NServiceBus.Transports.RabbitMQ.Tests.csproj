@@ -77,11 +77,6 @@
     <Compile Include="When_subscribed_to_a_event.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Fody.targets" />
-    <None Include="packages.config" />
-    <None Include="ripple.dependencies.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
       <Project>{ba731749-22c7-4025-8a4d-465ae8e02e61}</Project>
       <Name>NServiceBus.Transports.RabbitMQ</Name>
@@ -89,10 +84,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ClusteringTests\readme.txt" />
-    <Content Include="FodyWeavers.xml" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="Fody.targets" />
-  <Import Project="..\packages\RippleRestoreTask.0.1.1\build\RippleRestoreTask.targets" Condition="Exists('..\packages\RippleRestoreTask.0.1.1\build\RippleRestoreTask.targets')" />
+  <Import Project="..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets" Condition="Exists('..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets')" />
 </Project>
