@@ -67,6 +67,7 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
