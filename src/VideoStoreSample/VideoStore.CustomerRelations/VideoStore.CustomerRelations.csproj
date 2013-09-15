@@ -79,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
-      <Project>{BA731749-22C7-4025-8A4D-465AE8E02E61}</Project>
+      <Project>{ba731749-22c7-4025-8a4d-465ae8e02e61}</Project>
       <Name>NServiceBus.Transports.RabbitMQ</Name>
     </ProjectReference>
     <ProjectReference Include="..\VideoStore.Messages\VideoStore.Messages.csproj">
