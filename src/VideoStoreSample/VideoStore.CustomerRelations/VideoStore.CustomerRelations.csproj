@@ -76,7 +76,6 @@
   <ItemGroup>
     <None Include="App.config">
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
@@ -95,6 +94,5 @@
     <StartProgram>$(ProjectDir)$(OutputPath)NServiceBus.Host.exe</StartProgram>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <Import Project="..\..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets')" />
-  <Import Project="..\..\packages\RippleRestoreTask.0.1.3\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.3\build\RippleRestoreTask.targets')" />
+  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

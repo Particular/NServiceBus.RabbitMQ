@@ -58,10 +58,7 @@
     <Compile Include="RequestResponse\ProvisionDownloadResponse.cs">
     </Compile>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets">
   </Import>
-  <Import Project="..\..\packages\RippleRestoreTask.0.1.3\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.3\build\RippleRestoreTask.targets')" />
+  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
 </Project>
