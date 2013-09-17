@@ -81,8 +81,36 @@
             return message.BasicProperties.Headers.Cast<DictionaryEntry>()
                         .ToDictionary(
                             dictionaryEntry => (string)dictionaryEntry.Key,
-                            dictionaryEntry => dictionaryEntry.Value == null ? null : Encoding.UTF8.GetString((byte[])dictionaryEntry.Value));
+                            dictionaryEntry =>
+                                {
+                                    var value = dictionaryEntry.Value;
+                                    return dictionaryEntry.Value == null ? null : ValueToString(value);
+                                });
 
+        }
+
+        static string ValueToString(object value)
+        {
+            var returnValue = default(string);
+            if (value is string)
+            {
+                returnValue = value as string;
+            }
+            else if (value is byte[])
+            {
+                returnValue = Encoding.UTF8.GetString(value as byte[]);
+            }
+            else if (value is IDictionary<string, object>)
+            {
+                var dict = value as IDictionary<string, object>;
+                returnValue = String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
+            }
+            else if (value is IList)
+            {
+                var list = value as IList;
+                returnValue = String.Join(";", list.Cast<object>().Select(ValueToString));
+            }
+            return returnValue;
         }
     }
 
