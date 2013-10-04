@@ -71,6 +71,10 @@
     <Reference Include="NServiceBus.Core">
       <HintPath>..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
     </Reference>
+    <Reference Include="NServiceBus.Transports.RabbitMQ, Version=1.1.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+    </Reference>
     <Reference Include="Owin">
       <HintPath>..\..\packages\Owin\lib\net40\Owin.dll</HintPath>
     </Reference>
@@ -92,22 +96,28 @@
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Helpers, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
       <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.Helpers.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Mvc, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
       <HintPath>..\..\packages\Microsoft.AspNet.Mvc\lib\net40\System.Web.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
       <HintPath>..\..\packages\Microsoft.AspNet.Razor\lib\net40\System.Web.Razor.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Web.WebPages, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
       <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages.Deployment, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
       <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.Deployment.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
       <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.Razor.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
@@ -179,10 +189,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
-      <Project>{ba731749-22c7-4025-8a4d-465ae8e02e61}</Project>
-      <Name>NServiceBus.Transports.RabbitMQ</Name>
-    </ProjectReference>
     <ProjectReference Include="..\VideoStore.Messages\VideoStore.Messages.csproj">
       <Project>{59F2BA7E-4DA5-49F8-9DBC-520FA99F4679}</Project>
       <Name>VideoStore.Messages</Name>
@@ -228,5 +234,5 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
-  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
+  <Import Project="$(SolutionDir)..\..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

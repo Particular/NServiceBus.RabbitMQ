@@ -45,6 +45,9 @@
     <Reference Include="NServiceBus.Host">
       <HintPath>..\..\packages\NServiceBus.Host\lib\net40\NServiceBus.Host.exe</HintPath>
     </Reference>
+    <Reference Include="NServiceBus.Transports.RabbitMQ">
+      <HintPath>..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+    </Reference>
     <Reference Include="RabbitMQ.Client">
       <HintPath>..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
     </Reference>
@@ -78,10 +81,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
-      <Project>{ba731749-22c7-4025-8a4d-465ae8e02e61}</Project>
-      <Name>NServiceBus.Transports.RabbitMQ</Name>
-    </ProjectReference>
     <ProjectReference Include="..\VideoStore.Messages\VideoStore.Messages.csproj">
       <Project>{59f2ba7e-4da5-49f8-9dbc-520fa99f4679}</Project>
       <Name>VideoStore.Messages</Name>
@@ -94,5 +93,5 @@
     <StartProgram>$(ProjectDir)$(OutputPath)NServiceBus.Host.exe</StartProgram>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
+  <Import Project="$(SolutionDir)..\..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

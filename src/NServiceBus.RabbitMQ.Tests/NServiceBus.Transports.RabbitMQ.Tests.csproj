@@ -45,6 +45,9 @@
     <Reference Include="NServiceBus.Core">
       <HintPath>..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
     </Reference>
+    <Reference Include="NServiceBus.Transports.RabbitMQ">
+      <HintPath>..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit\lib\nunit.framework.dll</HintPath>
     </Reference>
@@ -75,12 +78,6 @@
     <Compile Include="When_sending_a_message_over_rabbitmq.cs" />
     <Compile Include="TransportMessageBuilder.cs" />
     <Compile Include="When_subscribed_to_a_event.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
-      <Project>{ba731749-22c7-4025-8a4d-465ae8e02e61}</Project>
-      <Name>NServiceBus.Transports.RabbitMQ</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="ClusteringTests\readme.txt" />
