@@ -46,7 +46,7 @@
       <HintPath>..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Transports.RabbitMQ">
-      <HintPath>..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+      <HintPath>..\NServiceBus.RabbitMQ\obj\Release\NServiceBus.Transports.RabbitMQ.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit\lib\nunit.framework.dll</HintPath>
