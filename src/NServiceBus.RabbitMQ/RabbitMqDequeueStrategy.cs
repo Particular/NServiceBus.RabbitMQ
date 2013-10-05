@@ -163,6 +163,7 @@
 
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
         {
+
             object rawMessage;
 
             if (!consumer.Queue.Dequeue(1000, out rawMessage))

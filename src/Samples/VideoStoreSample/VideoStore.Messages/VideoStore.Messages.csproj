@@ -60,5 +60,5 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets">
   </Import>
-  <Import Project="$(SolutionDir)..\..\BuildSupport\RippleRestoreTask.targets" />
+  <Import Project="$(SolutionDir)..\..\..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

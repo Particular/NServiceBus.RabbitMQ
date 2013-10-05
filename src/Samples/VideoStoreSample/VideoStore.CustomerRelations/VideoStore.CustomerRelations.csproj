@@ -37,19 +37,19 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus">
-      <HintPath>..\..\packages\NServiceBus.Interfaces\lib\net40\NServiceBus.dll</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus.Interfaces\lib\net40\NServiceBus.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Core">
-      <HintPath>..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Host">
-      <HintPath>..\..\packages\NServiceBus.Host\lib\net40\NServiceBus.Host.exe</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus.Host\lib\net40\NServiceBus.Host.exe</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Transports.RabbitMQ">
-      <HintPath>..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+      <HintPath>..\..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
     </Reference>
     <Reference Include="RabbitMQ.Client">
-      <HintPath>..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
+      <HintPath>..\..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -93,5 +93,5 @@
     <StartProgram>$(ProjectDir)$(OutputPath)NServiceBus.Host.exe</StartProgram>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)..\..\BuildSupport\RippleRestoreTask.targets" />
+  <Import Project="$(SolutionDir)..\..\..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

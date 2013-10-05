@@ -44,43 +44,42 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\log4net\lib\2.0\log4net.dll</HintPath>
+      <HintPath>..\..\..\packages\log4net\lib\2.0\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.SignalR.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.AspNet.SignalR.Core\lib\net40\Microsoft.AspNet.SignalR.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.SignalR.Core\lib\net40\Microsoft.AspNet.SignalR.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.SignalR.Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.AspNet.SignalR.Owin\lib\net40\Microsoft.AspNet.SignalR.Owin.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.SignalR.Owin\lib\net40\Microsoft.AspNet.SignalR.Owin.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.SignalR.SystemWeb, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.AspNet.SignalR.SystemWeb\lib\net40\Microsoft.AspNet.SignalR.SystemWeb.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.SignalR.SystemWeb\lib\net40\Microsoft.AspNet.SignalR.SystemWeb.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Owin.Host.SystemWeb, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Owin.Host.SystemWeb\lib\net40\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Owin.Host.SystemWeb\lib\net40\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Web.Infrastructure\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Web.Infrastructure\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\packages\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus">
-      <HintPath>..\..\packages\NServiceBus.Interfaces\lib\net40\NServiceBus.dll</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus.Interfaces\lib\net40\NServiceBus.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Core">
-      <HintPath>..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NServiceBus.Transports.RabbitMQ, Version=1.1.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+    <Reference Include="NServiceBus.Transports.RabbitMQ">
+      <HintPath>..\..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
     </Reference>
     <Reference Include="Owin">
-      <HintPath>..\..\packages\Owin\lib\net40\Owin.dll</HintPath>
+      <HintPath>..\..\..\packages\Owin\lib\net40\Owin.dll</HintPath>
     </Reference>
     <Reference Include="RabbitMQ.Client, Version=3.1.1.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
+      <HintPath>..\..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -97,28 +96,28 @@
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Helpers, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
-      <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.Helpers.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.Helpers.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Mvc, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
-      <HintPath>..\..\packages\Microsoft.AspNet.Mvc\lib\net40\System.Web.Mvc.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.Mvc\lib\net40\System.Web.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
-      <HintPath>..\..\packages\Microsoft.AspNet.Razor\lib\net40\System.Web.Razor.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.Razor\lib\net40\System.Web.Razor.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Web.WebPages, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
-      <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages.Deployment, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
-      <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.Deployment.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.Deployment.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
-      <HintPath>..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.Razor.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.AspNet.WebPages\lib\net40\System.Web.WebPages.Razor.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
@@ -234,5 +233,5 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
-  <Import Project="$(SolutionDir)..\..\BuildSupport\RippleRestoreTask.targets" />
+  <Import Project="$(SolutionDir)..\..\..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

@@ -1,4 +1,6 @@
 Prerequisites:
+NOTE: if you are running this sample from source code, please build ..\..\NServiceBus.RabbitMQ.sln 
+
 · Erlang OTP R16B 
 http://www.erlang.org/download.html 
 · Rabbit MQ version – 3.0.4 

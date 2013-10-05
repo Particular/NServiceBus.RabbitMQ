@@ -5,11 +5,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C2D005B5-065F-4F81-BA1F-259F90E00AEE}</ProjectGuid>
+    <ProjectGuid>{0B353423-4655-4523-B4E0-F191DDDF0ABF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VideoStore.Sales</RootNamespace>
-    <AssemblyName>VideoStore.Sales</AssemblyName>
+    <RootNamespace>VideoStore.Operations</RootNamespace>
+    <AssemblyName>VideoStore.Operations</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <RestorePackages>true</RestorePackages>
@@ -35,19 +35,19 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus">
-      <HintPath>..\..\packages\NServiceBus.Interfaces\lib\net40\NServiceBus.dll</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus.Interfaces\lib\net40\NServiceBus.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Core">
-      <HintPath>..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus\lib\net40\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Host">
-      <HintPath>..\..\packages\NServiceBus.Host\lib\net40\NServiceBus.Host.exe</HintPath>
+      <HintPath>..\..\..\packages\NServiceBus.Host\lib\net40\NServiceBus.Host.exe</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Transports.RabbitMQ">
-      <HintPath>..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
+      <HintPath>..\..\..\..\binaries\NServiceBus.Transports.RabbitMQ.dll</HintPath>
     </Reference>
     <Reference Include="RabbitMQ.Client">
-      <HintPath>..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
+      <HintPath>..\..\..\packages\RabbitMQ.Client\lib\net30\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -61,9 +61,7 @@
     </Compile>
     <Compile Include="EndpointConfig.cs">
     </Compile>
-    <Compile Include="SubmitOrderHandler.cs">
-    </Compile>
-    <Compile Include="ProcessOrderSaga.cs">
+    <Compile Include="ProvisionDownloadHandler.cs">
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
     </Compile>
@@ -75,7 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VideoStore.Messages\VideoStore.Messages.csproj">
-      <Project>{59F2BA7E-4DA5-49F8-9DBC-520FA99F4679}</Project>
+      <Project>{59f2ba7e-4da5-49f8-9dbc-520fa99f4679}</Project>
       <Name>VideoStore.Messages</Name>
     </ProjectReference>
   </ItemGroup>
@@ -86,5 +84,5 @@
     <StartProgram>$(ProjectDir)$(OutputPath)NServiceBus.Host.exe</StartProgram>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)..\..\BuildSupport\RippleRestoreTask.targets" />
+  <Import Project="$(SolutionDir)..\..\..\BuildSupport\RippleRestoreTask.targets" />
 </Project>
