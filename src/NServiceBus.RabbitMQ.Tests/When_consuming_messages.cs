@@ -7,7 +7,7 @@
     public class When_consuming_messages : RabbitMqContext
     {
         [SetUp]
-        public void SetUp()
+        public new void SetUp()
         {
             MakeSureQueueAndExchangeExists(ReceiverQueue);
         }
