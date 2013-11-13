@@ -41,9 +41,9 @@
             }
         }
 
-        private static IDictionary ConvertToHashtable(IDictionary<string, string> clientProperties)
+        private static IDictionary<string, object> ConvertToHashtable(IDictionary<string, object> clientProperties)
         {
-            var dictionary = new Hashtable();
+            var dictionary = new Dictionary<string, object>();
             foreach (var clientProperty in clientProperties)
             {
                 dictionary.Add(clientProperty.Key, clientProperty.Value);

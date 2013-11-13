@@ -164,14 +164,14 @@
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
         {
 
-            object rawMessage;
+            BasicDeliverEventArgs rawMessage;
 
             if (!consumer.Queue.Dequeue(1000, out rawMessage))
             {
                 return null;
             }
 
-            return (BasicDeliverEventArgs)rawMessage;
+            return rawMessage;
         }
 
         void Purge()

@@ -26,7 +26,7 @@
 
             properties.SetPersistent(message.Recoverable);
 
-            properties.Headers = message.Headers;
+            properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
             if (message.Headers.ContainsKey(Headers.EnclosedMessageTypes))
             {
@@ -96,9 +96,9 @@
                 return new Dictionary<string, string>();
             }
 
-            return message.BasicProperties.Headers.Cast<DictionaryEntry>()
+            return message.BasicProperties.Headers.Cast<KeyValuePair<string, object>>()
                 .ToDictionary(
-                    dictionaryEntry => (string) dictionaryEntry.Key,
+                    dictionaryEntry => dictionaryEntry.Key,
                     dictionaryEntry =>
                     {
                         var value = dictionaryEntry.Value;
