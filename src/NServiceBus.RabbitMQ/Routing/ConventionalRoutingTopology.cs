@@ -40,7 +40,9 @@
             {
                 channel.ExchangeUnbind(subscriberName, ExchangeName(type), string.Empty, null);
             }
-            catch
+            // ReSharper disable EmptyGeneralCatchClause
+            catch (Exception)
+            // ReSharper restore EmptyGeneralCatchClause
             {
                 // TODO: Any better way to make this idempotent?
             }
@@ -118,7 +120,9 @@
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
             }
+// ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
+// ReSharper restore EmptyGeneralCatchClause
             {
                 // TODO: Any better way to make this idempotent?
             }

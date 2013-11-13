@@ -129,7 +129,7 @@
 
             var message = new TransportMessageBuilder().WithBody(body).Build();
 
-            using (var tx = new TransactionScope())
+            using (new TransactionScope())
             {
                 SendMessage(message);
                 Assert.Throws<InvalidOperationException>(() => Consume(message.Id));
@@ -145,10 +145,7 @@
         public void Should_throw_when_sending_to_a_non_existing_queue()
         {
             Assert.Throws<QueueNotFoundException>(() =>
-                 sender.Send(new TransportMessage
-                 {
-
-                 }, Address.Parse("NonExistingQueue@localhost")));
+                 sender.Send(new TransportMessage(), Address.Parse("NonExistingQueue@localhost")));
         }
 
         void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion)

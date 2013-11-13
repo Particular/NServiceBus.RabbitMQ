@@ -51,7 +51,9 @@
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, true);
             }
+            // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
+            // ReSharper restore EmptyGeneralCatchClause
             {
 
             }

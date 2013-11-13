@@ -181,14 +181,11 @@
                 channel.QueuePurge(workQueue);
             }
         }
-#pragma warning disable 618
 
-        readonly ICircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
                     TimeSpan.FromMinutes(2),
                     ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
                     TimeSpan.FromSeconds(5));
-
-#pragma warning restore 618
 
         Func<TransportMessage, bool> tryProcessMessage;
         bool autoAck;
