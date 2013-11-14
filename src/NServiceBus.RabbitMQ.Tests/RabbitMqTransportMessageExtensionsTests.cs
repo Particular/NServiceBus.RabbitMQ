@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Text;
@@ -19,7 +20,7 @@
         [Test]
         public void TestCanHandleByteArrayHeader()
         {
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs { BasicProperties = new BasicProperties { MessageId = "Blah", Headers = new Hashtable
+            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs { BasicProperties = new BasicProperties { MessageId = "Blah", Headers = new Dictionary<string,object>()
                 {
                     {"Foo", Encoding.UTF8.GetBytes("blah")}
                 }} });
@@ -35,7 +36,7 @@
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Hashtable
+                    Headers = new Dictionary<string, object>()
                 {
                     {"Foo", "ni"}
                 }
@@ -53,7 +54,7 @@
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Hashtable
+                    Headers = new Dictionary<string,object>
                 {
                     {"Foo", new ArrayList{"Bing"}}
                 }
@@ -71,7 +72,7 @@
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Hashtable
+                    Headers = new Dictionary<string, object>()
                 {
                     {"Foo", new List<object>{"Bing"}}
                 }
@@ -88,14 +89,14 @@
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Hashtable
+                    Headers = new Dictionary<string, object>
                 {
                     {"Foo", new List<object>{new Dictionary<string, object>{{"key1", Encoding.UTF8.GetBytes("value1")}, {"key2", Encoding.UTF8.GetBytes("value2")}}}}
                 }
                 }
             });
             Assert.NotNull(transportMessage);
-            Assert.AreEqual("key1=value1,key2=value2", transportMessage.Headers["Foo"]);
+            Assert.AreEqual("key1=value1,key2=value2", Convert.ToString(transportMessage.Headers["Foo"]));
         }
     }
 }

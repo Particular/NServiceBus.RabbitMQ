@@ -15,7 +15,7 @@
         public const ushort DefaultPrefetchCount = 1;
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
-        IDictionary<string, string> clientProperties = new Dictionary<string, string>();
+        IDictionary<string, object> clientProperties = new Dictionary<string, object>();
         IEnumerable<IHostConfiguration> hosts= new List<IHostConfiguration>();
 
         public ushort Port { get; set; }
@@ -28,7 +28,7 @@
         public bool UsePublisherConfirms { get; set; }
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
         public TimeSpan RetryDelay { get; set; }
-        public IDictionary<string, string> ClientProperties {
+        public IDictionary<string, object> ClientProperties {
             get { return clientProperties; }
             private set { clientProperties = value; }
         }

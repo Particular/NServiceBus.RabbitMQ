@@ -186,12 +186,12 @@
 
                 channel.BasicConsume("testEndPoint", false, consumer);
 
-                object message;
+                BasicDeliverEventArgs message;
 
                 if (!consumer.Queue.Dequeue(1000, out message))
                     throw new InvalidOperationException("No message found in queue");
 
-                var e = (BasicDeliverEventArgs)message;
+                var e = message;
 
                 if (e.BasicProperties.MessageId != id)
                     throw new InvalidOperationException("Unexpected message found in queue");
