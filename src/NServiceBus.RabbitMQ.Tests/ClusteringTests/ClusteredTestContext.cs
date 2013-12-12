@@ -7,14 +7,14 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using Config;
-    using EasyNetQ;
     using Logging.Loggers.NLogAdapter;
     using NLog;
     using NLog.Targets;
     using NUnit.Framework;
     using Support;
     using Unicast.Transport;
+    using EasyNetQ;
+    using NServiceBus.Transports.RabbitMQ.Config;
 
     public abstract class ClusteredTestContext
     {

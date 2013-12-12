@@ -9,7 +9,6 @@
     using Unicast.Queuing;
 
     [TestFixture]
-    [Explicit("requires rabbit node")]
     public class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
         
@@ -130,7 +129,7 @@
 
             var message = new TransportMessageBuilder().WithBody(body).Build();
 
-            using (var tx = new TransactionScope())
+            using (new TransactionScope())
             {
                 SendMessage(message);
                 Assert.Throws<InvalidOperationException>(() => Consume(message.Id));
@@ -146,10 +145,7 @@
         public void Should_throw_when_sending_to_a_non_existing_queue()
         {
             Assert.Throws<QueueNotFoundException>(() =>
-                 sender.Send(new TransportMessage
-                 {
-
-                 }, Address.Parse("NonExistingQueue@localhost")));
+                 sender.Send(new TransportMessage(), Address.Parse("NonExistingQueue@localhost")));
         }
 
         void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion)
@@ -190,12 +186,12 @@
 
                 channel.BasicConsume("testEndPoint", false, consumer);
 
-                object message;
+                BasicDeliverEventArgs message;
 
                 if (!consumer.Queue.Dequeue(1000, out message))
                     throw new InvalidOperationException("No message found in queue");
 
-                var e = (BasicDeliverEventArgs)message;
+                var e = message;
 
                 if (e.BasicProperties.MessageId != id)
                     throw new InvalidOperationException("Unexpected message found in queue");

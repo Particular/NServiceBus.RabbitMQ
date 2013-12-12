@@ -163,14 +163,15 @@
 
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
         {
-            object rawMessage;
+
+            BasicDeliverEventArgs rawMessage;
 
             if (!consumer.Queue.Dequeue(1000, out rawMessage))
             {
                 return null;
             }
 
-            return (BasicDeliverEventArgs)rawMessage;
+            return rawMessage;
         }
 
         void Purge()
@@ -181,11 +182,11 @@
             }
         }
 
-        readonly ICircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
                     TimeSpan.FromMinutes(2),
                     ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
                     TimeSpan.FromSeconds(5));
-        
+
         Func<TransportMessage, bool> tryProcessMessage;
         bool autoAck;
         //MTATaskScheduler scheduler;

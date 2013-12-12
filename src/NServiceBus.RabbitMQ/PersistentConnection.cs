@@ -1,7 +1,7 @@
 namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
-    using System.Collections;
+    using System.Collections.Generic;
     using System.Threading;
     using EasyNetQ;
     using global::RabbitMQ.Client;
@@ -194,12 +194,12 @@ namespace NServiceBus.Transports.RabbitMQ
             get { return connection.Heartbeat; }
         }
 
-        public IDictionary ClientProperties
+        public IDictionary<string, object> ClientProperties
         {
             get { return connection.ClientProperties; }
         }
 
-        public IDictionary ServerProperties
+        public IDictionary<string, object> ServerProperties
         {
             get { return connection.ServerProperties; }
         }
@@ -225,7 +225,7 @@ namespace NServiceBus.Transports.RabbitMQ
             set { connection.AutoClose = value; }
         }
 
-        public IList ShutdownReport
+        public IList<ShutdownReportEntry> ShutdownReport
         {
             get { return connection.ShutdownReport; }
         }
@@ -242,6 +242,19 @@ namespace NServiceBus.Transports.RabbitMQ
             remove { connection.CallbackException -= value; }
         }
 
+        public event ConnectionBlockedEventHandler ConnectionBlocked
+        {
+            add { connection.ConnectionBlocked += value; }
+            remove { connection.ConnectionBlocked -= value; }
+        }
+
+        public event ConnectionUnblockedEventHandler ConnectionUnblocked
+        {
+            add { connection.ConnectionUnblocked += value; }
+            remove { connection.ConnectionUnblocked -= value; }
+        }
+
+
         public void Close(ushort reasonCode, string reasonText, int timeout)
         {
             connection.Close(reasonCode, reasonText, timeout);
@@ -250,6 +263,16 @@ namespace NServiceBus.Transports.RabbitMQ
         public void Close(ushort reasonCode, string reasonText)
         {
             connection.Close(reasonCode, reasonText);
+        }
+
+        public void HandleConnectionBlocked(string reason)
+        {
+            connection.HandleConnectionBlocked(reason);
+        }
+        
+        public void HandleConnectionUnblocked()
+        {
+            connection.HandleConnectionUnblocked();
         }
 
         public void Dispose()

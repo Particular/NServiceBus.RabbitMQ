@@ -12,7 +12,7 @@
         string Password { get; }
         ushort RequestedHeartbeat { get; }
         ushort PrefetchCount { get; }
-        IDictionary<string, string> ClientProperties { get; } 
+        IDictionary<string, object> ClientProperties { get; } 
         IEnumerable<IHostConfiguration> Hosts { get; }
         TimeSpan RetryDelay { get; set; }
         bool UsePublisherConfirms { get; set; }

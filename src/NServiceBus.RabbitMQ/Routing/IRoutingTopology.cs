@@ -38,5 +38,12 @@
         /// <param name="message"></param>
         /// <param name="properties"></param>
         void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties);
+
+        /// <summary>
+        /// Performs any initalizating logic needed (eg creating exchanges and bindings)
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <param name="main"></param>
+        void Initialize(IModel channel, string main);
     }
 }

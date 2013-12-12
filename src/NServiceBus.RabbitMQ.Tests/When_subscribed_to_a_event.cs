@@ -4,7 +4,6 @@
     using NUnit.Framework;
 
     [TestFixture]
-    [Explicit("requires rabbit node")]
     public class When_subscribed_to_a_event : RabbitMqContext
     {
 
