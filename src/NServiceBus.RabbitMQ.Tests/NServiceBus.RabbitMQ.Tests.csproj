@@ -83,9 +83,9 @@
     <Content Include="ClusteringTests\readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj">
+    <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj">
       <Project>{ba731749-22c7-4025-8a4d-465ae8e02e61}</Project>
-      <Name>NServiceBus.Transports.RabbitMQ</Name>
+      <Name>NServiceBus.RabbitMQ</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

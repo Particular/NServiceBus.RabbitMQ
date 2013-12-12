@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transports.RabbitMQ", "NServiceBus.RabbitMQ\NServiceBus.Transports.RabbitMQ.csproj", "{BA731749-22C7-4025-8A4D-465AE8E02E61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ", "NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj", "{BA731749-22C7-4025-8A4D-465AE8E02E61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transports.RabbitMQ.Tests", "NServiceBus.RabbitMQ.Tests\NServiceBus.Transports.RabbitMQ.Tests.csproj", "{8B773CFD-E0F8-402F-AABC-04580289C76A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ.Tests", "NServiceBus.RabbitMQ.Tests\NServiceBus.RabbitMQ.Tests.csproj", "{8B773CFD-E0F8-402F-AABC-04580289C76A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{BA731749-22C7-4025-8A4D-465AE8E02E61} = {BA731749-22C7-4025-8A4D-465AE8E02E61}
 	EndProjectSection
