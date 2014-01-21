@@ -6,7 +6,7 @@
     using AcceptanceTesting;
     using NUnit.Framework;
 
-    public class When_doing_request_response_between_sites : NServiceBusAcceptanceTest
+    public class When_doing_request_return : NServiceBusAcceptanceTest
     {
         [Test]
         public void Callback_should_be_fired()
@@ -44,7 +44,7 @@
                             new SiteConfig
                             {
                                 Key = "SiteB",
-                                Address = "http://localhost:25799/SiteB/",
+                                Address = "http://localhost:25699/SiteB/",
                                 ChannelType = "http"
                             }
                         };
@@ -53,7 +53,7 @@
                         {
                             new ChannelConfig
                             {
-                                Address = "http://localhost:25799/SiteA/",
+                                Address = "http://localhost:25699/SiteA/",
                                 ChannelType = "http",
                                 Default = true
                             }
@@ -74,7 +74,7 @@
                         {
                             new ChannelConfig
                             {
-                                Address = "http://localhost:25799/SiteB/",
+                                Address = "http://localhost:25699/SiteB/",
                                 ChannelType = "http",
                                 Default = true
                             }
@@ -88,17 +88,13 @@
                 public IBus Bus { get; set; }
                 public void Handle(MyRequest request)
                 {
-                    Bus.Reply(new MyResponse());
+                    Bus.Return(1);
                 }
             }
         }
 
         [Serializable]
         public class MyRequest : ICommand
-        {
-        }
-        [Serializable]
-        public class MyResponse : IMessage
         {
         }
     }

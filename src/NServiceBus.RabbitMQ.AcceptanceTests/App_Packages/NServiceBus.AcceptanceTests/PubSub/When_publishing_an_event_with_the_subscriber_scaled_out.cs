@@ -49,13 +49,13 @@
                               context.NumberOfSubcriptionsReceived++;
                       }))
                     .Done(c => c.SubcribersOfTheEvent != null)
-                    .Repeat(r => r.For(Transports.SqlServer)
+                    .Repeat(r => r.For<AllTransportsWithMessageDrivenPubSub>(Transports.Msmq)
                         .For<AllSubscriptionStorages>(SubscriptionStorages.Msmq))
                     .Should(c =>
                     {
                         Assert.AreEqual(1, c.SubcribersOfTheEvent.Count(), "There should only be one logical subscriber");
                     })
-                    .MaxTestParallelism(1)//we force the endpoint names so we can't run this is parallell
+                    .MaxTestParallelism(1)//we force the endpoint names so we can't run this is parallel
                     .Run();
         }
 
