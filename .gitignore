@@ -1,9 +1,9 @@
-build
+nugets
 build32
 binaries
 obj
-logs
 bin
+*.vshost.*
 .nu
 _ReSharper.*
 _UpgradeReport.*
@@ -32,3 +32,7 @@ csx
 *.ncrunchproject
 *.ncrunchsolution
 _NCrunch_NServiceBus/*
+logs
+run-git.cmd
+src/Chocolatey/Build/*
+App_Packages
