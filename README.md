@@ -8,11 +8,11 @@ Follow the instructions here: http://docs.particular.net/servicecontrol/multi-tr
 
 In your app.config make sure to provides the necessary connection information needed to communicate to the RabbitMQ server. A typical setup would be:
 
-`
+````xml
 <connectionStrings>
   <add name="NServiceBus/Transport" connectionString="host=localhost"/>
 </connectionStrings>
-`
+````
 
 ## Samples
 
