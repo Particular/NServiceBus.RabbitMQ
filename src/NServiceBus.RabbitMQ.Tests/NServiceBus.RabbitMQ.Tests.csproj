@@ -75,6 +75,7 @@
     <Compile Include="RabbitMqContext.cs" />
     <Compile Include="TestCategory.cs" />
     <Compile Include="When_consuming_messages.cs" />
+    <Compile Include="When_running_concurrent_units_of_work_and_distributed_tx.cs" />
     <Compile Include="When_sending_a_message_over_rabbitmq.cs" />
     <Compile Include="TransportMessageBuilder.cs" />
     <Compile Include="When_subscribed_to_a_event.cs" />
