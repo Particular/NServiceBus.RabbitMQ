@@ -15,12 +15,13 @@
         public IManageRabbitMqConnections ConnectionManager { get; set; }
 
         /// <summary>
-        /// If set to true publisher confirms will be used to make sure that messages are acked by the broker before considered to be published
+        ///     If set to true publisher confirms will be used to make sure that messages are acked by the broker before considered
+        ///     to be published
         /// </summary>
         public bool UsePublisherConfirms { get; set; }
 
         /// <summary>
-        /// The maximum time to wait for all publisher confirms to be received
+        ///     The maximum time to wait for all publisher confirms to be received
         /// </summary>
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
 
@@ -30,7 +31,10 @@
 
             if (transaction == null)
             {
-                ExecuteRabbitMqActions(new[] { action });
+                ExecuteRabbitMqActions(new[]
+                {
+                    action
+                });
 
                 return;
             }
@@ -39,7 +43,10 @@
             OutstandingOperations.AddOrUpdate(transactionId, s =>
             {
                 transaction.TransactionCompleted += ExecuteActionsAgainstRabbitMq;
-                return new List<Action<IModel>> { action };
+                return new List<Action<IModel>>
+                {
+                    action
+                };
             }, (s, list) =>
             {
                 list.Add(action);
@@ -49,22 +56,28 @@
 
         void ExecuteActionsAgainstRabbitMq(object sender, TransactionEventArgs transactionEventArgs)
         {
+            transactionEventArgs.Transaction.TransactionCompleted -= ExecuteActionsAgainstRabbitMq;
+
             var transactionInfo = transactionEventArgs.Transaction.TransactionInformation;
             var transactionId = transactionInfo.LocalIdentifier;
 
             if (transactionInfo.Status != TransactionStatus.Committed)
+            {
                 return;
+            }
 
             IList<Action<IModel>> actions;
             OutstandingOperations.TryRemove(transactionId, out actions);
 
             if (!actions.Any())
+            {
                 return;
+            }
 
             ExecuteRabbitMqActions(actions);
         }
 
-        void ExecuteRabbitMqActions(IList<Action<IModel>> actions)
+        void ExecuteRabbitMqActions(IEnumerable<Action<IModel>> actions)
         {
             using (var channel = ConnectionManager.GetPublishConnection().CreateModel())
             {
@@ -95,6 +108,6 @@
             }
         }
 
-        private static ConcurrentDictionary<string, IList<Action<IModel>>> OutstandingOperations = new ConcurrentDictionary<string, IList<Action<IModel>>>();
+        static ConcurrentDictionary<string, IList<Action<IModel>>> OutstandingOperations = new ConcurrentDictionary<string, IList<Action<IModel>>>();
     }
 }
