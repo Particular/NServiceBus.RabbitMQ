@@ -11,13 +11,13 @@ namespace NServiceBus.Transports.RabbitMQ.Tests
     {
         /// <summary>
         /// Reproduces https://github.com/Particular/NServiceBus.RabbitMQ/issues/26.
-        /// When there are several units of work running simultaneaously, hanling concurrent units of
+        /// When there are several units of work running simultaneously, handling concurrent units of
         /// work must not leak.
         /// </summary>
         [Test]
         public void Should_launch_all_TransactionCompleted_events()
         {
-            var rounds = 20; //majic number, this should be  enough to reproduce every time
+            var rounds = 20; //magic number, this should be enough to reproduce every time
             var count = 0;
             
             Parallel.For(0, rounds, i =>
