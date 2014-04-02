@@ -96,7 +96,7 @@
                 return new Dictionary<string, string>();
             }
 
-            return message.BasicProperties.Headers.Cast<KeyValuePair<string, object>>()
+            return message.BasicProperties.Headers
                 .ToDictionary(
                     dictionaryEntry => dictionaryEntry.Key,
                     dictionaryEntry =>
