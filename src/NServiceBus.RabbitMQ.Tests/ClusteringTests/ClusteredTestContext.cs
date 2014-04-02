@@ -14,7 +14,7 @@
     using Support;
     using Unicast.Transport;
     using EasyNetQ;
-    using NServiceBus.Transports.RabbitMQ.Config;
+    using Config;
 
     public abstract class ClusteredTestContext
     {

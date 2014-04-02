@@ -106,9 +106,7 @@
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     Exception exception = null;
-                    BasicDeliverEventArgs message = null;
-
-                    message = DequeueMessage(consumer);
+                    var message = DequeueMessage(consumer);
 
                     if (message == null)
                     {
