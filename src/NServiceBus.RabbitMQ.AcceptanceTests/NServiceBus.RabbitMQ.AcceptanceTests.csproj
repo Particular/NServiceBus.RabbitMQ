@@ -58,9 +58,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
