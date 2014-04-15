@@ -85,6 +85,11 @@
             countdownEvent.Wait();
         }
 
+        public void Dispose()
+        {
+            // Injected
+        }
+
         void StartConsumer()
         {
             var token = tokenSource.Token;
@@ -134,7 +139,7 @@
                         }
 
                         TransportMessage transportMessage = null;
-                        
+
                         try
                         {
                             var messageProcessedOk = false;
@@ -223,9 +228,5 @@
         CancellationTokenSource tokenSource;
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
-        public void Dispose()
-        {
-            // Injected
-        }
     }
 }
