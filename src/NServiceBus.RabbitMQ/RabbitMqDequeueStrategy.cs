@@ -46,6 +46,11 @@
             this.endProcessMessage = endProcessMessage;
             workQueue = address.Queue;
             autoAck = !transactionSettings.IsTransactional;
+
+            if (PurgeOnStartup)
+            {
+                Purge();
+            }
         }
 
         /// <summary>
@@ -57,11 +62,6 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
-            if (PurgeOnStartup)
-            {
-                Purge();
-            }
-
             tokenSource = new CancellationTokenSource();
             countdownEvent = new CountdownEvent(maximumConcurrencyLevel);
 
