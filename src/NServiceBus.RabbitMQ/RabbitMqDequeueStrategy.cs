@@ -12,7 +12,7 @@
     /// <summary>
     ///     Default implementation of <see cref="IDequeueMessages" /> for RabbitMQ.
     /// </summary>
-    public class RabbitMqDequeueStrategy : IDequeueMessages
+    public class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
         /// <summary>
         ///     The connection to the RabbitMQ broker
@@ -82,12 +82,7 @@
             }
 
             tokenSource.Cancel();
-            tokenSource.Dispose();
-            tokenSource = null;
-
             countdownEvent.Wait();
-            countdownEvent.Dispose();
-            countdownEvent = null;
         }
 
         void StartConsumer()
@@ -228,5 +223,9 @@
         CancellationTokenSource tokenSource;
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
+        public void Dispose()
+        {
+            // Injected
+        }
     }
 }
