@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Diagnostics;
     using Config;
     using EasyNetQ;
     using NUnit.Framework;
@@ -20,7 +21,7 @@
                 //to make sure we kill old subscriptions
                 DeleteExchange(queueName);
 
-                routingTopology.Initialize(channel,queueName);
+                routingTopology.Initialize(channel, queueName);
             }
         }
 
@@ -33,14 +34,18 @@
                 {
                     channel.ExchangeDelete(exchangeName);
                 }
-                // ReSharper disable EmptyGeneralCatchClause
+                    // ReSharper disable EmptyGeneralCatchClause
                 catch (Exception)
-                // ReSharper restore EmptyGeneralCatchClause
+                    // ReSharper restore EmptyGeneralCatchClause
                 {
                 }
             }
         }
 
+        public virtual int MaximumConcurrency
+        {
+            get { return 1; }
+        }
 
         [SetUp]
         public void SetUp()
@@ -50,27 +55,39 @@
 
             var config = new ConnectionConfiguration();
             config.ParseHosts("localhost:5672");
-            
+
             var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
             var connectionFactory = new ConnectionFactoryWrapper(config, selectionStrategy);
             connectionManager = new RabbitMqConnectionManager(connectionFactory, config);
 
-            unitOfWork = new RabbitMqUnitOfWork { ConnectionManager = connectionManager,UsePublisherConfirms = true,MaxWaitTimeForConfirms = TimeSpan.FromSeconds(10) };
+            unitOfWork = new RabbitMqUnitOfWork
+            {
+                ConnectionManager = connectionManager,
+                UsePublisherConfirms = true,
+                MaxWaitTimeForConfirms = TimeSpan.FromSeconds(10)
+            };
 
-            sender = new RabbitMqMessageSender { UnitOfWork = unitOfWork, RoutingTopology = routingTopology };
+            sender = new RabbitMqMessageSender
+            {
+                UnitOfWork = unitOfWork,
+                RoutingTopology = routingTopology
+            };
 
 
-            dequeueStrategy = new RabbitMqDequeueStrategy { ConnectionManager = connectionManager, PurgeOnStartup = true };
-            
+            dequeueStrategy = new RabbitMqDequeueStrategy
+            {
+                ConnectionManager = connectionManager,
+                PurgeOnStartup = true
+            };
+
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
-            
 
             MessagePublisher = new RabbitMqMessagePublisher
-                {
-                    UnitOfWork = unitOfWork,
-                    RoutingTopology = routingTopology
-                };
+            {
+                UnitOfWork = unitOfWork,
+                RoutingTopology = routingTopology
+            };
             subscriptionManager = new RabbitMqSubscriptionManager
             {
                 ConnectionManager = connectionManager,
@@ -84,7 +101,7 @@
                 return true;
             }, (s, exception) => { });
 
-            dequeueStrategy.Start(1);
+            dequeueStrategy.Start(MaximumConcurrency);
         }
 
 
@@ -92,12 +109,14 @@
         public void TearDown()
         {
             if (dequeueStrategy != null)
+            {
                 dequeueStrategy.Stop();
-            
+            }
+
             connectionManager.Dispose();
         }
 
-        protected virtual string ExchangeNameConvention(Address address,Type eventType)
+        protected virtual string ExchangeNameConvention(Address address, Type eventType)
         {
             return "amq.topic";
         }
@@ -107,24 +126,25 @@
         {
             var waitTime = TimeSpan.FromSeconds(1);
 
-            if (System.Diagnostics.Debugger.IsAttached)
+            if (Debugger.IsAttached)
+            {
                 waitTime = TimeSpan.FromMinutes(10);
+            }
 
             TransportMessage message;
             receivedMessages.TryTake(out message, waitTime);
 
             return message;
-
         }
 
+        protected const string ReceiverQueue = "testreceiver";
+        protected RabbitMqMessagePublisher MessagePublisher;
+        protected RabbitMqConnectionManager connectionManager;
+        protected RabbitMqDequeueStrategy dequeueStrategy;
         BlockingCollection<TransportMessage> receivedMessages;
 
         protected ConventionalRoutingTopology routingTopology;
-        protected const string ReceiverQueue = "testreceiver";
-        protected RabbitMqDequeueStrategy dequeueStrategy;
-        protected RabbitMqConnectionManager connectionManager;
         protected RabbitMqMessageSender sender;
-        protected RabbitMqMessagePublisher MessagePublisher;
         protected RabbitMqSubscriptionManager subscriptionManager;
         protected RabbitMqUnitOfWork unitOfWork;
     }
