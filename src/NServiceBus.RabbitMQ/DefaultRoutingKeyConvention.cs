@@ -4,7 +4,6 @@
     using System.Collections;
     using System.Collections.Concurrent;
     using System.Linq;
-    using Utils.Reflection;
 
     public class DefaultRoutingKeyConvention
     {
@@ -44,7 +43,7 @@
             var baseType = type.BaseType;
 
 
-            if (baseType != null && !baseType.IsSystemType())
+            if (baseType != null && !IsSystemType(baseType))
             {
                 key = GetRoutingKey(baseType, key);
             }
