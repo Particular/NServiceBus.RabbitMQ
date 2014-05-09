@@ -9,12 +9,9 @@
     {
         public IRoutingTopology RoutingTopology { get; set; }
 
-
-        public bool Publish(TransportMessage message, IEnumerable<Type> eventTypes)
+        public void Publish(TransportMessage message, IEnumerable<Type> eventTypes)
         {
             var eventType = eventTypes.First();//we route on the first event for now
-
-
 
             UnitOfWork.Add(channel =>
                 {
@@ -23,9 +20,6 @@
 
                     RoutingTopology.Publish(channel, eventType, message, properties);
                 });
-
-            //we don't know if there was a subscriber so we just return true
-            return true;
         }
 
         public RabbitMqUnitOfWork UnitOfWork { get; set; }
