@@ -20,10 +20,18 @@
         [Test]
         public void TestCanHandleByteArrayHeader()
         {
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs { BasicProperties = new BasicProperties { MessageId = "Blah", Headers = new Dictionary<string,object>()
+            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
                 {
-                    {"Foo", Encoding.UTF8.GetBytes("blah")}
-                }} });
+                    MessageId = "Blah",
+                    Headers = new Dictionary<string, object>
+                    {
+                        {"Foo", Encoding.UTF8.GetBytes("blah")}
+                    }
+                }
+            };
+            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
             Assert.AreEqual("blah", transportMessage.Headers["Foo"]);
         }
@@ -31,17 +39,18 @@
         [Test]
         public void TestCanHandleStringHeader()
         {
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs
+            var basicDeliverEventArgs = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Dictionary<string, object>()
-                {
-                    {"Foo", "ni"}
+                    Headers = new Dictionary<string, object>
+                    {
+                        {"Foo", "ni"}
+                    }
                 }
-                }
-            });
+            };
+            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
             Assert.AreEqual("ni", transportMessage.Headers["Foo"]);
         }
@@ -67,17 +76,18 @@
         [Test]
         public void TestCanHandleStringObjectListHeader()
         {
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs
+            var basicDeliverEventArgs = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Dictionary<string, object>()
-                {
-                    {"Foo", new List<object>{"Bing"}}
+                    Headers = new Dictionary<string, object>
+                    {
+                        {"Foo", new List<object>{"Bing"}}
+                    }
                 }
-                }
-            });
+            };
+            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
             Assert.AreEqual("Bing", transportMessage.Headers["Foo"]);
         }

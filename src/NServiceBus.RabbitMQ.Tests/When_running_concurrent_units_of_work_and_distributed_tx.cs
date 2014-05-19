@@ -25,10 +25,7 @@ namespace NServiceBus.Transports.RabbitMQ.Tests
                 using (var scope = GetTransaction())
                 {
                     MakeTransactionDistributed();
-                    unitOfWork.Add(model =>
-                    {
-                        Interlocked.Increment(ref count);
-                    });
+                    unitOfWork.Add(model => Interlocked.Increment(ref count));
                     scope.Complete();
                 }
             });
