@@ -67,7 +67,7 @@
 
             var result = new TransportMessage(properties.MessageId, headers)
             {
-                Body = message.Body,
+                Body = message.Body ?? new byte[0],
             };
 
             if (properties.IsReplyToPresent())
