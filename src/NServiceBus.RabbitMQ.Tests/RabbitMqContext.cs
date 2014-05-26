@@ -116,7 +116,7 @@
             connectionManager.Dispose();
         }
 
-        protected virtual string ExchangeNameConvention(Address address, Type eventType)
+        protected virtual string ExchangeNameConvention()
         {
             return "amq.topic";
         }

@@ -33,7 +33,7 @@
 
         public TransportMessageBuilder ReplyToAddress(Address address)
         {
-            message = new TransportMessage(Guid.NewGuid().ToString(),new Dictionary<string, string>(),address);
+            message = new TransportMessage(Guid.NewGuid().ToString(),new Dictionary<string, string>(),address){Recoverable = true};
             return this;
         }
 

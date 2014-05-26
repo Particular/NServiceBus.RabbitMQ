@@ -69,7 +69,7 @@
         {
             var address = Address.Parse("myAddress");
 
-            Verify(new TransportMessageBuilder(), 
+            Verify(new TransportMessageBuilder().ReplyToAddress(address), 
                 (t, r) =>
                 {
                     Assert.AreEqual(address, t.ReplyToAddress);
