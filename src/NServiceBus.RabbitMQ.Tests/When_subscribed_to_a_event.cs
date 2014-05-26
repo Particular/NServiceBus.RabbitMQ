@@ -2,9 +2,10 @@
 {
     using System;
     using NUnit.Framework;
+    using Unicast;
 
     [TestFixture]
-    public class When_subscribed_to_a_event : RabbitMqContext
+    class When_subscribed_to_a_event : RabbitMqContext
     {
 
         [Test]
@@ -147,7 +148,10 @@
         void Publish<T>()
         {
             var type = typeof(T);
-            MessagePublisher.Publish(new TransportMessage { CorrelationId = type.FullName }, new[] { type });
+            MessagePublisher.Publish(new TransportMessage
+            {
+                CorrelationId = type.FullName
+            }, new PublishOptions(type));
 
         }
 

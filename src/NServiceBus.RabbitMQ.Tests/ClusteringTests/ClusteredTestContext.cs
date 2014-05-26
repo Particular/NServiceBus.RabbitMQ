@@ -7,14 +7,15 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using Logging.Loggers.NLogAdapter;
     using NLog;
     using NLog.Targets;
     using NUnit.Framework;
+    using Settings;
     using Support;
-    using Unicast.Transport;
+    using Unicast;
     using EasyNetQ;
     using Config;
+    using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     public abstract class ClusteredTestContext
     {
@@ -102,7 +103,6 @@
 
         [TestFixtureSetUp]
         public void TestContextFixtureSetup() {
-            SetupNLog(LogLevel.Trace);
             Logger.Trace("Running TestContextFixtureSetup");
             CaptureExistingErlangProcesses();
             StartUpRabbitNodes();
@@ -169,7 +169,7 @@
         protected TransportMessage SendAndReceiveAMessage(out TransportMessage sentMessage) {
             Logger.Info("Sending a message");
             var message = new TransportMessage();
-            sender.Send(message, Address.Parse(QueueName));
+            sender.Send(message, new SendOptions(QueueName));
             sentMessage = message;
             var receivedMessage = WaitForMessage();
             return receivedMessage;
@@ -186,11 +186,7 @@
             return log4View;
         }
 
-        protected void SetupNLog(LogLevel logLevel) {
-            var nLogViewerTarget = GetNLogViewerLoggingTarget();
-            var consoleTarget = GetConsoleLoggingTarget();
-            NLogConfigurator.Configure(new object[] {nLogViewerTarget, consoleTarget}, logLevel.ToString());
-        }
+     
 
         protected void SetupQueueAndSenderAndListener(string connectionString) {
             connectionManager = SetupRabbitMqConnectionManager(connectionString);
@@ -226,7 +222,7 @@
         }
 
         static RabbitMqConnectionManager SetupRabbitMqConnectionManager(string connectionString) {
-            var config = new ConnectionStringParser().Parse(connectionString);
+            var config = new ConnectionStringParser(new SettingsHolder()).Parse(connectionString);
 //            config.OverrideClientProperties();
             var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
             var connectionFactory = new ConnectionFactoryWrapper(config, selectionStrategy);

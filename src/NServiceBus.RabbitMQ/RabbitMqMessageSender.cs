@@ -1,16 +1,17 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using Routing;
+    using Unicast;
 
-    public class RabbitMqMessageSender : ISendMessages
+    class RabbitMqMessageSender : ISendMessages
     {
         public IRoutingTopology RoutingTopology { get; set; }
-        public void Send(TransportMessage message, Address address)
+        public void Send(TransportMessage message, SendOptions sendOptions)
         {
             UnitOfWork.Add(channel =>
                 {
                     var properties = RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message,channel.CreateBasicProperties());
-                    RoutingTopology.Send(channel, address, message, properties);
+                    RoutingTopology.Send(channel, sendOptions.Destination, message, properties);
                 });
         }
 

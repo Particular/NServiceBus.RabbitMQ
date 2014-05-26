@@ -6,10 +6,11 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
+    using Unicast;
     using Unicast.Queuing;
 
     [TestFixture]
-    public class When_sending_a_message_over_rabbitmq : RabbitMqContext
+    class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
         
 
@@ -68,7 +69,7 @@
         {
             var address = Address.Parse("myAddress");
 
-            Verify(new TransportMessageBuilder().ReplyToAddress(address),
+            Verify(new TransportMessageBuilder(), 
                 (t, r) =>
                 {
                     Assert.AreEqual(address, t.ReplyToAddress);
@@ -145,7 +146,7 @@
         public void Should_throw_when_sending_to_a_non_existing_queue()
         {
             Assert.Throws<QueueNotFoundException>(() =>
-                 sender.Send(new TransportMessage(), Address.Parse("NonExistingQueue@localhost")));
+                 sender.Send(new TransportMessage(), new SendOptions("NonExistingQueue@localhost")));
         }
 
         void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion)
@@ -174,7 +175,7 @@
         {
             MakeSureQueueAndExchangeExists("testEndPoint");
 
-            sender.Send(message, Address.Parse("testEndPoint"));
+            sender.Send(message, new SendOptions("testEndPoint"));
         }
 
         BasicDeliverEventArgs Consume(string id)

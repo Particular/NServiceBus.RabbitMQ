@@ -7,7 +7,7 @@ namespace NServiceBus.Transports.RabbitMQ.Tests
     using System.Transactions;
     using NUnit.Framework;
 
-    public class When_running_concurrent_units_of_work_and_distributed_tx : RabbitMqContext
+    class When_running_concurrent_units_of_work_and_distributed_tx : RabbitMqContext
     {
         /// <summary>
         /// Reproduces https://github.com/Particular/NServiceBus.RabbitMQ/issues/26.

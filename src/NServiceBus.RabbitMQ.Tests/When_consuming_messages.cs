@@ -2,9 +2,10 @@
 {
     using System;
     using NUnit.Framework;
+    using Unicast;
 
     [TestFixture]
-    public class When_consuming_messages : RabbitMqContext
+    class When_consuming_messages : RabbitMqContext
     {
         [SetUp]
         public new void SetUp()
@@ -20,7 +21,7 @@
 
             var message = new TransportMessage();
 
-            sender.Send(message, address);
+            sender.Send(message,new SendOptions(address));
 
 
             var received = WaitForMessage();

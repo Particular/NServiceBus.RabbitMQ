@@ -67,7 +67,6 @@
     <Compile Include="Config\IConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQ.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
-    <Compile Include="Config\RabbitMqSettings.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
     <Compile Include="EasyNetQ\ConnectionFactoryInfo.cs" />
@@ -79,6 +78,7 @@
     <Compile Include="Config\IConnectionConfiguration.cs" />
     <Compile Include="EasyNetQ\IConnectionFactory.cs" />
     <Compile Include="EasyNetQ\IHostConfiguration.cs" />
+    <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="IPersistentConnection.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />

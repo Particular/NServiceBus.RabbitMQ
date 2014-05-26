@@ -9,7 +9,7 @@
     using Routing;
     using Unicast.Transport;
 
-    public class RabbitMqContext
+    class RabbitMqContext
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {

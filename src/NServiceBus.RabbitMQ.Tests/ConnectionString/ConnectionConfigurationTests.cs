@@ -3,6 +3,7 @@
     using System.Linq;
     using Config;
     using NUnit.Framework;
+    using Settings;
 
     [TestFixture]
     public class ConnectionConfigurationTests
@@ -11,7 +12,7 @@
 
         [SetUp]
         public void Setup() {
-            parser = new ConnectionStringParser();
+            parser = new ConnectionStringParser(new SettingsHolder());
             defaults = new ConnectionConfiguration();
         }
 

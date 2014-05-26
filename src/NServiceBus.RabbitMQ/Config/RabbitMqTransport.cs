@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Features
 {
+    using System;
+    using EasyNetQ;
     using Transports;
     using Transports.RabbitMQ;
     using Transports.RabbitMQ.Config;
@@ -15,7 +17,7 @@
             }
 
             var connectionString = config.Settings.Get<string>("NServiceBus.Transport.ConnectionString");
-            var connectionConfiguration = new ConnectionStringParser().Parse(connectionString);
+            var connectionConfiguration = new ConnectionStringParser(config.Settings).Parse(connectionString);
 
             var configurer = config.Configurer;
             configurer.RegisterSingleton<IConnectionConfiguration>(connectionConfiguration);
@@ -36,10 +38,31 @@
             configurer.ConfigureComponent<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
              .ConfigureProperty(p => p.EndpointQueueName, Address.Local.Queue);
 
-            configurer.ConfigureComponent<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall);
+            configurer.ConfigureComponent<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(t=>t.UseDurableQueues,config.Settings.Get<bool>("Endpoint.DurableMessages"));
 
-            InfrastructureServices.Enable<IRoutingTopology>();
-            InfrastructureServices.Enable<IManageRabbitMqConnections>();
+
+            if (config.Settings.HasSetting<IRoutingTopology>())
+            {
+                configurer.RegisterSingleton<IRoutingTopology>(config.Settings.Get <IRoutingTopology>());
+            }
+            else
+            {
+                configurer.ConfigureComponent<ConventionalRoutingTopology>(DependencyLifecycle.SingleInstance);
+            }
+
+
+            if (config.Settings.HasSetting("IManageRabbitMqConnections"))
+            {
+                configurer.ConfigureComponent(config.Settings.Get<Type>("IManageRabbitMqConnections"), DependencyLifecycle.SingleInstance);
+            }
+            else
+            {
+                configurer.ConfigureComponent<RabbitMqConnectionManager>(DependencyLifecycle.SingleInstance);
+
+                configurer.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
+
+            }
         }
 
 

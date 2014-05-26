@@ -65,15 +65,19 @@
 
             var headers = DeserializeHeaders(message);
 
-            var result = new TransportMessage(properties.MessageId, headers)
+            Address replyToAddress = null;
+
+            if (properties.IsReplyToPresent())
+            {
+                replyToAddress = Address.Parse(properties.ReplyTo);
+            }
+
+            var result = new TransportMessage(properties.MessageId, headers, replyToAddress)
             {
                 Body = message.Body ?? new byte[0],
             };
 
-            if (properties.IsReplyToPresent())
-            {
-                result.ReplyToAddress = Address.Parse(properties.ReplyTo);
-            }
+        
 
             if (properties.IsCorrelationIdPresent())
             {

@@ -1,17 +1,15 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Routing;
+    using Unicast;
 
-    public class RabbitMqMessagePublisher : IPublishMessages
+    class RabbitMqMessagePublisher : IPublishMessages
     {
         public IRoutingTopology RoutingTopology { get; set; }
 
-        public void Publish(TransportMessage message, IEnumerable<Type> eventTypes)
+        public void Publish(TransportMessage message, PublishOptions publishOptions)
         {
-            var eventType = eventTypes.First();//we route on the first event for now
+            var eventType = publishOptions.EventType;
 
             UnitOfWork.Add(channel =>
                 {
