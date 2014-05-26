@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
-    using System;
     using NUnit.Framework;
     using Unicast;
 
