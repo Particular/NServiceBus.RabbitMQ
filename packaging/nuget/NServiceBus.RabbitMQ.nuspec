@@ -21,6 +21,6 @@
   <files>
     <file src="..\..\binaries\NServiceBus.Transports.RabbitMQ.???" target="lib\net45" />
     <file src="tools\**" target="tools" />
-    <file src="..\..\src\NServiceBus.RabbitMQ\**\*.cs" target="src\NServiceBus.RabbitMQ" />
+    <file src="..\..\src\NServiceBus.RabbitMQ\**\*.cs" target="src" />
   </files>
 </package>
