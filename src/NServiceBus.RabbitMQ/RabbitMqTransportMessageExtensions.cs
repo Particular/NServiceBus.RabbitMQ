@@ -7,10 +7,11 @@
     using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using Unicast;
 
     public static class RabbitMqTransportMessageExtensions
     {
-        public static IBasicProperties FillRabbitMqProperties(TransportMessage message, IBasicProperties properties)
+        public static void FillRabbitMqProperties(TransportMessage message, DeliveryOptions options, IBasicProperties properties)
         {
             properties.MessageId = message.Id;
 
@@ -45,13 +46,11 @@
                 properties.ContentType = "application/octet-stream";
             }
 
-
-            if (message.ReplyToAddress != null && message.ReplyToAddress != Address.Undefined)
+            var replyToAddress = options.ReplyToAddress ?? message.ReplyToAddress;
+            if (replyToAddress != null)
             {
-                properties.ReplyTo = message.ReplyToAddress.Queue;
+                properties.ReplyTo = replyToAddress.Queue;
             }
-
-            return properties;
         }
 
         public static TransportMessage ToTransportMessage(BasicDeliverEventArgs message)

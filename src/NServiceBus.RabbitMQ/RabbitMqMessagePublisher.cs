@@ -12,12 +12,13 @@
             var eventType = publishOptions.EventType;
 
             UnitOfWork.Add(channel =>
-                {
-                    var properties = RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message,
-                                                                                               channel.CreateBasicProperties());
+            {
+                var properties = channel.CreateBasicProperties();
 
-                    RoutingTopology.Publish(channel, eventType, message, properties);
-                });
+                RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, publishOptions, properties);
+
+                RoutingTopology.Publish(channel, eventType, message, properties);
+            });
         }
 
         public RabbitMqUnitOfWork UnitOfWork { get; set; }
