@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using CircuitBreakers;
@@ -63,7 +64,8 @@
         public void Start(int maximumConcurrencyLevel)
         {
             tokenSource = new CancellationTokenSource();
-            countdownEvent = new CountdownEvent(maximumConcurrencyLevel);
+            // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
+            countdownEvent = new CountdownEvent(maximumConcurrencyLevel + 1);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -82,6 +84,7 @@
             }
 
             tokenSource.Cancel();
+            countdownEvent.Signal();
             countdownEvent.Wait();
         }
 
@@ -105,8 +108,10 @@
 
                     if (!tokenSource.IsCancellationRequested)
                     {
-                        countdownEvent.TryAddCount();
-                        StartConsumer();
+                        if (countdownEvent.TryAddCount())
+                        {
+                            StartConsumer();
+                        }
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
@@ -179,7 +184,16 @@
 
                             if (!autoAck)
                             {
-                                channel.BasicReject(message.DeliveryTag, true);
+                                try
+                                {
+                                    channel.BasicReject(message.DeliveryTag, true);
+
+                                }
+                                catch (Exception ff)
+                                {
+                                    var t = ff;
+                                    Console.Out.WriteLine(t);
+                                }
                             }
                         }
                         finally
@@ -189,6 +203,11 @@
                     }
                 }
             }
+            catch (IOException)
+            {
+                //Unable to write data to the transport connection: An existing connection was forcibly closed by the remote host.
+                //This exception is expected because we are shutting down!
+            }
             finally
             {
                 countdownEvent.Signal();
@@ -197,9 +216,23 @@
 
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
         {
-            BasicDeliverEventArgs rawMessage;
+            BasicDeliverEventArgs rawMessage = null;
 
-            if (!consumer.Queue.Dequeue(1000, out rawMessage))
+            var messageDequeued = false;
+
+            try
+            {
+                messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
+            }
+            catch (EndOfStreamException)
+            {
+                // If no items are present and the queue is in a closed
+                // state, or if at any time while waiting the queue
+                // transitions to a closed state (by a call to Close()), this
+                // method will throw EndOfStreamException.
+            }
+
+            if (!messageDequeued)
             {
                 return null;
             }
