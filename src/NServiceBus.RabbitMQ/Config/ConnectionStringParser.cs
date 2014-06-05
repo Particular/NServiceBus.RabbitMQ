@@ -8,10 +8,10 @@
 
     public class ConnectionStringParser : DbConnectionStringBuilder, IConnectionStringParser
     {
-        readonly SettingsHolder settings;
+        readonly ReadOnlySettings settings;
         ConnectionConfiguration connectionConfiguration;
 
-        public ConnectionStringParser(SettingsHolder settings)
+        public ConnectionStringParser(ReadOnlySettings settings)
         {
             this.settings = settings;
         }

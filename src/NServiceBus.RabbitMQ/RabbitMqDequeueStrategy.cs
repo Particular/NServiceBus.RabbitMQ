@@ -252,7 +252,7 @@
 
         readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
             TimeSpan.FromMinutes(2),
-            ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
+            ex => ConfigureCriticalErrorAction.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
             TimeSpan.FromSeconds(5));
 
         bool autoAck;
