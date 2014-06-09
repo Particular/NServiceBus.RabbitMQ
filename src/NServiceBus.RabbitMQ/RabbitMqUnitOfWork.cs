@@ -3,14 +3,12 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Text.RegularExpressions;
-    using System.Transactions;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
     using Unicast.Queuing;
 
-    public class RabbitMqUnitOfWork
+    class RabbitMqUnitOfWork
     {
         public IManageRabbitMqConnections ConnectionManager { get; set; }
 
@@ -27,54 +25,7 @@
 
         public void Add(Action<IModel> action)
         {
-            var transaction = Transaction.Current;
-
-            if (transaction == null)
-            {
-                ExecuteRabbitMqActions(new[]
-                {
-                    action
-                });
-
-                return;
-            }
-
-            var transactionId = transaction.TransactionInformation.LocalIdentifier;
-            OutstandingOperations.AddOrUpdate(transactionId, s =>
-            {
-                transaction.TransactionCompleted += ExecuteActionsAgainstRabbitMq;
-                return new List<Action<IModel>>
-                {
-                    action
-                };
-            }, (s, list) =>
-            {
-                list.Add(action);
-                return list;
-            });
-        }
-
-        void ExecuteActionsAgainstRabbitMq(object sender, TransactionEventArgs transactionEventArgs)
-        {
-            transactionEventArgs.Transaction.TransactionCompleted -= ExecuteActionsAgainstRabbitMq;
-
-            var transactionInfo = transactionEventArgs.Transaction.TransactionInformation;
-            var transactionId = transactionInfo.LocalIdentifier;
-
-            if (transactionInfo.Status != TransactionStatus.Committed)
-            {
-                return;
-            }
-
-            IList<Action<IModel>> actions;
-            OutstandingOperations.TryRemove(transactionId, out actions);
-
-            if (!actions.Any())
-            {
-                return;
-            }
-
-            ExecuteRabbitMqActions(actions);
+            ExecuteRabbitMqActions(new[]{action});
         }
 
         void ExecuteRabbitMqActions(IEnumerable<Action<IModel>> actions)

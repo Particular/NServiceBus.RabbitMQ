@@ -7,9 +7,8 @@
     using Transports.RabbitMQ.Config;
     using Transports.RabbitMQ.Routing;
 
-    public class RabbitMqTransport : ConfigureTransport<RabbitMQ>
+    class RabbitMqTransport : ConfigureTransport<RabbitMQ>
     {
-
         protected override void InternalConfigure(Configure config)
         {
             config.Features(f =>
@@ -19,6 +18,12 @@
             });
 
             config.Settings.EnableFeatureByDefault<TimeoutManager>();
+
+            //enable the outbox unless the users hasn't disabled it
+            if (config.Settings.GetOrDefault<bool>(typeof(Outbox).FullName))
+            {
+                config.EnableOutbox();
+            }
         }
 
         protected override void Setup(FeatureConfigurationContext context)
@@ -72,17 +77,12 @@
                 context.Container.ConfigureComponent<RabbitMqConnectionManager>(DependencyLifecycle.SingleInstance);
 
                 context.Container.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
-
             }
         }
-
-
 
         protected override string ExampleConnectionStringForErrorMessage
         {
             get { return "host=localhost"; }
         }
-
-
     }
 }
