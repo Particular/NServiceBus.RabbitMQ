@@ -2,7 +2,6 @@
 {
     using System;
     using System.Text;
-    using System.Transactions;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
