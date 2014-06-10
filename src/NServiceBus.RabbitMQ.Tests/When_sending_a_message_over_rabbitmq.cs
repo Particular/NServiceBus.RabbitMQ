@@ -101,45 +101,6 @@
                 });
 
         }
-        [Test]
-        public void Should_defer_the_send_until_tx_commit_if_ambient_tx_exists()
-        {
-            var body = Encoding.UTF8.GetBytes("<TestMessage/>");
-            var body2 = Encoding.UTF8.GetBytes("<TestMessage2/>");
-
-            var message = new TransportMessageBuilder().WithBody(body).Build();
-            var message2 = new TransportMessageBuilder().WithBody(body2).Build();
-
-            using (var tx = new TransactionScope())
-            {
-                SendMessage(message);
-                SendMessage(message2);
-                Assert.Throws<InvalidOperationException>(()=>Consume(message.Id));
-               
-                tx.Complete();
-            }
-
-            Assert.AreEqual(body, Consume(message.Id).Body,"Message should be in the queue");
-            Assert.AreEqual(body2, Consume(message2.Id).Body, "Message2 should be in the queue");
-        }
-
-        [Test]
-        public void Should_not_send_message_if_ambient_tx_is_rolled_back()
-        {
-            var body = Encoding.UTF8.GetBytes("<TestMessage/>");
-
-            var message = new TransportMessageBuilder().WithBody(body).Build();
-
-            using (new TransactionScope())
-            {
-                SendMessage(message);
-                Assert.Throws<InvalidOperationException>(() => Consume(message.Id));
-            }
-
-            Assert.Throws<InvalidOperationException>(() => Consume(message.Id));
-
-        }
-
 
 
         [Test, Ignore("Not sure we should enforce this")]
