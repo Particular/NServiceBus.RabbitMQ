@@ -8,6 +8,7 @@
         {
             HasNativePubSubSupport = true;
             HasSupportForCentralizedPubSub = true;
+            HasSupportForDistributedTransactions = false;
         }
     }
 }
