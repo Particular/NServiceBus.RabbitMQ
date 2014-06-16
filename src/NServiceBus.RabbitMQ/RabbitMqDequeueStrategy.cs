@@ -13,7 +13,7 @@
     /// <summary>
     ///     Default implementation of <see cref="IDequeueMessages" /> for RabbitMQ.
     /// </summary>
-    public class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
+    class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
         /// <summary>
         ///     The connection to the RabbitMQ broker

@@ -58,7 +58,5 @@
                 }
             }
         }
-
-        static ConcurrentDictionary<string, IList<Action<IModel>>> OutstandingOperations = new ConcurrentDictionary<string, IList<Action<IModel>>>();
     }
 }

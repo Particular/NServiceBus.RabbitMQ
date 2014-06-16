@@ -5,7 +5,7 @@
     using EasyNetQ;
     using global::RabbitMQ.Client;
 
-    public class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
+    class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
     {
         public RabbitMqConnectionManager(IConnectionFactory connectionFactory, IConnectionConfiguration connectionConfiguration)
         {

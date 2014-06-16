@@ -8,7 +8,7 @@
     using EasyNetQ;
     using Support;
 
-    public class ConnectionConfiguration : IConnectionConfiguration
+    class ConnectionConfiguration : IConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
         public const ushort DefaultPrefetchCount = 1;

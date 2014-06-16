@@ -9,7 +9,7 @@
     using global::RabbitMQ.Client.Events;
     using Unicast;
 
-    public static class RabbitMqTransportMessageExtensions
+    static class RabbitMqTransportMessageExtensions
     {
         public static void FillRabbitMqProperties(TransportMessage message, DeliveryOptions options, IBasicProperties properties)
         {

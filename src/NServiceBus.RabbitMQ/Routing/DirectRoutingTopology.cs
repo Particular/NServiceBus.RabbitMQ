@@ -6,7 +6,7 @@
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys
     /// </summary>
-    public class DirectRoutingTopology:IRoutingTopology
+    class DirectRoutingTopology:IRoutingTopology
     {
         public Func<Address, Type, string> ExchangeNameConvention { get; set; }
 

@@ -64,7 +64,6 @@
   <ItemGroup>
     <Compile Include="Config\RabbitMqTransport.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />
-    <Compile Include="Config\IConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQ.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
@@ -114,12 +113,11 @@
   <Import Project="Fody.targets" />
   <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
   <Import Project="$(SolutionDir)..\BuildSupport\GitVersionTask\Build\GitVersionTask.targets" />
-
   <!-- Ripple Nuget Generation -->
   <UsingTask TaskName="GitVersionTask.GetVersion" AssemblyFile="$(SolutionDir)..\buildsupport\GitVersionTask\GitVersionTask.dll" />
-  <Target Name="AfterBuild"  Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU'" >
+  <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <GetVersion SolutionDirectory="$(SolutionDir)">
-        <Output TaskParameter="LegacySemVerPadded" PropertyName="LegacySemVerPadded" />
+      <Output TaskParameter="LegacySemVerPadded" PropertyName="LegacySemVerPadded" />
     </GetVersion>
     <Exec Command="&quot;$(SolutionDir)..\BuildSupport\Ripple.exe&quot; create-packages -v $(LegacySemVerPadded) -d &quot;$(SolutionDir)..\nugets&quot; -u -C " />
   </Target>

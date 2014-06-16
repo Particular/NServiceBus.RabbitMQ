@@ -5,7 +5,7 @@
     using System.Collections.Concurrent;
     using System.Linq;
 
-    public class DefaultRoutingKeyConvention
+    class DefaultRoutingKeyConvention
     {
         static bool IsClrType(byte[] a1)
         {

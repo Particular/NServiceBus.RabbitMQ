@@ -6,7 +6,7 @@
     using System.Text.RegularExpressions;
     using Settings;
 
-    public class ConnectionStringParser : DbConnectionStringBuilder, IConnectionStringParser
+    class ConnectionStringParser : DbConnectionStringBuilder
     {
         readonly ReadOnlySettings settings;
         ConnectionConfiguration connectionConfiguration;
