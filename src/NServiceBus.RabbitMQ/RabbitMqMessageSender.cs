@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
+    using global::RabbitMQ.Client;
     using Routing;
     using Unicast;
 
@@ -7,16 +8,32 @@
     {
         public IRoutingTopology RoutingTopology { get; set; }
 
+        public IChannelProvider ChannelProvider { get; set; }
+
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
-            UnitOfWork.Add(channel =>
+            IModel channel;
+
+            if (ChannelProvider.TryGetPublishChannel(out channel))
             {
-                var properties = channel.CreateBasicProperties();
-                RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, sendOptions, properties);
-                RoutingTopology.Send(channel, sendOptions.Destination, message, properties);
-            });
+                SendMessage(message, sendOptions, channel);
+            }
+            else
+            {
+                using (var confirmsAwareChannel = ChannelProvider.GetNewPublishChannel())
+                {
+                    SendMessage(message, sendOptions, confirmsAwareChannel.Channel);    
+                }
+            }
         }
 
-        public RabbitMqUnitOfWork UnitOfWork { get; set; }
+        void SendMessage(TransportMessage message, SendOptions sendOptions, IModel channel)
+        {
+            var properties = channel.CreateBasicProperties();
+
+            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, sendOptions, properties);
+
+            RoutingTopology.Send(channel, sendOptions.Destination, message, properties);
+        }
     }
 }

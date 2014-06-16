@@ -8,5 +8,4 @@
         IConnection GetConsumeConnection();
         IConnection GetAdministrationConnection();
     }
-
 }

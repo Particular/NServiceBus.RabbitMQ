@@ -42,14 +42,18 @@
                  .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested)
                  .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount);
 
-            context.Container.ConfigureComponent<RabbitMqUnitOfWork>(DependencyLifecycle.InstancePerCall)
+            context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
+
+            context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
+
+            context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.UsePublisherConfirms, connectionConfiguration.UsePublisherConfirms)
                   .ConfigureProperty(p => p.MaxWaitTimeForConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
 
-
+            context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
-
             context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
+
 
             context.Container.ConfigureComponent<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
              .ConfigureProperty(p => p.EndpointQueueName, Address.Local.Queue);

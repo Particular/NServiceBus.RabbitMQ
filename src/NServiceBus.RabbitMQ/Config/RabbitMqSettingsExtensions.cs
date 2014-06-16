@@ -43,7 +43,6 @@
         /// <returns></returns>
         public static void UseRoutingTopology<T>(this TransportConfiguration transportConfiguration) where T : IRoutingTopology
         {
-
             transportConfiguration.Config.Settings.Set<IRoutingTopology>(Activator.CreateInstance<T>());
         }
 
