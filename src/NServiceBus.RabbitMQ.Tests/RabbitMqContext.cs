@@ -5,6 +5,7 @@
     using System.Diagnostics;
     using Config;
     using EasyNetQ;
+    using global::RabbitMQ.Client;
     using NUnit.Framework;
     using Routing;
     using Unicast.Transport;
@@ -46,7 +47,7 @@
         {
             get { return 1; }
         }
-
+       
         [SetUp]
         public void SetUp()
         {
@@ -60,16 +61,13 @@
             var connectionFactory = new ConnectionFactoryWrapper(config, selectionStrategy);
             connectionManager = new RabbitMqConnectionManager(connectionFactory, config);
 
-            unitOfWork = new RabbitMqUnitOfWork
-            {
-                ConnectionManager = connectionManager,
-                UsePublisherConfirms = true,
-                MaxWaitTimeForConfirms = TimeSpan.FromSeconds(10)
-            };
+            publishChannel = connectionManager.GetPublishConnection().CreateModel();
+
+            var channelProvider = new FakeChannelProvider(publishChannel);
 
             sender = new RabbitMqMessageSender
             {
-                UnitOfWork = unitOfWork,
+                ChannelProvider = channelProvider,
                 RoutingTopology = routingTopology
             };
 
@@ -85,7 +83,7 @@
 
             MessagePublisher = new RabbitMqMessagePublisher
             {
-                UnitOfWork = unitOfWork,
+                ChannelProvider = channelProvider,
                 RoutingTopology = routingTopology
             };
             subscriptionManager = new RabbitMqSubscriptionManager
@@ -113,6 +111,9 @@
                 dequeueStrategy.Stop();
             }
 
+            publishChannel.Close();
+            publishChannel.Dispose();
+
             connectionManager.Dispose();
         }
 
@@ -137,6 +138,8 @@
             return message;
         }
 
+        IModel publishChannel;
+
         protected const string ReceiverQueue = "testreceiver";
         protected RabbitMqMessagePublisher MessagePublisher;
         protected RabbitMqConnectionManager connectionManager;
@@ -146,6 +149,27 @@
         protected ConventionalRoutingTopology routingTopology;
         protected RabbitMqMessageSender sender;
         protected RabbitMqSubscriptionManager subscriptionManager;
-        protected RabbitMqUnitOfWork unitOfWork;
+    }
+
+    class FakeChannelProvider:IChannelProvider
+    {
+        readonly IModel publishChannel;
+
+        public FakeChannelProvider(IModel publishChannel)
+        {
+            this.publishChannel = publishChannel;
+        }
+
+        public bool TryGetPublishChannel(out IModel channel)
+        {
+            channel = publishChannel;
+
+            return true;
+        }
+
+        public ConfirmsAwareChannel GetNewPublishChannel()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

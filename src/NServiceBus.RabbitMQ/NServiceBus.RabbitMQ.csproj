@@ -62,10 +62,12 @@
     <Reference Include="System.Web.Services" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChannelProvider.cs" />
     <Compile Include="Config\RabbitMqTransport.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQ.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
+    <Compile Include="ConfirmsAwareChannel.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
     <Compile Include="EasyNetQ\ConnectionFactoryInfo.cs" />
@@ -77,8 +79,9 @@
     <Compile Include="Config\IConnectionConfiguration.cs" />
     <Compile Include="EasyNetQ\IConnectionFactory.cs" />
     <Compile Include="EasyNetQ\IHostConfiguration.cs" />
+    <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="IPersistentConnection.cs" />
+    <Compile Include="OpenPublishChannelBehavior.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
@@ -89,7 +92,6 @@
     <Compile Include="RabbitMqQueueCreator.cs" />
     <Compile Include="RabbitMqSubscriptionManager.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
-    <Compile Include="RabbitMqUnitOfWork.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />

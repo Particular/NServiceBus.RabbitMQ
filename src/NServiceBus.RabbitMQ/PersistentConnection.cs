@@ -14,7 +14,7 @@ namespace NServiceBus.Transports.RabbitMQ
     /// A connection that attempts to reconnect if the inner connection is closed.
     /// </summary>
     [SkipWeaving]
-    class PersistentConnection : IPersistentConnection, IConnection
+    class PersistentConnection: IConnection
     {
         public PersistentConnection(IConnectionFactory connectionFactory, TimeSpan retryDelay)
         {
