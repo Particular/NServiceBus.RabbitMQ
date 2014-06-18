@@ -37,6 +37,28 @@
         }
 
         [Test]
+        public void Should_set_or_override_replyto_header_if_present_in_native_message()
+        {
+            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
+                {
+                    ReplyTo = "myaddress",
+                    MessageId = "Blah",
+                    Headers = new Dictionary<string, object>
+                    {
+                        {Headers.ReplyToAddress, Encoding.UTF8.GetBytes("native address")}
+                    }
+                }
+            };
+            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
+            Assert.NotNull(transportMessage);
+            Assert.AreEqual("myaddress", transportMessage.Headers[Headers.ReplyToAddress]);
+        }
+
+
+
+        [Test]
         public void TestCanHandleStringHeader()
         {
             var basicDeliverEventArgs = new BasicDeliverEventArgs

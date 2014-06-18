@@ -7,6 +7,7 @@
     using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using Logging;
     using Unicast;
 
     static class RabbitMqTransportMessageExtensions
@@ -64,19 +65,25 @@
 
             var headers = DeserializeHeaders(message);
 
-            Address replyToAddress = null;
 
-            if (properties.IsReplyToPresent())
-            {
-                replyToAddress = Address.Parse(properties.ReplyTo);
-            }
 
-            var result = new TransportMessage(properties.MessageId, headers, replyToAddress)
+            var result = new TransportMessage(properties.MessageId, headers)
             {
                 Body = message.Body ?? new byte[0],
             };
 
-        
+            if (properties.IsReplyToPresent())
+            {
+                string replyToAddressNSBHeaders;
+                var nativeReplyToAddress = properties.ReplyTo;
+
+                if (headers.TryGetValue(Headers.ReplyToAddress, out replyToAddressNSBHeaders) && replyToAddressNSBHeaders != nativeReplyToAddress)
+                {
+                    Logger.WarnFormat("Missmatching replyto address properties found, the native '{0}' will override the one found in the headers '{1}'",nativeReplyToAddress,replyToAddressNSBHeaders);
+                }
+
+                headers[Headers.ReplyToAddress] = nativeReplyToAddress;
+            }
 
             if (properties.IsCorrelationIdPresent())
             {
@@ -132,5 +139,7 @@
             }
             return returnValue;
         }
+
+        static ILog Logger = LogManager.GetLogger(typeof(RabbitMqTransportMessageExtensions));
     }
 }
