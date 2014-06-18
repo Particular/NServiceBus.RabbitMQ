@@ -36,8 +36,8 @@
             public Registration()
                 : base("OpenPublishChannelBehavior", typeof(OpenPublishChannelBehavior), "Makes sure that the is a publish channel available on the pipeline")
             {
-                InsertAfter(WellKnownBehavior.ChildContainer);
-                InsertBefore(WellKnownBehavior.UnitOfWork);
+                InsertAfter(WellKnownBehavior.CreateChildContainer);
+                InsertBefore(WellKnownBehavior.ExecuteUnitOfWork);
             }
         }
     }
