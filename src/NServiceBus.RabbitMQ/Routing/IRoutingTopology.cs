@@ -40,7 +40,7 @@
         void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties);
 
         /// <summary>
-        /// Performs any initalizating logic needed (eg creating exchanges and bindings)
+        /// Performs any initialisation logic needed (eg creating exchanges and bindings)
         /// </summary>
         /// <param name="channel"></param>
         /// <param name="main"></param>

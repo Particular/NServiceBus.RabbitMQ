@@ -11,11 +11,8 @@
     {
         protected override void InternalConfigure(Configure config)
         {
-            config.Features(f =>
-            {
-                f.Enable<RabbitMqTransport>();
-                f.Enable<TimeoutManagerBasedDeferral>();
-            });
+            config.EnableFeature<RabbitMqTransport>();
+            config.EnableFeature<TimeoutManagerBasedDeferral>();
 
             config.Settings.EnableFeatureByDefault<TimeoutManager>();
 
