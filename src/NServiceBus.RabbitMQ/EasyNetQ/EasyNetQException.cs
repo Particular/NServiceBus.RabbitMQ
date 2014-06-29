@@ -4,7 +4,7 @@
     using System.Runtime.Serialization;
 
     [Serializable]
-    public class EasyNetQException : Exception
+    class EasyNetQException : Exception
     {
         public EasyNetQException() {}
         public EasyNetQException(string message) : base(message) {}
@@ -17,7 +17,7 @@
     }
 
     [Serializable]
-    public class EasyNetQInvalidMessageTypeException : EasyNetQException
+    class EasyNetQInvalidMessageTypeException : EasyNetQException
     {
         public EasyNetQInvalidMessageTypeException() {}
         public EasyNetQInvalidMessageTypeException(string message) : base(message) {}

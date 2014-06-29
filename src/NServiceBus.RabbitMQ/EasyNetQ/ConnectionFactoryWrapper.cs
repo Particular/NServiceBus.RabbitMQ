@@ -6,7 +6,7 @@
     using NServiceBus.Transports.RabbitMQ.Config;
     using RabbitMQ.Client;
 
-    public class ConnectionFactoryWrapper : IConnectionFactory
+    class ConnectionFactoryWrapper : IConnectionFactory
     {
         public virtual IConnectionConfiguration Configuration { get; private set; }
         private readonly IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy;
