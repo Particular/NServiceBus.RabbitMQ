@@ -7,6 +7,7 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
+    using System.Transactions;
     using global::RabbitMQ.Client;
     using NLog;
     using NUnit.Framework;
@@ -216,7 +217,7 @@
         {
             receivedMessages = new BlockingCollection<TransportMessage>();
             dequeueStrategy = new RabbitMqDequeueStrategy { ConnectionManager = connectionManager, PurgeOnStartup = true };
-            dequeueStrategy.Init(Address.Parse(queueName), TransactionSettings.Default, m =>
+            dequeueStrategy.Init(Address.Parse(queueName), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
                 {
                     receivedMessages.Add(m);
                     return true;

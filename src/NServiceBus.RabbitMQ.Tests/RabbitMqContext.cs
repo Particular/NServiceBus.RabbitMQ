@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
+    using System.Transactions;
     using Config;
     using EasyNetQ;
     using global::RabbitMQ.Client;
@@ -93,7 +94,7 @@
                 RoutingTopology = routingTopology
             };
 
-            dequeueStrategy.Init(Address.Parse(ReceiverQueue), TransactionSettings.Default, m =>
+            dequeueStrategy.Init(Address.Parse(ReceiverQueue), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
             {
                 receivedMessages.Add(m);
                 return true;
