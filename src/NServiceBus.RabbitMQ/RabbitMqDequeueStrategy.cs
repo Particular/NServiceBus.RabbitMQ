@@ -250,7 +250,7 @@
 
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
             TimeSpan.FromMinutes(2),
             ex => ConfigureCriticalErrorAction.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
             TimeSpan.FromSeconds(5));
