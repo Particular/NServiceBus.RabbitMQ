@@ -117,7 +117,6 @@
     <GetVersion SolutionDirectory="$(SolutionDir)">
       <Output TaskParameter="LegacySemVerPadded" PropertyName="LegacySemVerPadded" />
     </GetVersion>
-    <Exec Command="&quot;$(SolutionDir)..\BuildSupport\Ripple.exe&quot; create-packages -v $(LegacySemVerPadded) -d &quot;$(SolutionDir)..\nugets&quot; -u -C " />
   </Target>
   <Import Project="..\packages\Fody.1.24.0\build\Fody.targets" Condition="Exists('..\packages\Fody.1.24.0\build\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
