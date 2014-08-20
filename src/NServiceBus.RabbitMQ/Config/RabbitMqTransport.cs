@@ -2,41 +2,30 @@
 {
     using System;
     using EasyNetQ;
+    using Support;
     using Transports;
     using Transports.RabbitMQ;
     using Transports.RabbitMQ.Config;
     using Transports.RabbitMQ.Routing;
 
-    class RabbitMqTransport : ConfigureTransport<RabbitMQ>
+    class RabbitMqTransport : ConfigureTransport
     {
-        protected override void InternalConfigure(Configure config)
+        protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
-            config.EnableFeature<RabbitMqTransport>();
-            config.EnableFeature<TimeoutManagerBasedDeferral>();
+            var queueName = context.Settings.EndpointName();
 
-            config.Settings.EnableFeatureByDefault<TimeoutManager>();
-
-            //enable the outbox unless the users hasn't disabled it
-            if (config.Settings.GetOrDefault<bool>(typeof(Outbox).FullName))
-            {
-                config.EnableOutbox();
-            }
-        }
-
-        protected override void Setup(FeatureConfigurationContext context)
-        {
             if (!context.Settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
             {
-                Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
+                queueName += string.Format(".{0}", RuntimeEnvironment.MachineName);
+                LocalAddress(queueName);
             }
 
-            var connectionString = context.Settings.Get<string>("NServiceBus.Transport.ConnectionString");
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
 
-            context.Container.RegisterSingleton<IConnectionConfiguration>(connectionConfiguration);
+            context.Container.RegisterSingleton(connectionConfiguration);
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                 .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested)
+                 .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.GetPurgeOnStartup(context.Settings))
                  .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount);
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
@@ -51,9 +40,8 @@
             context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
 
-
             context.Container.ConfigureComponent<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
-             .ConfigureProperty(p => p.EndpointQueueName, Address.Local.Queue);
+             .ConfigureProperty(p => p.EndpointQueueName, queueName);
 
             context.Container.ConfigureComponent<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(t => t.UseDurableQueues, context.Settings.Get<bool>("Endpoint.DurableMessages"));
@@ -61,7 +49,7 @@
 
             if (context.Settings.HasSetting<IRoutingTopology>())
             {
-                context.Container.RegisterSingleton<IRoutingTopology>(context.Settings.Get<IRoutingTopology>());
+                context.Container.RegisterSingleton(context.Settings.Get<IRoutingTopology>());
             }
             else
             {

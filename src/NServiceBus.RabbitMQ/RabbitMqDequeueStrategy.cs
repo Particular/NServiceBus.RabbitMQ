@@ -15,11 +15,7 @@
     /// </summary>
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
-        /// <summary>
-        ///     The connection to the RabbitMQ broker
-        /// </summary>
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
-
+        readonly IManageRabbitMqConnections connectionManager;
 
         /// <summary>
         ///     Determines if the queue should be purged when the transport starts
@@ -30,6 +26,15 @@
         ///     The number of messages to allow the RabbitMq client to pre-fetch from the broker
         /// </summary>
         public ushort PrefetchCount { get; set; }
+
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError)
+        {
+            this.connectionManager = connectionManager;
+            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+            TimeSpan.FromMinutes(2),
+            ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker", ex),
+            TimeSpan.FromSeconds(5));
+        }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -121,7 +126,7 @@
             try
             {
                 var cancellationToken = (CancellationToken) obj;
-                var connection = ConnectionManager.GetConsumeConnection();
+                var connection = connectionManager.GetConsumeConnection();
 
                 using (var channel = connection.CreateModel())
                 {
@@ -242,7 +247,7 @@
 
         void Purge()
         {
-            using (var channel = ConnectionManager.GetAdministrationConnection().CreateModel())
+            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
             {
                 channel.QueuePurge(workQueue);
             }
@@ -250,10 +255,7 @@
 
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
-        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
-            TimeSpan.FromMinutes(2),
-            ex => ConfigureCriticalErrorAction.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
-            TimeSpan.FromSeconds(5));
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
 
         bool autoAck;
         CountdownEvent countdownEvent;

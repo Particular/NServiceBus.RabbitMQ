@@ -1,21 +1,22 @@
 ﻿namespace NServiceBus
 {
     using System;
+    using Configuration.AdvanceExtensibility;
     using Transports.RabbitMQ;
     using Transports.RabbitMQ.Routing;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object
     /// </summary>
-    public static class RabbitMqSettingsExtensions
+    public static partial class RabbitMqSettingsExtensions
     {
         /// <summary>
         /// Use the direct routing topology with the given conventions
         /// </summary>
-        /// <param name="transportConfiguration"></param>
-        /// <param name="routingKeyConvention"></param>
-        /// <param name="exchangeNameConvention"></param>
-        public static void UseDirectRoutingTopology(this TransportConfiguration transportConfiguration,Func<Type, string> routingKeyConvention = null, Func<Address, Type, string> exchangeNameConvention = null)
+        /// <param name="transportExtentions"></param>
+        /// <param name="routingKeyConvention">The routing key conventions.</param>
+        /// <param name="exchangeNameConvention">The exchange name convention.</param>
+        public static TransportExtentions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtentions<RabbitMQTransport> transportExtentions, Func<Type, string> routingKeyConvention = null, Func<Address, Type, string> exchangeNameConvention = null)
         {
             if (routingKeyConvention == null)
             {
@@ -33,7 +34,9 @@
                 RoutingKeyConvention = routingKeyConvention
             };
 
-            transportConfiguration.Config.Settings.Set<IRoutingTopology>(router);
+            transportExtentions.GetSettings().Set<IRoutingTopology>(router);
+
+            return transportExtentions;
         }
 
         /// <summary>
@@ -41,9 +44,10 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static void UseRoutingTopology<T>(this TransportConfiguration transportConfiguration) where T : IRoutingTopology
+        public static TransportExtentions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtentions<RabbitMQTransport> transportExtentions) where T : IRoutingTopology
         {
-            transportConfiguration.Config.Settings.Set<IRoutingTopology>(Activator.CreateInstance<T>());
+            transportExtentions.GetSettings().Set<IRoutingTopology>(Activator.CreateInstance<T>());
+            return transportExtentions;
         }
 
         /// <summary>
@@ -51,9 +55,10 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static void UseConnectionManager<T>(this TransportConfiguration transportConfiguration) where T:IManageRabbitMqConnections
+        public static TransportExtentions<RabbitMQTransport> UseConnectionManager<T>(this TransportExtentions<RabbitMQTransport> transportExtentions) where T : IManageRabbitMqConnections
         {
-            transportConfiguration.Config.Settings.Set("IManageRabbitMqConnections",typeof(T));
+            transportExtentions.GetSettings().Set("IManageRabbitMqConnections", typeof(T));
+            return transportExtentions;
         }
     }
 }

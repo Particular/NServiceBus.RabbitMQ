@@ -73,9 +73,8 @@
             };
 
 
-            dequeueStrategy = new RabbitMqDequeueStrategy
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null)
             {
-                ConnectionManager = connectionManager,
                 PurgeOnStartup = true
             };
 
