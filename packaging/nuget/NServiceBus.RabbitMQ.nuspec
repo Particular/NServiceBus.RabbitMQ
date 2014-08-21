@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>NServiceBus.RabbitMQ</id>
     <title>NServiceBus RabbitMQ</title>
-    <version>4.0.0-alpha0</version>
+    <version>$version$</version>
     <authors>NServiceBus Ltd</authors>
     <owners>Udi Dahan, Andreas Ohlund, John Simons</owners>
     <licenseUrl>http://particular.net/LicenseAgreement</licenseUrl>
@@ -16,6 +16,9 @@
     <copyright>Copyright 2010-2013 NServiceBus. All rights reserved</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
+      <dependency id="NServiceBus" version="[4.4.2.0, 5.0.0.0)" />
+      <dependency id="NServiceBus.Interfaces" version="[4.4.2.0, 5.0.0.0)" />
+      <dependency id="RabbitMQ.Client" version="[3.2.1.0, 4.0.0.0)" />
     </dependencies>
   </metadata>
   <files>

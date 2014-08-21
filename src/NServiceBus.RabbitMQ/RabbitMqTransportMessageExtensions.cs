@@ -86,6 +86,12 @@
                 result.Headers[Headers.EnclosedMessageTypes] = properties.Type;
             }
 
+            if (properties.IsDeliveryModePresent())
+            {
+                result.Recoverable = properties.DeliveryMode == 2;
+            }
+
+
             return result;
         }
 
