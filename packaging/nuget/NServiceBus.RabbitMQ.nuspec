@@ -16,6 +16,9 @@
     <copyright>Copyright 2010-2013 NServiceBus. All rights reserved</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
+      <dependency id="NServiceBus" version="[4.4.2.0, 5.0.0.0)" />
+      <dependency id="NServiceBus.Interfaces" version="[4.4.2.0, 5.0.0.0)" />
+      <dependency id="RabbitMQ.Client" version="[3.2.1.0, 4.0.0.0)" />
     </dependencies>
   </metadata>
   <files>
