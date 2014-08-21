@@ -41,5 +41,11 @@
             message.CorrelationId = correlationId;
             return this;
         }
+
+        public TransportMessageBuilder NonDurable()
+        {
+            message.Recoverable = false;
+            return this;
+        }
     }
 }
