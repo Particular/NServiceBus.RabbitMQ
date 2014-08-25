@@ -18,22 +18,18 @@
         readonly IManageRabbitMqConnections connectionManager;
 
         /// <summary>
-        ///     Determines if the queue should be purged when the transport starts
-        /// </summary>
-        public bool PurgeOnStartup { get; set; }
-
-        /// <summary>
         ///     The number of messages to allow the RabbitMq client to pre-fetch from the broker
         /// </summary>
         public ushort PrefetchCount { get; set; }
 
-        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError)
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config)
         {
             this.connectionManager = connectionManager;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
             TimeSpan.FromMinutes(2),
             ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker", ex),
             TimeSpan.FromSeconds(5));
+            purgeOnStartup = config.PurgeOnStartup();
         }
 
         /// <summary>
@@ -53,7 +49,7 @@
             workQueue = address.Queue;
             autoAck = !transactionSettings.IsTransactional;
 
-            if (PurgeOnStartup)
+            if (purgeOnStartup)
             {
                 Purge();
             }
@@ -263,5 +259,6 @@
         CancellationTokenSource tokenSource;
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
+        bool purgeOnStartup;
     }
 }

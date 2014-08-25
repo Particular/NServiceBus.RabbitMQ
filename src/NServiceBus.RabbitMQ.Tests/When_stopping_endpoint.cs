@@ -24,7 +24,6 @@
             Parallel.For(0, 2000, i =>
                 sender.Send(new TransportMessage(), new SendOptions(address)));
 
-            dequeueStrategy.PurgeOnStartup = false;
             dequeueStrategy.Start(50);
             Thread.Sleep(10);
             dequeueStrategy.Stop();

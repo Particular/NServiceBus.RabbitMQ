@@ -20,9 +20,9 @@
         }
 
         /// <summary>
-        /// Gives implementations access to the <see cref="T:NServiceBus.ConfigurationBuilder"/> instance at configuration time.
+        /// Gives implementations access to the <see cref="T:NServiceBus.BusConfiguration"/> instance at configuration time.
         /// </summary>
-        protected override void Configure(ConfigurationBuilder config)
+        protected override void Configure(BusConfiguration config)
         {
             config.EnableFeature<RabbitMqTransport>();
             config.EnableFeature<TimeoutManagerBasedDeferral>();

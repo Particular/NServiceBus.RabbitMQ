@@ -25,7 +25,6 @@
             context.Container.RegisterSingleton(connectionConfiguration);
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                 .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.GetPurgeOnStartup(context.Settings))
                  .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount);
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
@@ -55,7 +54,6 @@
             {
                 context.Container.ConfigureComponent<ConventionalRoutingTopology>(DependencyLifecycle.SingleInstance);
             }
-
 
             if (context.Settings.HasSetting("IManageRabbitMqConnections"))
             {

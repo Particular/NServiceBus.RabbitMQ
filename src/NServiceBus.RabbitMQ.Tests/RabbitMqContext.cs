@@ -72,11 +72,7 @@
                 RoutingTopology = routingTopology
             };
 
-
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null)
-            {
-                PurgeOnStartup = true
-            };
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, null); 
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
