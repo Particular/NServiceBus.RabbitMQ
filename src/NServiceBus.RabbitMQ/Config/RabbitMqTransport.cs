@@ -42,9 +42,7 @@
             context.Container.ConfigureComponent<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
              .ConfigureProperty(p => p.EndpointQueueName, queueName);
 
-            context.Container.ConfigureComponent<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(t => t.UseDurableQueues, context.Settings.Get<bool>("Endpoint.DurableMessages"));
-
+            context.Container.ConfigureComponent<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall);
 
             if (context.Settings.HasSetting<IRoutingTopology>())
             {

@@ -2,14 +2,19 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Transactions;
     using Config;
     using EasyNetQ;
     using global::RabbitMQ.Client;
     using NUnit.Framework;
+    using ObjectBuilder;
+    using ObjectBuilder.Common;
+    using Pipeline;
     using Routing;
-    using Unicast.Transport;
+    using Settings;
+    using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     class RabbitMqContext
     {
@@ -72,7 +77,7 @@
                 RoutingTopology = routingTopology
             };
 
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, null); 
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration()))); 
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
@@ -145,6 +150,58 @@
         protected ConventionalRoutingTopology routingTopology;
         protected RabbitMqMessageSender sender;
         protected RabbitMqSubscriptionManager subscriptionManager;
+    }
+
+    class FakeContainer : IContainer
+    {
+        public void Dispose()
+        {
+        }
+
+        public object Build(Type typeToBuild)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IContainer BuildChildContainer()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<object> BuildAll(Type typeToBuild)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Configure(Type component, DependencyLifecycle dependencyLifecycle)
+        {
+            
+        }
+
+        public void Configure<T>(Func<T> component, DependencyLifecycle dependencyLifecycle)
+        {
+            
+        }
+
+        public void ConfigureProperty(Type component, string property, object value)
+        {
+            
+        }
+
+        public void RegisterSingleton(Type lookupType, object instance)
+        {
+            
+        }
+
+        public bool HasComponent(Type componentType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Release(object instance)
+        {
+            
+        }
     }
 
     class FakeChannelProvider:IChannelProvider
