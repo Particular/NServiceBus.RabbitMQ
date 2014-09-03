@@ -185,16 +185,7 @@
 
                             if (!autoAck)
                             {
-                                try
-                                {
-                                    channel.BasicReject(message.DeliveryTag, true);
-
-                                }
-                                catch (Exception ff)
-                                {
-                                    var t = ff;
-                                    Console.Out.WriteLine(t);
-                                }
+                                channel.BasicReject(message.DeliveryTag, true);
                             }
                         }
                         finally
