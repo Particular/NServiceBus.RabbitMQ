@@ -2,6 +2,7 @@
 {
     using System;
     using EasyNetQ;
+    using NServiceBus.Settings;
     using Support;
     using Transports;
     using Transports.RabbitMQ;
@@ -10,15 +11,26 @@
 
     class RabbitMqTransport : ConfigureTransport
     {
-        protected override void Configure(FeatureConfigurationContext context, string connectionString)
+        protected override string GetLocalAddress(SettingsHolder settings)
         {
-            var queueName = context.Settings.EndpointName();
+            return GetLocalAddress(settings);
+        }
 
-            if (!context.Settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
+        string GetLocalAddress(ReadOnlySettings settings)
+        {
+            var queueName = settings.EndpointName();
+
+            if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
             {
                 queueName += string.Format(".{0}", RuntimeEnvironment.MachineName);
-                LocalAddress(queueName);
             }
+
+            return queueName;
+        }
+
+        protected override void Configure(FeatureConfigurationContext context, string connectionString)
+        {
+            var queueName = GetLocalAddress(context.Settings);
 
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
 

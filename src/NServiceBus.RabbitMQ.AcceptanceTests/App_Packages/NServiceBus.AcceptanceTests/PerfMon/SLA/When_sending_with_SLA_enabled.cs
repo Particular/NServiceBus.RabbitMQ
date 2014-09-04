@@ -2,7 +2,6 @@
 {
     using System;
     using System.Diagnostics;
-    using System.Linq;
     using System.Threading;
     using EndpointTemplates;
     using AcceptanceTesting;
@@ -24,7 +23,7 @@
                 Scenario.Define(context)
                     .WithEndpoint<Endpoint>(b => b.Given((bus, c) => bus.SendLocal(new MyMessage())))
                     .Done(c => c.WasCalled)
-                    .Repeat(r => r.For(Transports.AllAvailable.ToArray()))
+                    .Repeat(r => r.For(Transports.Default))
                     .Should(c => Assert.True(c.WasCalled, "The message handler should be called"))
                     .Run();
             }
