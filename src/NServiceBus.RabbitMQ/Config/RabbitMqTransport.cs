@@ -2,7 +2,7 @@
 {
     using System;
     using EasyNetQ;
-    using NServiceBus.Settings;
+    using Settings;
     using Support;
     using Transports;
     using Transports.RabbitMQ;
