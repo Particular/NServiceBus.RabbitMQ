@@ -3,6 +3,7 @@
     using System;
     using EndpointTemplates;
     using AcceptanceTesting;
+    using NServiceBus.AcceptanceTesting.Support;
     using NUnit.Framework;
     using ScenarioDescriptors;
     using Support;
@@ -29,7 +30,7 @@
                             Assert.True(c.CallbackBFired, "Callback on ClientB should fire");
                             Assert.False(c.ResponseEndedUpAtTheWrongClient, "One of the responses ended up at the wrong client");
                         })
-                    .Run();
+                    .Run(new RunSettings{UseSeparateAppDomains = true});
         }
 
         public class Context : ScenarioContext
