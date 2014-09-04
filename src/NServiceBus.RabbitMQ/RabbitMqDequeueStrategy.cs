@@ -63,7 +63,8 @@
         public void Start(int maximumConcurrencyLevel)
         {
             tokenSource = new CancellationTokenSource();
-            countdownEvent = new CountdownEvent(maximumConcurrencyLevel);
+            // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
+            countdownEvent = new CountdownEvent(maximumConcurrencyLevel + 1);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -82,6 +83,7 @@
             }
 
             tokenSource.Cancel();
+            countdownEvent.Signal();
             countdownEvent.Wait();
         }
 
