@@ -11,6 +11,15 @@
 
     class RabbitMqTransport : ConfigureTransport
     {
+        public RabbitMqTransport()
+        {
+            Defaults(s =>
+            {
+                s.SetDefault("RabbitMQ.UseCallbackReceiver", true);
+
+                s.SetDefault("RabbitMQ.MaxConcurrencyForCallbackReceiver", 1);
+            });
+        }
         protected override string GetLocalAddress(SettingsHolder settings)
         {
             return GetLocalAddress(settings);
@@ -18,19 +27,16 @@
 
         string GetLocalAddress(ReadOnlySettings settings)
         {
-            var queueName = settings.EndpointName();
-
-            if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
-            {
-                queueName += string.Format(".{0}", RuntimeEnvironment.MachineName);
-            }
-
-            return queueName;
+            return settings.EndpointName();
         }
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
+            var useCallbackReceiver = context.Settings.Get<bool>("RabbitMQ.UseCallbackReceiver");
+            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>("RabbitMQ.MaxConcurrencyForCallbackReceiver");
+
             var queueName = GetLocalAddress(context.Settings);
+            var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
 
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
 
@@ -43,12 +49,41 @@
 
             context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
 
+            if (useCallbackReceiver)
+            {
+                context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
+                    .ConfigureProperty(p => p.Enabled, true)
+                    .ConfigureProperty(p => p.CallbackQueueAddress, Address.Parse(callbackQueue));
+
+                context.Container.ConfigureComponent<PromoteCallbackQueueBehavior>(DependencyLifecycle.InstancePerCall);
+                context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
+            }
+
             context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.UsePublisherConfirms, connectionConfiguration.UsePublisherConfirms)
                   .ConfigureProperty(p => p.MaxWaitTimeForConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
+            context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
+            {
+                //if this isn't the main queue we shouldn't use callback receiver
+                if (!useCallbackReceiver || workQueue != queueName)
+                {
+                    return new SecondaryReceiveSettings();
+                }
+
+                var settings = new SecondaryReceiveSettings
+                {
+                    MaximumConcurrencyLevel = maxConcurrencyForCallbackReceiver
+                };
+
+
+                settings.SecondaryQueues.Add(callbackQueue);
+
+                return settings;
+            }));
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
-            context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
             context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
 
             context.Container.ConfigureComponent<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
@@ -76,6 +111,7 @@
                 context.Container.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
             }
         }
+
 
         protected override string ExampleConnectionStringForErrorMessage
         {

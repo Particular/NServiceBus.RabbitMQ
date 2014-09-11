@@ -160,6 +160,8 @@
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\Transactions\When_sending_a_message_from_a_non_transactional_endpoint_with_a_ambient_transaction_enabled.cs" />
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\Transactions\When_sending_messages_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
+    <Compile Include="When_scaling_out_senders_that_uses_callbacks.cs" />
+    <Compile Include="When_scaling_out_subscribers.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

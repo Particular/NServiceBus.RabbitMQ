@@ -218,7 +218,9 @@
         void SetupQueueListener(string queueName)
         {
             receivedMessages = new BlockingCollection<TransportMessage>();
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())));
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, 
+                new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
+                new SecondaryReceiveConfiguration(s=> new SecondaryReceiveSettings()));
             dequeueStrategy.Init(Address.Parse(queueName), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
                 {
                     receivedMessages.Add(m);

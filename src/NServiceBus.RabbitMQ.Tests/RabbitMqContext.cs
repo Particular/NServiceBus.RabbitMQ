@@ -8,6 +8,7 @@
     using Config;
     using EasyNetQ;
     using global::RabbitMQ.Client;
+    using NServiceBus.Support;
     using NUnit.Framework;
     using ObjectBuilder;
     using ObjectBuilder.Common;
@@ -22,8 +23,13 @@
         {
             using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
             {
+                //create main q
                 channel.QueueDeclare(queueName, true, false, false, null);
                 channel.QueuePurge(queueName);
+
+                //create callback q
+                channel.QueueDeclare(CallbackQueue, true, false, false, null);
+                channel.QueuePurge(CallbackQueue);
 
                 //to make sure we kill old subscriptions
                 DeleteExchange(queueName);
@@ -74,10 +80,24 @@
             sender = new RabbitMqMessageSender
             {
                 ChannelProvider = channelProvider,
-                RoutingTopology = routingTopology
+                RoutingTopology = routingTopology,
+                CallbackQueue = CallbackQueue
             };
 
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration()))); 
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null,
+                new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
+                new SecondaryReceiveConfiguration(s =>
+                {
+                    var settings = new SecondaryReceiveSettings
+                    {
+                        MaximumConcurrencyLevel = 1
+                    };
+
+                    settings.SecondaryQueues.Add(CallbackQueue);
+
+                    return settings;
+                }));
+            
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
@@ -140,6 +160,7 @@
         }
 
         IModel publishChannel;
+        protected string CallbackQueue = "testreceiver." + RuntimeEnvironment.MachineName;
 
         protected const string ReceiverQueue = "testreceiver";
         protected RabbitMqMessagePublisher MessagePublisher;

@@ -4,6 +4,7 @@
     using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using NServiceBus.Support;
     using NUnit.Framework;
     using Unicast;
     using Unicast.Queuing;
@@ -11,8 +12,6 @@
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
-        
-
         [Test]
         public void Should_populate_the_body()
         {
@@ -76,6 +75,15 @@
                 });
 
         }
+        [Test]
+        public void Should_populate_the_callback_header()
+        {
+            Verify(new TransportMessageBuilder(),
+                (t, r) => Assert.AreEqual("testreceiver."+RuntimeEnvironment.MachineName, t.Headers[RabbitMqMessageSender.CallbackHeaderKey]));
+
+        }
+
+
 
        
         [Test]
@@ -101,6 +109,19 @@
 
         }
 
+        [Test]
+        public void Should_use_the_callback_address_header_if_present_when_sending_replies()
+        {
+            var testCallbackQueue = "testEndPoint.callback";
+
+            MakeSureQueueAndExchangeExists(testCallbackQueue);
+
+
+            VerifyRabbit(new TransportMessageBuilder().WithIntent(MessageIntentEnum.Reply).WithHeader(RabbitMqMessageSender.CallbackHeaderKey, testCallbackQueue),
+                result => Assert.AreEqual(testCallbackQueue, result.Exchange), testCallbackQueue);
+
+        }
+
 
         [Test, Ignore("Not sure we should enforce this")]
         public void Should_throw_when_sending_to_a_non_existing_queue()
@@ -109,13 +130,13 @@
                  sender.Send(new TransportMessage(), new SendOptions("NonExistingQueue@localhost")));
         }
 
-        void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion)
+        void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
         {
             var message = builder.Build();
 
             SendMessage(message);
 
-            var result = Consume(message.Id);
+            var result = Consume(message.Id, alternateQueueToReceiveOn);
 
             assertion(RabbitMqTransportMessageExtensions.ToTransportMessage(result), result);
         }
@@ -124,12 +145,10 @@
             Verify(builder, (t, r) => assertion(t));
         }
 
-        void VerifyRabbit(TransportMessageBuilder builder, Action<BasicDeliverEventArgs> assertion)
+        void VerifyRabbit(TransportMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
-            Verify(builder, (t, r) => assertion(r));
+            Verify(builder, (t, r) => assertion(r), alternateQueueToReceiveOn);
         }
-
-
 
         void SendMessage(TransportMessage message)
         {
@@ -138,14 +157,18 @@
             sender.Send(message, new SendOptions("testEndPoint"));
         }
 
-        BasicDeliverEventArgs Consume(string id)
+        BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
         {
+            if (string.IsNullOrEmpty(queueToReceiveOn))
+            {
+                queueToReceiveOn = "testEndPoint";
+            }
 
             using (var channel = connectionManager.GetConsumeConnection().CreateModel())
             {
                 var consumer = new QueueingBasicConsumer(channel);
 
-                channel.BasicConsume("testEndPoint", false, consumer);
+                channel.BasicConsume(queueToReceiveOn, false, consumer);
 
                 BasicDeliverEventArgs message;
 

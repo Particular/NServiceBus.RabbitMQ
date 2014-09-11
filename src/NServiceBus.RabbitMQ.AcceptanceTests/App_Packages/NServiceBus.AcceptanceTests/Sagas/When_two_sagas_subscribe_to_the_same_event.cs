@@ -24,7 +24,7 @@ namespace NServiceBus.AcceptanceTests.Sagas
                      )
                     .WithEndpoint<EndpointThatHandlesAMessageAndPublishesEvent>()
                     .Done(c => c.DidSaga1EventHandlerGetInvoked && c.DidSaga2EventHandlerGetInvoked)
-                    .Repeat(r => r.For(Transports.Default))
+                    .Repeat(r => r.For<AllTransportsWithMessageDrivenPubSub>()) // exlude the brokers since c.Subscribed won't get set for them
                     .Should(c => Assert.True(c.DidSaga1EventHandlerGetInvoked && c.DidSaga2EventHandlerGetInvoked))
                     .Run();
         }

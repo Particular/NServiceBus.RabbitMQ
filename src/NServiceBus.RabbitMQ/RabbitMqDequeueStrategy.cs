@@ -16,15 +16,17 @@
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
         readonly IManageRabbitMqConnections connectionManager;
+        readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
 
         /// <summary>
         ///     The number of messages to allow the RabbitMq client to pre-fetch from the broker
         /// </summary>
         public ushort PrefetchCount { get; set; }
 
-        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config)
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
             this.connectionManager = connectionManager;
+            this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
             TimeSpan.FromMinutes(2),
             ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker", ex),
@@ -47,6 +49,7 @@
             this.tryProcessMessage = tryProcessMessage;
             this.endProcessMessage = endProcessMessage;
             workQueue = address.Queue;
+
             autoAck = !transactionSettings.IsTransactional;
 
             if (purgeOnStartup)
@@ -64,15 +67,32 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
+            var secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(workQueue);
+
+            var actualConcurrencyLevel = maximumConcurrencyLevel +
+                secondaryReceiveSettings.MaximumConcurrencyLevel * secondaryReceiveSettings.SecondaryQueues.Count;
+
             tokenSource = new CancellationTokenSource();
+            
             // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            countdownEvent = new CountdownEvent(maximumConcurrencyLevel + 1);
+            countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
-                StartConsumer();
+                StartConsumer(workQueue);
+            }
+
+            foreach (var secondaryReceiveQueue in secondaryReceiveSettings.SecondaryQueues)
+            {
+                for (var i = 0; i < secondaryReceiveSettings.MaximumConcurrencyLevel; i++)
+                {
+                    StartConsumer(secondaryReceiveQueue);
+                }
+
+                Logger.InfoFormat("Secondary receiver for queue: {0} initiated with concurrency: {1}",secondaryReceiveQueue,secondaryReceiveSettings.MaximumConcurrencyLevel);
             }
         }
+
 
         /// <summary>
         ///     Stops the dequeuing of messages.
@@ -94,11 +114,11 @@
             // Injected
         }
 
-        void StartConsumer()
+        void StartConsumer(string queue)
         {
             var token = tokenSource.Token;
             Task.Factory
-                .StartNew(Action, token, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                .StartNew(ConsumeMessages, new ConsumeParams { Queue = queue, CancellationToken = token }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
@@ -111,17 +131,17 @@
                     {
                         if (countdownEvent.TryAddCount())
                         {
-                            StartConsumer();
+                            StartConsumer(queue);
                         }
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        void Action(object obj)
+        void ConsumeMessages(object state)
         {
             try
             {
-                var cancellationToken = (CancellationToken) obj;
+                var parameters = (ConsumeParams)state;
                 var connection = connectionManager.GetConsumeConnection();
 
                 using (var channel = connection.CreateModel())
@@ -130,11 +150,11 @@
 
                     var consumer = new QueueingBasicConsumer(channel);
 
-                    channel.BasicConsume(workQueue, autoAck, consumer);
+                    channel.BasicConsume(parameters.Queue, autoAck, consumer);
 
                     circuitBreaker.Success();
 
-                    while (!cancellationToken.IsCancellationRequested)
+                    while (!parameters.CancellationToken.IsCancellationRequested)
                     {
                         Exception exception = null;
                         var message = DequeueMessage(consumer);
@@ -243,7 +263,7 @@
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-
+    
         bool autoAck;
         CountdownEvent countdownEvent;
         Action<TransportMessage, Exception> endProcessMessage;
@@ -251,5 +271,12 @@
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
         bool purgeOnStartup;
+
+
+        class ConsumeParams
+        {
+            public CancellationToken CancellationToken;
+            public string Queue;
+        }
     }
 }
