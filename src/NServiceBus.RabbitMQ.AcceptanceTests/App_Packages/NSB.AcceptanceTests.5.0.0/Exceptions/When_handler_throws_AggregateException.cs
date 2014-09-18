@@ -25,31 +25,6 @@
             Assert.AreEqual(typeof(Exception), context.InnerExceptionType);
             Assert.AreEqual("My Exception", context.ExceptionMessage);
             Assert.AreEqual("My Inner Exception", context.InnerExceptionMessage);
-      
-#if (!DEBUG)
-            StackTraceAssert.StartsWith(
-                @"at NServiceBus.AcceptanceTests.Exceptions.When_handler_throws_AggregateException.Endpoint.Handler.Handle(Message message)
-at NServiceBus.Unicast.MessageHandlerRegistry.Invoke(Object handler, Object message, Dictionary`2 dictionary)
-at NServiceBus.InvokeHandlersBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.SetCurrentMessageBeingHandledBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.LoadHandlersBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.ApplyIncomingMessageMutatorsBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.ExecuteLogicalMessagesBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.DeserializeLogicalMessagesBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.CallbackInvocationBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.ApplyIncomingTransportMessageMutatorsBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.SubscriptionReceiverBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.UnitOfWorkBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.ChildContainerBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.ProcessingStatisticsBehavior.Invoke(IncomingContext context, Action next)
-at NServiceBus.Pipeline.PipelineExecutor.Execute[T](BehaviorChain`1 pipelineAction, T context)
-at NServiceBus.Unicast.Transport.TransportReceiver.ProcessMessage(TransportMessage message)
-at NServiceBus.Unicast.Transport.TransportReceiver.TryProcess(TransportMessage message)", context.StackTrace);
-
-            StackTraceAssert.StartsWith(
-                @"at NServiceBus.AcceptanceTests.Exceptions.When_handler_throws_AggregateException.Endpoint.Handler.MethodThatThrows()
-at NServiceBus.AcceptanceTests.Exceptions.When_handler_throws_AggregateException.Endpoint.Handler.Handle(Message message)", context.InnerStackTrace);
-#endif
         }
 
         public class Context : ScenarioContext

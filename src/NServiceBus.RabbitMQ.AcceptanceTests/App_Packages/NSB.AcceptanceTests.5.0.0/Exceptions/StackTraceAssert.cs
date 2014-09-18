@@ -21,7 +21,10 @@ namespace NServiceBus.AcceptanceTests.Exceptions
                 var cleanStackTrace = CleanStackTrace(actual);
                 try
                 {
-                    Assert.IsTrue(cleanStackTrace.Replace("\r\n", "\n").StartsWith(expected.Replace("\r\n", "\n")));
+                    var expectedSt = expected.Replace("\r\n", "\n");
+                    var cleanSt = cleanStackTrace.Replace("\r\n", "\n");
+
+                    Assert.IsTrue(cleanSt.StartsWith(expectedSt), "Clean '{0}' should have started with '{1}'", cleanSt, expectedSt);
                 }
                 catch (Exception)
                 {
