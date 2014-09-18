@@ -43,5 +43,11 @@
             message.CorrelationId = correlationId;
             return this;
         }
+
+        public TransportMessageBuilder WithIntent(MessageIntentEnum intent)
+        {
+            message.MessageIntent = intent;
+            return this;
+        }
     }
 }
