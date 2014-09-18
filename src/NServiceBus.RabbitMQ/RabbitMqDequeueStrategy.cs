@@ -69,11 +69,15 @@
         {
             var secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(workQueue);
 
-            var actualConcurrencyLevel = maximumConcurrencyLevel +
-                secondaryReceiveSettings.MaximumConcurrencyLevel * secondaryReceiveSettings.SecondaryQueues.Count;
+            var actualConcurrencyLevel = maximumConcurrencyLevel;
+
+            if (secondaryReceiveSettings.Enabled)
+            {
+                actualConcurrencyLevel += secondaryReceiveSettings.MaximumConcurrencyLevel;
+            }
 
             tokenSource = new CancellationTokenSource();
-            
+
             // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
             countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
 
@@ -82,14 +86,14 @@
                 StartConsumer(workQueue);
             }
 
-            foreach (var secondaryReceiveQueue in secondaryReceiveSettings.SecondaryQueues)
+            if (secondaryReceiveSettings.Enabled)
             {
                 for (var i = 0; i < secondaryReceiveSettings.MaximumConcurrencyLevel; i++)
                 {
-                    StartConsumer(secondaryReceiveQueue);
+                    StartConsumer(secondaryReceiveSettings.SecondaryReceiveQueue);
                 }
 
-                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'",secondaryReceiveQueue,secondaryReceiveSettings.MaximumConcurrencyLevel);
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.SecondaryReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);                
             }
         }
 
@@ -263,7 +267,7 @@
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-    
+
         bool autoAck;
         CountdownEvent countdownEvent;
         Action<TransportMessage, Exception> endProcessMessage;

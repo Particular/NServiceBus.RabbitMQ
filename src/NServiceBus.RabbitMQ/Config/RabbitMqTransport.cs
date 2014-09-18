@@ -65,15 +65,7 @@
                     return new SecondaryReceiveSettings();
                 }
 
-                var settings = new SecondaryReceiveSettings
-                {
-                    MaximumConcurrencyLevel = maxConcurrencyForCallbackReceiver
-                };
-
-
-                settings.SecondaryQueues.Add(callbackQueue);
-
-                return settings;
+                return new SecondaryReceiveSettings(callbackQueue, maxConcurrencyForCallbackReceiver);
             }));
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);

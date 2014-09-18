@@ -8,8 +8,7 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             secondaryReceiveSettings = getSecondaryReceiveSettings;
         }
-        
-     
+
         public SecondaryReceiveSettings GetSettings(string queue)
         {
             return secondaryReceiveSettings(queue);
