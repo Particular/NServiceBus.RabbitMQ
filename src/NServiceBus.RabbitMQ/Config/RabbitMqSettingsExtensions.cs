@@ -8,7 +8,7 @@
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object
     /// </summary>
-    public static partial class RabbitMqSettingsExtensions
+    public static class RabbitMqSettingsExtensions
     {
         /// <summary>
         /// Use the direct routing topology with the given conventions
@@ -16,7 +16,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="routingKeyConvention">The routing key conventions.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtentions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtentions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<Address, Type, string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<Address, Type, string> exchangeNameConvention = null)
         {
             if (routingKeyConvention == null)
             {
@@ -44,7 +44,7 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static TransportExtentions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtentions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology
+        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology
         {
             transportExtensions.GetSettings().Set<IRoutingTopology>(Activator.CreateInstance<T>());
             return transportExtensions;
@@ -55,7 +55,7 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static TransportExtentions<RabbitMQTransport> UseConnectionManager<T>(this TransportExtentions<RabbitMQTransport> transportExtensions) where T : IManageRabbitMqConnections
+        public static TransportExtensions<RabbitMQTransport> UseConnectionManager<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IManageRabbitMqConnections
         {
             transportExtensions.GetSettings().Set("IManageRabbitMqConnections", typeof(T));
             return transportExtensions;
@@ -66,7 +66,7 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
-        public static TransportExtentions<RabbitMQTransport> DisableCallbackReceiver(this TransportExtentions<RabbitMQTransport> transportExtensions) 
+        public static TransportExtensions<RabbitMQTransport> DisableCallbackReceiver(this TransportExtensions<RabbitMQTransport> transportExtensions) 
         {
             transportExtensions.GetSettings().Set("RabbitMQ.UseCallbackReceiver", false);
             return transportExtensions;
@@ -78,7 +78,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="maxConcurrency">The new value for concurrency</param>
         /// <returns></returns>
-        public static TransportExtentions<RabbitMQTransport> CallbackReceiverMaxConcurrency(this TransportExtentions<RabbitMQTransport> transportExtensions,int maxConcurrency)
+        public static TransportExtensions<RabbitMQTransport> CallbackReceiverMaxConcurrency(this TransportExtensions<RabbitMQTransport> transportExtensions, int maxConcurrency)
         {
             transportExtensions.GetSettings().Set("RabbitMQ.MaxConcurrencyForCallbackReceiver", maxConcurrency);
             return transportExtensions;

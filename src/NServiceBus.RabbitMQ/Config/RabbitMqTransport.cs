@@ -20,12 +20,8 @@
                 s.SetDefault("RabbitMQ.MaxConcurrencyForCallbackReceiver", 1);
             });
         }
-        protected override string GetLocalAddress(SettingsHolder settings)
-        {
-            return GetLocalAddress(settings);
-        }
 
-        string GetLocalAddress(ReadOnlySettings settings)
+        protected override string GetLocalAddress(ReadOnlySettings settings)
         {
             return settings.EndpointName();
         }
