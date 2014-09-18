@@ -2,7 +2,7 @@
 {
     using RabbitMQ.Client;
 
-    public class ConnectionFactoryInfo
+    class ConnectionFactoryInfo
     {
         public ConnectionFactoryInfo(ConnectionFactory connectionFactory, IHostConfiguration hostConfiguration)
         {

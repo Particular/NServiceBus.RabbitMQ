@@ -3,9 +3,10 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
+    using Unicast;
 
     [TestFixture]
-    public class When_stopping_endpoint : RabbitMqContext
+    class When_stopping_endpoint : RabbitMqContext
     {
         [SetUp]
         public new void SetUp()
@@ -21,9 +22,8 @@
             var address = Address.Parse(ReceiverQueue);
 
             Parallel.For(0, 2000, i =>
-                sender.Send(new TransportMessage(), address));
+                sender.Send(new TransportMessage(), new SendOptions(address)));
 
-            dequeueStrategy.PurgeOnStartup = false;
             dequeueStrategy.Start(50);
             Thread.Sleep(10);
             dequeueStrategy.Stop();

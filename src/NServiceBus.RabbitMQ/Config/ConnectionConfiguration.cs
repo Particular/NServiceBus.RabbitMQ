@@ -6,10 +6,9 @@
     using System.Linq;
     using System.Reflection;
     using EasyNetQ;
-    using Settings;
     using Support;
 
-    public class ConnectionConfiguration : IConnectionConfiguration
+    class ConnectionConfiguration : IConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
         public const ushort DefaultPrefetchCount = 1;
@@ -47,11 +46,11 @@
             Password = "guest";
             RequestedHeartbeat = DefaultHeartBeatInSeconds;
             PrefetchCount = DefaultPrefetchCount;
-            UsePublisherConfirms = SettingsHolder.GetOrDefault<bool>("Endpoint.DurableMessages");
             MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
             MaxRetries = 5;
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();
+            UsePublisherConfirms = true;
         }
 
         private void SetDefaultClientProperties()
@@ -67,7 +66,6 @@
             clientProperties.Add("application", applicationName);
             clientProperties.Add("application_location", applicationPath);
             clientProperties.Add("machine_name", hostname);
-            clientProperties.Add("endpoint_name", Configure.EndpointName);
             clientProperties.Add("user", UserName);
             clientProperties.Add("connected", DateTime.Now.ToString("G"));
 

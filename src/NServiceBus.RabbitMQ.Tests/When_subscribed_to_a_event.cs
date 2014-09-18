@@ -1,10 +1,10 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
-    using System;
     using NUnit.Framework;
+    using Unicast;
 
     [TestFixture]
-    public class When_subscribed_to_a_event : RabbitMqContext
+    class When_subscribed_to_a_event : RabbitMqContext
     {
 
         [Test]
@@ -131,7 +131,7 @@
         {
             Subscribe<MyEvent>();
 
-            subscriptionManager.Unsubscribe(typeof(MyEvent), Address.Parse(ExchangeNameConvention(null, null)));
+            subscriptionManager.Unsubscribe(typeof(MyEvent), Address.Parse(ExchangeNameConvention()));
 
             //publish a event that that this publisher isn't subscribed to
             Publish<MyEvent>();
@@ -141,13 +141,16 @@
 
         void Subscribe<T>()
         {
-            subscriptionManager.Subscribe(typeof(T), Address.Parse(ExchangeNameConvention(null,null)));
+            subscriptionManager.Subscribe(typeof(T), Address.Parse(ExchangeNameConvention()));
         }
 
         void Publish<T>()
         {
             var type = typeof(T);
-            MessagePublisher.Publish(new TransportMessage { CorrelationId = type.FullName }, new[] { type });
+            MessagePublisher.Publish(new TransportMessage
+            {
+                CorrelationId = type.FullName
+            }, new PublishOptions(type));
 
         }
 
@@ -172,7 +175,7 @@
             Assert.Null(receivedEvent);
         }
 
-        protected override string ExchangeNameConvention(Address address,Type eventType)
+        protected override string ExchangeNameConvention()
         {
             return "nservicebus.events";
         }

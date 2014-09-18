@@ -2,17 +2,16 @@
 {
     using System;
     using System.Text;
-    using System.Transactions;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using NServiceBus.Support;
     using NUnit.Framework;
+    using Unicast;
     using Unicast.Queuing;
 
     [TestFixture]
-    public class When_sending_a_message_over_rabbitmq : RabbitMqContext
+    class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
-        
-
         [Test]
         public void Should_populate_the_body()
         {
@@ -68,7 +67,7 @@
         {
             var address = Address.Parse("myAddress");
 
-            Verify(new TransportMessageBuilder().ReplyToAddress(address),
+            Verify(new TransportMessageBuilder().ReplyToAddress(address), 
                 (t, r) =>
                 {
                     Assert.AreEqual(address, t.ReplyToAddress);
@@ -76,6 +75,15 @@
                 });
 
         }
+        [Test]
+        public void Should_populate_the_callback_header()
+        {
+            Verify(new TransportMessageBuilder(),
+                (t, r) => Assert.AreEqual("testreceiver."+RuntimeEnvironment.MachineName, t.Headers[RabbitMqMessageSender.CallbackHeaderKey]));
+
+        }
+
+
 
        
         [Test]
@@ -114,61 +122,35 @@
                 });
 
         }
-        [Test]
-        public void Should_defer_the_send_until_tx_commit_if_ambient_tx_exists()
-        {
-            var body = Encoding.UTF8.GetBytes("<TestMessage/>");
-            var body2 = Encoding.UTF8.GetBytes("<TestMessage2/>");
-
-            var message = new TransportMessageBuilder().WithBody(body).Build();
-            var message2 = new TransportMessageBuilder().WithBody(body2).Build();
-
-            using (var tx = new TransactionScope())
-            {
-                SendMessage(message);
-                SendMessage(message2);
-                Assert.Throws<InvalidOperationException>(()=>Consume(message.Id));
-               
-                tx.Complete();
-            }
-
-            Assert.AreEqual(body, Consume(message.Id).Body,"Message should be in the queue");
-            Assert.AreEqual(body2, Consume(message2.Id).Body, "Message2 should be in the queue");
-        }
 
         [Test]
-        public void Should_not_send_message_if_ambient_tx_is_rolled_back()
+        public void Should_use_the_callback_address_header_if_present_when_sending_replies()
         {
-            var body = Encoding.UTF8.GetBytes("<TestMessage/>");
+            var testCallbackQueue = "testEndPoint.callback";
 
-            var message = new TransportMessageBuilder().WithBody(body).Build();
+            MakeSureQueueAndExchangeExists(testCallbackQueue);
 
-            using (new TransactionScope())
-            {
-                SendMessage(message);
-                Assert.Throws<InvalidOperationException>(() => Consume(message.Id));
-            }
 
-            Assert.Throws<InvalidOperationException>(() => Consume(message.Id));
+            VerifyRabbit(new TransportMessageBuilder().WithIntent(MessageIntentEnum.Reply).WithHeader(RabbitMqMessageSender.CallbackHeaderKey, testCallbackQueue),
+                result => Assert.AreEqual(testCallbackQueue, result.Exchange), testCallbackQueue);
 
         }
-
 
 
         [Test, Ignore("Not sure we should enforce this")]
         public void Should_throw_when_sending_to_a_non_existing_queue()
         {
             Assert.Throws<QueueNotFoundException>(() =>
-                 sender.Send(new TransportMessage(), Address.Parse("NonExistingQueue@localhost")));
+                 sender.Send(new TransportMessage(), new SendOptions("NonExistingQueue@localhost")));
         }
 
-        void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion)
+        void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
         {
             var message = builder.Build();
 
             SendMessage(message);
 
-            var result = Consume(message.Id);
+            var result = Consume(message.Id, alternateQueueToReceiveOn);
 
             assertion(RabbitMqTransportMessageExtensions.ToTransportMessage(result), result);
         }
@@ -177,28 +159,30 @@
             Verify(builder, (t, r) => assertion(t));
         }
 
-        void VerifyRabbit(TransportMessageBuilder builder, Action<BasicDeliverEventArgs> assertion)
+        void VerifyRabbit(TransportMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
-            Verify(builder, (t, r) => assertion(r));
+            Verify(builder, (t, r) => assertion(r), alternateQueueToReceiveOn);
         }
-
-
 
         void SendMessage(TransportMessage message)
         {
             MakeSureQueueAndExchangeExists("testEndPoint");
 
-            sender.Send(message, Address.Parse("testEndPoint"));
+            sender.Send(message, new SendOptions("testEndPoint"));
         }
 
-        BasicDeliverEventArgs Consume(string id)
+        BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
         {
+            if (string.IsNullOrEmpty(queueToReceiveOn))
+            {
+                queueToReceiveOn = "testEndPoint";
+            }
 
             using (var channel = connectionManager.GetConsumeConnection().CreateModel())
             {
                 var consumer = new QueueingBasicConsumer(channel);
 
-                channel.BasicConsume("testEndPoint", false, consumer);
+                channel.BasicConsume(queueToReceiveOn, false, consumer);
 
                 BasicDeliverEventArgs message;
 

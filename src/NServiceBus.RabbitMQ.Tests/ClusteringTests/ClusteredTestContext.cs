@@ -7,14 +7,18 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using Logging.Loggers.NLogAdapter;
+    using System.Transactions;
+    using global::RabbitMQ.Client;
     using NLog;
-    using NLog.Targets;
     using NUnit.Framework;
+    using ObjectBuilder;
+    using Pipeline;
+    using Settings;
     using Support;
-    using Unicast.Transport;
+    using Unicast;
     using EasyNetQ;
     using Config;
+    using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     public abstract class ClusteredTestContext
     {
@@ -37,7 +41,8 @@
         protected int[] erlangProcessesRunningBeforeTheTest;
         BlockingCollection<TransportMessage> receivedMessages;
         RabbitMqMessageSender sender;
-        RabbitMqUnitOfWork unitOfWork;
+        IModel publishChannel;
+
 
         protected class RabbitNode
         {
@@ -50,17 +55,20 @@
             /// <summary>
             ///     The FQ node name (eg rabbit1@JUSTINT).
             /// </summary>
-            public string Name {
+            public string Name
+            {
                 get { return string.Format("rabbit{0}@{1}", Number, LocalHostName); }
             }
         }
 
-        protected Process[] GetExistingErlangProcesses() {
+        protected Process[] GetExistingErlangProcesses()
+        {
             return Process.GetProcessesByName(ErlangProcessName);
         }
 
-        void StartRabbitMqServer(RabbitNode node) {
-            var envVars = new Dictionary<string,string>
+        void StartRabbitMqServer(RabbitNode node)
+        {
+            var envVars = new Dictionary<string, string>
                 {
                     {"RABBITMQ_NODENAME", node.Name},
                     {"RABBITMQ_NODE_PORT", node.Port.ToString(CultureInfo.InvariantCulture)},
@@ -70,22 +78,28 @@
             InvokeExternalProgram(rabbitMqServer, "-detached", envVars);
         }
 
-        protected void InvokeRabbitMqCtl(RabbitNode node, string command) {
+        protected void InvokeRabbitMqCtl(RabbitNode node, string command)
+        {
             var args = (string.Format("-n {0} {1}", node.Name, command));
             InvokeExternalProgram(rabbitMqCtl, args);
         }
 
-        static void InvokeExternalProgram(string program, string args, Dictionary<string,string> customEnvVars = null) {
-            var startInfo = new ProcessStartInfo {UseShellExecute = false, RedirectStandardOutput = true, FileName = program, Arguments = args,CreateNoWindow = true,WindowStyle = ProcessWindowStyle.Hidden};
+        static void InvokeExternalProgram(string program, string args, Dictionary<string, string> customEnvVars = null)
+        {
+            var startInfo = new ProcessStartInfo { UseShellExecute = false, RedirectStandardOutput = true, FileName = program, Arguments = args, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
             var environmentVariables = startInfo.EnvironmentVariables;
 
-            if (customEnvVars != null) {
-                foreach (var customEnvVar in customEnvVars) {
+            if (customEnvVars != null)
+            {
+                foreach (var customEnvVar in customEnvVars)
+                {
                     Logger.Debug("Setting env var {0} to '{1}'", customEnvVar.Key, customEnvVar.Value);
-                    if (environmentVariables.ContainsKey(customEnvVar.Key)) {
+                    if (environmentVariables.ContainsKey(customEnvVar.Key))
+                    {
                         environmentVariables[customEnvVar.Key] = customEnvVar.Value;
                     }
-                    else {
+                    else
+                    {
                         environmentVariables.Add(customEnvVar.Key, customEnvVar.Value);
                     }
                 }
@@ -101,108 +115,113 @@
         }
 
         [TestFixtureSetUp]
-        public void TestContextFixtureSetup() {
-            SetupNLog(LogLevel.Trace);
+        public void TestContextFixtureSetup()
+        {
             Logger.Trace("Running TestContextFixtureSetup");
             CaptureExistingErlangProcesses();
             StartUpRabbitNodes();
             ClusterRabbitNodes();
             SetHAPolicy();
+
+            publishChannel = connectionManager.GetPublishConnection().CreateModel();
+
             Logger.Fatal("RabbitMQ cluster setup complete");
         }
 
         [TestFixtureTearDown]
-        public void TestContextFixtureTearDown() {
+        public void TestContextFixtureTearDown()
+        {
             Logger.Trace("Running TestContextFixtureTearDown");
-            if (dequeueStrategy != null) {
+            if (dequeueStrategy != null)
+            {
                 dequeueStrategy.Stop();
             }
 
+            publishChannel.Close();
+            publishChannel.Dispose();
+            
             connectionManager.Dispose();
 
             var erlangProcessesToKill = GetExistingErlangProcesses().Select(p => p.Id).Except(erlangProcessesRunningBeforeTheTest).ToList();
             erlangProcessesToKill.ForEach(id => Process.GetProcessById(id).Kill());
         }
 
-        void ClusterRabbitNodes() {
+        void ClusterRabbitNodes()
+        {
             ClusterRabbitNode(2, 1);
             ClusterRabbitNode(3, 1);
         }
 
-        void ResetCluster() {
+        void ResetCluster()
+        {
             StartNode(1);
             ClusterRabbitNode(2, 1, withReset: true);
             ClusterRabbitNode(3, 1, withReset: true);
         }
 
-        void SetHAPolicy() {
+        void SetHAPolicy()
+        {
             const string command = @"set_policy ha-all ""^(?!amq\.).*"" ""{""""ha-mode"""": """"all""""}""";
             InvokeRabbitMqCtl(RabbitNodes[1], command);
         }
 
-        void CaptureExistingErlangProcesses() {
+        void CaptureExistingErlangProcesses()
+        {
             erlangProcessesRunningBeforeTheTest = GetExistingErlangProcesses().Select(p => p.Id).ToArray();
         }
 
-        void StartUpRabbitNodes() {
-            foreach (var node in RabbitNodes.Values.Where(node => node.ShouldBeRunning)) {
+        void StartUpRabbitNodes()
+        {
+            foreach (var node in RabbitNodes.Values.Where(node => node.ShouldBeRunning))
+            {
                 StartRabbitMqServer(node);
             }
         }
 
-        void ClusterRabbitNode(int fromNodeNumber, int toNodeNumber, bool withReset = false) {
+        void ClusterRabbitNode(int fromNodeNumber, int toNodeNumber, bool withReset = false)
+        {
             var node = RabbitNodes[fromNodeNumber];
             var clusterToNode = RabbitNodes[toNodeNumber];
             InvokeRabbitMqCtl(node, "stop_app");
-            if (withReset) {
+            if (withReset)
+            {
                 InvokeRabbitMqCtl(node, "reset");
             }
             InvokeRabbitMqCtl(node, string.Format("join_cluster {0}", clusterToNode.Name));
             InvokeRabbitMqCtl(node, "start_app");
         }
 
-        protected TransportMessage SendAndReceiveAMessage() {
-            TransportMessage message; 
+        protected TransportMessage SendAndReceiveAMessage()
+        {
+            TransportMessage message;
             return SendAndReceiveAMessage(out message);
         }
 
-        protected TransportMessage SendAndReceiveAMessage(out TransportMessage sentMessage) {
+        protected TransportMessage SendAndReceiveAMessage(out TransportMessage sentMessage)
+        {
             Logger.Info("Sending a message");
             var message = new TransportMessage();
-            sender.Send(message, Address.Parse(QueueName));
+            sender.Send(message, new SendOptions(QueueName));
             sentMessage = message;
             var receivedMessage = WaitForMessage();
             return receivedMessage;
         }
 
-        static ColoredConsoleTarget GetConsoleLoggingTarget() {
-            return new ColoredConsoleTarget {Layout = "${longdate:universalTime=true} | ${logger:shortname=true} | ${message} | ${exception:format=tostring}"};
-        }
-
-        static NLogViewerTarget GetNLogViewerLoggingTarget() {
-            var log4View = new NLogViewerTarget {Address = "udp://127.0.0.1:12345", IncludeCallSite = true, AppInfo = "IntegrationTest"};
-            log4View.Parameters.Add(new NLogViewerParameterInfo {Layout = "${exception:format=tostring}", Name = "Exception"});
-            log4View.Parameters.Add(new NLogViewerParameterInfo {Layout = "${stacktrace}", Name = "StackTrace"});
-            return log4View;
-        }
-
-        protected void SetupNLog(LogLevel logLevel) {
-            var nLogViewerTarget = GetNLogViewerLoggingTarget();
-            var consoleTarget = GetConsoleLoggingTarget();
-            NLogConfigurator.Configure(new object[] {nLogViewerTarget, consoleTarget}, logLevel.ToString());
-        }
-
-        protected void SetupQueueAndSenderAndListener(string connectionString) {
+        protected void SetupQueueAndSenderAndListener(string connectionString)
+        {
             connectionManager = SetupRabbitMqConnectionManager(connectionString);
             EnsureRabbitQueueExists(QueueName);
             SetupMessageSender();
             SetupQueueListener(QueueName);
         }
 
-        void SetupQueueListener(string queueName) {
+        void SetupQueueListener(string queueName)
+        {
             receivedMessages = new BlockingCollection<TransportMessage>();
-            dequeueStrategy = new RabbitMqDequeueStrategy {ConnectionManager = connectionManager, PurgeOnStartup = true};
-            dequeueStrategy.Init(Address.Parse(queueName), TransactionSettings.Default, m =>
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, 
+                new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
+                new SecondaryReceiveConfiguration(s=> new SecondaryReceiveSettings()));
+            dequeueStrategy.Init(Address.Parse(queueName), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
                 {
                     receivedMessages.Add(m);
                     return true;
@@ -213,31 +232,39 @@
             dequeueStrategy.Start(1);
         }
 
-        void EnsureRabbitQueueExists(string queueName) {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel()) {
+        void EnsureRabbitQueueExists(string queueName)
+        {
+            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            {
                 channel.QueueDeclare(queueName, true, false, false, null);
                 channel.QueuePurge(queueName);
             }
         }
 
-        void SetupMessageSender() {
-            unitOfWork = new RabbitMqUnitOfWork {ConnectionManager = connectionManager};
-            sender = new RabbitMqMessageSender {UnitOfWork = unitOfWork};
+        void SetupMessageSender()
+        {
+            sender = new RabbitMqMessageSender
+            {
+                ChannelProvider = new FakeChannelProvider(publishChannel)
+            };
         }
 
-        static RabbitMqConnectionManager SetupRabbitMqConnectionManager(string connectionString) {
-            var config = new ConnectionStringParser().Parse(connectionString);
-//            config.OverrideClientProperties();
+        static RabbitMqConnectionManager SetupRabbitMqConnectionManager(string connectionString)
+        {
+            var config = new ConnectionStringParser(new SettingsHolder()).Parse(connectionString);
+            //            config.OverrideClientProperties();
             var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
             var connectionFactory = new ConnectionFactoryWrapper(config, selectionStrategy);
             var newConnectionManager = new RabbitMqConnectionManager(connectionFactory, config);
             return newConnectionManager;
         }
 
-        TransportMessage WaitForMessage() {
+        TransportMessage WaitForMessage()
+        {
             var waitTime = TimeSpan.FromSeconds(1);
 
-            if (Debugger.IsAttached) {
+            if (Debugger.IsAttached)
+            {
                 waitTime = TimeSpan.FromMinutes(10);
             }
 
@@ -247,20 +274,23 @@
             return transportMessage;
         }
 
-        protected string GetConnectionString() {
+        protected string GetConnectionString()
+        {
             var hosts = RabbitNodes.Values.OrderBy(n => n.Port).Select(n => string.Format("{0}:{1}", RabbitNode.LocalHostName, n.Port));
-            var connectionString = string.Concat("host=" ,string.Join(",", hosts));
+            var connectionString = string.Concat("host=", string.Join(",", hosts));
             Logger.Info("Connection string is: '{0}'", connectionString);
             return connectionString;
         }
 
-        protected void StopNode(int nodeNumber) {
-            Logger.Warn("Stopping node {0}",nodeNumber);
+        protected void StopNode(int nodeNumber)
+        {
+            Logger.Warn("Stopping node {0}", nodeNumber);
             InvokeRabbitMqCtl(RabbitNodes[nodeNumber], "stop_app");
         }
 
-        protected void StartNode(int nodeNumber) {
-            Logger.Info("Starting node {0}",nodeNumber);
+        protected void StartNode(int nodeNumber)
+        {
+            Logger.Info("Starting node {0}", nodeNumber);
             InvokeRabbitMqCtl(RabbitNodes[nodeNumber], "start_app");
         }
     }

@@ -1,10 +1,12 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
     using System;
+    using NServiceBus.Support;
     using NUnit.Framework;
+    using Unicast;
 
     [TestFixture]
-    public class When_consuming_messages : RabbitMqContext
+    class When_consuming_messages : RabbitMqContext
     {
         [SetUp]
         public new void SetUp()
@@ -20,7 +22,7 @@
 
             var message = new TransportMessage();
 
-            sender.Send(message, address);
+            sender.Send(message,new SendOptions(address));
 
 
             var received = WaitForMessage();
@@ -100,6 +102,29 @@
 
             Assert.AreEqual(typeName, received.Headers[Headers.EnclosedMessageTypes]);
             Assert.AreEqual(typeof(MyMessage), Type.GetType(received.Headers[Headers.EnclosedMessageTypes]));
+        }
+
+        [Test]
+        public void Should_listen_to_the_callback_queue_as_well()
+        {
+            var address = Address.Parse(ReceiverQueue);
+
+            var message = new TransportMessage();
+
+            using (var channel = connectionManager.GetPublishConnection().CreateModel())
+            {
+                var properties = channel.CreateBasicProperties();
+
+                properties.MessageId = message.Id;
+
+                channel.BasicPublish(string.Empty, address.Queue+"."+RuntimeEnvironment.MachineName, true, false, properties, message.Body);
+            }
+
+
+            var received = WaitForMessage();
+
+
+            Assert.AreEqual(message.Id, received.Id);
         }
 
         class MyMessage

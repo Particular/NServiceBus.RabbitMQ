@@ -6,7 +6,7 @@
     /// <summary>
     /// A collection that hands out the next item until success, or until every item has been tried.
     /// </summary>
-    public class DefaultClusterHostSelectionStrategy<T> : IClusterHostSelectionStrategy<T>, IEnumerable<T>
+    class DefaultClusterHostSelectionStrategy<T> : IClusterHostSelectionStrategy<T>, IEnumerable<T>
     {
         private readonly IList<T> items = new List<T>();
         private int currentIndex;

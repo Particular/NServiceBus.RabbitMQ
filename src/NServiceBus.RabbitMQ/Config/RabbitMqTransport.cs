@@ -1,53 +1,104 @@
 ﻿namespace NServiceBus.Features
 {
-    using Config;
+    using System;
+    using EasyNetQ;
     using Settings;
+    using Support;
     using Transports;
     using Transports.RabbitMQ;
     using Transports.RabbitMQ.Config;
     using Transports.RabbitMQ.Routing;
 
-    public class RabbitMqTransport : ConfigureTransport<RabbitMQ>
+    class RabbitMqTransport : ConfigureTransport
     {
-        public override void Initialize()
+        public RabbitMqTransport()
         {
-            if (!SettingsHolder.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
+            Defaults(s =>
             {
-                Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
-            }
+                s.SetDefault("RabbitMQ.UseCallbackReceiver", true);
 
-            var connectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
-            var connectionConfiguration = new ConnectionStringParser().Parse(connectionString);
+                s.SetDefault("RabbitMQ.MaxConcurrencyForCallbackReceiver", 1);
+            });
+        }
 
-            NServiceBus.Configure.Instance.Configurer.RegisterSingleton<IConnectionConfiguration>(connectionConfiguration);
+        protected override string GetLocalAddress(ReadOnlySettings settings)
+        {
+            return settings.EndpointName();
+        }
 
-            NServiceBus.Configure.Component<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                 .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested)
+        protected override void Configure(FeatureConfigurationContext context, string connectionString)
+        {
+            var useCallbackReceiver = context.Settings.Get<bool>("RabbitMQ.UseCallbackReceiver");
+            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>("RabbitMQ.MaxConcurrencyForCallbackReceiver");
+
+            var queueName = GetLocalAddress(context.Settings);
+            var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
+
+            var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
+
+            context.Container.RegisterSingleton(connectionConfiguration);
+
+            context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                  .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount);
 
-            NServiceBus.Configure.Component<RabbitMqUnitOfWork>(DependencyLifecycle.InstancePerCall)
+            context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
+
+            context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
+
+            if (useCallbackReceiver)
+            {
+                context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
+                    .ConfigureProperty(p => p.Enabled, true)
+                    .ConfigureProperty(p => p.CallbackQueueAddress, Address.Parse(callbackQueue));
+
+                context.Pipeline.Register<ForwardCallbackQueueHeaderBehavior.Registration>();
+            }
+
+            context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.UsePublisherConfirms, connectionConfiguration.UsePublisherConfirms)
                   .ConfigureProperty(p => p.MaxWaitTimeForConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
+            context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
+            {
+                //if this isn't the main queue we shouldn't use callback receiver
+                if (!useCallbackReceiver || workQueue != queueName)
+                {
+                    return new SecondaryReceiveSettings();
+                }
 
+                return new SecondaryReceiveSettings(callbackQueue, maxConcurrencyForCallbackReceiver);
+            }));
 
-            NServiceBus.Configure.Component<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
+            context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
 
-            NServiceBus.Configure.Component<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
+             .ConfigureProperty(p => p.EndpointQueueName, queueName);
 
-            NServiceBus.Configure.Component<RabbitMqSubscriptionManager>(DependencyLifecycle.SingleInstance)
-             .ConfigureProperty(p => p.EndpointQueueName, Address.Local.Queue);
+            context.Container.ConfigureComponent<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall);
 
-            NServiceBus.Configure.Component<RabbitMqQueueCreator>(DependencyLifecycle.InstancePerCall);
+            if (context.Settings.HasSetting<IRoutingTopology>())
+            {
+                context.Container.RegisterSingleton(context.Settings.Get<IRoutingTopology>());
+            }
+            else
+            {
+                context.Container.ConfigureComponent<ConventionalRoutingTopology>(DependencyLifecycle.SingleInstance);
+            }
 
-            InfrastructureServices.Enable<IRoutingTopology>();
-            InfrastructureServices.Enable<IManageRabbitMqConnections>();
+            if (context.Settings.HasSetting("IManageRabbitMqConnections"))
+            {
+                context.Container.ConfigureComponent(context.Settings.Get<Type>("IManageRabbitMqConnections"), DependencyLifecycle.SingleInstance);
+            }
+            else
+            {
+                context.Container.ConfigureComponent<RabbitMqConnectionManager>(DependencyLifecycle.SingleInstance);
+
+                context.Container.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
+            }
         }
 
-
-        protected override void InternalConfigure(Configure config)
-        {
-            Enable<RabbitMqTransport>();
-        }
 
         protected override string ExampleConnectionStringForErrorMessage
         {

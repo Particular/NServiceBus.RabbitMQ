@@ -1,33 +1,44 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
+    using global::RabbitMQ.Client;
     using Routing;
+    using Unicast;
 
-    public class RabbitMqMessagePublisher : IPublishMessages
+    class RabbitMqMessagePublisher : IPublishMessages
     {
         public IRoutingTopology RoutingTopology { get; set; }
 
+        public IChannelProvider ChannelProvider { get; set; }
 
-        public bool Publish(TransportMessage message, IEnumerable<Type> eventTypes)
+        public void Publish(TransportMessage message, PublishOptions publishOptions)
         {
-            var eventType = eventTypes.First();//we route on the first event for now
+        
+            IModel channel;
 
-
-
-            UnitOfWork.Add(channel =>
+            if (ChannelProvider.TryGetPublishChannel(out channel))
+            {
+                PublishMessage(message,publishOptions,channel);
+            }
+            else
+            {
+                using (var confirmsAwareChannel = ChannelProvider.GetNewPublishChannel())
                 {
-                    var properties = RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message,
-                                                                                               channel.CreateBasicProperties());
-
-                    RoutingTopology.Publish(channel, eventType, message, properties);
-                });
-
-            //we don't know if there was a subscriber so we just return true
-            return true;
+                    PublishMessage(message, publishOptions, confirmsAwareChannel.Channel);    
+                }
+                
+            }
+            
         }
 
-        public RabbitMqUnitOfWork UnitOfWork { get; set; }
+        void PublishMessage(TransportMessage message, PublishOptions publishOptions, IModel channel)
+        {
+            var eventType = publishOptions.EventType;
+
+            var properties = channel.CreateBasicProperties();
+
+            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, publishOptions, properties);
+
+            RoutingTopology.Publish(channel, eventType, message, properties);
+        }
     }
 }

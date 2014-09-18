@@ -1,10 +1,11 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
     using System;
+    using System.Collections.Generic;
 
     public class TransportMessageBuilder
     {
-        readonly TransportMessage message = new TransportMessage{Recoverable = true};
+        TransportMessage message = new TransportMessage{Recoverable = true};
     
         public TransportMessageBuilder WithBody(byte[] body)
         {
@@ -32,7 +33,8 @@
 
         public TransportMessageBuilder ReplyToAddress(Address address)
         {
-            message.ReplyToAddress = address;
+            message = new TransportMessage(Guid.NewGuid().ToString(),new Dictionary<string, string>()){Recoverable = true};
+            message.Headers[Headers.ReplyToAddress] = address.ToString();
             return this;
         }
 
@@ -45,6 +47,12 @@
         public TransportMessageBuilder NonDurable()
         {
             message.Recoverable = false;
+            return this;
+        }
+
+        public TransportMessageBuilder WithIntent(MessageIntentEnum intent)
+        {
+            message.MessageIntent = intent;
             return this;
         }
     }

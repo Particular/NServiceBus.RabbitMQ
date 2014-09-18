@@ -20,7 +20,7 @@
     /// <item><description>we generate an exchange for each queue so that we can do direct sends to the queue. it is bound as a fanout exchange</description></item>
     /// </list>
     /// </summary>
-    public class ConventionalRoutingTopology : IRoutingTopology
+    class ConventionalRoutingTopology : IRoutingTopology
     {
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {

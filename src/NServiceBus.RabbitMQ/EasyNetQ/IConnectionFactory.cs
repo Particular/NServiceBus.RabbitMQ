@@ -3,7 +3,7 @@
     using NServiceBus.Transports.RabbitMQ.Config;
     using RabbitMQ.Client;
 
-    public interface IConnectionFactory
+    interface IConnectionFactory
     {
         IConnection CreateConnection();
         IConnectionConfiguration Configuration { get; }

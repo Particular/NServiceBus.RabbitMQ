@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using CircuitBreakers;
@@ -12,23 +13,26 @@
     /// <summary>
     ///     Default implementation of <see cref="IDequeueMessages" /> for RabbitMQ.
     /// </summary>
-    public class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
+    class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
-        /// <summary>
-        ///     The connection to the RabbitMQ broker
-        /// </summary>
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
-
-
-        /// <summary>
-        ///     Determines if the queue should be purged when the transport starts
-        /// </summary>
-        public bool PurgeOnStartup { get; set; }
+        readonly IManageRabbitMqConnections connectionManager;
+        readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
 
         /// <summary>
         ///     The number of messages to allow the RabbitMq client to pre-fetch from the broker
         /// </summary>
         public ushort PrefetchCount { get; set; }
+
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+        {
+            this.connectionManager = connectionManager;
+            this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
+            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+            TimeSpan.FromMinutes(2),
+            ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker", ex),
+            TimeSpan.FromSeconds(5));
+            purgeOnStartup = config.PurgeOnStartup();
+        }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -45,9 +49,10 @@
             this.tryProcessMessage = tryProcessMessage;
             this.endProcessMessage = endProcessMessage;
             workQueue = address.Queue;
+
             autoAck = !transactionSettings.IsTransactional;
 
-            if (PurgeOnStartup)
+            if (purgeOnStartup)
             {
                 Purge();
             }
@@ -62,15 +67,36 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
+            var secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(workQueue);
+
+            var actualConcurrencyLevel = maximumConcurrencyLevel;
+
+            if (secondaryReceiveSettings.Enabled)
+            {
+                actualConcurrencyLevel += secondaryReceiveSettings.MaximumConcurrencyLevel;
+            }
+
             tokenSource = new CancellationTokenSource();
+
             // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            countdownEvent = new CountdownEvent(maximumConcurrencyLevel + 1);
+            countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
-                StartConsumer();
+                StartConsumer(workQueue);
+            }
+
+            if (secondaryReceiveSettings.Enabled)
+            {
+                for (var i = 0; i < secondaryReceiveSettings.MaximumConcurrencyLevel; i++)
+                {
+                    StartConsumer(secondaryReceiveSettings.SecondaryReceiveQueue);
+                }
+
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.SecondaryReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);                
             }
         }
+
 
         /// <summary>
         ///     Stops the dequeuing of messages.
@@ -92,11 +118,11 @@
             // Injected
         }
 
-        void StartConsumer()
+        void StartConsumer(string queue)
         {
             var token = tokenSource.Token;
             Task.Factory
-                .StartNew(Action, token, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                .StartNew(ConsumeMessages, new ConsumeParams { Queue = queue, CancellationToken = token }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
@@ -107,18 +133,20 @@
 
                     if (!tokenSource.IsCancellationRequested)
                     {
-                        countdownEvent.TryAddCount();
-                        StartConsumer();
+                        if (countdownEvent.TryAddCount())
+                        {
+                            StartConsumer(queue);
+                        }
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        void Action(object obj)
+        void ConsumeMessages(object state)
         {
             try
             {
-                var cancellationToken = (CancellationToken) obj;
-                var connection = ConnectionManager.GetConsumeConnection();
+                var parameters = (ConsumeParams)state;
+                var connection = connectionManager.GetConsumeConnection();
 
                 using (var channel = connection.CreateModel())
                 {
@@ -126,11 +154,11 @@
 
                     var consumer = new QueueingBasicConsumer(channel);
 
-                    channel.BasicConsume(workQueue, autoAck, consumer);
+                    channel.BasicConsume(parameters.Queue, autoAck, consumer);
 
                     circuitBreaker.Success();
 
-                    while (!cancellationToken.IsCancellationRequested)
+                    while (!parameters.CancellationToken.IsCancellationRequested)
                     {
                         Exception exception = null;
                         var message = DequeueMessage(consumer);
@@ -191,6 +219,11 @@
                     }
                 }
             }
+            catch (IOException)
+            {
+                //Unable to write data to the transport connection: An existing connection was forcibly closed by the remote host.
+                //This exception is expected because we are shutting down!
+            }
             finally
             {
                 countdownEvent.Signal();
@@ -199,9 +232,23 @@
 
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
         {
-            BasicDeliverEventArgs rawMessage;
+            BasicDeliverEventArgs rawMessage = null;
 
-            if (!consumer.Queue.Dequeue(1000, out rawMessage))
+            var messageDequeued = false;
+
+            try
+            {
+                messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
+            }
+            catch (EndOfStreamException)
+            {
+                // If no items are present and the queue is in a closed
+                // state, or if at any time while waiting the queue
+                // transitions to a closed state (by a call to Close()), this
+                // method will throw EndOfStreamException.
+            }
+
+            if (!messageDequeued)
             {
                 return null;
             }
@@ -211,7 +258,7 @@
 
         void Purge()
         {
-            using (var channel = ConnectionManager.GetAdministrationConnection().CreateModel())
+            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
             {
                 channel.QueuePurge(workQueue);
             }
@@ -219,10 +266,7 @@
 
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
-            TimeSpan.FromMinutes(2),
-            ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with the RabbitMq broker", ex),
-            TimeSpan.FromSeconds(5));
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
 
         bool autoAck;
         CountdownEvent countdownEvent;
@@ -230,5 +274,13 @@
         CancellationTokenSource tokenSource;
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
+        bool purgeOnStartup;
+
+
+        class ConsumeParams
+        {
+            public CancellationToken CancellationToken;
+            public string Queue;
+        }
     }
 }

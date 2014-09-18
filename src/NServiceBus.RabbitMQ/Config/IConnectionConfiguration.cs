@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using EasyNetQ;
 
-    public interface IConnectionConfiguration
+    interface IConnectionConfiguration
     {
         ushort Port { get; }
         string VirtualHost { get; }

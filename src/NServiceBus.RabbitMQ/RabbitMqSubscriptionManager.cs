@@ -3,7 +3,7 @@
     using System;
     using Routing;
 
-    public class RabbitMqSubscriptionManager : IManageSubscriptions
+    class RabbitMqSubscriptionManager : IManageSubscriptions
     {
         public IManageRabbitMqConnections ConnectionManager { get; set; }
 
