@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>NServiceBus.RabbitMQ</id>
+    <title>NServiceBus RabbitMQ</title>
+    <version>$version$</version>
+    <authors>NServiceBus Ltd</authors>
+    <owners>Udi Dahan, Andreas Ohlund, John Simons</owners>
+    <licenseUrl>http://particular.net/LicenseAgreement</licenseUrl>
+    <projectUrl>http://particular.net/</projectUrl>
+    <iconUrl>http://s3.amazonaws.com/nuget.images/NServiceBus_32.png</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>RabbitMQ support for NServicebus</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2010-2014 NServiceBus. All rights reserved</copyright>
+    <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
+    <dependencies>
+      <dependency id="NServiceBus" version="[5.0.0-beta0005, 6.0.0)" />
+      <dependency id="RabbitMQ.Client" version="[3.3.5, 4.0.0.0)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\..\binaries\NServiceBus.Transports.RabbitMQ.???" target="lib\net45" />
+    <file src="tools\**" target="tools" />
+    <file src="..\..\src\NServiceBus.RabbitMQ\**\*.cs" exclude="..\..\src\NServiceBus.RabbitMQ\**\TemporaryGeneratedFile_*.cs" target="src" />
+  </files>
+</package>
