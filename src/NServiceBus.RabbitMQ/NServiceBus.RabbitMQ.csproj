@@ -93,7 +93,7 @@
     <Compile Include="OpenPublishChannelBehavior.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
-    <Compile Include="PromoteCallbackQueueBehavior.cs" />
+    <Compile Include="ForwardCallbackQueueHeaderBehavior.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RabbitMqDequeueStrategy.cs" />

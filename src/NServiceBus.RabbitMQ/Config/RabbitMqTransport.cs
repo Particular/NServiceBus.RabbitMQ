@@ -51,8 +51,7 @@
                     .ConfigureProperty(p => p.Enabled, true)
                     .ConfigureProperty(p => p.CallbackQueueAddress, Address.Parse(callbackQueue));
 
-                context.Container.ConfigureComponent<PromoteCallbackQueueBehavior>(DependencyLifecycle.InstancePerCall);
-                context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
+                context.Pipeline.Register<ForwardCallbackQueueHeaderBehavior.Registration>();
             }
 
             context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
