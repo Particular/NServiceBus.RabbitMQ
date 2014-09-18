@@ -89,7 +89,7 @@
                     StartConsumer(secondaryReceiveQueue);
                 }
 
-                Logger.InfoFormat("Secondary receiver for queue: {0} initiated with concurrency: {1}",secondaryReceiveQueue,secondaryReceiveSettings.MaximumConcurrencyLevel);
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'",secondaryReceiveQueue,secondaryReceiveSettings.MaximumConcurrencyLevel);
             }
         }
 
