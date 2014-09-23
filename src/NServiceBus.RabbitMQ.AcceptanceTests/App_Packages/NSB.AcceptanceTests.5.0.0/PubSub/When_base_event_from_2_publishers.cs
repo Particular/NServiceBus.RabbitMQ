@@ -9,6 +9,7 @@
     public class When_base_event_from_2_publishers : NServiceBusAcceptanceTest
     {
         [Test]
+        [Explicit]
         public void Should_receive_events_from_all_publishers()
         {
             var cc = new Context();
