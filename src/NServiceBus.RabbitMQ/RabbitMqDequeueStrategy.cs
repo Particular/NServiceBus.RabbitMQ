@@ -69,12 +69,7 @@
         {
             var secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(workQueue);
 
-            var actualConcurrencyLevel = maximumConcurrencyLevel;
-
-            if (secondaryReceiveSettings.Enabled)
-            {
-                actualConcurrencyLevel += secondaryReceiveSettings.MaximumConcurrencyLevel;
-            }
+            var actualConcurrencyLevel = maximumConcurrencyLevel + secondaryReceiveSettings.MaximumConcurrencyLevel;
 
             tokenSource = new CancellationTokenSource();
 
@@ -86,14 +81,14 @@
                 StartConsumer(workQueue);
             }
 
-            if (secondaryReceiveSettings.Enabled)
+            if (secondaryReceiveSettings.IsEnabled)
             {
                 for (var i = 0; i < secondaryReceiveSettings.MaximumConcurrencyLevel; i++)
                 {
-                    StartConsumer(secondaryReceiveSettings.SecondaryReceiveQueue);
+                    StartConsumer(secondaryReceiveSettings.ReceiveQueue);
                 }
 
-                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.SecondaryReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);                
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.ReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);                
             }
         }
 

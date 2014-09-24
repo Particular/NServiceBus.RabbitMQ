@@ -11,13 +11,16 @@
 
     class RabbitMqTransport : ConfigureTransport
     {
+        public const string UseCallbackReceiverSettingKey = "RabbitMQ.UseCallbackReceiver";
+        public const string MaxConcurrencyForCallbackReceiver = "RabbitMQ.MaxConcurrencyForCallbackReceiver";
+
         public RabbitMqTransport()
         {
             Defaults(s =>
             {
-                s.SetDefault("RabbitMQ.UseCallbackReceiver", true);
+                s.SetDefault(UseCallbackReceiverSettingKey, true);
 
-                s.SetDefault("RabbitMQ.MaxConcurrencyForCallbackReceiver", 1);
+                s.SetDefault(MaxConcurrencyForCallbackReceiver, 1);
             });
         }
 
@@ -28,8 +31,8 @@
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
-            var useCallbackReceiver = context.Settings.Get<bool>("RabbitMQ.UseCallbackReceiver");
-            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>("RabbitMQ.MaxConcurrencyForCallbackReceiver");
+            var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
+            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiver);
 
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
@@ -62,10 +65,9 @@
                 //if this isn't the main queue we shouldn't use callback receiver
                 if (!useCallbackReceiver || workQueue != queueName)
                 {
-                    return new SecondaryReceiveSettings();
+                    return SecondaryReceiveSettings.Disabled();
                 }
-
-                return new SecondaryReceiveSettings(callbackQueue, maxConcurrencyForCallbackReceiver);
+                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
             }));
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
