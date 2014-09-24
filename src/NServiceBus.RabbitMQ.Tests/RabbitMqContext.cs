@@ -86,7 +86,7 @@
 
             dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null,
                 new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
-                new SecondaryReceiveConfiguration(s => new SecondaryReceiveSettings(CallbackQueue,1)));
+                new SecondaryReceiveConfiguration(s => SecondaryReceiveSettings.Enabled(CallbackQueue,1)));
             
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
