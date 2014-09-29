@@ -36,7 +36,7 @@
 
             string callbackAddress;
 
-            if (message.MessageIntent == MessageIntentEnum.Reply &&
+            if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
                 message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
             {
                 destination = Address.Parse(callbackAddress);
