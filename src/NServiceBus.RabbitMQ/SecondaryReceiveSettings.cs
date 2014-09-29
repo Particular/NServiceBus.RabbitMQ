@@ -4,28 +4,34 @@ namespace NServiceBus.Transports.RabbitMQ
 
     class SecondaryReceiveSettings
     {
-        public SecondaryReceiveSettings()
+        public static SecondaryReceiveSettings Disabled()
         {
-            Enabled = false;
+            return new SecondaryReceiveSettings();
         }
 
-        public SecondaryReceiveSettings(string secondaryReceiveQueue, int maximumConcurrencyLevel)
+        public static SecondaryReceiveSettings Enabled(string secondaryReceiveQueue, int maximumConcurrencyLevel)
         {
-            if (maximumConcurrencyLevel < 0)
+            if (maximumConcurrencyLevel <= 0)
             {
-                throw new Exception("Concurrency level must be a positive value");
+                throw new ArgumentException("Concurrency level must be a positive value.", "maximumConcurrencyLevel");
             }
-
-            Enabled = true;
-
-            SecondaryReceiveQueue = secondaryReceiveQueue;
-
-            MaximumConcurrencyLevel = maximumConcurrencyLevel;
+            if (string.IsNullOrEmpty(secondaryReceiveQueue))
+            {
+                throw new ArgumentException("Receive queue must not be empty.", "secondaryReceiveQueue");
+            }
+            return new SecondaryReceiveSettings()
+            {
+                ReceiveQueue = secondaryReceiveQueue,
+                MaximumConcurrencyLevel = maximumConcurrencyLevel,
+            };
         }
 
-        public bool Enabled { get; private set; }
-
+        public bool IsEnabled { get { return MaximumConcurrencyLevel > 0; } }
         public int MaximumConcurrencyLevel { get; private set; }
-        public string SecondaryReceiveQueue { get; private set; }
+        public string ReceiveQueue { get; private set; }
+
+        private SecondaryReceiveSettings()
+        {
+        }
     }
 }

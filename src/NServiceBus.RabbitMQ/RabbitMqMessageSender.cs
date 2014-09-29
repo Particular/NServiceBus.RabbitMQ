@@ -36,15 +36,18 @@
 
             string callbackAddress;
 
-            if (message.MessageIntent == MessageIntentEnum.Reply &&
+            if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
                 message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
             {
                 destination = Address.Parse(callbackAddress);
             }
 
             //set our callback address
-            message.Headers[CallbackHeaderKey] = CallbackQueue;
-
+            if (!string.IsNullOrEmpty(CallbackQueue))
+            {
+                message.Headers[CallbackHeaderKey] = CallbackQueue;     
+            }
+           
             var properties = channel.CreateBasicProperties();
 
             RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, sendOptions, properties);
