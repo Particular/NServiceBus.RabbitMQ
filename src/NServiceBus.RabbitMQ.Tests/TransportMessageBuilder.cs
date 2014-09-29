@@ -44,6 +44,12 @@
             return this;
         }
 
+        public TransportMessageBuilder NonDurable()
+        {
+            message.Recoverable = false;
+            return this;
+        }
+
         public TransportMessageBuilder WithIntent(MessageIntentEnum intent)
         {
             message.MessageIntent = intent;

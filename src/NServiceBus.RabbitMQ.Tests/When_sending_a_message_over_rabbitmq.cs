@@ -97,6 +97,20 @@
         }
 
         [Test]
+        public void Should_preserve_the_recoverable_setting_if_set_to_durable()
+        {
+            Verify(new TransportMessageBuilder(),result => Assert.True(result.Recoverable));
+        }
+
+
+        [Test]
+        public void Should_preserve_the_recoverable_setting_if_set_to_non_durable()
+        {
+            Verify(new TransportMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
+        }
+
+
+        [Test]
         public void Should_transmit_all_transportMessage_headers()
         {
 
