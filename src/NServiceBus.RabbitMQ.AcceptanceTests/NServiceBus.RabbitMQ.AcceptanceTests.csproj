@@ -170,6 +170,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="When_scaling_out_senders_that_uses_callbacks.cs" />
     <Compile Include="When_scaling_out_subscribers.cs" />
   </ItemGroup>
