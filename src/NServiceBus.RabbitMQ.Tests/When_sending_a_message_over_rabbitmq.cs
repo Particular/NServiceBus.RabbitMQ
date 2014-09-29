@@ -109,20 +109,6 @@
 
         }
 
-        [Test]
-        public void Should_use_the_callback_address_header_if_present_when_sending_replies()
-        {
-            var testCallbackQueue = "testEndPoint.callback";
-
-            MakeSureQueueAndExchangeExists(testCallbackQueue);
-
-
-            VerifyRabbit(new TransportMessageBuilder().WithIntent(MessageIntentEnum.Reply).WithHeader(RabbitMqMessageSender.CallbackHeaderKey, testCallbackQueue),
-                result => Assert.AreEqual(testCallbackQueue, result.Exchange), testCallbackQueue);
-
-        }
-
-
         [Test, Ignore("Not sure we should enforce this")]
         public void Should_throw_when_sending_to_a_non_existing_queue()
         {
@@ -154,7 +140,13 @@
         {
             MakeSureQueueAndExchangeExists("testEndPoint");
 
-            sender.Send(message, new SendOptions("testEndPoint"));
+            var options = new SendOptions("testEndPoint");
+
+            if (message.MessageIntent == MessageIntentEnum.Reply)
+            {
+                
+            }
+            sender.Send(message, options);
         }
 
         BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
