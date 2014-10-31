@@ -8,7 +8,7 @@ namespace NServiceBus.Transports.RabbitMQ
     using Unicast.Queuing;
 
     [SkipWeaving]
-    class ConfirmsAwareChannel:IDisposable
+    class ConfirmsAwareChannel : IDisposable
     {
         public IModel Channel { get; private set; }
 
@@ -26,14 +26,14 @@ namespace NServiceBus.Transports.RabbitMQ
 
         public void Dispose()
         {
-            if (!usePublisherConfirms)
-            {
-                return;
-            }
-
             try
             {
-                Channel.WaitForConfirmsOrDie(maxWaitTimeForConfirms);
+                if (usePublisherConfirms)
+                {
+                    Channel.WaitForConfirmsOrDie(maxWaitTimeForConfirms);
+                }
+
+                Channel.Dispose();
             }
             catch (AlreadyClosedException ex)
             {
@@ -44,6 +44,7 @@ namespace NServiceBus.Transports.RabbitMQ
                     var exchangeName = matches.Count > 0 && matches[0].Groups.Count > 1 ? Address.Parse(matches[0].Groups[1].Value) : null;
                     throw new QueueNotFoundException(exchangeName, "Exchange for the recipient does not exist", ex);
                 }
+
                 throw;
             }
         }
