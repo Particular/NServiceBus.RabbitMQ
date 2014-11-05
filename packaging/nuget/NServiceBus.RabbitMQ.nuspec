@@ -16,7 +16,7 @@
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
       <dependency id="NServiceBus" version="[5.0.0, 6.0.0)" />
-      <dependency id="RabbitMQ.Client" version="[3.3.5, 4.0.0.0)" />
+      <dependency id="RabbitMQ.Client" version="[3.3.5]" />
     </dependencies>
   </metadata>
   <files>
