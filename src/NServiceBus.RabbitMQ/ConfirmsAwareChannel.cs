@@ -30,22 +30,29 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 if (usePublisherConfirms)
                 {
-                    Channel.WaitForConfirmsOrDie(maxWaitTimeForConfirms);
-                }
+                    try
+                    {
+                        Channel.WaitForConfirmsOrDie(maxWaitTimeForConfirms);
+                    }
+                    catch (AlreadyClosedException ex)
+                    {
+                        if (ex.ShutdownReason != null && ex.ShutdownReason.ReplyCode == 404)
+                        {
+                            var msg = ex.ShutdownReason.ReplyText;
+                            var matches = Regex.Matches(msg, @"'([^' ]*)'");
+                            var exchangeName = matches.Count > 0 && matches[0].Groups.Count > 1 ? Address.Parse(matches[0].Groups[1].Value) : null;
+                            throw new QueueNotFoundException(exchangeName, "Exchange for the recipient does not exist", ex);
+                        }
 
-                Channel.Dispose();
+                        throw;
+                    }
+                }
             }
-            catch (AlreadyClosedException ex)
+            finally
             {
-                if (ex.ShutdownReason != null && ex.ShutdownReason.ReplyCode == 404)
-                {
-                    var msg = ex.ShutdownReason.ReplyText;
-                    var matches = Regex.Matches(msg, @"'([^' ]*)'");
-                    var exchangeName = matches.Count > 0 && matches[0].Groups.Count > 1 ? Address.Parse(matches[0].Groups[1].Value) : null;
-                    throw new QueueNotFoundException(exchangeName, "Exchange for the recipient does not exist", ex);
-                }
-
-                throw;
+                // After decompiling it looks like Abort is a safest method to call instead of Close/Dispose
+                // Close/Dispose throws exceptions if the channel is already closed!
+                Channel.Abort();
             }
         }
 
