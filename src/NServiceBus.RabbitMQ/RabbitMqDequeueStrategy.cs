@@ -69,12 +69,12 @@
         {
             var secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(workQueue);
 
-            var actualConcurrencyLevel = maximumConcurrencyLevel + secondaryReceiveSettings.MaximumConcurrencyLevel;
+            actualConcurrencyLevel = maximumConcurrencyLevel + secondaryReceiveSettings.MaximumConcurrencyLevel;
 
             tokenSource = new CancellationTokenSource();
 
             // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
+            tracksRunningThreads = new SemaphoreSlim(actualConcurrencyLevel, actualConcurrencyLevel);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -104,8 +104,19 @@
             }
 
             tokenSource.Cancel();
-            countdownEvent.Signal();
-            countdownEvent.Wait();
+            DrainStopSemaphore();
+        }
+
+        void DrainStopSemaphore()
+        {
+            for (var index = 0; index < actualConcurrencyLevel; index++)
+            {
+                tracksRunningThreads.Wait();
+            }
+
+            tracksRunningThreads.Release(actualConcurrencyLevel);
+
+            tracksRunningThreads.Dispose();
         }
 
         public void Dispose()
@@ -128,10 +139,7 @@
 
                     if (!tokenSource.IsCancellationRequested)
                     {
-                        if (countdownEvent.TryAddCount())
-                        {
-                            StartConsumer(queue);
-                        }
+                        StartConsumer(queue);
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
@@ -140,6 +148,8 @@
         {
             try
             {
+                tracksRunningThreads.Wait();
+
                 var parameters = (ConsumeParams)state;
                 var connection = connectionManager.GetConsumeConnection();
 
@@ -221,7 +231,7 @@
             }
             finally
             {
-                countdownEvent.Signal();
+                tracksRunningThreads.Release();
             }
         }
 
@@ -264,12 +274,13 @@
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
 
         bool autoAck;
-        CountdownEvent countdownEvent;
+        SemaphoreSlim tracksRunningThreads;
         Action<TransportMessage, Exception> endProcessMessage;
         CancellationTokenSource tokenSource;
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
         bool purgeOnStartup;
+        int actualConcurrencyLevel;
 
 
         class ConsumeParams
