@@ -146,10 +146,13 @@
 
         void ConsumeMessages(object state)
         {
+            if (!tracksRunningThreads.Wait(TimeSpan.FromSeconds(1)))
+            {
+                return;
+            }
+
             try
             {
-                tracksRunningThreads.Wait();
-
                 var parameters = (ConsumeParams)state;
                 var connection = connectionManager.GetConsumeConnection();
 
