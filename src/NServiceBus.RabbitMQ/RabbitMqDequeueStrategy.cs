@@ -50,7 +50,7 @@
             this.endProcessMessage = endProcessMessage;
             workQueue = address.Queue;
 
-            autoAck = !transactionSettings.IsTransactional;
+            noAck = !transactionSettings.IsTransactional;
 
             if (purgeOnStartup)
             {
@@ -162,7 +162,7 @@
 
                     var consumer = new QueueingBasicConsumer(channel);
 
-                    channel.BasicConsume(parameters.Queue, autoAck, consumer);
+                    channel.BasicConsume(parameters.Queue, noAck, consumer);
 
                     circuitBreaker.Success();
 
@@ -199,7 +199,7 @@
                                 messageProcessedOk = tryProcessMessage(transportMessage);
                             }
 
-                            if (!autoAck)
+                            if (!noAck)
                             {
                                 if (messageProcessedOk)
                                 {
@@ -215,7 +215,7 @@
                         {
                             exception = ex;
 
-                            if (!autoAck)
+                            if (!noAck)
                             {
                                 channel.BasicReject(message.DeliveryTag, true);
                             }
@@ -226,6 +226,18 @@
                         }
                     }
                 }
+            }
+            catch (EndOfStreamException)
+            {
+                // If no items are present and the queue is in a closed
+                // state, or if at any time while waiting the queue
+                // transitions to a closed state (by a call to Close()), this
+                // method will throw EndOfStreamException.
+
+                // We need to put a delay here otherwise we end-up doing a tight loop that causes
+                // CPU spikes
+                Thread.Sleep(1000);
+                throw;
             }
             catch (IOException)
             {
@@ -240,21 +252,9 @@
 
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
         {
-            BasicDeliverEventArgs rawMessage = null;
+            BasicDeliverEventArgs rawMessage;
 
-            var messageDequeued = false;
-
-            try
-            {
-                messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
-            }
-            catch (EndOfStreamException)
-            {
-                // If no items are present and the queue is in a closed
-                // state, or if at any time while waiting the queue
-                // transitions to a closed state (by a call to Close()), this
-                // method will throw EndOfStreamException.
-            }
+            var messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
 
             if (!messageDequeued)
             {
@@ -276,7 +276,7 @@
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
 
-        bool autoAck;
+        bool noAck;
         SemaphoreSlim tracksRunningThreads;
         Action<TransportMessage, Exception> endProcessMessage;
         CancellationTokenSource tokenSource;
