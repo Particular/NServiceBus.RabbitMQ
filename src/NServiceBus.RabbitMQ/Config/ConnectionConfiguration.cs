@@ -10,7 +10,8 @@
 
     class ConnectionConfiguration : IConnectionConfiguration
     {
-        public const ushort DefaultHeartBeatInSeconds = 5;
+        public static readonly ushort DefaultHeartBeatInSeconds = Debugger.IsAttached ? (ushort)600
+                                                                                      : (ushort)5;
         public const ushort DefaultPrefetchCount = 1;
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
