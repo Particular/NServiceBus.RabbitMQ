@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -15,6 +16,8 @@
     /// </summary>
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
+        static readonly int DequeueTimeout = Debugger.IsAttached ? 600000 : 1000;
+
         readonly IManageRabbitMqConnections connectionManager;
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
 
@@ -254,7 +257,7 @@
         {
             BasicDeliverEventArgs rawMessage;
 
-            var messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
+            var messageDequeued = consumer.Queue.Dequeue(DequeueTimeout, out rawMessage);
 
             if (!messageDequeued)
             {
