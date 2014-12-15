@@ -23,6 +23,11 @@
         /// </summary>
         public ushort PrefetchCount { get; set; }
 
+        /// <summary>
+        ///     The dequeue timeout tu use with DequeueMessage, in millisesonds.
+        /// </summary>
+        public int DequeueTimeout { get; set; }
+
         public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
             this.connectionManager = connectionManager;
@@ -169,7 +174,7 @@
                     while (!parameters.CancellationToken.IsCancellationRequested)
                     {
                         Exception exception = null;
-                        var message = DequeueMessage(consumer);
+                        var message = DequeueMessage(consumer, DequeueTimeout);
 
                         if (message == null)
                         {
@@ -250,11 +255,11 @@
             }
         }
 
-        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
+        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer, int dequeueTimeout)
         {
             BasicDeliverEventArgs rawMessage;
 
-            var messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
+            var messageDequeued = consumer.Queue.Dequeue(dequeueTimeout, out rawMessage);
 
             if (!messageDequeued)
             {

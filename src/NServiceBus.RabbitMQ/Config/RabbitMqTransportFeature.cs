@@ -42,7 +42,8 @@
             context.Container.RegisterSingleton(connectionConfiguration);
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                 .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount);
+                 .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount)
+                 .ConfigureProperty(p => p.DequeueTimeout, connectionConfiguration.DequeueTimeout * 1000);
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
 

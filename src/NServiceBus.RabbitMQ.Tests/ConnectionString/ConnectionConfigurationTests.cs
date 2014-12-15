@@ -45,6 +45,14 @@
         }
 
         [Test]
+        public void Should_default_the_dequeue_timeout()
+        {
+            connectionString = ("host=localhost");
+            connectionConfiguration = parser.Parse(connectionString);
+            Assert.AreEqual(ConnectionConfiguration.DefaultDequeueTimeout, connectionConfiguration.DequeueTimeout);
+        }
+
+        [Test]
         public void Should_set_default_password() {
 Assert.AreEqual(            defaults.Password,"guest");
         }

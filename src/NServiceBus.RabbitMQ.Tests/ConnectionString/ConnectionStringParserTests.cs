@@ -122,6 +122,14 @@
         }
 
         [Test]
+        public void Should_parse_the_dequeueTimeout()
+        {
+            var parser = new ConnectionStringParser(new SettingsHolder());
+            var connectionConfiguration = parser.Parse("host=localhost;dequeueTimeout=600000");
+            Assert.AreEqual(600000, connectionConfiguration.DequeueTimeout);
+        }
+
+        [Test]
         public void Should_parse_the_retry_delay()
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
