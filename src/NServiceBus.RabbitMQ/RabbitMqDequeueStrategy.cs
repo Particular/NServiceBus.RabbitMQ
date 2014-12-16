@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
-    using System.Diagnostics;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -16,8 +15,6 @@
     /// </summary>
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
-        static readonly int DequeueTimeout = Debugger.IsAttached ? 600000 : 1000;
-
         readonly IManageRabbitMqConnections connectionManager;
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
 
@@ -25,6 +22,11 @@
         ///     The number of messages to allow the RabbitMq client to pre-fetch from the broker
         /// </summary>
         public ushort PrefetchCount { get; set; }
+
+        /// <summary>
+        ///     The dequeue timeout tu use with DequeueMessage.
+        /// </summary>
+        public int DequeueTimeout { get; set; }
 
         public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
@@ -172,7 +174,7 @@
                     while (!parameters.CancellationToken.IsCancellationRequested)
                     {
                         Exception exception = null;
-                        var message = DequeueMessage(consumer);
+                        var message = DequeueMessage(consumer, DequeueTimeout);
 
                         if (message == null)
                         {
@@ -253,11 +255,11 @@
             }
         }
 
-        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
+        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer, int dequeueTimeout)
         {
             BasicDeliverEventArgs rawMessage;
 
-            var messageDequeued = consumer.Queue.Dequeue(DequeueTimeout, out rawMessage);
+            var messageDequeued = consumer.Queue.Dequeue(dequeueTimeout, out rawMessage);
 
             if (!messageDequeued)
             {

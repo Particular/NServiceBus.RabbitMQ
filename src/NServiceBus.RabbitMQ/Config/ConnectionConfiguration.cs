@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Reflection;
@@ -11,7 +10,8 @@
 
     class ConnectionConfiguration : IConnectionConfiguration
     {
-        public static readonly ushort DefaultHeartBeatInSeconds = Debugger.IsAttached ? (ushort)600 : (ushort)5;
+        public const ushort DefaultHeartBeatInSeconds = 5;
+        public const int DefaultDequeueTimeout = 1000;
         public const ushort DefaultPrefetchCount = 1;
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
@@ -23,6 +23,7 @@
         public string UserName { get; set; }
         public string Password { get; set; }
         public ushort RequestedHeartbeat { get; set; }
+        public int DequeueTimeout { get; set; }
         public ushort PrefetchCount { get; set; }
         public ushort MaxRetries { get; set; }
         public bool UsePublisherConfirms { get; set; }
@@ -46,6 +47,7 @@
             UserName = "guest";
             Password = "guest";
             RequestedHeartbeat = DefaultHeartBeatInSeconds;
+            DequeueTimeout = DefaultDequeueTimeout;
             PrefetchCount = DefaultPrefetchCount;
             MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
             MaxRetries = 5;
