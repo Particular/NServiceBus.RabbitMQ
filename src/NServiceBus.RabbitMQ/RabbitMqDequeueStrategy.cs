@@ -24,7 +24,7 @@
         public ushort PrefetchCount { get; set; }
 
         /// <summary>
-        ///     The dequeue timeout tu use with DequeueMessage.
+        ///     The dequeue timeout tu use with DequeueMessage, in millisesonds.
         /// </summary>
         public int DequeueTimeout { get; set; }
 

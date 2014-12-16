@@ -11,7 +11,7 @@
     class ConnectionConfiguration : IConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
-        public const int DefaultDequeueTimeout = 1000;
+        public const int DefaultDequeueTimeout = 1;
         public const ushort DefaultPrefetchCount = 1;
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
