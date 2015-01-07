@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
+    using System;
+    using System.Collections.Generic;
     using System.IO;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -31,6 +33,8 @@
                            {
                                var properties = channel.CreateBasicProperties();
 
+                               //for now until we can patch the serializer to infer the type based on the root node
+                               properties.Headers = new Dictionary<string, object> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } };
 
                                channel.BasicPublish(string.Empty, unicastBus.Configure.LocalAddress.Queue, true, false, properties, stream.ToArray());
                            }
@@ -49,7 +53,9 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
+                    //just returning a guid here, not suitable for production use
+                    .CustomMessageIdStrategy(m => Guid.NewGuid().ToString()));
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>

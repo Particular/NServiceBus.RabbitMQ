@@ -101,11 +101,12 @@
     <Compile Include="RabbitMqMessageSender.cs" />
     <Compile Include="RabbitMqQueueCreator.cs" />
     <Compile Include="RabbitMqSubscriptionManager.cs" />
+    <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
-    <Compile Include="SecondaryReceiveConfiguration.cs" />
+    <Compile Include="ReceiveOptions.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
   </ItemGroup>
   <ItemGroup>
