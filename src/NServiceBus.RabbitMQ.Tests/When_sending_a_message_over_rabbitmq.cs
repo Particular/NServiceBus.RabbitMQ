@@ -138,7 +138,7 @@
 
             var result = Consume(message.Id, alternateQueueToReceiveOn);
 
-            assertion(RabbitMqTransportMessageExtensions.ToTransportMessage(result), result);
+            assertion(new MessageConverter().ToTransportMessage(result), result);
         }
         void Verify(TransportMessageBuilder builder, Action<TransportMessage> assertion)
         {

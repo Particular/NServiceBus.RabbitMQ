@@ -10,11 +10,8 @@
     using global::RabbitMQ.Client;
     using NServiceBus.Support;
     using NUnit.Framework;
-    using ObjectBuilder;
     using ObjectBuilder.Common;
-    using Pipeline;
     using Routing;
-    using Settings;
     using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     class RabbitMqContext
@@ -85,8 +82,7 @@
             };
 
             dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null,
-                new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
-                new SecondaryReceiveConfiguration(s => SecondaryReceiveSettings.Enabled(CallbackQueue,1)));
+                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false));
             
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);

@@ -2,6 +2,7 @@
 {
     using System;
     using EasyNetQ;
+    using RabbitMQ.Client.Events;
     using Settings;
     using Support;
     using Transports;
@@ -13,6 +14,7 @@
     {
         public const string UseCallbackReceiverSettingKey = "RabbitMQ.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiver = "RabbitMQ.MaxConcurrencyForCallbackReceiver";
+        public const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
 
         public RabbitMqTransportFeature()
         {
@@ -33,17 +35,44 @@
         {
             var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
             var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiver);
-
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
-
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
 
-            context.Container.RegisterSingleton(connectionConfiguration);
+            MessageConverter messageConverter;
 
-            context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                 .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount)
-                 .ConfigureProperty(p => p.DequeueTimeout, connectionConfiguration.DequeueTimeout * 1000);
+            if (context.Settings.HasSetting(CustomMessageIdStrategy))
+            {
+                messageConverter = new MessageConverter(context.Settings.Get<Func<BasicDeliverEventArgs, string>>(CustomMessageIdStrategy));
+            }
+            else
+            {
+                messageConverter = new MessageConverter();
+            }
+
+            var receiveOptions = new ReceiveOptions(workQueue =>
+            {
+                //if this isn't the main queue we shouldn't use callback receiver
+                if (!useCallbackReceiver || workQueue != queueName)
+                {
+                    return SecondaryReceiveSettings.Disabled();
+                }
+                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
+            },
+            messageConverter,
+            connectionConfiguration.PrefetchCount, 
+            connectionConfiguration.DequeueTimeout * 1000,
+            context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"));
+
+        
+     
+            context.Container.RegisterSingleton(connectionConfiguration);
+            
+            context.Container.ConfigureComponent(builder => new RabbitMqDequeueStrategy(
+                builder.Build<IManageRabbitMqConnections>(),
+                builder.Build<CriticalError>(),
+                receiveOptions),DependencyLifecycle.InstancePerCall);
+
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
 
@@ -64,16 +93,7 @@
             context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.UsePublisherConfirms, connectionConfiguration.UsePublisherConfirms)
                   .ConfigureProperty(p => p.MaxWaitTimeForConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
-            context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
-            {
-                //if this isn't the main queue we shouldn't use callback receiver
-                if (!useCallbackReceiver || workQueue != queueName)
-                {
-                    return SecondaryReceiveSettings.Disabled();
-                }
-                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
-            }));
-
+            
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
 
@@ -108,5 +128,6 @@
         {
             get { return "host=localhost"; }
         }
+
     }
 }
