@@ -29,13 +29,7 @@
                 exchangeNameConvention = (address, eventType) => "amq.topic";
             }
 
-            var router = new DirectRoutingTopology
-            {
-                ExchangeNameConvention = exchangeNameConvention,
-                RoutingKeyConvention = routingKeyConvention
-            };
-
-            transportExtensions.GetSettings().Set<IRoutingTopology>(router);
+            transportExtensions.GetSettings().Set<DirectRoutingTopology.Conventions>(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention));
 
             return transportExtensions;
         }

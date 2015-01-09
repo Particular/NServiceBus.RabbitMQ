@@ -8,9 +8,11 @@
     /// </summary>
     class DirectRoutingTopology:IRoutingTopology
     {
-        public Func<Address, Type, string> ExchangeNameConvention { get; set; }
-
-        public Func<Type, string> RoutingKeyConvention { get; set; }
+        public DirectRoutingTopology(Conventions conventions, bool useDurableExchanges)
+        {
+            this.conventions = conventions;
+            this.useDurableExchanges = useDurableExchanges;
+        }
 
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {
@@ -40,16 +42,16 @@
 
         string ExchangeName()
         {
-            return ExchangeNameConvention(null,null);
+            return conventions.ExchangeName(null, null);
         }
 
-        static void CreateExchange(IModel channel, string exchangeName)
+        void CreateExchange(IModel channel, string exchangeName)
         {
             if (exchangeName == AmqpTopicExchange)
                 return;
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, true);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
             }
             // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
@@ -61,7 +63,7 @@
 
         string GetRoutingKeyForPublish(Type eventType)
         {
-            return RoutingKeyConvention(eventType);
+            return conventions.RoutingKey(eventType);
         }
 
         string GetRoutingKeyForBinding(Type eventType)
@@ -70,11 +72,25 @@
                 return "#";
 
 
-            return RoutingKeyConvention(eventType) + ".#";
+            return conventions.RoutingKey(eventType) + ".#";
         }
 
         const string AmqpTopicExchange = "amq.topic";
 
+        readonly Conventions conventions;
+        readonly bool useDurableExchanges;
 
+        public class Conventions
+        {
+            public Conventions(Func<Address, Type, string> exchangeName, Func<Type, string> routingKey)
+            {
+                ExchangeName = exchangeName;
+                RoutingKey = routingKey;
+            }
+
+            public Func<Address, Type, string> ExchangeName { get; private set; }
+
+            public Func<Type, string> RoutingKey { get; private set; }
+        }
     }
 }
