@@ -60,7 +60,7 @@
         [SetUp]
         public void SetUp()
         {
-            routingTopology = new ConventionalRoutingTopology();
+            routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<TransportMessage>();
 
             var config = new ConnectionConfiguration();

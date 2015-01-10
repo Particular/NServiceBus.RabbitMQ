@@ -108,7 +108,24 @@
             }
             else
             {
-                context.Container.ConfigureComponent<ConventionalRoutingTopology>(DependencyLifecycle.SingleInstance);
+                var durable = GetDurableMessagesEnabled(context.Settings);
+
+                IRoutingTopology topology;
+
+                DirectRoutingTopology.Conventions conventions;
+
+
+                if (context.Settings.TryGet(out conventions))
+                {
+                    topology = new DirectRoutingTopology(conventions,durable);    
+                }
+                else
+                {
+                    topology = new ConventionalRoutingTopology(durable);    
+                }
+                
+
+                context.Container.RegisterSingleton(topology);
             }
 
             if (context.Settings.HasSetting("IManageRabbitMqConnections"))
@@ -121,6 +138,16 @@
 
                 context.Container.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
             }
+        }
+
+        static bool GetDurableMessagesEnabled(ReadOnlySettings settings)
+        {
+            bool durableMessagesEnabled;
+            if (settings.TryGet("Endpoint.DurableMessages", out durableMessagesEnabled))
+            {
+                return durableMessagesEnabled;
+            }
+            return true;
         }
 
 
