@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using EasyNetQ;
+    using NServiceBus.Transports.RabbitMQ.Connection;
 
     interface IConnectionConfiguration
     {

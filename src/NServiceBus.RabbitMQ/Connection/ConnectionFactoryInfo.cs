@@ -1,6 +1,6 @@
-﻿namespace EasyNetQ
+﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
-    using RabbitMQ.Client;
+    using global::RabbitMQ.Client;
 
     class ConnectionFactoryInfo
     {

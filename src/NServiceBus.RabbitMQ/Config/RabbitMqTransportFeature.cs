@@ -2,8 +2,8 @@
 {
     using System;
     using System.Configuration;
-    using EasyNetQ;
     using NServiceBus.CircuitBreakers;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using RabbitMQ.Client.Events;
     using Settings;
     using Support;

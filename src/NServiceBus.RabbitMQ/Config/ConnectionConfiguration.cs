@@ -5,7 +5,7 @@
     using System.IO;
     using System.Linq;
     using System.Reflection;
-    using EasyNetQ;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using Support;
 
     class ConnectionConfiguration : IConnectionConfiguration

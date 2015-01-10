@@ -1,4 +1,4 @@
-﻿namespace EasyNetQ
+﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     class HostConfiguration : IHostConfiguration
     {
