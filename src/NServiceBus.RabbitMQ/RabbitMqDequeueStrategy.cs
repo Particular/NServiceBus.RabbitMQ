@@ -235,7 +235,8 @@
 
         void Purge()
         {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 channel.QueuePurge(workQueue);
             }
