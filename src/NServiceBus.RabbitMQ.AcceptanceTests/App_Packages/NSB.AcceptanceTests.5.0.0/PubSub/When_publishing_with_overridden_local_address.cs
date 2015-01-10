@@ -58,8 +58,7 @@
                 {
                     builder.DisableFeature<AutoSubscribe>();
                     builder.OverrideLocalAddress("myinputqueue");
-                })
-                    .AddMapping<MyEvent>(typeof(Publisher));
+                });
             }
 
             public class MyEventHandler : IHandleMessages<MyEvent>

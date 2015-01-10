@@ -28,7 +28,7 @@
 
         protected override string GetLocalAddress(ReadOnlySettings settings)
         {
-            return settings.EndpointName();
+            return Address.Parse(settings.Get<string>("NServiceBus.LocalAddress")).Queue;
         }
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
