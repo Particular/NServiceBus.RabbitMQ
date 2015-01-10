@@ -25,7 +25,6 @@
         public ushort RequestedHeartbeat { get; set; }
         public int DequeueTimeout { get; set; }
         public ushort PrefetchCount { get; set; }
-        public ushort MaxRetries { get; set; }
         public bool UsePublisherConfirms { get; set; }
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
         public TimeSpan RetryDelay { get; set; }
@@ -50,7 +49,6 @@
             DequeueTimeout = DefaultDequeueTimeout;
             PrefetchCount = DefaultPrefetchCount;
             MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
-            MaxRetries = 5;
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();
             UsePublisherConfirms = true;
