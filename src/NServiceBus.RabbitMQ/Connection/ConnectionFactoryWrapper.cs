@@ -1,26 +1,26 @@
-﻿namespace EasyNetQ
+﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using EasyNetQ;
+    using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
-    using RabbitMQ.Client;
 
     class ConnectionFactoryWrapper : IConnectionFactory
     {
-        public virtual IConnectionConfiguration Configuration { get; private set; }
-        private readonly IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy;
-
+        public IConnectionConfiguration Configuration { get; private set; }
+     
         public ConnectionFactoryWrapper(IConnectionConfiguration connectionConfiguration, IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
         {
             this.clusterHostSelectionStrategy = clusterHostSelectionStrategy;
-            if(connectionConfiguration == null)
+            if (connectionConfiguration == null)
             {
                 throw new ArgumentNullException("connectionConfiguration");
             }
             if (!connectionConfiguration.Hosts.Any())
             {
-                throw new EasyNetQException("At least one host must be defined in connectionConfiguration");
+                throw new Exception("At least one host must be defined in connectionConfiguration");
             }
 
             Configuration = connectionConfiguration;
@@ -40,19 +40,13 @@
             }
         }
 
-        private static IDictionary<string, object> ConvertToHashtable(IDictionary<string, object> clientProperties)
-        {
-            var dictionary = new Dictionary<string, object>();
-            foreach (var clientProperty in clientProperties)
-            {
-                dictionary.Add(clientProperty.Key, clientProperty.Value);
-            }
-            return dictionary;
-        }
+        
 
-        public virtual IConnection CreateConnection() {
+        public virtual IConnection CreateConnection()
+        {
             var connectionFactoryInfo = clusterHostSelectionStrategy.Current();
             var connectionFactory = connectionFactoryInfo.ConnectionFactory;
+
             return connectionFactory.CreateConnection();
         }
 
@@ -80,5 +74,18 @@
         {
             get { return clusterHostSelectionStrategy.Succeeded; }
         }
+
+        static IDictionary<string, object> ConvertToHashtable(IDictionary<string, object> clientProperties)
+        {
+            var dictionary = new Dictionary<string, object>();
+            foreach (var clientProperty in clientProperties)
+            {
+                dictionary.Add(clientProperty.Key, clientProperty.Value);
+            }
+            return dictionary;
+        }
+
+        readonly IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy;
+
     }
 }

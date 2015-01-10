@@ -10,11 +10,11 @@
     using System.Transactions;
     using global::RabbitMQ.Client;
     using NLog;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
     using Settings;
     using Support;
     using Unicast;
-    using EasyNetQ;
     using Config;
     using TransactionSettings = Unicast.Transport.TransactionSettings;
 

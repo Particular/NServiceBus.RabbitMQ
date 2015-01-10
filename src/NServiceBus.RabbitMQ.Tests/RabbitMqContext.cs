@@ -6,10 +6,10 @@
     using System.Diagnostics;
     using System.Transactions;
     using Config;
-    using EasyNetQ;
     using global::RabbitMQ.Client;
     using NServiceBus.CircuitBreakers;
     using NServiceBus.Support;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
     using ObjectBuilder.Common;
     using Routing;

@@ -2,8 +2,8 @@
 {
     using System;
     using Config;
-    using EasyNetQ;
     using global::RabbitMQ.Client;
+    using NServiceBus.Transports.RabbitMQ.Connection;
 
     class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
     {

@@ -1,7 +1,9 @@
-﻿namespace EasyNetQ
+﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
+    using EasyNetQ;
 
     /// <summary>
     /// A collection that hands out the next item until success, or until every item has been tried.
@@ -22,7 +24,7 @@
         {
             if (items.Count == 0)
             {
-                throw new EasyNetQException("No items in collection");
+                throw new Exception("No items in collection");
             }
 
             return items[currentIndex];
