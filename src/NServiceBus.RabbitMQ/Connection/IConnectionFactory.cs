@@ -5,7 +5,7 @@
 
     interface IConnectionFactory
     {
-        IConnection CreateConnection();
+        IConnection CreateConnection(string purpose);
         IConnectionConfiguration Configuration { get; }
         IHostConfiguration CurrentHost { get; }
         bool Next();

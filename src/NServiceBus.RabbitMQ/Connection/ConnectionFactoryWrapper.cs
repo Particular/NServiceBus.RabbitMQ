@@ -42,11 +42,13 @@
 
         
 
-        public virtual IConnection CreateConnection()
+        public virtual IConnection CreateConnection(string purpose)
         {
             var connectionFactoryInfo = clusterHostSelectionStrategy.Current();
             var connectionFactory = connectionFactoryInfo.ConnectionFactory;
 
+            connectionFactory.ClientProperties["purpose"] = purpose;
+        
             return connectionFactory.CreateConnection();
         }
 
