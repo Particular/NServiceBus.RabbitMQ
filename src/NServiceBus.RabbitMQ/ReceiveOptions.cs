@@ -8,13 +8,20 @@ namespace NServiceBus.Transports.RabbitMQ
         public ushort PrefetchCount { get; private set; }
         public int DequeueTimeout { get; private set; }
         public bool PurgeOnStartup { get; private set; }
+        public string ConsumerTag { get; private set; }
 
-        public ReceiveOptions(Func<string, SecondaryReceiveSettings> getSecondaryReceiveSettings, MessageConverter converter, ushort prefetchCount, int dequeueTimeout,bool purgeOnStartup)
+        public ReceiveOptions(Func<string, SecondaryReceiveSettings> getSecondaryReceiveSettings,
+            MessageConverter converter,
+            ushort prefetchCount, 
+            int dequeueTimeout,
+            bool purgeOnStartup,
+            string consumerTag)
         {
             Converter = converter;
             PrefetchCount = prefetchCount;
             DequeueTimeout = dequeueTimeout;
             PurgeOnStartup = purgeOnStartup;
+            ConsumerTag = consumerTag;
             secondaryReceiveSettings = getSecondaryReceiveSettings;
         }
 

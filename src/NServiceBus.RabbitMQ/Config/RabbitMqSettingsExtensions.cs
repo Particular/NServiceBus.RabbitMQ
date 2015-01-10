@@ -95,6 +95,5 @@
             transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.CustomMessageIdStrategy, customIdStrategy);
             return transportExtensions;
         }
-        
     }
 }

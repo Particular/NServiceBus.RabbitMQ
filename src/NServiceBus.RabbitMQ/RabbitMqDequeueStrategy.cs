@@ -131,7 +131,7 @@
 
                     var consumer = new QueueingBasicConsumer(channel);
 
-                    channel.BasicConsume(parameters.Queue, noAck, consumer);
+                    channel.BasicConsume(parameters.Queue, noAck,receiveOptions.ConsumerTag, consumer);
 
                     circuitBreaker.Success();
 

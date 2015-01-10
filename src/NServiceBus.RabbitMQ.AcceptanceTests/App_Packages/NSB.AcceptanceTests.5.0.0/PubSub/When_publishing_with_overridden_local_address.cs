@@ -9,7 +9,7 @@
 
     public class When_publishing_with_overridden_local_address : NServiceBusAcceptanceTest
     {
-        [Test, Explicit("This test fails against RabbitMQ")]
+        [Test]
         public void Should_be_delivered_to_all_subscribers()
         {
             Scenario.Define<Context>()

@@ -50,6 +50,14 @@
                 messageConverter = new MessageConverter();
             }
 
+            string hostDisplayName;
+            if (!context.Settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName))//this was added in 5.1.2 of the core
+            {
+                hostDisplayName = RuntimeEnvironment.MachineName;
+            }
+
+            var consumerTag = string.Format("{0} - {1}",hostDisplayName, context.Settings.EndpointName());
+
             var receiveOptions = new ReceiveOptions(workQueue =>
             {
                 //if this isn't the main queue we shouldn't use callback receiver
@@ -62,7 +70,8 @@
             messageConverter,
             connectionConfiguration.PrefetchCount, 
             connectionConfiguration.DequeueTimeout * 1000,
-            context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"));
+            context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
+            consumerTag);
 
         
      

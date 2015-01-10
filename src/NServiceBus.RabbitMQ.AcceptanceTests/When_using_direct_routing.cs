@@ -25,7 +25,6 @@
             public Receiver()
             {
                 EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
-                    //just returning a guid here, not suitable for production use
                     .UseDirectRoutingTopology());
             }
 

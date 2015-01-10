@@ -82,7 +82,7 @@
             };
 
             dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null,
-                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false));
+                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"));
             
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
