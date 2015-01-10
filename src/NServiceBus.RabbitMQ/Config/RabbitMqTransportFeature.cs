@@ -1,7 +1,9 @@
 ﻿namespace NServiceBus.Features
 {
     using System;
+    using System.Configuration;
     using EasyNetQ;
+    using NServiceBus.CircuitBreakers;
     using RabbitMQ.Client.Events;
     using Settings;
     using Support;
@@ -56,7 +58,7 @@
                 hostDisplayName = RuntimeEnvironment.MachineName;
             }
 
-            var consumerTag = string.Format("{0} - {1}",hostDisplayName, context.Settings.EndpointName());
+            var consumerTag = string.Format("{0} - {1}", hostDisplayName, context.Settings.EndpointName());
 
             var receiveOptions = new ReceiveOptions(workQueue =>
             {
@@ -68,19 +70,19 @@
                 return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
             },
             messageConverter,
-            connectionConfiguration.PrefetchCount, 
+            connectionConfiguration.PrefetchCount,
             connectionConfiguration.DequeueTimeout * 1000,
             context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
             consumerTag);
 
-        
-     
+
+
             context.Container.RegisterSingleton(connectionConfiguration);
-            
+
             context.Container.ConfigureComponent(builder => new RabbitMqDequeueStrategy(
                 builder.Build<IManageRabbitMqConnections>(),
-                builder.Build<CriticalError>(),
-                receiveOptions),DependencyLifecycle.InstancePerCall);
+                SetupCircuitBreaker(builder.Build<CriticalError>()),
+                receiveOptions), DependencyLifecycle.InstancePerCall);
 
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
@@ -88,7 +90,7 @@
             context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
 
             context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
-       
+
             if (useCallbackReceiver)
             {
                 context.Container.ConfigureProperty<RabbitMqMessageSender>(p => p.CallbackQueue, callbackQueue);
@@ -102,7 +104,7 @@
             context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.UsePublisherConfirms, connectionConfiguration.UsePublisherConfirms)
                   .ConfigureProperty(p => p.MaxWaitTimeForConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
-            
+
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
 
@@ -126,13 +128,13 @@
 
                 if (context.Settings.TryGet(out conventions))
                 {
-                    topology = new DirectRoutingTopology(conventions,durable);    
+                    topology = new DirectRoutingTopology(conventions, durable);
                 }
                 else
                 {
-                    topology = new ConventionalRoutingTopology(durable);    
+                    topology = new ConventionalRoutingTopology(durable);
                 }
-                
+
 
                 context.Container.RegisterSingleton(topology);
             }
@@ -147,6 +149,31 @@
 
                 context.Container.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
             }
+        }
+
+        static RepeatedFailuresOverTimeCircuitBreaker SetupCircuitBreaker(CriticalError criticalError)
+        {
+
+            var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
+            var timeToWaitBeforeTriggeringOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/TimeToWaitBeforeTriggering"] ?? "00:02:00";
+
+            if (!string.IsNullOrEmpty(timeToWaitBeforeTriggeringOverride))
+            {
+                timeToWaitBeforeTriggering = TimeSpan.Parse(timeToWaitBeforeTriggeringOverride);
+            }
+
+            var delayAfterFailure = TimeSpan.FromSeconds(5);
+            var delayAfterFailureOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/DelayAfterFailure"] ?? "00:02:00";
+
+            if (!string.IsNullOrEmpty(delayAfterFailureOverride))
+            {
+                delayAfterFailure = TimeSpan.Parse(delayAfterFailureOverride);
+            }
+
+            return new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+                timeToWaitBeforeTriggering, 
+                ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker",
+                    ex), delayAfterFailure);
         }
 
         static bool GetDurableMessagesEnabled(ReadOnlySettings settings)

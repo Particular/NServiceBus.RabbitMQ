@@ -13,11 +13,11 @@
 
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {   
-        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, ReceiveOptions receiveOptions)
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, ReceiveOptions receiveOptions)
         {
             this.connectionManager = connectionManager;
+            this.circuitBreaker = circuitBreaker;
             this.receiveOptions = receiveOptions;
-            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",TimeSpan.FromMinutes(2),ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker", ex),TimeSpan.FromSeconds(5));
         }
 
         public void Init(Address address, TransactionSettings transactionSettings, Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
