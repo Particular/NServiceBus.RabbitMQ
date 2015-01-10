@@ -8,6 +8,7 @@
     using Config;
     using EasyNetQ;
     using global::RabbitMQ.Client;
+    using NServiceBus.CircuitBreakers;
     using NServiceBus.Support;
     using NUnit.Framework;
     using ObjectBuilder.Common;
@@ -81,7 +82,7 @@
                 CallbackQueue = CallbackQueue
             };
 
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null,
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, new RepeatedFailuresOverTimeCircuitBreaker("UnitTest",TimeSpan.FromMinutes(2),e=>{}),
                 new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"));
             
 
