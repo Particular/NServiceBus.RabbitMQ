@@ -41,12 +41,18 @@
                 string replyToAddressNSBHeaders;
                 var nativeReplyToAddress = properties.ReplyTo;
 
-                if (headers.TryGetValue(Headers.ReplyToAddress, out replyToAddressNSBHeaders) && replyToAddressNSBHeaders != nativeReplyToAddress)
+                if (headers.TryGetValue(Headers.ReplyToAddress, out replyToAddressNSBHeaders))
                 {
-                    Logger.WarnFormat("Missmatching replyto address properties found, the native '{0}' will override the one found in the headers '{1}'",nativeReplyToAddress,replyToAddressNSBHeaders);
+                    if (replyToAddressNSBHeaders != nativeReplyToAddress)
+                    {
+                        Logger.WarnFormat("Missmatching replyto address properties found, the address specified by the NServiceBus headers '{1}' will override the native one '{0}'", nativeReplyToAddress, replyToAddressNSBHeaders);         
+                    }
                 }
-
-                headers[Headers.ReplyToAddress] = nativeReplyToAddress;
+                else
+                {
+                    //promote the native address
+                    headers[Headers.ReplyToAddress] = nativeReplyToAddress;             
+                }
             }
 
             if (properties.IsCorrelationIdPresent())
