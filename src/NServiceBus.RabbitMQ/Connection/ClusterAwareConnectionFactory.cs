@@ -9,9 +9,9 @@
 
     class ClusterAwareConnectionFactory
     {
-        public IConnectionConfiguration Configuration { get; private set; }
+        public ConnectionConfiguration Configuration { get; private set; }
      
-        public ClusterAwareConnectionFactory(IConnectionConfiguration connectionConfiguration, IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
+        public ClusterAwareConnectionFactory(ConnectionConfiguration connectionConfiguration, IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
         {
             this.clusterHostSelectionStrategy = clusterHostSelectionStrategy;
             if (connectionConfiguration == null)

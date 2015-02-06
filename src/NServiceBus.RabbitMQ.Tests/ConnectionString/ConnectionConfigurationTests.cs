@@ -21,7 +21,7 @@
         ConnectionConfiguration defaults;
         ConnectionStringParser parser;
         string connectionString;
-        IConnectionConfiguration connectionConfiguration;
+        ConnectionConfiguration connectionConfiguration;
 
         [Test]
         public void Should_default_the_port_if_not_set() {

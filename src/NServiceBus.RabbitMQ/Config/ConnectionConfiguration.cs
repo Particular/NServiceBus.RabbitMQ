@@ -8,7 +8,7 @@
     using NServiceBus.Transports.RabbitMQ.Connection;
     using Support;
 
-    class ConnectionConfiguration : IConnectionConfiguration
+    class ConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
         public const int DefaultDequeueTimeout = 1;
