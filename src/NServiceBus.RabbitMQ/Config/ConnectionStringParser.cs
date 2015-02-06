@@ -16,7 +16,7 @@
             this.settings = settings;
         }
 
-        public IConnectionConfiguration Parse(string connectionString)
+        public ConnectionConfiguration Parse(string connectionString)
         {
             ConnectionString = connectionString;
 

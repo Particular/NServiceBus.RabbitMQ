@@ -2,12 +2,12 @@
 {
     using System;
     using Config;
-    using EasyNetQ;
     using global::RabbitMQ.Client;
+    using NServiceBus.Transports.RabbitMQ.Connection;
 
     class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
     {
-        public RabbitMqConnectionManager(IConnectionFactory connectionFactory, IConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionManager(ClusterAwareConnectionFactory connectionFactory, ConnectionConfiguration connectionConfiguration)
         {
             this.connectionFactory = connectionFactory;
             this.connectionConfiguration = connectionConfiguration;
@@ -18,7 +18,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionPublish ?? (connectionPublish = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay));
+                return connectionPublish ?? (connectionPublish = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Publish"));
             }
         }
 
@@ -27,7 +27,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionConsume ?? (connectionConsume = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay));
+                return connectionConsume ?? (connectionConsume = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Consume"));
             }
         }
 
@@ -36,7 +36,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionAdministration ?? (connectionAdministration = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay));
+                return new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Administration");
             }
         }
 
@@ -52,20 +52,15 @@
             {
                 connectionConsume.Dispose();
             }
-            if (connectionAdministration != null)
-            {
-                connectionAdministration.Dispose();
-            }
             if (connectionPublish != null)
             {
                 connectionPublish.Dispose();
             }
         }
 
-        IConnectionFactory connectionFactory;
-        IConnectionConfiguration connectionConfiguration;
+        ClusterAwareConnectionFactory connectionFactory;
+        ConnectionConfiguration connectionConfiguration;
         PersistentConnection connectionConsume;
-        PersistentConnection connectionAdministration;
         PersistentConnection connectionPublish;
     }
 }

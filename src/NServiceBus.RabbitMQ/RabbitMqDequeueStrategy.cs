@@ -10,40 +10,16 @@
     using Logging;
     using Unicast.Transport;
 
-    /// <summary>
-    ///     Default implementation of <see cref="IDequeueMessages" /> for RabbitMQ.
-    /// </summary>
+
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
-    {
-        readonly IManageRabbitMqConnections connectionManager;
-        readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
-
-        /// <summary>
-        ///     The number of messages to allow the RabbitMq client to pre-fetch from the broker
-        /// </summary>
-        public ushort PrefetchCount { get; set; }
-
-        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+    {   
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, ReceiveOptions receiveOptions)
         {
             this.connectionManager = connectionManager;
-            this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
-            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
-            TimeSpan.FromMinutes(2),
-            ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker", ex),
-            TimeSpan.FromSeconds(5));
-            purgeOnStartup = config.PurgeOnStartup();
+            this.circuitBreaker = circuitBreaker;
+            this.receiveOptions = receiveOptions;
         }
 
-        /// <summary>
-        ///     Initializes the <see cref="IDequeueMessages" />.
-        /// </summary>
-        /// <param name="address">The address to listen on.</param>
-        /// <param name="transactionSettings">The <see cref="TransactionSettings" /> to be used by <see cref="IDequeueMessages" />.</param>
-        /// <param name="tryProcessMessage">Called when a message has been dequeued and is ready for processing.</param>
-        /// <param name="endProcessMessage">
-        ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been
-        ///     processed regardless if the outcome was successful or not.
-        /// </param>
         public void Init(Address address, TransactionSettings transactionSettings, Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
         {
             this.tryProcessMessage = tryProcessMessage;
@@ -52,22 +28,27 @@
 
             noAck = !transactionSettings.IsTransactional;
 
-            if (purgeOnStartup)
+            if (receiveOptions.PurgeOnStartup)
             {
                 Purge();
             }
         }
 
-        /// <summary>
-        ///     Starts the dequeuing of message using the specified <paramref name="maximumConcurrencyLevel" />.
-        /// </summary>
-        /// <param name="maximumConcurrencyLevel">
-        ///     Indicates the maximum concurrency level this <see cref="IDequeueMessages" /> is
-        ///     able to support.
-        /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
-            var secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(workQueue);
+            if (receiveOptions.DefaultPrefetchCount > 0)
+            {
+                actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
+            }
+            else
+            {
+                actualPrefetchCount = Convert.ToUInt16(maximumConcurrencyLevel);
+
+                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);                
+            }
+
+
+            var secondaryReceiveSettings = receiveOptions.GetSettings(workQueue);
 
             actualConcurrencyLevel = maximumConcurrencyLevel + secondaryReceiveSettings.MaximumConcurrencyLevel;
 
@@ -158,18 +139,18 @@
 
                 using (var channel = connection.CreateModel())
                 {
-                    channel.BasicQos(0, PrefetchCount, false);
+                    channel.BasicQos(0, actualPrefetchCount, false);
 
                     var consumer = new QueueingBasicConsumer(channel);
 
-                    channel.BasicConsume(parameters.Queue, noAck, consumer);
+                    channel.BasicConsume(parameters.Queue, noAck,receiveOptions.ConsumerTag, consumer);
 
                     circuitBreaker.Success();
 
                     while (!parameters.CancellationToken.IsCancellationRequested)
                     {
                         Exception exception = null;
-                        var message = DequeueMessage(consumer);
+                        var message = DequeueMessage(consumer, receiveOptions.DequeueTimeout);
 
                         if (message == null)
                         {
@@ -184,7 +165,7 @@
 
                             try
                             {
-                                transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(message);
+                                transportMessage = receiveOptions.Converter.ToTransportMessage(message);
                             }
                             catch (Exception ex)
                             {
@@ -250,11 +231,11 @@
             }
         }
 
-        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer)
+        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer, int dequeueTimeout)
         {
             BasicDeliverEventArgs rawMessage;
 
-            var messageDequeued = consumer.Queue.Dequeue(1000, out rawMessage);
+            var messageDequeued = consumer.Queue.Dequeue(dequeueTimeout, out rawMessage);
 
             if (!messageDequeued)
             {
@@ -266,11 +247,14 @@
 
         void Purge()
         {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 channel.QueuePurge(workQueue);
             }
         }
+
+
 
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
@@ -282,8 +266,10 @@
         CancellationTokenSource tokenSource;
         Func<TransportMessage, bool> tryProcessMessage;
         string workQueue;
-        bool purgeOnStartup;
         int actualConcurrencyLevel;
+        readonly IManageRabbitMqConnections connectionManager;
+        readonly ReceiveOptions receiveOptions;
+        ushort actualPrefetchCount;
 
 
         class ConsumeParams

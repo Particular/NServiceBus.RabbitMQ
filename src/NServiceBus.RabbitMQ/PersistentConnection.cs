@@ -2,13 +2,14 @@ namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading;
-    using EasyNetQ;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Janitor;
     using Logging;
+    using NServiceBus.Transports.RabbitMQ.Connection;
 
     /// <summary>
     /// A connection that attempts to reconnect if the inner connection is closed.
@@ -16,16 +17,14 @@ namespace NServiceBus.Transports.RabbitMQ
     [SkipWeaving]
     class PersistentConnection: IConnection
     {
-        public PersistentConnection(IConnectionFactory connectionFactory, TimeSpan retryDelay)
+        public PersistentConnection(ClusterAwareConnectionFactory connectionFactory, TimeSpan retryDelay,string purpose)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
+            this.purpose = purpose;
 
             TryToConnect(null);
         }
-
-        public event Action Connected;
-        public event Action Disconnected;
 
         public IModel CreateModel()
         {
@@ -36,11 +35,7 @@ namespace NServiceBus.Transports.RabbitMQ
             return connection.CreateModel();
         }
 
-        public bool IsConnected
-        {
-            get { return connection != null && connection.IsOpen && !disposed; }
-        }
-
+       
         public void Close()
         {
             connection.ConnectionShutdown -= OnConnectionShutdown;
@@ -78,7 +73,7 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 try
                 {
-                    connection = connectionFactory.CreateConnection();
+                    connection = connectionFactory.CreateConnection(purpose);
                     connectionFactory.Success();
                 }
                 catch (System.Net.Sockets.SocketException socketException)
@@ -95,7 +90,6 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 connection.ConnectionShutdown += OnConnectionShutdown;
 
-                OnConnected();
                 Logger.InfoFormat("Connected to RabbitMQ. Broker: '{0}', Port: {1}, VHost: '{2}'",
                                   connectionFactory.CurrentHost.Host,
                                   connectionFactory.CurrentHost.Port,
@@ -106,6 +100,10 @@ namespace NServiceBus.Transports.RabbitMQ
                 Logger.ErrorFormat("Failed to connected to any Broker. Retrying in {0}", retryDelay);
                 StartTryToConnect();
             }
+        }
+        bool IsConnected
+        {
+            get { return connection != null && connection.IsOpen && !disposed; }
         }
 
         void LogException(Exception exception)
@@ -124,30 +122,11 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 return;
             }
-            OnDisconnected();
-
+        
             Logger.InfoFormat("Disconnected from RabbitMQ Broker, reason: {0} , going to reconnect", reason);
 
             TryToConnect(null);
         }
-
-        public void OnConnected()
-        {
-            Logger.Debug("OnConnected event fired");
-            if (Connected != null)
-            {
-                Connected();
-            }
-        }
-
-        public void OnDisconnected()
-        {
-            if (Disconnected != null)
-            {
-                Disconnected();
-            }
-        }
-
 
         public void Abort()
         {
@@ -308,9 +287,14 @@ namespace NServiceBus.Transports.RabbitMQ
 
         bool disposed;
         IConnection connection;
-        readonly IConnectionFactory connectionFactory;
+        readonly ClusterAwareConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
+        readonly string purpose;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof (RabbitMqConnectionManager));
+        public EndPoint LocalEndPoint { get { return connection.LocalEndPoint; }}
+        public EndPoint RemoteEndPoint { get { return connection.RemoteEndPoint; } }
+        public int LocalPort { get { return connection.LocalPort; } }
+        public int RemotePort { get { return connection.RemotePort; } }
     }
 }

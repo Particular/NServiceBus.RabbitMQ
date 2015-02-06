@@ -2,6 +2,7 @@
 {
     using System;
     using Configuration.AdvanceExtensibility;
+    using RabbitMQ.Client.Events;
     using Transports.RabbitMQ;
     using Transports.RabbitMQ.Routing;
 
@@ -28,13 +29,7 @@
                 exchangeNameConvention = (address, eventType) => "amq.topic";
             }
 
-            var router = new DirectRoutingTopology
-            {
-                ExchangeNameConvention = exchangeNameConvention,
-                RoutingKeyConvention = routingKeyConvention
-            };
-
-            transportExtensions.GetSettings().Set<IRoutingTopology>(router);
+            transportExtensions.GetSettings().Set<DirectRoutingTopology.Conventions>(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention));
 
             return transportExtensions;
         }
@@ -85,6 +80,19 @@
                 throw new ArgumentException("Maximum concurrency value must be greater than zero.", "maxConcurrency");
             }
             transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.MaxConcurrencyForCallbackReceiver, maxConcurrency);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Allows the user to control how the message id is determined. Mostly useful when doing native integration with non NSB endpoints
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="customIdStrategy">The user defined strategy for giving the message a unique id</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs,string> customIdStrategy)
+        {
+
+            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.CustomMessageIdStrategy, customIdStrategy);
             return transportExtensions;
         }
     }

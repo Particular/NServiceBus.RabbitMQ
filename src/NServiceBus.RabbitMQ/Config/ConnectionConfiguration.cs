@@ -5,25 +5,25 @@
     using System.IO;
     using System.Linq;
     using System.Reflection;
-    using EasyNetQ;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using Support;
 
-    class ConnectionConfiguration : IConnectionConfiguration
+    class ConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
-        public const ushort DefaultPrefetchCount = 1;
+        public const int DefaultDequeueTimeout = 1;
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
-        IEnumerable<IHostConfiguration> hosts= new List<IHostConfiguration>();
+        IEnumerable<HostConfiguration> hosts= new List<HostConfiguration>();
 
         public ushort Port { get; set; }
         public string VirtualHost { get; set; }
         public string UserName { get; set; }
         public string Password { get; set; }
         public ushort RequestedHeartbeat { get; set; }
+        public int DequeueTimeout { get; set; }
         public ushort PrefetchCount { get; set; }
-        public ushort MaxRetries { get; set; }
         public bool UsePublisherConfirms { get; set; }
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
         public TimeSpan RetryDelay { get; set; }
@@ -32,7 +32,7 @@
             private set { clientProperties = value; }
         }
 
-        public IEnumerable<IHostConfiguration> Hosts {
+        public IEnumerable<HostConfiguration> Hosts {
             get { return hosts; }
             private set { hosts = value; }
         }
@@ -45,9 +45,8 @@
             UserName = "guest";
             Password = "guest";
             RequestedHeartbeat = DefaultHeartBeatInSeconds;
-            PrefetchCount = DefaultPrefetchCount;
+            DequeueTimeout = DefaultDequeueTimeout;
             MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
-            MaxRetries = 5;
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();
             UsePublisherConfirms = true;
@@ -81,7 +80,7 @@
             {
                 if (hostConfiguration.Port == 0)
                 {
-                    ((HostConfiguration)hostConfiguration).Port = Port;
+                    hostConfiguration.Port = Port;
                 }
             }
         }

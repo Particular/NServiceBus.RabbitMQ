@@ -21,7 +21,7 @@
         ConnectionConfiguration defaults;
         ConnectionStringParser parser;
         string connectionString;
-        IConnectionConfiguration connectionConfiguration;
+        ConnectionConfiguration connectionConfiguration;
 
         [Test]
         public void Should_default_the_port_if_not_set() {
@@ -31,10 +31,10 @@
         }
 
         [Test]
-        public void Should_default_the_prefetch_count() {
+        public void Should_not_default_the_prefetch_count() {
             connectionString = ("host=localhost");
             connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(ConnectionConfiguration.DefaultPrefetchCount, connectionConfiguration.PrefetchCount);
+            Assert.AreEqual(0, connectionConfiguration.PrefetchCount);
         }
 
         [Test]
@@ -42,6 +42,14 @@
             connectionString = ("host=localhost");
             connectionConfiguration = parser.Parse(connectionString);
             Assert.AreEqual(ConnectionConfiguration.DefaultHeartBeatInSeconds, connectionConfiguration.RequestedHeartbeat);
+        }
+
+        [Test]
+        public void Should_default_the_dequeue_timeout()
+        {
+            connectionString = ("host=localhost");
+            connectionConfiguration = parser.Parse(connectionString);
+            Assert.AreEqual(ConnectionConfiguration.DefaultDequeueTimeout, connectionConfiguration.DequeueTimeout);
         }
 
         [Test]

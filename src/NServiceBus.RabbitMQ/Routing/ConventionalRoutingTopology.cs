@@ -22,6 +22,13 @@
     /// </summary>
     class ConventionalRoutingTopology : IRoutingTopology
     {
+        readonly bool useDurableExchanges;
+
+        public ConventionalRoutingTopology(bool useDurableExchanges)
+        {
+            this.useDurableExchanges = useDurableExchanges;
+        }
+
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {
             if (type == typeof(IEvent))
@@ -114,11 +121,11 @@
             return typeTopologyConfiguredSet.ContainsKey(eventType);
         }
 
-        static void CreateExchange(IModel channel, string exchangeName)
+        void CreateExchange(IModel channel, string exchangeName)
         {
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
             }
 // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)

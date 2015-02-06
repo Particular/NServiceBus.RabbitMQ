@@ -52,15 +52,17 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.Core">
-      <HintPath>..\packages\NServiceBus.5.0.2\lib\net45\NServiceBus.Core.dll</HintPath>
+    <Reference Include="NServiceBus.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NServiceBus.5.1.3\lib\net45\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="Obsolete">
       <HintPath>..\packages\Obsolete.Fody.3.1.0.0\Lib\NET35\Obsolete.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="RabbitMQ.Client">
-      <HintPath>..\packages\RabbitMQ.Client.3.3.5\lib\net30\RabbitMQ.Client.dll</HintPath>
+    <Reference Include="RabbitMQ.Client, Version=3.4.3.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\RabbitMQ.Client.3.4.3\lib\net35\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -79,15 +81,11 @@
     <Compile Include="ConfirmsAwareChannel.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
-    <Compile Include="EasyNetQ\ConnectionFactoryInfo.cs" />
-    <Compile Include="EasyNetQ\ConnectionFactoryWrapper.cs" />
-    <Compile Include="EasyNetQ\DefaultClusterHostSelectionStrategy.cs" />
-    <Compile Include="EasyNetQ\EasyNetQException.cs" />
-    <Compile Include="EasyNetQ\HostConfiguration.cs" />
-    <Compile Include="EasyNetQ\IClusterHostSelectionStrategy.cs" />
-    <Compile Include="Config\IConnectionConfiguration.cs" />
-    <Compile Include="EasyNetQ\IConnectionFactory.cs" />
-    <Compile Include="EasyNetQ\IHostConfiguration.cs" />
+    <Compile Include="Connection\ConnectionFactoryInfo.cs" />
+    <Compile Include="Connection\ClusterAwareConnectionFactory.cs" />
+    <Compile Include="Connection\DefaultClusterHostSelectionStrategy.cs" />
+    <Compile Include="Connection\HostConfiguration.cs" />
+    <Compile Include="Connection\IClusterHostSelectionStrategy.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="OpenPublishChannelBehavior.cs" />
@@ -101,16 +99,15 @@
     <Compile Include="RabbitMqMessageSender.cs" />
     <Compile Include="RabbitMqQueueCreator.cs" />
     <Compile Include="RabbitMqSubscriptionManager.cs" />
+    <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
-    <Compile Include="SecondaryReceiveConfiguration.cs" />
+    <Compile Include="ReceiveOptions.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="EasyNetQ\licence.txt" />
-    <Content Include="EasyNetQ\readme.txt" />
     <Content Include="FodyWeavers.xml">
       <SubType>Designer</SubType>
     </Content>
@@ -123,11 +120,11 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Fody.1.26.0\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.26.0\build\Fody.targets'))" />
-    <Error Condition="!Exists('..\packages\GitVersionTask.1.3.2\Build\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.1.3.2\Build\GitVersionTask.targets'))" />
     <Error Condition="!Exists('..\packages\NuGetPackager.0.4.12\build\NuGetPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NuGetPackager.0.4.12\build\NuGetPackager.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.1.26.4\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.26.4\build\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets'))" />
   </Target>
-  <Import Project="..\packages\Fody.1.26.0\build\Fody.targets" Condition="Exists('..\packages\Fody.1.26.0\build\Fody.targets')" />
-  <Import Project="..\packages\GitVersionTask.1.3.2\Build\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.1.3.2\Build\GitVersionTask.targets')" />
   <Import Project="..\packages\NuGetPackager.0.4.12\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.4.12\build\NuGetPackager.targets')" />
+  <Import Project="..\packages\Fody.1.26.4\build\Fody.targets" Condition="Exists('..\packages\Fody.1.26.4\build\Fody.targets')" />
+  <Import Project="..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets')" />
 </Project>

@@ -6,15 +6,13 @@
     using System.Diagnostics;
     using System.Transactions;
     using Config;
-    using EasyNetQ;
     using global::RabbitMQ.Client;
+    using NServiceBus.CircuitBreakers;
     using NServiceBus.Support;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
-    using ObjectBuilder;
     using ObjectBuilder.Common;
-    using Pipeline;
     using Routing;
-    using Settings;
     using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     class RabbitMqContext
@@ -63,14 +61,14 @@
         [SetUp]
         public void SetUp()
         {
-            routingTopology = new ConventionalRoutingTopology();
+            routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<TransportMessage>();
 
             var config = new ConnectionConfiguration();
             config.ParseHosts("localhost:5672");
 
             var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
-            var connectionFactory = new ConnectionFactoryWrapper(config, selectionStrategy);
+            var connectionFactory = new ClusterAwareConnectionFactory(config, selectionStrategy);
             connectionManager = new RabbitMqConnectionManager(connectionFactory, config);
 
             publishChannel = connectionManager.GetPublishConnection().CreateModel();
@@ -84,9 +82,8 @@
                 CallbackQueue = CallbackQueue
             };
 
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null,
-                new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
-                new SecondaryReceiveConfiguration(s => SecondaryReceiveSettings.Enabled(CallbackQueue,1)));
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, new RepeatedFailuresOverTimeCircuitBreaker("UnitTest",TimeSpan.FromMinutes(2),e=>{}),
+                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"));
             
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);

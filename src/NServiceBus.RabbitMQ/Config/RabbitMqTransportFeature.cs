@@ -1,7 +1,10 @@
 ﻿namespace NServiceBus.Features
 {
     using System;
-    using EasyNetQ;
+    using System.Configuration;
+    using NServiceBus.CircuitBreakers;
+    using NServiceBus.Transports.RabbitMQ.Connection;
+    using RabbitMQ.Client.Events;
     using Settings;
     using Support;
     using Transports;
@@ -13,6 +16,7 @@
     {
         public const string UseCallbackReceiverSettingKey = "RabbitMQ.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiver = "RabbitMQ.MaxConcurrencyForCallbackReceiver";
+        public const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
 
         public RabbitMqTransportFeature()
         {
@@ -26,30 +30,67 @@
 
         protected override string GetLocalAddress(ReadOnlySettings settings)
         {
-            return settings.EndpointName();
+            return Address.Parse(settings.Get<string>("NServiceBus.LocalAddress")).Queue;
         }
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
             var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
             var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiver);
-
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
-
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
+
+            MessageConverter messageConverter;
+
+            if (context.Settings.HasSetting(CustomMessageIdStrategy))
+            {
+                messageConverter = new MessageConverter(context.Settings.Get<Func<BasicDeliverEventArgs, string>>(CustomMessageIdStrategy));
+            }
+            else
+            {
+                messageConverter = new MessageConverter();
+            }
+
+            string hostDisplayName;
+            if (!context.Settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName))//this was added in 5.1.2 of the core
+            {
+                hostDisplayName = RuntimeEnvironment.MachineName;
+            }
+
+            var consumerTag = string.Format("{0} - {1}", hostDisplayName, context.Settings.EndpointName());
+
+            var receiveOptions = new ReceiveOptions(workQueue =>
+            {
+                //if this isn't the main queue we shouldn't use callback receiver
+                if (!useCallbackReceiver || workQueue != queueName)
+                {
+                    return SecondaryReceiveSettings.Disabled();
+                }
+                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
+            },
+            messageConverter,
+            connectionConfiguration.PrefetchCount,
+            connectionConfiguration.DequeueTimeout * 1000,
+            context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
+            consumerTag);
+
+
 
             context.Container.RegisterSingleton(connectionConfiguration);
 
-            context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                 .ConfigureProperty(p => p.PrefetchCount, connectionConfiguration.PrefetchCount);
+            context.Container.ConfigureComponent(builder => new RabbitMqDequeueStrategy(
+                builder.Build<IManageRabbitMqConnections>(),
+                SetupCircuitBreaker(builder.Build<CriticalError>()),
+                receiveOptions), DependencyLifecycle.InstancePerCall);
+
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
 
             context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
 
             context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
-       
+
             if (useCallbackReceiver)
             {
                 context.Container.ConfigureProperty<RabbitMqMessageSender>(p => p.CallbackQueue, callbackQueue);
@@ -63,15 +104,6 @@
             context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.UsePublisherConfirms, connectionConfiguration.UsePublisherConfirms)
                   .ConfigureProperty(p => p.MaxWaitTimeForConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
-            context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
-            {
-                //if this isn't the main queue we shouldn't use callback receiver
-                if (!useCallbackReceiver || workQueue != queueName)
-                {
-                    return SecondaryReceiveSettings.Disabled();
-                }
-                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
-            }));
 
             context.Container.ConfigureComponent<RabbitMqDequeueStrategy>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<RabbitMqMessagePublisher>(DependencyLifecycle.InstancePerCall);
@@ -87,7 +119,24 @@
             }
             else
             {
-                context.Container.ConfigureComponent<ConventionalRoutingTopology>(DependencyLifecycle.SingleInstance);
+                var durable = GetDurableMessagesEnabled(context.Settings);
+
+                IRoutingTopology topology;
+
+                DirectRoutingTopology.Conventions conventions;
+
+
+                if (context.Settings.TryGet(out conventions))
+                {
+                    topology = new DirectRoutingTopology(conventions, durable);
+                }
+                else
+                {
+                    topology = new ConventionalRoutingTopology(durable);
+                }
+
+
+                context.Container.RegisterSingleton(topology);
             }
 
             if (context.Settings.HasSetting("IManageRabbitMqConnections"))
@@ -98,8 +147,43 @@
             {
                 context.Container.ConfigureComponent<RabbitMqConnectionManager>(DependencyLifecycle.SingleInstance);
 
-                context.Container.ConfigureComponent<IConnectionFactory>(builder => new ConnectionFactoryWrapper(builder.Build<IConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
+                context.Container.ConfigureComponent(builder => new ClusterAwareConnectionFactory(builder.Build<ConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
             }
+        }
+
+        static RepeatedFailuresOverTimeCircuitBreaker SetupCircuitBreaker(CriticalError criticalError)
+        {
+
+            var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
+            var timeToWaitBeforeTriggeringOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/TimeToWaitBeforeTriggering"] ?? "00:02:00";
+
+            if (!string.IsNullOrEmpty(timeToWaitBeforeTriggeringOverride))
+            {
+                timeToWaitBeforeTriggering = TimeSpan.Parse(timeToWaitBeforeTriggeringOverride);
+            }
+
+            var delayAfterFailure = TimeSpan.FromSeconds(5);
+            var delayAfterFailureOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/DelayAfterFailure"] ?? "00:02:00";
+
+            if (!string.IsNullOrEmpty(delayAfterFailureOverride))
+            {
+                delayAfterFailure = TimeSpan.Parse(delayAfterFailureOverride);
+            }
+
+            return new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+                timeToWaitBeforeTriggering, 
+                ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker",
+                    ex), delayAfterFailure);
+        }
+
+        static bool GetDurableMessagesEnabled(ReadOnlySettings settings)
+        {
+            bool durableMessagesEnabled;
+            if (settings.TryGet("Endpoint.DurableMessages", out durableMessagesEnabled))
+            {
+                return durableMessagesEnabled;
+            }
+            return true;
         }
 
 
@@ -107,5 +191,6 @@
         {
             get { return "host=localhost"; }
         }
+
     }
 }

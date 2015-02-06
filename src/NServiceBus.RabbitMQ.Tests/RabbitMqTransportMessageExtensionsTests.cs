@@ -4,17 +4,18 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Text;
+    using global::RabbitMQ.Client.Framing;
     using NUnit.Framework;
     using global::RabbitMQ.Client.Events;
-    using global::RabbitMQ.Client.Framing.v0_9_1;
 
     [TestFixture]
     class RabbitMqTransportMessageExtensionsTests
     {
+        MessageConverter converter = new MessageConverter();
         [Test]
         public void TestCanHandleNoInterestingProperties()
         {
-            Assert.IsNotNull(RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs{BasicProperties = new BasicProperties{MessageId = "Blah"}}));
+            Assert.IsNotNull(converter.ToTransportMessage(new BasicDeliverEventArgs { BasicProperties = new BasicProperties { MessageId = "Blah" } }));
         }
 
         [Test]
@@ -31,13 +32,29 @@
                     }
                 }
             };
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
+            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
             Assert.AreEqual("blah", transportMessage.Headers["Foo"]);
         }
 
         [Test]
-        public void Should_set_or_override_replyto_header_if_present_in_native_message()
+        public void Should_set_replyto_header_if_present_in_native_message_and_not_already_set()
+        {
+            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
+                {
+                    ReplyTo = "myaddress",
+                    MessageId = "Blah",
+                }
+            };
+            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
+            Assert.NotNull(transportMessage);
+            Assert.AreEqual("myaddress", transportMessage.Headers[Headers.ReplyToAddress]);
+        }
+
+        [Test]
+        public void Should_not_override_replyto_header_if_native_replyto_is_present()
         {
             var basicDeliverEventArgs = new BasicDeliverEventArgs
             {
@@ -47,13 +64,13 @@
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
                     {
-                        {Headers.ReplyToAddress, Encoding.UTF8.GetBytes("native address")}
+                        {Headers.ReplyToAddress, Encoding.UTF8.GetBytes("nsb set address")}
                     }
                 }
             };
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
+            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
-            Assert.AreEqual("myaddress", transportMessage.Headers[Headers.ReplyToAddress]);
+            Assert.AreEqual("nsb set address", transportMessage.Headers[Headers.ReplyToAddress]);
         }
 
 
@@ -72,7 +89,7 @@
                     }
                 }
             };
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
+            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
             Assert.AreEqual("ni", transportMessage.Headers["Foo"]);
         }
@@ -80,7 +97,7 @@
         [Test]
         public void TestCanHandleStringArrayListsHeader()
         {
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs
+            var transportMessage = converter.ToTransportMessage(new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -109,14 +126,14 @@
                     }
                 }
             };
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(basicDeliverEventArgs);
+            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
             Assert.AreEqual("Bing", transportMessage.Headers["Foo"]);
         }
         [Test]
         public void TestCanHandleTablesListHeader()
         {
-            var transportMessage = RabbitMqTransportMessageExtensions.ToTransportMessage(new BasicDeliverEventArgs
+            var transportMessage = converter.ToTransportMessage(new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {

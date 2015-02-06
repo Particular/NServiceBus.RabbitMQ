@@ -10,13 +10,11 @@
     using System.Transactions;
     using global::RabbitMQ.Client;
     using NLog;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
-    using ObjectBuilder;
-    using Pipeline;
     using Settings;
     using Support;
     using Unicast;
-    using EasyNetQ;
     using Config;
     using TransactionSettings = Unicast.Transport.TransactionSettings;
 
@@ -218,9 +216,7 @@
         void SetupQueueListener(string queueName)
         {
             receivedMessages = new BlockingCollection<TransportMessage>();
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, 
-                new Configure(new SettingsHolder(), new FakeContainer(), new List<Action<IConfigureComponents>>(), new PipelineSettings(new BusConfiguration())),
-                new SecondaryReceiveConfiguration(s=> SecondaryReceiveSettings.Disabled()));
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new ReceiveOptions(s => SecondaryReceiveSettings.Disabled(), new MessageConverter(),1,1000,true,"Cluster test"));
             dequeueStrategy.Init(Address.Parse(queueName), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
                 {
                     receivedMessages.Add(m);
@@ -254,7 +250,7 @@
             var config = new ConnectionStringParser(new SettingsHolder()).Parse(connectionString);
             //            config.OverrideClientProperties();
             var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
-            var connectionFactory = new ConnectionFactoryWrapper(config, selectionStrategy);
+            var connectionFactory = new ClusterAwareConnectionFactory(config, selectionStrategy);
             var newConnectionManager = new RabbitMqConnectionManager(connectionFactory, config);
             return newConnectionManager;
         }
