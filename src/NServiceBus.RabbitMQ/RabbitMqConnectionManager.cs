@@ -36,7 +36,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionAdministration ?? (connectionAdministration = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Administration"));
+                return new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Administration");
             }
         }
 
@@ -52,10 +52,6 @@
             {
                 connectionConsume.Dispose();
             }
-            if (connectionAdministration != null)
-            {
-                connectionAdministration.Dispose();
-            }
             if (connectionPublish != null)
             {
                 connectionPublish.Dispose();
@@ -65,7 +61,6 @@
         ClusterAwareConnectionFactory connectionFactory;
         ConnectionConfiguration connectionConfiguration;
         PersistentConnection connectionConsume;
-        PersistentConnection connectionAdministration;
         PersistentConnection connectionPublish;
     }
 }

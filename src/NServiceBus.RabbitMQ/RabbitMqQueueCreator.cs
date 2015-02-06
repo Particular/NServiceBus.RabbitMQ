@@ -12,7 +12,8 @@
 
         public void CreateQueueIfNecessary(Address address, string account)
         {
-            using (var channel = ConnectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = ConnectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(address.Queue, Configure.DurableMessagesEnabled(), false, false, null);
 
