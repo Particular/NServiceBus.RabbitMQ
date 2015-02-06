@@ -31,10 +31,10 @@
         }
 
         [Test]
-        public void Should_default_the_prefetch_count() {
+        public void Should_not_default_the_prefetch_count() {
             connectionString = ("host=localhost");
             connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(ConnectionConfiguration.DefaultPrefetchCount, connectionConfiguration.PrefetchCount);
+            Assert.AreEqual(0, connectionConfiguration.PrefetchCount);
         }
 
         [Test]

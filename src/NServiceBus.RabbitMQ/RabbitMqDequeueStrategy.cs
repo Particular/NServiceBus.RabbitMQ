@@ -36,6 +36,18 @@
 
         public void Start(int maximumConcurrencyLevel)
         {
+            if (receiveOptions.DefaultPrefetchCount > 0)
+            {
+                actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
+            }
+            else
+            {
+                actualPrefetchCount = Convert.ToUInt16(maximumConcurrencyLevel);
+
+                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);                
+            }
+
+
             var secondaryReceiveSettings = receiveOptions.GetSettings(workQueue);
 
             actualConcurrencyLevel = maximumConcurrencyLevel + secondaryReceiveSettings.MaximumConcurrencyLevel;
@@ -127,7 +139,7 @@
 
                 using (var channel = connection.CreateModel())
                 {
-                    channel.BasicQos(0, receiveOptions.PrefetchCount, false);
+                    channel.BasicQos(0, actualPrefetchCount, false);
 
                     var consumer = new QueueingBasicConsumer(channel);
 
@@ -256,7 +268,7 @@
         int actualConcurrencyLevel;
         readonly IManageRabbitMqConnections connectionManager;
         readonly ReceiveOptions receiveOptions;
-     
+        ushort actualPrefetchCount;
 
 
         class ConsumeParams

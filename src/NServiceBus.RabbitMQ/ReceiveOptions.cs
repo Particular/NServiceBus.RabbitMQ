@@ -5,20 +5,20 @@ namespace NServiceBus.Transports.RabbitMQ
     class ReceiveOptions
     {
         public MessageConverter Converter { get; private set; }
-        public ushort PrefetchCount { get; private set; }
+        public ushort DefaultPrefetchCount { get; private set; }
         public int DequeueTimeout { get; private set; }
         public bool PurgeOnStartup { get; private set; }
         public string ConsumerTag { get; private set; }
 
         public ReceiveOptions(Func<string, SecondaryReceiveSettings> getSecondaryReceiveSettings,
             MessageConverter converter,
-            ushort prefetchCount, 
+            ushort defaultPrefetchCount, 
             int dequeueTimeout,
             bool purgeOnStartup,
             string consumerTag)
         {
             Converter = converter;
-            PrefetchCount = prefetchCount;
+            DefaultPrefetchCount = defaultPrefetchCount;
             DequeueTimeout = dequeueTimeout;
             PurgeOnStartup = purgeOnStartup;
             ConsumerTag = consumerTag;

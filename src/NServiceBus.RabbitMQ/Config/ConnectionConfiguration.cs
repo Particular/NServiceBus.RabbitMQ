@@ -12,7 +12,6 @@
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
         public const int DefaultDequeueTimeout = 1;
-        public const ushort DefaultPrefetchCount = 1;
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
@@ -47,7 +46,6 @@
             Password = "guest";
             RequestedHeartbeat = DefaultHeartBeatInSeconds;
             DequeueTimeout = DefaultDequeueTimeout;
-            PrefetchCount = DefaultPrefetchCount;
             MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();
