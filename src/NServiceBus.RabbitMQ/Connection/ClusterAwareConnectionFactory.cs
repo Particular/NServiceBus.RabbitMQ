@@ -52,7 +52,7 @@
             return connectionFactory.CreateConnection();
         }
 
-        public virtual IHostConfiguration CurrentHost
+        public virtual HostConfiguration CurrentHost
         {
             get { return clusterHostSelectionStrategy.Current().HostConfiguration; }
         }
