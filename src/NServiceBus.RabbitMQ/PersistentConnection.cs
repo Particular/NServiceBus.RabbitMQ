@@ -16,7 +16,7 @@ namespace NServiceBus.Transports.RabbitMQ
     [SkipWeaving]
     class PersistentConnection: IConnection
     {
-        public PersistentConnection(IConnectionFactory connectionFactory, TimeSpan retryDelay,string purpose)
+        public PersistentConnection(ClusterAwareConnectionFactory connectionFactory, TimeSpan retryDelay,string purpose)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
@@ -286,7 +286,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
         bool disposed;
         IConnection connection;
-        readonly IConnectionFactory connectionFactory;
+        readonly ClusterAwareConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
         readonly string purpose;
 

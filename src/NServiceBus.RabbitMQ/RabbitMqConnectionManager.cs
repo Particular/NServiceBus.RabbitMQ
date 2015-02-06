@@ -7,7 +7,7 @@
 
     class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
     {
-        public RabbitMqConnectionManager(IConnectionFactory connectionFactory, IConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionManager(ClusterAwareConnectionFactory connectionFactory, IConnectionConfiguration connectionConfiguration)
         {
             this.connectionFactory = connectionFactory;
             this.connectionConfiguration = connectionConfiguration;
@@ -62,7 +62,7 @@
             }
         }
 
-        IConnectionFactory connectionFactory;
+        ClusterAwareConnectionFactory connectionFactory;
         IConnectionConfiguration connectionConfiguration;
         PersistentConnection connectionConsume;
         PersistentConnection connectionAdministration;

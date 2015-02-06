@@ -7,11 +7,11 @@
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
-    class ConnectionFactoryWrapper : IConnectionFactory
+    class ClusterAwareConnectionFactory
     {
         public IConnectionConfiguration Configuration { get; private set; }
      
-        public ConnectionFactoryWrapper(IConnectionConfiguration connectionConfiguration, IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
+        public ClusterAwareConnectionFactory(IConnectionConfiguration connectionConfiguration, IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
         {
             this.clusterHostSelectionStrategy = clusterHostSelectionStrategy;
             if (connectionConfiguration == null)
