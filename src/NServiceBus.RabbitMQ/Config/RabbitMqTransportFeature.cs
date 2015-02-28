@@ -155,7 +155,7 @@
         {
 
             var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
-            var timeToWaitBeforeTriggeringOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/TimeToWaitBeforeTriggering"] ?? "00:02:00";
+            var timeToWaitBeforeTriggeringOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/TimeToWaitBeforeTriggering"];
 
             if (!string.IsNullOrEmpty(timeToWaitBeforeTriggeringOverride))
             {
@@ -163,7 +163,7 @@
             }
 
             var delayAfterFailure = TimeSpan.FromSeconds(5);
-            var delayAfterFailureOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/DelayAfterFailure"] ?? "00:02:00";
+            var delayAfterFailureOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/DelayAfterFailure"];
 
             if (!string.IsNullOrEmpty(delayAfterFailureOverride))
             {
@@ -172,7 +172,7 @@
 
             return new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
                 timeToWaitBeforeTriggering, 
-                ex => criticalError.Raise("Repeated failures when communicating with the RabbitMq broker",
+                ex => criticalError.Raise("Repeated failures when communicating with the broker",
                     ex), delayAfterFailure);
         }
 
