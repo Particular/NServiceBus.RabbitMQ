@@ -210,6 +210,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.1.3\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.1.3\Volatile\When_sending_to_non_durable_endpoint.cs" />
     <Compile Include="When_using_direct_routing.cs" />
+    <Compile Include="When_the_broker_connection_is_lost.cs" />
     <Compile Include="When_using_a_custom_message_id_strategy.cs" />
     <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="When_scaling_out_senders_that_uses_callbacks.cs" />
