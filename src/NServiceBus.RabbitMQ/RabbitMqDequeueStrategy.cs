@@ -36,6 +36,8 @@
 
         public void Start(int maximumConcurrencyLevel)
         {
+            isStopping = false;
+
             if (receiveOptions.DefaultPrefetchCount > 0)
             {
                 actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
@@ -79,16 +81,26 @@
         /// </summary>
         public void Stop()
         {
+            if (isStopping)
+            {
+                return;
+            }
+            
+            isStopping = true;
+
             if (tokenSource == null)
             {
                 return;
             }
 
             tokenSource.Cancel();
-            DrainStopSemaphore();
+
+            WaitForThreadsToStop();
+
+            tokenSource = null;
         }
 
-        void DrainStopSemaphore()
+        void WaitForThreadsToStop()
         {
             for (var index = 0; index < actualConcurrencyLevel; index++)
             {
@@ -224,6 +236,10 @@
             {
                 //Unable to write data to the transport connection: An existing connection was forcibly closed by the remote host.
                 //This exception is expected because we are shutting down!
+                if (!isStopping)
+                {
+                    throw;
+                }
             }
             finally
             {
@@ -270,6 +286,7 @@
         readonly IManageRabbitMqConnections connectionManager;
         readonly ReceiveOptions receiveOptions;
         ushort actualPrefetchCount;
+        bool isStopping;
 
 
         class ConsumeParams
