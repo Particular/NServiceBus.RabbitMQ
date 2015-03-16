@@ -126,6 +126,7 @@
                 {
                     t.Exception.Handle(ex =>
                     {
+                        Logger.Error("Failed to receive messages from " + queue,t.Exception);
                         circuitBreaker.Failure(ex);
                         return true;
                     });
