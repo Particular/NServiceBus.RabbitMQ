@@ -22,7 +22,7 @@
             var address = Address.Parse(ReceiverQueue);
 
             Parallel.For(0, 2000, i =>
-                sender.Send(new TransportMessage(){Body = new byte[1]}, new SendOptions(address)));
+                sender.Send(new TransportMessage{Body = new byte[1]}, new SendOptions(address)));
 
             dequeueStrategy.Start(50);
             Thread.Sleep(1000);
