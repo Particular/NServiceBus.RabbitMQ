@@ -116,7 +116,7 @@ namespace NServiceBus.Transports.RabbitMQ
                                exception.Message);
         }
 
-        void OnConnectionShutdown(IConnection _, ShutdownEventArgs reason)
+        void OnConnectionShutdown(object sender, ShutdownEventArgs reason)
         {
             if (disposed)
             {
@@ -209,25 +209,27 @@ namespace NServiceBus.Transports.RabbitMQ
             get { return connection.ShutdownReport; }
         }
 
-        public event ConnectionShutdownEventHandler ConnectionShutdown
+        public ConsumerWorkService ConsumerWorkService { get { return connection.ConsumerWorkService; } }
+
+        public event EventHandler<ShutdownEventArgs> ConnectionShutdown
         {
             add { connection.ConnectionShutdown += value; }
             remove { connection.ConnectionShutdown -= value; }
         }
 
-        public event CallbackExceptionEventHandler CallbackException
+        public event EventHandler<CallbackExceptionEventArgs> CallbackException
         {
             add { connection.CallbackException += value; }
             remove { connection.CallbackException -= value; }
         }
 
-        public event ConnectionBlockedEventHandler ConnectionBlocked
+        public event EventHandler<ConnectionBlockedEventArgs> ConnectionBlocked
         {
             add { connection.ConnectionBlocked += value; }
             remove { connection.ConnectionBlocked -= value; }
         }
 
-        public event ConnectionUnblockedEventHandler ConnectionUnblocked
+        public event EventHandler<EventArgs> ConnectionUnblocked
         {
             add { connection.ConnectionUnblocked += value; }
             remove { connection.ConnectionUnblocked -= value; }
