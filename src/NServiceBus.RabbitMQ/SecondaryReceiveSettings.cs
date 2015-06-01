@@ -19,7 +19,7 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 throw new ArgumentException("Receive queue must not be empty.", "secondaryReceiveQueue");
             }
-            return new SecondaryReceiveSettings()
+            return new SecondaryReceiveSettings
             {
                 ReceiveQueue = secondaryReceiveQueue,
                 MaximumConcurrencyLevel = maximumConcurrencyLevel,
