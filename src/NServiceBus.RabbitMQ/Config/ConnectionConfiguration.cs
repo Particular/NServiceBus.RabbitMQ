@@ -15,7 +15,6 @@
         public const ushort DefaultPort = 5672;
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
-        IEnumerable<HostConfiguration> hosts= new List<HostConfiguration>();
 
         public ushort Port { get; set; }
         public string VirtualHost { get; set; }
@@ -32,10 +31,7 @@
             private set { clientProperties = value; }
         }
 
-        public IEnumerable<HostConfiguration> Hosts {
-            get { return hosts; }
-            private set { hosts = value; }
-        }
+        public HostConfiguration HostConfiguration { get; private set; }
 
         public ConnectionConfiguration()
         {
@@ -72,28 +68,26 @@
 
         public void Validate()
         {
-            if (!Hosts.Any())
+            if (HostConfiguration == null)
             {
                 throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
-            foreach (var hostConfiguration in Hosts)
+
+            if (HostConfiguration.Port == 0)
             {
-                if (hostConfiguration.Port == 0)
-                {
-                    hostConfiguration.Port = Port;
-                }
+                HostConfiguration.Port = Port;
             }
         }
 
         public void ParseHosts(string hostsConnectionString)
         {
             var hostsAndPorts = hostsConnectionString.Split(',');
-            hosts = (from hostAndPort in hostsAndPorts
+            HostConfiguration = (from hostAndPort in hostsAndPorts
                     select hostAndPort.Split(':') into hostParts
                     let host = hostParts.ElementAt(0)
                     let portString = hostParts.ElementAtOrDefault(1)
                     let port = (portString == null) ? Port : ushort.Parse(portString)
-                    select new HostConfiguration { Host = host, Port = port }).ToList();
+                    select new HostConfiguration { Host = host, Port = port }).FirstOrDefault();
         }
 
     }

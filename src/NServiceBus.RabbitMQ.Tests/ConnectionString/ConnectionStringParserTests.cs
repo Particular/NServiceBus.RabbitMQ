@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests.ConnectionString
 {
     using System;
-    using System.Linq;
     using Config;
     using NUnit.Framework;
     using Settings;
@@ -10,17 +9,15 @@
     public class ConnectionStringParserTests
     {
         const string connectionString =
-            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234,192.168.1.2:2345;password=abc_xyz;port=12345;requestedHeartbeat=3;prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
+            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
 
         [Test]
         public void Should_correctly_parse_full_connection_string() {
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse(connectionString);
 
-            Assert.AreEqual(connectionConfiguration.Hosts.First().Host, "192.168.1.1");
-            Assert.AreEqual(connectionConfiguration.Hosts.First().Port, 1234);
-            Assert.AreEqual(connectionConfiguration.Hosts.Last().Host, "192.168.1.2");
-            Assert.AreEqual(connectionConfiguration.Hosts.Last().Port, 2345);
+            Assert.AreEqual(connectionConfiguration.HostConfiguration.Host, "192.168.1.1");
+            Assert.AreEqual(connectionConfiguration.HostConfiguration.Port, 1234);
             Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
@@ -41,43 +38,34 @@
         }
 
         [Test]
-        public void Should_parse_list_of_hosts() {
+        public void Should_parse_host() {
 
             var parser = new ConnectionStringParser(new SettingsHolder());
-            var connectionConfiguration = parser.Parse("host=host.one:1001,host.two:1002,host.three:1003");
-            var hosts = connectionConfiguration.Hosts;
+            var connectionConfiguration = parser.Parse("host=host.one:1001");
+            var hostConfiguration = connectionConfiguration.HostConfiguration;
 
-            Assert.AreEqual(hosts.Count(), 3);
-            Assert.AreEqual(hosts.ElementAt(0).Host, "host.one");
-            Assert.AreEqual(hosts.ElementAt(0).Port, 1001);
-            Assert.AreEqual(hosts.ElementAt(1).Host, "host.two");
-            Assert.AreEqual(hosts.ElementAt(1).Port, 1002);
-            Assert.AreEqual(hosts.ElementAt(2).Host, "host.three");
-            Assert.AreEqual(hosts.ElementAt(2).Port, 1003);
+            Assert.AreEqual(hostConfiguration.Host, "host.one");
+            Assert.AreEqual(hostConfiguration.Port, 1001);
         }
 
         [Test]
-        public void Should_parse_list_of_hosts_with_single_port()
+        public void Should_parse_host_with_separate_port()
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
-            var connectionConfiguration = parser.Parse("host=my.host.com,my.host2.com;port=1234");
+            var connectionConfiguration = parser.Parse("host=my.host.com;port=1234");
 
-            Assert.AreEqual(connectionConfiguration.Hosts.First().Host, "my.host.com");
-            Assert.AreEqual(connectionConfiguration.Hosts.Last().Host, "my.host2.com");
-            Assert.AreEqual(connectionConfiguration.Hosts.First().Port, 1234);
-            Assert.AreEqual(connectionConfiguration.Hosts.Last().Port, 1234);
+            Assert.AreEqual(connectionConfiguration.HostConfiguration.Host, "my.host.com");
+            Assert.AreEqual(connectionConfiguration.HostConfiguration.Port, 1234);
         }
 
         [Test]
-        public void Should_parse_list_of_hosts_without_ports() {
+        public void Should_parse_host_without_port() {
 
             var parser = new ConnectionStringParser(new SettingsHolder());
-            var connectionConfiguration = parser.Parse("host=my.host.com,my.host2.com");
+            var connectionConfiguration = parser.Parse("host=my.host.com");
 
-            Assert.AreEqual(connectionConfiguration.Hosts.First().Host, "my.host.com");
-            Assert.AreEqual(connectionConfiguration.Hosts.Last().Host, "my.host2.com");
-            Assert.AreEqual(connectionConfiguration.Hosts.First().Port, 5672);
-            Assert.AreEqual(connectionConfiguration.Hosts.Last().Port, 5672);
+            Assert.AreEqual(connectionConfiguration.HostConfiguration.Host, "my.host.com");
+            Assert.AreEqual(connectionConfiguration.HostConfiguration.Port, 5672);
         }
 
         [Test]
@@ -85,7 +73,7 @@
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse("host=myHost");
-            Assert.AreEqual("myHost", connectionConfiguration.Hosts.First().Host);
+            Assert.AreEqual("myHost", connectionConfiguration.HostConfiguration.Host);
         }
 
 
@@ -102,7 +90,7 @@
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse("host=localhost;port=8181");
-            Assert.AreEqual(8181, connectionConfiguration.Hosts.First().Port);
+            Assert.AreEqual(8181, connectionConfiguration.HostConfiguration.Port);
         }
 
         [Test]

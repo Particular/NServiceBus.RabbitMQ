@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests.ConnectionString
 {
-    using System.Linq;
     using Config;
     using NUnit.Framework;
     using Settings;
@@ -27,7 +26,7 @@
         public void Should_default_the_port_if_not_set() {
             connectionString = ("host=myHost");
             connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(ConnectionConfiguration.DefaultPort, connectionConfiguration.Hosts.First().Port);
+            Assert.AreEqual(ConnectionConfiguration.DefaultPort, connectionConfiguration.HostConfiguration.Port);
         }
 
         [Test]

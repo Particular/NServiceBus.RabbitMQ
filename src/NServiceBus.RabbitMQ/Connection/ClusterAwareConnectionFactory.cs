@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using EasyNetQ;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
@@ -18,26 +17,23 @@
             {
                 throw new ArgumentNullException("connectionConfiguration");
             }
-            if (!connectionConfiguration.Hosts.Any())
+            if (connectionConfiguration.HostConfiguration == null)
             {
-                throw new Exception("At least one host must be defined in connectionConfiguration");
+                throw new Exception("A host must be defined in connectionConfiguration");
             }
 
             Configuration = connectionConfiguration;
 
-            foreach (var hostConfiguration in Configuration.Hosts)
-            {
-                clusterHostSelectionStrategy.Add(new ConnectionFactoryInfo(new ConnectionFactory
-                    {
-                        HostName = hostConfiguration.Host,
-                        Port = hostConfiguration.Port,
-                        VirtualHost = Configuration.VirtualHost,
-                        UserName = Configuration.UserName,
-                        Password = Configuration.Password,
-                        RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                        ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
-                    }, hostConfiguration));
-            }
+            clusterHostSelectionStrategy.Add(new ConnectionFactoryInfo(new ConnectionFactory
+                {
+                    HostName = connectionConfiguration.HostConfiguration.Host,
+                    Port = connectionConfiguration.HostConfiguration.Port,
+                    VirtualHost = Configuration.VirtualHost,
+                    UserName = Configuration.UserName,
+                    Password = Configuration.Password,
+                    RequestedHeartbeat = Configuration.RequestedHeartbeat,
+                    ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
+                }, connectionConfiguration.HostConfiguration));
         }
 
         
