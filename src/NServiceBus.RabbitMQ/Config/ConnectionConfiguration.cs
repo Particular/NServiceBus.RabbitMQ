@@ -82,6 +82,17 @@
         public void ParseHosts(string hostsConnectionString)
         {
             var hostsAndPorts = hostsConnectionString.Split(',');
+
+            if (hostsAndPorts.Length > 1)
+            {
+                var message =
+                    "Multiple hosts are no longer supported. " +
+                    "If you are using RabbitMQ in a cluster, " +
+                        "consider using a load balancer to represent the nodes as a single host.";
+
+                throw new ArgumentException(message, "hostsConnectionString");
+            }
+
             HostConfiguration = (from hostAndPort in hostsAndPorts
                     select hostAndPort.Split(':') into hostParts
                     let host = hostParts.ElementAt(0)
