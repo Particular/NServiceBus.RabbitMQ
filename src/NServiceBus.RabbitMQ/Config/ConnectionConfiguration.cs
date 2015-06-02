@@ -13,20 +13,33 @@
         public const ushort DefaultHeartBeatInSeconds = 5;
         public const int DefaultDequeueTimeout = 1;
         public const ushort DefaultPort = 5672;
+
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
+
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
 
         public ushort Port { get; set; }
+
         public string VirtualHost { get; set; }
+
         public string UserName { get; set; }
+
         public string Password { get; set; }
+
         public ushort RequestedHeartbeat { get; set; }
+
         public int DequeueTimeout { get; set; }
+
         public ushort PrefetchCount { get; set; }
+
         public bool UsePublisherConfirms { get; set; }
+
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
+
         public TimeSpan RetryDelay { get; set; }
-        public IDictionary<string, object> ClientProperties {
+
+        public IDictionary<string, object> ClientProperties
+        {
             get { return clientProperties; }
             private set { clientProperties = value; }
         }
@@ -63,7 +76,6 @@
             clientProperties.Add("machine_name", hostname);
             clientProperties.Add("user", UserName);
             clientProperties.Add("connected", DateTime.Now.ToString("G"));
-
         }
 
         public void Validate()
@@ -93,13 +105,14 @@
                 throw new ArgumentException(message, "hostsConnectionString");
             }
 
-            HostConfiguration = (from hostAndPort in hostsAndPorts
-                    select hostAndPort.Split(':') into hostParts
-                    let host = hostParts.ElementAt(0)
-                    let portString = hostParts.ElementAtOrDefault(1)
-                    let port = (portString == null) ? Port : ushort.Parse(portString)
-                    select new HostConfiguration { Host = host, Port = port }).FirstOrDefault();
+            HostConfiguration =
+                (from hostAndPort in hostsAndPorts
+                 select hostAndPort.Split(':') into hostParts
+                 let host = hostParts.ElementAt(0)
+                 let portString = hostParts.ElementAtOrDefault(1)
+                 let port = (portString == null) ? Port : ushort.Parse(portString)
+                 select new HostConfiguration { Host = host, Port = port })
+                .FirstOrDefault();
         }
-
     }
 }

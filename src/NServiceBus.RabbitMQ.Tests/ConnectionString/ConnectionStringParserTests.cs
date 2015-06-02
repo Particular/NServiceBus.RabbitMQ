@@ -9,10 +9,12 @@
     public class ConnectionStringParserTests
     {
         const string connectionString =
-            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
+            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
+            "prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
 
         [Test]
-        public void Should_correctly_parse_full_connection_string() {
+        public void Should_correctly_parse_full_connection_string()
+        {
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse(connectionString);
 
@@ -31,14 +33,16 @@
 
         [Test]
         [ExpectedException(typeof(Exception))]
-        public void Should_fail_if_host_is_not_present() {
+        public void Should_fail_if_host_is_not_present()
+        {
 
             var parser = new ConnectionStringParser(new SettingsHolder());
             parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3");
         }
 
         [Test]
-        public void Should_parse_host() {
+        public void Should_parse_host()
+        {
 
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse("host=host.one:1001");
@@ -59,7 +63,8 @@
         }
 
         [Test]
-        public void Should_parse_host_without_port() {
+        public void Should_parse_host_without_port()
+        {
 
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse("host=my.host.com");
@@ -145,15 +150,19 @@
         public void Should_throw_if_given_badly_formatted_max_wait_time_for_confirms()
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
-            var formatException = Assert.Throws<FormatException>(() => parser.Parse("host=localhost;maxWaitTimeForConfirms=00:0d0:10"));
-            Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.",formatException.Message);
+            var formatException = Assert.Throws<FormatException>(
+                () => parser.Parse("host=localhost;maxWaitTimeForConfirms=00:0d0:10"));
+            
+            Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
         }
 
         [Test]
         public void Should_throw_if_given_badly_formatted_retry_delay()
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
-            var formatException = Assert.Throws<FormatException>(() => parser.Parse("host=localhost;retryDelay=00:0d0:10"));
+            var formatException = Assert.Throws<FormatException>(
+                () => parser.Parse("host=localhost;retryDelay=00:0d0:10"));
+            
             Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
         }
 

@@ -9,14 +9,17 @@
     class ClusterAwareConnectionFactory
     {
         public ConnectionConfiguration Configuration { get; private set; }
-     
-        public ClusterAwareConnectionFactory(ConnectionConfiguration connectionConfiguration, IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
+
+        public ClusterAwareConnectionFactory(
+            ConnectionConfiguration connectionConfiguration,
+            IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy)
         {
             this.clusterHostSelectionStrategy = clusterHostSelectionStrategy;
             if (connectionConfiguration == null)
             {
                 throw new ArgumentNullException("connectionConfiguration");
             }
+
             if (connectionConfiguration.HostConfiguration == null)
             {
                 throw new Exception("A host must be defined in connectionConfiguration");
@@ -24,19 +27,20 @@
 
             Configuration = connectionConfiguration;
 
-            clusterHostSelectionStrategy.Add(new ConnectionFactoryInfo(new ConnectionFactory
-                {
-                    HostName = connectionConfiguration.HostConfiguration.Host,
-                    Port = connectionConfiguration.HostConfiguration.Port,
-                    VirtualHost = Configuration.VirtualHost,
-                    UserName = Configuration.UserName,
-                    Password = Configuration.Password,
-                    RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                    ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
-                }, connectionConfiguration.HostConfiguration));
+            clusterHostSelectionStrategy.Add(
+                new ConnectionFactoryInfo(
+                    new ConnectionFactory
+                    {
+                        HostName = connectionConfiguration.HostConfiguration.Host,
+                        Port = connectionConfiguration.HostConfiguration.Port,
+                        VirtualHost = Configuration.VirtualHost,
+                        UserName = Configuration.UserName,
+                        Password = Configuration.Password,
+                        RequestedHeartbeat = Configuration.RequestedHeartbeat,
+                        ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
+                    },
+                    connectionConfiguration.HostConfiguration));
         }
-
-        
 
         public virtual IConnection CreateConnection(string purpose)
         {
@@ -44,7 +48,7 @@
             var connectionFactory = connectionFactoryInfo.ConnectionFactory;
 
             connectionFactory.ClientProperties["purpose"] = purpose;
-        
+
             return connectionFactory.CreateConnection();
         }
 
@@ -80,10 +84,10 @@
             {
                 dictionary.Add(clientProperty.Key, clientProperty.Value);
             }
+
             return dictionary;
         }
 
         readonly IClusterHostSelectionStrategy<ConnectionFactoryInfo> clusterHostSelectionStrategy;
-
     }
 }
