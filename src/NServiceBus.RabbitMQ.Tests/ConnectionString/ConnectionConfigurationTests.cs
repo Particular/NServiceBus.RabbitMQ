@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests.ConnectionString
 {
+    using System;
     using Config;
     using NUnit.Framework;
     using Settings;
@@ -69,6 +70,25 @@ Assert.AreEqual(            defaults.UserName,"guest");
         [Test]
         public void Should_set_default_virtual_host() {
 Assert.AreEqual(            defaults.VirtualHost,"/");
+        }
+
+        [Test]
+        public void Should_inform_that_multiple_hosts_are_not_supported()
+        {
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost,host=localhost2");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
+            Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
         }
     }
 }
