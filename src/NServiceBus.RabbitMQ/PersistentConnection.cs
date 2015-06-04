@@ -88,8 +88,8 @@ namespace NServiceBus.Transports.RabbitMQ
                 connection.ConnectionShutdown += OnConnectionShutdown;
 
                 Logger.InfoFormat("Connected to RabbitMQ. Broker: '{0}', Port: {1}, VHost: '{2}'",
-                                  connectionFactory.HostConfiguration.Host,
-                                  connectionFactory.HostConfiguration.Port,
+                                  connectionFactory.Configuration.HostConfiguration.Host,
+                                  connectionFactory.Configuration.HostConfiguration.Port,
                                   connectionFactory.Configuration.VirtualHost);
             }
             else
@@ -107,8 +107,8 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             Logger.ErrorFormat("Failed to connect to Broker: '{0}', Port: {1} VHost: '{2}'. " +
                                "ExceptionMessage: '{3}'",
-                               connectionFactory.HostConfiguration.Host,
-                               connectionFactory.HostConfiguration.Port,
+                               connectionFactory.Configuration.HostConfiguration.Host,
+                               connectionFactory.Configuration.HostConfiguration.Port,
                                connectionFactory.Configuration.VirtualHost,
                                exception.Message);
         }

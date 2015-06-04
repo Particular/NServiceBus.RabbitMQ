@@ -34,8 +34,6 @@
                 RequestedHeartbeat = Configuration.RequestedHeartbeat,
                 ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
             };
-
-            hostConfiguration = connectionConfiguration.HostConfiguration;
         }
 
         public virtual IConnection CreateConnection(string purpose)
@@ -43,11 +41,6 @@
             connectionFactory.ClientProperties["purpose"] = purpose;
 
             return connectionFactory.CreateConnection();
-        }
-
-        public virtual HostConfiguration HostConfiguration
-        {
-            get { return hostConfiguration; }
         }
 
         static IDictionary<string, object> ConvertToHashtable(IDictionary<string, object> clientProperties)
@@ -62,6 +55,5 @@
         }
 
         readonly ConnectionFactory connectionFactory;
-        readonly HostConfiguration hostConfiguration;
     }
 }
