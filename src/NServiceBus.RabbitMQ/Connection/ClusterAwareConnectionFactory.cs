@@ -24,24 +24,22 @@
 
             Configuration = connectionConfiguration;
 
-            connectionFactoryInfo = new ConnectionFactoryInfo(
-                new ConnectionFactory
-                {
-                    HostName = connectionConfiguration.HostConfiguration.Host,
-                    Port = connectionConfiguration.HostConfiguration.Port,
-                    VirtualHost = Configuration.VirtualHost,
-                    UserName = Configuration.UserName,
-                    Password = Configuration.Password,
-                    RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                    ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
-                },
-                connectionConfiguration.HostConfiguration);
+            connectionFactory = new ConnectionFactory
+            {
+                HostName = connectionConfiguration.HostConfiguration.Host,
+                Port = connectionConfiguration.HostConfiguration.Port,
+                VirtualHost = Configuration.VirtualHost,
+                UserName = Configuration.UserName,
+                Password = Configuration.Password,
+                RequestedHeartbeat = Configuration.RequestedHeartbeat,
+                ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
+            };
+
+            hostConfiguration = connectionConfiguration.HostConfiguration;
         }
 
         public virtual IConnection CreateConnection(string purpose)
         {
-            var connectionFactory = connectionFactoryInfo.ConnectionFactory;
-
             connectionFactory.ClientProperties["purpose"] = purpose;
 
             return connectionFactory.CreateConnection();
@@ -49,7 +47,7 @@
 
         public virtual HostConfiguration HostConfiguration
         {
-            get { return connectionFactoryInfo.HostConfiguration; }
+            get { return hostConfiguration; }
         }
 
         static IDictionary<string, object> ConvertToHashtable(IDictionary<string, object> clientProperties)
@@ -63,6 +61,7 @@
             return dictionary;
         }
 
-        readonly ConnectionFactoryInfo connectionFactoryInfo;
+        readonly ConnectionFactory connectionFactory;
+        readonly HostConfiguration hostConfiguration;
     }
 }
