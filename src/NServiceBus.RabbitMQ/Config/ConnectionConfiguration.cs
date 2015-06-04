@@ -13,29 +13,38 @@
         public const ushort DefaultHeartBeatInSeconds = 5;
         public const int DefaultDequeueTimeout = 1;
         public const ushort DefaultPort = 5672;
+
         public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
+
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
-        IEnumerable<HostConfiguration> hosts= new List<HostConfiguration>();
 
         public ushort Port { get; set; }
+
         public string VirtualHost { get; set; }
+
         public string UserName { get; set; }
+
         public string Password { get; set; }
+
         public ushort RequestedHeartbeat { get; set; }
+
         public int DequeueTimeout { get; set; }
+
         public ushort PrefetchCount { get; set; }
+
         public bool UsePublisherConfirms { get; set; }
+
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
+
         public TimeSpan RetryDelay { get; set; }
-        public IDictionary<string, object> ClientProperties {
+
+        public IDictionary<string, object> ClientProperties
+        {
             get { return clientProperties; }
             private set { clientProperties = value; }
         }
 
-        public IEnumerable<HostConfiguration> Hosts {
-            get { return hosts; }
-            private set { hosts = value; }
-        }
+        public HostConfiguration HostConfiguration { get; private set; }
 
         public ConnectionConfiguration()
         {
@@ -67,34 +76,43 @@
             clientProperties.Add("machine_name", hostname);
             clientProperties.Add("user", UserName);
             clientProperties.Add("connected", DateTime.Now.ToString("G"));
-
         }
 
         public void Validate()
         {
-            if (!Hosts.Any())
+            if (HostConfiguration == null)
             {
                 throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
-            foreach (var hostConfiguration in Hosts)
+
+            if (HostConfiguration.Port == 0)
             {
-                if (hostConfiguration.Port == 0)
-                {
-                    hostConfiguration.Port = Port;
-                }
+                HostConfiguration.Port = Port;
             }
         }
 
         public void ParseHosts(string hostsConnectionString)
         {
             var hostsAndPorts = hostsConnectionString.Split(',');
-            hosts = (from hostAndPort in hostsAndPorts
-                    select hostAndPort.Split(':') into hostParts
-                    let host = hostParts.ElementAt(0)
-                    let portString = hostParts.ElementAtOrDefault(1)
-                    let port = (portString == null) ? Port : ushort.Parse(portString)
-                    select new HostConfiguration { Host = host, Port = port }).ToList();
-        }
 
+            if (hostsAndPorts.Length > 1)
+            {
+                var message =
+                    "Multiple hosts are no longer supported. " +
+                    "If you are using RabbitMQ in a cluster, " +
+                        "consider using a load balancer to represent the nodes as a single host.";
+
+                throw new ArgumentException(message, "hostsConnectionString");
+            }
+
+            HostConfiguration =
+                (from hostAndPort in hostsAndPorts
+                 select hostAndPort.Split(':') into hostParts
+                 let host = hostParts.ElementAt(0)
+                 let portString = hostParts.ElementAtOrDefault(1)
+                 let port = (portString == null) ? Port : ushort.Parse(portString)
+                 select new HostConfiguration { Host = host, Port = port })
+                .FirstOrDefault();
+        }
     }
 }
