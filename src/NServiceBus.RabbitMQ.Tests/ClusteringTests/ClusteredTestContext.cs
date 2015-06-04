@@ -249,8 +249,7 @@
         {
             var config = new ConnectionStringParser(new SettingsHolder()).Parse(connectionString);
             //            config.OverrideClientProperties();
-            var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
-            var connectionFactory = new ClusterAwareConnectionFactory(config, selectionStrategy);
+            var connectionFactory = new ClusterAwareConnectionFactory(config);
             var newConnectionManager = new RabbitMqConnectionManager(connectionFactory, config);
             return newConnectionManager;
         }
