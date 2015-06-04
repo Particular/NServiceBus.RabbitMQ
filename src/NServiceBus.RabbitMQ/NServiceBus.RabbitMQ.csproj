@@ -83,9 +83,7 @@
     <Compile Include="Config\ConnectionConfiguration.cs" />
     <Compile Include="Connection\ConnectionFactoryInfo.cs" />
     <Compile Include="Connection\ClusterAwareConnectionFactory.cs" />
-    <Compile Include="Connection\DefaultClusterHostSelectionStrategy.cs" />
     <Compile Include="Connection\HostConfiguration.cs" />
-    <Compile Include="Connection\IClusterHostSelectionStrategy.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="OpenPublishChannelBehavior.cs" />

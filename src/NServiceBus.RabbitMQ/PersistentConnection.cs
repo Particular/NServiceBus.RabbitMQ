@@ -68,36 +68,33 @@ namespace NServiceBus.Transports.RabbitMQ
                 return;
             }
 
-            connectionFactory.Reset();
-            do
+            var success = false;
+            try
             {
-                try
-                {
-                    connection = connectionFactory.CreateConnection(purpose);
-                    connectionFactory.Success();
-                }
-                catch (System.Net.Sockets.SocketException socketException)
-                {
-                    LogException(socketException);
-                }
-                catch (BrokerUnreachableException brokerUnreachableException)
-                {
-                    LogException(brokerUnreachableException);
-                }
-            } while (connectionFactory.Next());
+                connection = connectionFactory.CreateConnection(purpose);
+                success = true;
+            }
+            catch (System.Net.Sockets.SocketException socketException)
+            {
+                LogException(socketException);
+            }
+            catch (BrokerUnreachableException brokerUnreachableException)
+            {
+                LogException(brokerUnreachableException);
+            }
 
-            if (connectionFactory.Succeeded)
+            if (success)
             {
                 connection.ConnectionShutdown += OnConnectionShutdown;
 
                 Logger.InfoFormat("Connected to RabbitMQ. Broker: '{0}', Port: {1}, VHost: '{2}'",
-                                  connectionFactory.CurrentHost.Host,
-                                  connectionFactory.CurrentHost.Port,
+                                  connectionFactory.HostConfiguration.Host,
+                                  connectionFactory.HostConfiguration.Port,
                                   connectionFactory.Configuration.VirtualHost);
             }
             else
             {
-                Logger.ErrorFormat("Failed to connected to any Broker. Retrying in {0}", retryDelay);
+                Logger.ErrorFormat("Failed to connected to the Broker. Retrying in {0}", retryDelay);
                 StartTryToConnect();
             }
         }
@@ -110,8 +107,8 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             Logger.ErrorFormat("Failed to connect to Broker: '{0}', Port: {1} VHost: '{2}'. " +
                                "ExceptionMessage: '{3}'",
-                               connectionFactory.CurrentHost.Host,
-                               connectionFactory.CurrentHost.Port,
+                               connectionFactory.HostConfiguration.Host,
+                               connectionFactory.HostConfiguration.Port,
                                connectionFactory.Configuration.VirtualHost,
                                exception.Message);
         }
