@@ -67,7 +67,7 @@
             var config = new ConnectionConfiguration();
             config.ParseHosts("localhost:5672");
 
-            var connectionFactory = new ClusterAwareConnectionFactory(config);
+            var connectionFactory = new RabbitMqConnectionFactory(config);
             connectionManager = new RabbitMqConnectionManager(connectionFactory, config);
 
             publishChannel = connectionManager.GetPublishConnection().CreateModel();

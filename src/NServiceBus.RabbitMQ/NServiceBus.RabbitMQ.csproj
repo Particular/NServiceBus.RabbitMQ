@@ -81,7 +81,7 @@
     <Compile Include="ConfirmsAwareChannel.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
-    <Compile Include="Connection\ClusterAwareConnectionFactory.cs" />
+    <Compile Include="Connection\RabbitMqConnectionFactory.cs" />
     <Compile Include="Connection\HostConfiguration.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />

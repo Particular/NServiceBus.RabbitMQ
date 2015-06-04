@@ -4,11 +4,11 @@
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
-    class ClusterAwareConnectionFactory
+    class RabbitMqConnectionFactory
     {
         public ConnectionConfiguration Configuration { get; private set; }
 
-        public ClusterAwareConnectionFactory(ConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
             if (connectionConfiguration == null)
             {
