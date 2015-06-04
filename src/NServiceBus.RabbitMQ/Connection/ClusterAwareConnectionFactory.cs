@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
-    using System.Collections.Generic;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
@@ -9,8 +8,7 @@
     {
         public ConnectionConfiguration Configuration { get; private set; }
 
-        public ClusterAwareConnectionFactory(
-            ConnectionConfiguration connectionConfiguration)
+        public ClusterAwareConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
             if (connectionConfiguration == null)
             {
@@ -19,7 +17,8 @@
 
             if (connectionConfiguration.HostConfiguration == null)
             {
-                throw new Exception("A host must be defined in connectionConfiguration");
+                throw new ArgumentException(
+                    "The connectionConfiguration has a null HostConfiguration.", "connectionConfiguration");
             }
 
             Configuration = connectionConfiguration;
@@ -32,26 +31,14 @@
                 UserName = Configuration.UserName,
                 Password = Configuration.Password,
                 RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                ClientProperties = ConvertToHashtable(Configuration.ClientProperties)
+                ClientProperties = Configuration.ClientProperties
             };
         }
 
         public virtual IConnection CreateConnection(string purpose)
         {
             connectionFactory.ClientProperties["purpose"] = purpose;
-
             return connectionFactory.CreateConnection();
-        }
-
-        static IDictionary<string, object> ConvertToHashtable(IDictionary<string, object> clientProperties)
-        {
-            var dictionary = new Dictionary<string, object>();
-            foreach (var clientProperty in clientProperties)
-            {
-                dictionary.Add(clientProperty.Key, clientProperty.Value);
-            }
-
-            return dictionary;
         }
 
         readonly ConnectionFactory connectionFactory;
