@@ -150,13 +150,6 @@
             ClusterRabbitNode(3, 1);
         }
 
-        void ResetCluster()
-        {
-            StartNode(1);
-            ClusterRabbitNode(2, 1, withReset: true);
-            ClusterRabbitNode(3, 1, withReset: true);
-        }
-
         void SetHAPolicy()
         {
             const string command = @"set_policy ha-all ""^(?!amq\.).*"" ""{""""ha-mode"""": """"all""""}""";
