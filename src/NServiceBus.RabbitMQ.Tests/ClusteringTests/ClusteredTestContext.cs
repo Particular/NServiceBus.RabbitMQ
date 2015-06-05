@@ -150,13 +150,6 @@
             ClusterRabbitNode(3, 1);
         }
 
-        void ResetCluster()
-        {
-            StartNode(1);
-            ClusterRabbitNode(2, 1, withReset: true);
-            ClusterRabbitNode(3, 1, withReset: true);
-        }
-
         void SetHAPolicy()
         {
             const string command = @"set_policy ha-all ""^(?!amq\.).*"" ""{""""ha-mode"""": """"all""""}""";
@@ -249,8 +242,7 @@
         {
             var config = new ConnectionStringParser(new SettingsHolder()).Parse(connectionString);
             //            config.OverrideClientProperties();
-            var selectionStrategy = new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>();
-            var connectionFactory = new ClusterAwareConnectionFactory(config, selectionStrategy);
+            var connectionFactory = new RabbitMqConnectionFactory(config);
             var newConnectionManager = new RabbitMqConnectionManager(connectionFactory, config);
             return newConnectionManager;
         }

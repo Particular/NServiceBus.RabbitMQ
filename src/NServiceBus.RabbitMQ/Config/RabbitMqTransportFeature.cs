@@ -147,7 +147,7 @@
             {
                 context.Container.ConfigureComponent<RabbitMqConnectionManager>(DependencyLifecycle.SingleInstance);
 
-                context.Container.ConfigureComponent(builder => new ClusterAwareConnectionFactory(builder.Build<ConnectionConfiguration>(), new DefaultClusterHostSelectionStrategy<ConnectionFactoryInfo>()), DependencyLifecycle.InstancePerCall);
+                context.Container.ConfigureComponent(builder => new RabbitMqConnectionFactory(builder.Build<ConnectionConfiguration>()), DependencyLifecycle.InstancePerCall);
             }
         }
 

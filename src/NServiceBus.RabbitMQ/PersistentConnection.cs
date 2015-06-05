@@ -17,7 +17,7 @@ namespace NServiceBus.Transports.RabbitMQ
     [SkipWeaving]
     class PersistentConnection: IConnection
     {
-        public PersistentConnection(ClusterAwareConnectionFactory connectionFactory, TimeSpan retryDelay,string purpose)
+        public PersistentConnection(RabbitMqConnectionFactory connectionFactory, TimeSpan retryDelay,string purpose)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
@@ -68,36 +68,33 @@ namespace NServiceBus.Transports.RabbitMQ
                 return;
             }
 
-            connectionFactory.Reset();
-            do
+            var success = false;
+            try
             {
-                try
-                {
-                    connection = connectionFactory.CreateConnection(purpose);
-                    connectionFactory.Success();
-                }
-                catch (System.Net.Sockets.SocketException socketException)
-                {
-                    LogException(socketException);
-                }
-                catch (BrokerUnreachableException brokerUnreachableException)
-                {
-                    LogException(brokerUnreachableException);
-                }
-            } while (connectionFactory.Next());
+                connection = connectionFactory.CreateConnection(purpose);
+                success = true;
+            }
+            catch (System.Net.Sockets.SocketException socketException)
+            {
+                LogException(socketException);
+            }
+            catch (BrokerUnreachableException brokerUnreachableException)
+            {
+                LogException(brokerUnreachableException);
+            }
 
-            if (connectionFactory.Succeeded)
+            if (success)
             {
                 connection.ConnectionShutdown += OnConnectionShutdown;
 
                 Logger.InfoFormat("Connected to RabbitMQ. Broker: '{0}', Port: {1}, VHost: '{2}'",
-                                  connectionFactory.CurrentHost.Host,
-                                  connectionFactory.CurrentHost.Port,
+                                  connectionFactory.Configuration.HostConfiguration.Host,
+                                  connectionFactory.Configuration.HostConfiguration.Port,
                                   connectionFactory.Configuration.VirtualHost);
             }
             else
             {
-                Logger.ErrorFormat("Failed to connected to any Broker. Retrying in {0}", retryDelay);
+                Logger.ErrorFormat("Failed to connected to the Broker. Retrying in {0}", retryDelay);
                 StartTryToConnect();
             }
         }
@@ -110,8 +107,8 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             Logger.ErrorFormat("Failed to connect to Broker: '{0}', Port: {1} VHost: '{2}'. " +
                                "ExceptionMessage: '{3}'",
-                               connectionFactory.CurrentHost.Host,
-                               connectionFactory.CurrentHost.Port,
+                               connectionFactory.Configuration.HostConfiguration.Host,
+                               connectionFactory.Configuration.HostConfiguration.Port,
                                connectionFactory.Configuration.VirtualHost,
                                exception.Message);
         }
@@ -289,7 +286,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
         bool disposed;
         IConnection connection;
-        readonly ClusterAwareConnectionFactory connectionFactory;
+        readonly RabbitMqConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
         readonly string purpose;
 
