@@ -103,6 +103,7 @@
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
     <Compile Include="ReceiveOptions.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
+    <Compile Include="v3-obsoletes.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml">
