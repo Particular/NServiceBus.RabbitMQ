@@ -8,16 +8,12 @@
     [TestFixture]
     public class ConnectionConfigurationTests
     {
-        #region Setup/Teardown
-
         [SetUp]
         public void Setup()
         {
             parser = new ConnectionStringParser(new SettingsHolder());
             defaults = new ConnectionConfiguration();
         }
-
-        #endregion
 
         ConnectionConfiguration defaults;
         ConnectionStringParser parser;
