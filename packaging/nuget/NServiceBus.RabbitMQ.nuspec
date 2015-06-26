@@ -21,6 +21,5 @@
   </metadata>
   <files>
     <file src="..\..\binaries\NServiceBus.Transports.RabbitMQ.???" target="lib\net45" />
-    <file src="..\..\src\NServiceBus.RabbitMQ\**\*.cs" exclude="..\..\src\NServiceBus.RabbitMQ\**\TemporaryGeneratedFile_*.cs" target="src" />
   </files>
 </package>
