@@ -28,12 +28,6 @@
             config.EnableFeature<TimeoutManagerBasedDeferral>();
 
             config.GetSettings().EnableFeatureByDefault<TimeoutManager>();
-
-            //enable the outbox unless the users hasn't disabled it
-            if (config.GetSettings().GetOrDefault<bool>(typeof(Features.Outbox).FullName))
-            {
-                config.EnableOutbox();
-            }
         }
     }
 }
