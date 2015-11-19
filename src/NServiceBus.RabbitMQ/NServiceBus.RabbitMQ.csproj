@@ -88,7 +88,6 @@
     <Compile Include="OpenPublishChannelBehavior.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
-    <Compile Include="ForwardCallbackQueueHeaderBehavior.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RabbitMqDequeueStrategy.cs" />
@@ -98,11 +97,13 @@
     <Compile Include="RabbitMqSubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
+    <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
     <Compile Include="ReceiveOptions.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
+    <Compile Include="SetOutgoingCallbackAddressBehavior.cs" />
     <Compile Include="v3-obsoletes.cs" />
   </ItemGroup>
   <ItemGroup>
