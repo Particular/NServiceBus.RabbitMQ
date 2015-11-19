@@ -16,6 +16,7 @@
     using Support;
     using Unicast;
     using Config;
+    using NServiceBus.Pipeline.Contexts;
     using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     public abstract class ClusteredTestContext
@@ -232,10 +233,7 @@
 
         void SetupMessageSender()
         {
-            sender = new RabbitMqMessageSender
-            {
-                ChannelProvider = new FakeChannelProvider(publishChannel)
-            };
+            sender = new RabbitMqMessageSender(null, new FakeChannelProvider(publishChannel), new IncomingContext(null, null));
         }
 
         static RabbitMqConnectionManager SetupRabbitMqConnectionManager(string connectionString)
