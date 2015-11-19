@@ -222,6 +222,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="When_a_message_is_retried_and_succeeds_with_a_reply.cs" />
     <Compile Include="When_using_direct_routing.cs" />
     <Compile Include="When_the_broker_connection_is_lost.cs" />
     <Compile Include="When_using_a_custom_message_id_strategy.cs" />
