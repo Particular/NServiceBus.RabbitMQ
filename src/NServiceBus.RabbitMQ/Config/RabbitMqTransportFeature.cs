@@ -3,6 +3,7 @@
     using System;
     using System.Configuration;
     using NServiceBus.CircuitBreakers;
+    using NServiceBus.Pipeline;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using RabbitMQ.Client.Events;
     using Settings;
@@ -88,17 +89,20 @@
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
 
             context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
+            context.Pipeline.Register<ReadIncomingCallbackAddressBehavior.Registration>();
 
-            context.Container.ConfigureComponent<RabbitMqMessageSender>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent(b => new RabbitMqMessageSender(b.Build<IRoutingTopology>(), b.Build<IChannelProvider>(), b.Build<PipelineExecutor>().CurrentContext),  DependencyLifecycle.InstancePerCall);
 
             if (useCallbackReceiver)
             {
-                context.Container.ConfigureProperty<RabbitMqMessageSender>(p => p.CallbackQueue, callbackQueue);
                 context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
                     .ConfigureProperty(p => p.Enabled, true)
                     .ConfigureProperty(p => p.CallbackQueueAddress, Address.Parse(callbackQueue));
 
-                context.Pipeline.Register<ForwardCallbackQueueHeaderBehavior.Registration>();
+                //context.Pipeline.Register<ForwardCallbackQueueHeaderBehavior.Registration>();
+                context.Pipeline.Register<SetOutgoingCallbackAddressBehavior.Registration>();
+                context.Container.ConfigureComponent<SetOutgoingCallbackAddressBehavior>(DependencyLifecycle.SingleInstance)
+                    .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
             }
 
             context.Container.ConfigureComponent<ChannelProvider>(DependencyLifecycle.InstancePerCall)
