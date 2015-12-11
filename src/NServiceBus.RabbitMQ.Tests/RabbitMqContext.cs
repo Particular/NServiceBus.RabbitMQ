@@ -8,6 +8,7 @@
     using Config;
     using global::RabbitMQ.Client;
     using NServiceBus.CircuitBreakers;
+    using NServiceBus.Pipeline.Contexts;
     using NServiceBus.Support;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
@@ -74,12 +75,7 @@
 
             var channelProvider = new FakeChannelProvider(publishChannel);
 
-            sender = new RabbitMqMessageSender
-            {
-                ChannelProvider = channelProvider,
-                RoutingTopology = routingTopology,
-                CallbackQueue = CallbackQueue
-            };
+            sender = new RabbitMqMessageSender(routingTopology, channelProvider, new IncomingContext(null, null));
 
             dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, new RepeatedFailuresOverTimeCircuitBreaker("UnitTest",TimeSpan.FromMinutes(2),e=>{}),
                 new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"));

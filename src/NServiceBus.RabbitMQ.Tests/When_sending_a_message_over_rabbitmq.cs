@@ -4,7 +4,6 @@
     using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.Support;
     using NUnit.Framework;
     using Unicast;
     using Unicast.Queuing;
@@ -75,16 +74,14 @@
                 });
 
         }
+
         [Test]
-        public void Should_populate_the_callback_header()
+        public void Should_not_populate_the_callback_header()
         {
             Verify(new TransportMessageBuilder(),
-                (t, r) => Assert.AreEqual("testreceiver."+RuntimeEnvironment.MachineName, t.Headers[RabbitMqMessageSender.CallbackHeaderKey]));
+                (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
 
         }
-
-
-
        
         [Test]
         public void Should_set_correlation_id_if_present()
