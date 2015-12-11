@@ -21,7 +21,7 @@
                 properties.Expiration = message.TimeToBeReceived.TotalMilliseconds.ToString();
             }
 
-            properties.SetPersistent(message.Recoverable);
+            properties.Persistent = message.Recoverable;
 
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
