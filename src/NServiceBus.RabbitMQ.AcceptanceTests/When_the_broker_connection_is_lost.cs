@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Transports.RabbitMQ;
@@ -9,18 +10,15 @@
     public class When_the_broker_connection_is_lost
     {
         [Test]
-        public void Should_reconnect()
+        public async Task Should_reconnect()
         {
-            var context = new Context
+            var context = await Scenario.Define<MyContext>(myContext =>
             {
-                MessageId = Guid.NewGuid().ToString()
-            };
-
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>()
-                   .Done(c => context.GotTheMessage)
-                   .AllowExceptions()
-                   .Run();
+                myContext.MessageId = Guid.NewGuid().ToString();
+            })
+                .WithEndpoint<Receiver>()
+                .Done(c => c.GotTheMessage)
+                .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
@@ -36,40 +34,46 @@
             class ConnectionKiller:IWantToRunWhenBusStartsAndStops
             {
                 readonly IManageRabbitMqConnections connectionManager;
-                readonly IBus bus;
-                readonly Context context;
+                readonly MyContext myContext;
 
-                public ConnectionKiller(IManageRabbitMqConnections connectionManager,IBus bus,Context context)
+                public ConnectionKiller(IManageRabbitMqConnections connectionManager, MyContext myContext)
                 {
                     this.connectionManager = connectionManager;
-                    this.bus = bus;
-                    this.context = context;
+                    this.myContext = myContext;
                 }
 
-                public void Start()
+                public Task Start(IBusContext context)
                 {
                     connectionManager.GetConsumeConnection().Abort();
-                    bus.SendLocal(new MyRequest
+                    return context.SendLocal(new MyRequest
                     {
-                        MessageId = context.MessageId
+                        MessageId = myContext.MessageId
                     });
                 }
 
-                public void Stop()
+                public Task Stop(IBusContext context)
                 {
+                    return context.Completed();
                 }
             }
 
             class MyHandler : IHandleMessages<MyRequest>
             {
-                public Context Context { get; set; }
+                private readonly MyContext myContext;
 
-                public void Handle(MyRequest message)
+                public MyHandler(MyContext myContext)
                 {
-                    if (message.MessageId == Context.MessageId)
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                {
+                    if (message.MessageId == myContext.MessageId)
                     {
-                        Context.GotTheMessage = true;             
+                        myContext.GotTheMessage = true;
                     }
+
+                    return context.Completed();
                 }
             }
         }
@@ -79,7 +83,7 @@
             public string MessageId { get; set; }
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
             public string MessageId { get; set; }
