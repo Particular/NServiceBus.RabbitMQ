@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
+    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -7,18 +8,15 @@
     public class When_using_direct_routing
     {
         [Test]
-        public void Should_receive_the_message()
+        public async Task Should_receive_the_message()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.Given((bus, c) => bus.SendLocal(new MyRequest())))
-                   .Done(c => context.GotTheMessage)
+            var context = await Scenario.Define< MyContext>()
+                   .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                   .Done(c => c.GotTheMessage)
                    .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
-
 
         public class Receiver : EndpointConfigurationBuilder
         {
@@ -30,11 +28,18 @@
 
             class MyEventHandler : IHandleMessages<MyRequest>
             {
-                public Context Context { get; set; }
+                private readonly MyContext myContext;
 
-                public void Handle(MyRequest message)
+                public MyEventHandler(MyContext myContext)
                 {
-                    Context.GotTheMessage = true;
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                {
+                    myContext.GotTheMessage = true;
+
+                    return context.Completed();
                 }
             }
         }
@@ -43,7 +48,7 @@
         {
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
         }

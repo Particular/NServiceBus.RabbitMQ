@@ -268,6 +268,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1237\UnitOfWork\When_a_subscription_message_arrives.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1237\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1237\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="IMessageHandlerContextExtensions.cs" />
     <Compile Include="When_a_message_is_retried_and_succeeds_with_a_reply.cs" />
     <Compile Include="When_using_direct_routing.cs" />
     <Compile Include="When_the_broker_connection_is_lost.cs" />
