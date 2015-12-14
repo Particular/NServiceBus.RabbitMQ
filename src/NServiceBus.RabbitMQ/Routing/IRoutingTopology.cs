@@ -29,7 +29,7 @@
         /// <param name="type">Type to handle with subscriber</param>
         /// <param name="message">Message to publish</param>
         /// <param name="properties">RabbitMQ properties of the message to publish</param>
-        void Publish(IModel channel, Type type, TransportMessage message, IBasicProperties properties);
+        void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties);
         /// <summary>
         /// Send message to the specified endpoint
         /// </summary>
@@ -37,7 +37,7 @@
         /// <param name="address"></param>
         /// <param name="message"></param>
         /// <param name="properties"></param>
-        void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties);
+        void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties);
 
         /// <summary>
         /// Performs any initialisation logic needed (eg creating exchanges and bindings)

@@ -73,7 +73,6 @@
     <Reference Include="System.Web.Services" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="ChannelProvider.cs" />
     <Compile Include="Config\RabbitMqTransportFeature.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />

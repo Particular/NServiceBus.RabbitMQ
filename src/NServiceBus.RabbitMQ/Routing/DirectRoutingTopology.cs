@@ -6,7 +6,7 @@
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys
     /// </summary>
-    class DirectRoutingTopology:IRoutingTopology
+    class DirectRoutingTopology : IRoutingTopology
     {
         public DirectRoutingTopology(Conventions conventions, bool useDurableExchanges)
         {
@@ -25,14 +25,14 @@
             channel.QueueUnbind(subscriberName, ExchangeName(), GetRoutingKeyForBinding(type), null);
         }
 
-        public void Publish(IModel channel, Type type, TransportMessage message, IBasicProperties properties)
+        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
             channel.BasicPublish(ExchangeName(), GetRoutingKeyForPublish(type), true, false, properties, message.Body);
         }
 
-        public void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties)
+        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(string.Empty, address.Queue, true, false, properties, message.Body);
+            channel.BasicPublish(string.Empty, address, true, false, properties, message.Body);
         }
 
         public void Initialize(IModel channel, string main)
@@ -53,9 +53,9 @@
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
             }
-            // ReSharper disable EmptyGeneralCatchClause
+                // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
+                // ReSharper restore EmptyGeneralCatchClause
             {
 
             }
@@ -82,13 +82,13 @@
 
         public class Conventions
         {
-            public Conventions(Func<Address, Type, string> exchangeName, Func<Type, string> routingKey)
+            public Conventions(Func<string, Type, string> exchangeName, Func<Type, string> routingKey)
             {
                 ExchangeName = exchangeName;
                 RoutingKey = routingKey;
             }
 
-            public Func<Address, Type, string> ExchangeName { get; private set; }
+            public Func<string, Type, string> ExchangeName { get; private set; }
 
             public Func<Type, string> RoutingKey { get; private set; }
         }
