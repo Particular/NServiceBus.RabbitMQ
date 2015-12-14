@@ -55,15 +55,15 @@
             }
         }
 
-        public void Publish(IModel channel, Type type, TransportMessage message, IBasicProperties properties)
+        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
             SetupTypeSubscriptions(channel, type);
             channel.BasicPublish(ExchangeName(type), String.Empty, true, false, properties, message.Body);
         }
 
-        public void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties)
+        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
-            var subscriberName = address.Queue;
+            var subscriberName = address;
             channel.BasicPublish(subscriberName, String.Empty, true, false, properties, message.Body);
         }
 
@@ -75,13 +75,10 @@
 
         }
 
-        
         static string ExchangeName(Type type)
         {
             return type.Namespace + ":" + type.Name;
         }
-
-
 
         void SetupTypeSubscriptions(IModel channel, Type type)
         {
@@ -136,6 +133,5 @@
         }
 
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
-
     }
 }
