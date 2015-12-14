@@ -1,25 +1,46 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
+    using System.Threading.Tasks;
+    using NServiceBus.Settings;
     using Routing;
 
     class RabbitMqQueueCreator : ICreateQueues
     {
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
+        private readonly IManageRabbitMqConnections connections;
+        private readonly IRoutingTopology topology;
+        private readonly ReadOnlySettings settings;
 
-        public IRoutingTopology RoutingTopology { get; set; }
-
-        public Configure Configure { get; set; }
-
-        public void CreateQueueIfNecessary(Address address, string account)
+        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, ReadOnlySettings settings)
         {
-            using (var connection = ConnectionManager.GetAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueueDeclare(address.Queue, Configure.DurableMessagesEnabled(), false, false, null);
+            this.connections = connections;
+            this.topology = topology;
+            this.settings = settings;
+        }
 
-                RoutingTopology.Initialize(channel, address.Queue);
+        public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
+        {
+            foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+            {
+                CreateQueueIfNecessary(receivingAddress);
             }
 
+            foreach (var sendingAddress in queueBindings.SendingAddresses)
+            {
+                CreateQueueIfNecessary(sendingAddress);
+            }
+
+            return Task.FromResult(0);
+        }
+
+        private void CreateQueueIfNecessary(string receivingAddress)
+        {
+            using (var connection = connections.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueueDeclare(receivingAddress, settings.DurableMessagesEnabled(), false, false, null);
+
+                topology.Initialize(channel, receivingAddress);
+            }
         }
     }
 }
