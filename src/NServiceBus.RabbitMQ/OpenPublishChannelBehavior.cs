@@ -1,22 +1,23 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.Threading.Tasks;
     using Pipeline;
     using Pipeline.Contexts;
 
-    class OpenPublishChannelBehavior : IBehavior<IncomingContext>
+    class OpenPublishChannelBehavior : Behavior<IncomingLogicalMessageContext>
     {
         public IChannelProvider ChannelProvider { get; set; }
 
-        public void Invoke(IncomingContext context, Action next)
+        public override async Task Invoke(IncomingLogicalMessageContext context, Func<Task> next)
         {
             var lazyChannel = new Lazy<ConfirmsAwareChannel>(() => ChannelProvider.GetNewPublishChannel());
 
-            context.Set("RabbitMq.PublishChannel", lazyChannel);
+            context.Extensions.Set(new RabbitMq_PublishChannel(lazyChannel));
 
             try
             {
-                next();
+                await next().ConfigureAwait(false);
             }
             finally
             {
@@ -25,11 +26,19 @@
                     lazyChannel.Value.Dispose();
                 }
 
-                context.Remove("RabbitMq.PublishChannel");
+                context.Extensions.Remove<RabbitMq_PublishChannel>();
             }
         }
 
+        public struct RabbitMq_PublishChannel
+        {
+            public RabbitMq_PublishChannel(Lazy<ConfirmsAwareChannel> obj)
+            {
+                LazyChannel = obj;
+            }
 
+            public Lazy<ConfirmsAwareChannel> LazyChannel { get; }
+        }
 
         public class Registration : RegisterStep
         {

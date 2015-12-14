@@ -25,7 +25,7 @@
         {
            IModel channel;
 
-            if (channelProvider.TryGetPublishChannel(out channel))
+            if (channelProvider.TryGetPublishChannel(context, out channel))
             {
                 SendMessages(outgoingMessages, channel);
             }

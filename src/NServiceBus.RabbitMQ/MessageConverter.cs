@@ -11,7 +11,6 @@
 
     class MessageConverter
     {
-      
         public MessageConverter()
         {
             messageIdStrategy = DefaultMessageIdStrategy;
