@@ -14,7 +14,6 @@ namespace NServiceBus.Transports.RabbitMQ
 
         public TimeSpan MaxWaitTimeForConfirms { get; set; }
 
-
         bool IChannelProvider.TryGetPublishChannel(out IModel channel)
         {
             Lazy<ConfirmsAwareChannel> lazyChannel;

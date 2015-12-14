@@ -1,27 +1,38 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using global::RabbitMQ.Client;
-    using Unicast;
+    using NServiceBus.DeliveryConstraints;
+    using NServiceBus.Performance.TimeToBeReceived;
 
     static class RabbitMqTransportMessageExtensions
     {
-        public static void FillRabbitMqProperties(TransportMessage message, DeliveryOptions options, IBasicProperties properties)
+        internal static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
         {
-            properties.MessageId = message.Id;
+            constraint = list.OfType<T>().FirstOrDefault();
 
-            if (!String.IsNullOrEmpty(message.CorrelationId))
+            return constraint != null;
+        }
+
+        public static void FillRabbitMqProperties(OutgoingMessage message, DispatchOptions options, IBasicProperties properties)
+        {
+            properties.MessageId = message.MessageId;
+
+            if (message.Headers.ContainsKey(Headers.CorrelationId))
             {
-                properties.CorrelationId = message.CorrelationId;
+                properties.CorrelationId = message.Headers[Headers.CorrelationId];
             }
 
-            if (message.TimeToBeReceived < TimeSpan.MaxValue)
+            DiscardIfNotReceivedBefore timeToBeReceived;
+
+            if (TryGet(options.DeliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {
-                properties.Expiration = message.TimeToBeReceived.TotalMilliseconds.ToString();
+                properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString();
             }
 
-            properties.Persistent = message.Recoverable;
+            properties.Persistent = !options.DeliveryConstraints.Any(c => c is NonDurableDelivery);
 
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
@@ -42,10 +53,9 @@
                 properties.ContentType = "application/octet-stream";
             }
 
-            var replyToAddress = options.ReplyToAddress ?? message.ReplyToAddress;
-            if (replyToAddress != null)
+            if (message.Headers.ContainsKey(Headers.ReplyToAddress))
             {
-                properties.ReplyTo = replyToAddress.Queue;
+                properties.ReplyTo = message.Headers[Headers.ReplyToAddress];
             }
         }
     }
