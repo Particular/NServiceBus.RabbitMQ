@@ -3,6 +3,7 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Text;
     using global::RabbitMQ.Client.Events;
@@ -21,7 +22,7 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public TransportMessage ToTransportMessage(BasicDeliverEventArgs message)
+        public IncomingMessage ToTransportMessage(BasicDeliverEventArgs message)
         {
             var properties = message.BasicProperties;
 
@@ -29,13 +30,8 @@
 
             var headers = DeserializeHeaders(message);
 
-
-
-            var result = new TransportMessage(messageId, headers)
-            {
-                Body = message.Body ?? new byte[0],
-            };
-
+            var result = new IncomingMessage(messageId, headers, new MemoryStream(message.Body ?? new byte[0]));
+            
             if (properties.IsReplyToPresent())
             {
                 string replyToAddressNSBHeaders;
@@ -57,7 +53,7 @@
 
             if (properties.IsCorrelationIdPresent())
             {
-                result.CorrelationId = properties.CorrelationId;
+                result.Headers[Headers.CorrelationId] = properties.CorrelationId;
             }
 
             //When doing native interop we only require the type to be set the "fullName" of the message
@@ -68,9 +64,8 @@
 
             if (properties.IsDeliveryModePresent())
             {
-                result.Recoverable = properties.DeliveryMode == 2;
+                result.Headers[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
             }
-
 
             return result;
         }
