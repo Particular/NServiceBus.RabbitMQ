@@ -2,7 +2,6 @@
 {
     using System;
     using System.Threading.Tasks;
-    using NServiceBus.OutgoingPipeline;
     using NServiceBus.Pipeline;
 
     class SetOutgoingCallbackAddressBehavior : Behavior<OutgoingPhysicalMessageContext>

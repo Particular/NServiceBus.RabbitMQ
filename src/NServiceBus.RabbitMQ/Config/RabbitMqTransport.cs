@@ -41,7 +41,13 @@
             Initialize(context.Settings, context.ConnectionString);
 
             return new TransportReceivingConfigurationResult(
-                () => new FakePusher(),
+                () =>
+                {
+                    context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
+                    context.Pipeline.Register<ReadIncomingCallbackAddressBehavior.Registration>();
+
+                    return new FakePusher();
+                },
                 () => new RabbitMqQueueCreator(connectionManager, topology, context.Settings),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
