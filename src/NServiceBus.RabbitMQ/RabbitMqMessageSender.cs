@@ -5,12 +5,14 @@
     using global::RabbitMQ.Client;
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
-    using Routing;
+    using NServiceBus.Transports.RabbitMQ.Routing;
 
     class RabbitMqMessageSender : IDispatchMessages
     {
-        IRoutingTopology routingTopology;
+        public const string CallbackHeaderKey = "NServiceBus.RabbitMQ.CallbackQueue";
+        private static readonly string REPLY = MessageIntentEnum.Reply.ToString();
         IChannelProvider channelProvider;
+        IRoutingTopology routingTopology;
 
         public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider)
         {
@@ -18,12 +20,9 @@
             this.channelProvider = channelProvider;
         }
 
-
-        public const string CallbackHeaderKey = "NServiceBus.RabbitMQ.CallbackQueue";
-
         public Task Dispatch(IEnumerable<TransportOperation> outgoingMessages, ContextBag context)
         {
-           IModel channel;
+            IModel channel;
 
             if (channelProvider.TryGetPublishChannel(context, out channel))
             {
@@ -61,21 +60,21 @@
 
             if (unicastRouting != null)
             {
-                var destination = DetermineDestination(unicastRouting);
+                var destination = DetermineDestination(transportOperation, unicastRouting);
 
                 routingTopology.Send(channel, destination, message, properties);
 
                 return;
             }
 
-            var multicastRouting = (MulticastAddressTag)dispatchOptions.AddressTag;
+            var multicastRouting = (MulticastAddressTag) dispatchOptions.AddressTag;
 
             routingTopology.Publish(channel, multicastRouting.MessageType, message, properties);
         }
 
-        string DetermineDestination(UnicastAddressTag sendOptions)
+        static string DetermineDestination(TransportOperation transportOperation, UnicastAddressTag sendOptions)
         {
-            return RequestorProvidedCallbackAddress(sendOptions) ?? SenderProvidedDestination(sendOptions);
+            return RequestorProvidedCallbackAddress(transportOperation.Message.Headers) ?? SenderProvidedDestination(sendOptions);
         }
 
         static string SenderProvidedDestination(UnicastAddressTag sendOptions)
@@ -83,21 +82,26 @@
             return sendOptions.Destination;
         }
 
-        string RequestorProvidedCallbackAddress(UnicastAddressTag sendOptions)
+        static string RequestorProvidedCallbackAddress(IReadOnlyDictionary<string, string> headers)
         {
-            //TODO: Still need to deal with callback address, especially for backwards compatibility
+            string callbackAddress;
+            if (IsReply(headers) && headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
+            {
+                return callbackAddress;
+            }
 
-            //string callbackAddress;
-            //if (IsReply(sendOptions) && context.TryGet(CallbackHeaderKey, out callbackAddress))
-            //{
-            //    return callbackAddress;
-            //}
             return null;
         }
 
-        static bool IsReply(SendOptions sendOptions)
+        static bool IsReply(IReadOnlyDictionary<string, string> headers)
         {
-            return sendOptions.GetType().FullName.EndsWith("ReplyOptions");
+            string intent;
+            if (!headers.TryGetValue(Headers.MessageIntent, out intent))
+            {
+                return false;
+            }
+
+            return intent == REPLY;
         }
     }
 }
