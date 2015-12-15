@@ -9,7 +9,6 @@
     class ConnectionStringParser : DbConnectionStringBuilder
     {
         readonly ReadOnlySettings settings;
-        ConnectionConfiguration connectionConfiguration;
 
         public ConnectionStringParser(ReadOnlySettings settings)
         {
@@ -20,7 +19,7 @@
         {
             ConnectionString = connectionString;
 
-            connectionConfiguration = new ConnectionConfiguration();
+            ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
 
             foreach (var pair in
                 (from property in typeof(ConnectionConfiguration).GetProperties()
