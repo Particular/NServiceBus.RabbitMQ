@@ -128,7 +128,6 @@
 
                 DirectRoutingTopology.Conventions conventions;
 
-
                 if (context.Settings.TryGet(out conventions))
                 {
                     topology = new DirectRoutingTopology(conventions, durable);
@@ -137,7 +136,6 @@
                 {
                     topology = new ConventionalRoutingTopology(durable);
                 }
-
 
                 context.Container.RegisterSingleton(topology);
             }

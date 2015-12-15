@@ -6,11 +6,16 @@ namespace NServiceBus.Transports.RabbitMQ
 
     class ChannelProvider:IChannelProvider
     {
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
+        private readonly IManageRabbitMqConnections connectionManager;
+        private readonly bool usePublisherConfirms;
+        private readonly TimeSpan maxWaitTimeForConfirms;
 
-        public bool UsePublisherConfirms { get; set; }
-
-        public TimeSpan MaxWaitTimeForConfirms { get; set; }
+        public ChannelProvider(IManageRabbitMqConnections connectionManager, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
+        {
+            this.connectionManager = connectionManager;
+            this.usePublisherConfirms = usePublisherConfirms;
+            this.maxWaitTimeForConfirms = maxWaitTimeForConfirms;
+        }
 
         bool IChannelProvider.TryGetPublishChannel(ContextBag context, out IModel channel)
         {
@@ -29,7 +34,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
         public ConfirmsAwareChannel GetNewPublishChannel()
         {
-           return new ConfirmsAwareChannel(ConnectionManager.GetPublishConnection(), UsePublisherConfirms,MaxWaitTimeForConfirms);
+           return new ConfirmsAwareChannel(connectionManager.GetPublishConnection(), usePublisherConfirms, maxWaitTimeForConfirms);
         }
     }
 }
