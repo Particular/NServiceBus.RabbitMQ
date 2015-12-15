@@ -7,15 +7,6 @@
 
     class ReadIncomingCallbackAddressBehavior : Behavior<IncomingLogicalMessageContext>
     {
-        public class Registration : RegisterStep
-        {
-            public Registration()
-                : base("ReadIncomingCallbackAddressBehavior", typeof(ReadIncomingCallbackAddressBehavior), "Reads the callback address specified by the message sender and puts it into the context.")
-            {
-                InsertBefore(WellKnownStep.LoadHandlers);
-            }
-        }
-
         public override async Task Invoke(IncomingLogicalMessageContext context, Func<Task> next)
         {
             string incomingCallbackQueue;
@@ -25,6 +16,14 @@
             }
 
             await next().ConfigureAwait(false);
+        }
+
+        public class Registration : RegisterStep
+        {
+            public Registration()
+                : base("ReadIncomingCallbackAddressBehavior", typeof(ReadIncomingCallbackAddressBehavior), "Reads the callback address specified by the message sender and puts it into the context.")
+            {
+            }
         }
     }
 }

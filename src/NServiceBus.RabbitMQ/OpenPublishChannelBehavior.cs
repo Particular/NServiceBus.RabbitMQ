@@ -3,15 +3,19 @@
     using System;
     using System.Threading.Tasks;
     using Pipeline;
-    using Pipeline.Contexts;
 
-    class OpenPublishChannelBehavior : Behavior<IncomingLogicalMessageContext>
+    class OpenPublishChannelBehavior : Behavior<IncomingPhysicalMessageContext>
     {
-        public IChannelProvider ChannelProvider { get; set; }
+        private readonly IChannelProvider channelProvider;
 
-        public override async Task Invoke(IncomingLogicalMessageContext context, Func<Task> next)
+        public OpenPublishChannelBehavior(IChannelProvider channelProvider)
         {
-            var lazyChannel = new Lazy<ConfirmsAwareChannel>(() => ChannelProvider.GetNewPublishChannel());
+            this.channelProvider = channelProvider;
+        }
+
+        public override async Task Invoke(IncomingPhysicalMessageContext context, Func<Task> next)
+        {
+            var lazyChannel = new Lazy<ConfirmsAwareChannel>(() => channelProvider.GetNewPublishChannel());
 
             context.Extensions.Set(new RabbitMq_PublishChannel(lazyChannel));
 
@@ -45,7 +49,6 @@
             public Registration()
                 : base("OpenPublishChannelBehavior", typeof(OpenPublishChannelBehavior), "Makes sure that the is a publish channel available on the pipeline")
             {
-                InsertAfter(WellKnownStep.CreateChildContainer);
                 InsertBefore(WellKnownStep.ExecuteUnitOfWork);
             }
         }
