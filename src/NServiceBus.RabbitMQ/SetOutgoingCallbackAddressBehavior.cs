@@ -1,17 +1,18 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.Threading.Tasks;
+    using NServiceBus.OutgoingPipeline;
     using NServiceBus.Pipeline;
-    using NServiceBus.Pipeline.Contexts;
 
-    class SetOutgoingCallbackAddressBehavior : IBehavior<OutgoingContext>
+    class SetOutgoingCallbackAddressBehavior : Behavior<OutgoingPhysicalMessageContext>
     {
         public string CallbackQueue { get; set; }
 
-        public void Invoke(OutgoingContext context, Action next)
+        public override Task Invoke(OutgoingPhysicalMessageContext context, Func<Task> next)
         {
-            context.OutgoingMessage.Headers[RabbitMqMessageSender.CallbackHeaderKey] = CallbackQueue;
-            next();
+            context.Headers[RabbitMqMessageSender.CallbackHeaderKey] = CallbackQueue;
+            return next();
         }
 
         public class Registration : RegisterStep
@@ -19,8 +20,6 @@
             public Registration()
                 : base("SetOutgoingCallbackAddressBehavior", typeof(SetOutgoingCallbackAddressBehavior), "Writes out callback address to in outgoing message.")
             {
-                InsertAfter(WellKnownStep.SerializeMessage);
-                InsertBefore(WellKnownStep.DispatchMessageToTransport);
             }
         }
     }
