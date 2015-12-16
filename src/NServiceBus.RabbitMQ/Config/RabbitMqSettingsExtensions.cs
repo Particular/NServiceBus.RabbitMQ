@@ -63,7 +63,7 @@
         /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> DisableCallbackReceiver(this TransportExtensions<RabbitMQTransport> transportExtensions) 
         {
-            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.UseCallbackReceiverSettingKey, false);
+            transportExtensions.GetSettings().Set(RabbitMQTransport.UseCallbackReceiverSettingKey, false);
             return transportExtensions;
         }
 
@@ -79,7 +79,7 @@
             {
                 throw new ArgumentException("Maximum concurrency value must be greater than zero.", "maxConcurrency");
             }
-            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.MaxConcurrencyForCallbackReceiver, maxConcurrency);
+            transportExtensions.GetSettings().Set(RabbitMQTransport.MaxConcurrencyForCallbackReceiver, maxConcurrency);
             return transportExtensions;
         }
 
@@ -92,7 +92,7 @@
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs,string> customIdStrategy)
         {
 
-            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.CustomMessageIdStrategy, customIdStrategy);
+            transportExtensions.GetSettings().Set(RabbitMQTransport.CustomMessageIdStrategy, customIdStrategy);
             return transportExtensions;
         }
     }

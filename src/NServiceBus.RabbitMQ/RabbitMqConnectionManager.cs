@@ -47,15 +47,8 @@
 
         public void DisposeManaged()
         {
-
-            if (connectionConsume != null)
-            {
-                connectionConsume.Dispose();
-            }
-            if (connectionPublish != null)
-            {
-                connectionPublish.Dispose();
-            }
+            connectionConsume?.Dispose();
+            connectionPublish?.Dispose();
         }
 
         RabbitMqConnectionFactory connectionFactory;

@@ -16,7 +16,6 @@
     using Support;
     using Unicast;
     using Config;
-    using NServiceBus.Pipeline.Contexts;
     using TransactionSettings = Unicast.Transport.TransactionSettings;
 
     public abstract class ClusteredTestContext
