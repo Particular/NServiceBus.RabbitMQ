@@ -104,9 +104,22 @@
         {
             Initialize(context.Settings, context.ConnectionString);
 
+            CallbackAddress callbackAddress;
+
+            if (context.Settings.Get<bool>(UseCallbackReceiverSettingKey))
+            {
+                var queueName = context.Settings.Get<string>("NServiceBus.LocalAddress");
+                var callbackQueue = $"{queueName}.{RuntimeEnvironment.MachineName}";
+                callbackAddress = new CallbackAddress(callbackQueue);
+            }
+            else
+            {
+                callbackAddress = CallbackAddress.None();
+            }
+
             var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
 
-            return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider), () => Task.FromResult(StartupCheckResult.Success));
+            return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider, callbackAddress), () => Task.FromResult(StartupCheckResult.Success));
         }
 
         private void CreateConnectionManager()
