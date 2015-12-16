@@ -85,7 +85,6 @@
     <Compile Include="Connection\HostConfiguration.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="OpenPublishChannelBehavior.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />

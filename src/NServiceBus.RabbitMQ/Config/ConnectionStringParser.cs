@@ -19,7 +19,7 @@
         {
             ConnectionString = connectionString;
 
-            ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
+            var connectionConfiguration = new ConnectionConfiguration();
 
             foreach (var pair in
                 (from property in typeof(ConnectionConfiguration).GetProperties()
