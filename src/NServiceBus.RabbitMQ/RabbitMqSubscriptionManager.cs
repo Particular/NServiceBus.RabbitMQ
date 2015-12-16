@@ -5,6 +5,7 @@
     using NServiceBus.Extensibility;
     using Routing;
 
+    //TODO: Need to figure out how to new this one up ?
     class RabbitMqSubscriptionManager : IManageSubscriptions
     {
         public IManageRabbitMqConnections ConnectionManager { get; set; }

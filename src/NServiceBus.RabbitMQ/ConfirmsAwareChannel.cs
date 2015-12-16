@@ -10,7 +10,7 @@ namespace NServiceBus.Transports.RabbitMQ
     [SkipWeaving]
     class ConfirmsAwareChannel : IDisposable
     {
-        public IModel Channel { get; private set; }
+        public IModel Channel { get; }
 
         public ConfirmsAwareChannel(IConnection connection, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
         {

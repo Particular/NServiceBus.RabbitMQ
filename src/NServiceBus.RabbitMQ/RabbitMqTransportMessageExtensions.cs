@@ -9,7 +9,7 @@
 
     static class RabbitMqTransportMessageExtensions
     {
-        internal static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
+        static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
         {
             constraint = list.OfType<T>().FirstOrDefault();
 

@@ -6,19 +6,19 @@
 
     class RabbitMqConnectionFactory
     {
-        public ConnectionConfiguration Configuration { get; private set; }
+        public ConnectionConfiguration Configuration { get; }
 
         public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
             if (connectionConfiguration == null)
             {
-                throw new ArgumentNullException("connectionConfiguration");
+                throw new ArgumentNullException(nameof(connectionConfiguration));
             }
 
             if (connectionConfiguration.HostConfiguration == null)
             {
                 throw new ArgumentException(
-                    "The connectionConfiguration has a null HostConfiguration.", "connectionConfiguration");
+                    "The connectionConfiguration has a null HostConfiguration.", nameof(connectionConfiguration));
             }
 
             Configuration = connectionConfiguration;

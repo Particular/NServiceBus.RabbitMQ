@@ -6,17 +6,22 @@
     using System.Threading.Tasks;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
+    using NServiceBus.Support;
     using NServiceBus.Transports;
     using NServiceBus.Transports.RabbitMQ;
     using NServiceBus.Transports.RabbitMQ.Config;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using NServiceBus.Transports.RabbitMQ.Routing;
+    using RabbitMQ.Client.Events;
 
     /// <summary>
     ///     Transport definition for RabbirtMQ
     /// </summary>
     public class RabbitMQTransport : TransportDefinition
     {
+        internal const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
+        internal const string UseCallbackReceiverSettingKey = "RabbitMQ.UseCallbackReceiver";
+        internal const string MaxConcurrencyForCallbackReceiver = "RabbitMQ.MaxConcurrencyForCallbackReceiver";
         private ConnectionConfiguration connectionConfiguration;
         private IManageRabbitMqConnections connectionManager;
         private IRoutingTopology topology;
@@ -44,10 +49,48 @@
             return new TransportReceivingConfigurationResult(
                 () =>
                 {
-                    context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
-                    context.Pipeline.Register<ReadIncomingCallbackAddressBehavior.Registration>();
+                    var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
+                    var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiver);
+                    var queueName = context.Settings.Get<string>("NServiceBus.LocalAddress");
+                    var callbackQueue = $"{queueName}.{RuntimeEnvironment.MachineName}";
 
-                    return new FakePusher();
+                    MessageConverter messageConverter;
+
+                    if (context.Settings.HasSetting(CustomMessageIdStrategy))
+                    {
+                        messageConverter = new MessageConverter(context.Settings.Get<Func<BasicDeliverEventArgs, string>>(CustomMessageIdStrategy));
+                    }
+                    else
+                    {
+                        messageConverter = new MessageConverter();
+                    }
+
+                    string hostDisplayName;
+                    if (!context.Settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName)) //this was added in 5.1.2 of the core
+                    {
+                        hostDisplayName = RuntimeEnvironment.MachineName;
+                    }
+
+                    var consumerTag = $"{hostDisplayName} - {context.Settings.EndpointName()}";
+
+                    var receiveOptions = new ReceiveOptions(workQueue =>
+                    {
+                        //if this isn't the main queue we shouldn't use callback receiver
+                        if (!useCallbackReceiver || workQueue != queueName)
+                        {
+                            return SecondaryReceiveSettings.Disabled();
+                        }
+                        return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
+                    },
+                        messageConverter,
+                        connectionConfiguration.PrefetchCount,
+                        connectionConfiguration.DequeueTimeout*1000,
+                        context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
+                        consumerTag);
+
+                    var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
+
+                    return new RabbitMqMessagePump(connectionManager, topology, provider, receiveOptions);
                 },
                 () => new RabbitMqQueueCreator(connectionManager, topology, context.Settings),
                 () => Task.FromResult(StartupCheckResult.Success));

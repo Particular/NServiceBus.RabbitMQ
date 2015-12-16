@@ -35,6 +35,12 @@
             channel.BasicPublish(string.Empty, address, true, false, properties, message.Body);
         }
 
+        
+        public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
+        {
+            channel.BasicPublish(string.Empty, address, true, false, properties, body);
+        }
+
         public void Initialize(IModel channel, string main)
         {
             //nothing needs to be done for direct routing

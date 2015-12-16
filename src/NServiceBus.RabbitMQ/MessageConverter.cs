@@ -3,7 +3,6 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Text;
     using global::RabbitMQ.Client.Events;
@@ -21,16 +20,17 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public IncomingMessage ToTransportMessage(BasicDeliverEventArgs message)
+        public string RetrieveMessageId(BasicDeliverEventArgs message)
+        {
+            return messageIdStrategy(message);
+        }
+
+        public Dictionary<string, string> RetrieveHeaders(BasicDeliverEventArgs message)
         {
             var properties = message.BasicProperties;
 
-            var messageId = messageIdStrategy(message);
-
             var headers = DeserializeHeaders(message);
 
-            var result = new IncomingMessage(messageId, headers, new MemoryStream(message.Body ?? new byte[0]));
-            
             if (properties.IsReplyToPresent())
             {
                 string replyToAddressNSBHeaders;
@@ -52,21 +52,21 @@
 
             if (properties.IsCorrelationIdPresent())
             {
-                result.Headers[Headers.CorrelationId] = properties.CorrelationId;
+                headers[Headers.CorrelationId] = properties.CorrelationId;
             }
 
             //When doing native interop we only require the type to be set the "fullName" of the message
-            if (!result.Headers.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
+            if (!headers.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
-                result.Headers[Headers.EnclosedMessageTypes] = properties.Type;
+                headers[Headers.EnclosedMessageTypes] = properties.Type;
             }
 
             if (properties.IsDeliveryModePresent())
             {
-                result.Headers[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
+                headers[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
             }
 
-            return result;
+            return headers;
         }
 
         string DefaultMessageIdStrategy(BasicDeliverEventArgs message)
