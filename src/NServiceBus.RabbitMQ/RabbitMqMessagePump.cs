@@ -207,7 +207,7 @@ namespace NServiceBus.Transports.RabbitMQ
                             var messageProcessedOk = false;
                             Dictionary<string, string> headers = null;
                             string messageId = null;
-                            bool pushMessage = false;
+                            var pushMessage = false;
                             try
                             {
                                 messageId = receiveOptions.Converter.RetrieveMessageId(message);
@@ -229,8 +229,9 @@ namespace NServiceBus.Transports.RabbitMQ
                                 }
                                 catch (Exception ex2)
                                 {
-                                    // Move on, we tried our best
-                                    Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
+                                     Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
+
+                                    //todo: trigger the circuit breaker
                                 }
 
                                 //just ack the poison message to avoid getting stuck

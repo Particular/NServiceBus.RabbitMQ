@@ -21,8 +21,7 @@
         /// </summary>
         protected override void Setup(FeatureConfigurationContext context)
         {
-            context.Pipeline.Register<OpenPublishChannelBehavior.Registration>();
-            context.Pipeline.Register<ReadIncomingCallbackAddressBehavior.Registration>();
+             context.Pipeline.Register<ReadIncomingCallbackAddressBehavior.Registration>();
             context.Pipeline.Register<SetOutgoingCallbackAddressBehavior.Registration>();
         }
     }

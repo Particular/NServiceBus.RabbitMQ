@@ -22,32 +22,18 @@
 
         public Task Dispatch(IEnumerable<TransportOperation> outgoingMessages, ContextBag context)
         {
-            IModel channel;
-
-            if (channelProvider.TryGetPublishChannel(context, out channel))
+            using (var confirmsAwareChannel = channelProvider.GetNewPublishChannel())
             {
-                SendMessages(outgoingMessages, channel);
-            }
-            else
-            {
-                using (var confirmsAwareChannel = channelProvider.GetNewPublishChannel())
+                foreach (var transportOperation in outgoingMessages)
                 {
-                    SendMessages(outgoingMessages, confirmsAwareChannel.Channel);
+                    SendMessage(transportOperation, confirmsAwareChannel.Channel);
                 }
             }
 
             return TaskEx.Completed;
         }
 
-        private void SendMessages(IEnumerable<TransportOperation> outgoingMessages, IModel channel)
-        {
-            foreach (var transportOperation in outgoingMessages)
-            {
-                SendMessage(transportOperation, channel);
-            }
-        }
-
-        private void SendMessage(TransportOperation transportOperation, IModel channel)
+        void SendMessage(TransportOperation transportOperation, IModel channel)
         {
             var dispatchOptions = transportOperation.DispatchOptions;
             var message = transportOperation.Message;
