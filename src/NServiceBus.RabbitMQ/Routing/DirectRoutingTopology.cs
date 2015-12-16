@@ -94,9 +94,9 @@
                 RoutingKey = routingKey;
             }
 
-            public Func<string, Type, string> ExchangeName { get; private set; }
+            public Func<string, Type, string> ExchangeName { get; }
 
-            public Func<Type, string> RoutingKey { get; private set; }
+            public Func<Type, string> RoutingKey { get; }
         }
     }
 }
