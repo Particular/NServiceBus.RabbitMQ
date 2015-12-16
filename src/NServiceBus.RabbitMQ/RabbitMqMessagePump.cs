@@ -245,7 +245,7 @@ namespace NServiceBus.Transports.RabbitMQ
                                 string explicitCallbackAddress;
 
 
-                                if (headers.TryGetValue(CallbackAddress.HeaderKey, out explicitCallbackAddress))
+                                if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
                                 {
                                     context.Set(new CallbackAddress(explicitCallbackAddress));    
                                 }

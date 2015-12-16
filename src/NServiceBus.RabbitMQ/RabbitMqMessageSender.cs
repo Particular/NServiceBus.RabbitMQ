@@ -9,11 +9,11 @@
 
     class RabbitMqMessageSender : IDispatchMessages
     {
-        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider, CallbackAddress callbackAddress)
+        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider, Callbacks callbacks)
         {
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
-            this.callbackAddress = callbackAddress;
+            this.callbacks = callbacks;
         }
 
         public Task Dispatch(IEnumerable<TransportOperation> outgoingMessages, ContextBag context)
@@ -41,9 +41,9 @@
             RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, dispatchOptions, properties);
 
             //todo: we can optimize this to check if there are callbacks present via the new header set by the callbacks package as well
-            if (callbackAddress.HasValue)
+            if (callbacks.Enabled)
             {
-                properties.Headers[CallbackAddress.HeaderKey] = callbackAddress.Value;
+                properties.Headers[Callbacks.HeaderKey] = callbacks.QueueAddress;
             }
 
             if (unicastRouting != null)
@@ -67,11 +67,11 @@
                 return defaultDestination;
             }
 
-            CallbackAddress requestedCallbackAddress;
+            CallbackAddress callbackAddress;
 
-            if (context.TryGet(out requestedCallbackAddress))
+            if (context.TryGet(out callbackAddress))
             {
-                return requestedCallbackAddress.Value;
+                return callbackAddress.Address;
             }
 
             return defaultDestination;
@@ -90,7 +90,7 @@
 
         static string REPLY = MessageIntentEnum.Reply.ToString();
         IChannelProvider channelProvider;
-        CallbackAddress callbackAddress;
+        Callbacks callbacks;
         IRoutingTopology routingTopology;
     }
 }

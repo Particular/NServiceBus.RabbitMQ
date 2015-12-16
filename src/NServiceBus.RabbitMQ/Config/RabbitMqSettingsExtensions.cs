@@ -63,7 +63,7 @@
         /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> DisableCallbackReceiver(this TransportExtensions<RabbitMQTransport> transportExtensions) 
         {
-            transportExtensions.GetSettings().Set(RabbitMQTransport.UseCallbackReceiverSettingKey, false);
+            transportExtensions.GetSettings().Set(Callbacks.UseCallbackReceiverSettingKey, false);
             return transportExtensions;
         }
 
@@ -79,7 +79,7 @@
             {
                 throw new ArgumentException("Maximum concurrency value must be greater than zero.", nameof(maxConcurrency));
             }
-            transportExtensions.GetSettings().Set(RabbitMQTransport.MaxConcurrencyForCallbackReceiver, maxConcurrency);
+            transportExtensions.GetSettings().Set(Callbacks.MaxConcurrencyForCallbackReceiver, maxConcurrency);
             return transportExtensions;
         }
 

@@ -2,25 +2,11 @@ namespace NServiceBus.Transports.RabbitMQ
 {
     class CallbackAddress
     {
-        public const string HeaderKey = "NServiceBus.RabbitMQ.CallbackQueue";
+        public string Address { get; }
 
-        public string Value { get; }
-        public bool HasValue { get; }
-
-        public CallbackAddress(string value)
+        public CallbackAddress(string address)
         {
-            HasValue = true;
-            Value = value;
-        }
-
-        private CallbackAddress()
-        {
-            HasValue = false;
-        }
-
-        public static CallbackAddress None()
-        {
-            return new CallbackAddress();
+            Address = address;
         }
     }
 }

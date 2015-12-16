@@ -16,21 +16,13 @@
     using RabbitMQ.Client.Events;
 
     /// <summary>
-    ///     Transport definition for RabbirtMQ
+    /// Transport definition for RabbirtMQ
     /// </summary>
     [SkipWeaving]
     public class RabbitMQTransport : TransportDefinition, IDisposable
     {
-        internal const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
-        internal const string UseCallbackReceiverSettingKey = "RabbitMQ.UseCallbackReceiver";
-        internal const string MaxConcurrencyForCallbackReceiver = "RabbitMQ.MaxConcurrencyForCallbackReceiver";
-        private ConnectionConfiguration connectionConfiguration;
-        private RabbitMqConnectionManager connectionManager;
-        private IRoutingTopology topology;
-        private string localQueue;
-
         /// <summary>
-        ///     Ctor
+        /// Ctor
         /// </summary>
         public RabbitMQTransport()
         {
@@ -38,12 +30,20 @@
         }
 
         /// <summary>
-        ///     Gets an example connection string to use when reporting lack of configured connection string to the user.
+        /// Gets an example connection string to use when reporting lack of configured connection string to the user.
         /// </summary>
         public override string ExampleConnectionStringForErrorMessage => "host=localhost";
 
         /// <summary>
-        ///     Configures transport for receiving.
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            connectionManager.Dispose();
+        }
+
+        /// <summary>
+        /// Configures transport for receiving.
         /// </summary>
         protected override TransportReceivingConfigurationResult ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
@@ -52,20 +52,8 @@
             return new TransportReceivingConfigurationResult(
                 () =>
                 {
-                    bool useCallbackReceiver;
-
-                    if (!context.Settings.TryGet(UseCallbackReceiverSettingKey, out useCallbackReceiver))
-                    {
-                        useCallbackReceiver = true;
-                    }
-                    int maxConcurrencyForCallbackReceiver;
-                    if (!context.Settings.TryGet(MaxConcurrencyForCallbackReceiver, out maxConcurrencyForCallbackReceiver))
-                    {
-                        maxConcurrencyForCallbackReceiver = 1;
-                    }
-                    var queueName = context.Settings.Get<string>("NServiceBus.LocalAddress");
-                    var callbackQueue = $"{queueName}.{RuntimeEnvironment.MachineName}";
-
+                    var callbacks = new Callbacks(context.Settings);
+                    
                     MessageConverter messageConverter;
 
                     if (context.Settings.HasSetting(CustomMessageIdStrategy))
@@ -88,11 +76,11 @@
                     var receiveOptions = new ReceiveOptions(workQueue =>
                     {
                         //if this isn't the main queue we shouldn't use callback receiver
-                        if (!useCallbackReceiver || workQueue != queueName)
+                        if (!callbacks.IsEnabledFor(workQueue))
                         {
                             return SecondaryReceiveSettings.Disabled();
                         }
-                        return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
+                        return SecondaryReceiveSettings.Enabled(callbacks.QueueAddress, callbacks.MaxConcurrency);
                     },
                         messageConverter,
                         connectionConfiguration.PrefetchCount,
@@ -109,28 +97,17 @@
         }
 
         /// <summary>
-        ///     Configures transport for sending.
+        /// Configures transport for sending.
         /// </summary>
         protected override TransportSendingConfigurationResult ConfigureForSending(TransportSendingConfigurationContext context)
         {
             Initialize(context.Settings, context.ConnectionString);
 
-            CallbackAddress callbackAddress;
-
-            if (context.Settings.Get<bool>(UseCallbackReceiverSettingKey))
-            {
-                var queueName = context.Settings.Get<string>("NServiceBus.LocalAddress");
-                var callbackQueue = $"{queueName}.{RuntimeEnvironment.MachineName}";
-                callbackAddress = new CallbackAddress(callbackQueue);
-            }
-            else
-            {
-                callbackAddress = CallbackAddress.None();
-            }
-
+            var callbacks = new Callbacks(context.Settings);
+            
             var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
 
-            return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider, callbackAddress), () => Task.FromResult(StartupCheckResult.Success));
+            return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider, callbacks), () => Task.FromResult(StartupCheckResult.Success));
         }
 
         private void Initialize(ReadOnlySettings settings, string connectionString)
@@ -199,7 +176,7 @@
         }
 
         /// <summary>
-        ///     Returns the list of supported delivery constraints for this transport.
+        /// Returns the list of supported delivery constraints for this transport.
         /// </summary>
         public override IEnumerable<Type> GetSupportedDeliveryConstraints()
         {
@@ -208,7 +185,7 @@
         }
 
         /// <summary>
-        ///     Gets the highest supported transaction mode for the this transport.
+        /// Gets the highest supported transaction mode for the this transport.
         /// </summary>
         public override TransportTransactionMode GetSupportedTransactionMode()
         {
@@ -216,8 +193,8 @@
         }
 
         /// <summary>
-        ///     Will be called if the transport has indicated that it has native support for pub sub.
-        ///     Creates a transport address for the input queue defined by a logical address.
+        /// Will be called if the transport has indicated that it has native support for pub sub.
+        /// Creates a transport address for the input queue defined by a logical address.
         /// </summary>
         public override IManageSubscriptions GetSubscriptionManager()
         {
@@ -225,7 +202,7 @@
         }
 
         /// <summary>
-        ///     Returns the discriminator for this endpoint instance.
+        /// Returns the discriminator for this endpoint instance.
         /// </summary>
         public override string GetDiscriminatorForThisEndpointInstance(ReadOnlySettings settings)
         {
@@ -233,11 +210,11 @@
         }
 
         /// <summary>
-        ///     Converts a given logical address to the transport address.
+        /// Converts a given logical address to the transport address.
         /// </summary>
         /// <param name="logicalAddress">The logical address.</param>
         /// <returns>
-        ///     The transport address.
+        /// The transport address.
         /// </returns>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
@@ -258,19 +235,17 @@
         }
 
         /// <summary>
-        ///     Returns the outbound routing policy selected for the transport.
+        /// Returns the outbound routing policy selected for the transport.
         /// </summary>
         public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
         {
             return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            connectionManager.Dispose();
-        }
+        private ConnectionConfiguration connectionConfiguration;
+        private RabbitMqConnectionManager connectionManager;
+        private string localQueue;
+        private IRoutingTopology topology;
+        internal const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
     }
 }
