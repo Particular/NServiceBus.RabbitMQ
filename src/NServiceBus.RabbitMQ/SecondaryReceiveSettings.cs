@@ -22,7 +22,7 @@ namespace NServiceBus.Transports.RabbitMQ
             return new SecondaryReceiveSettings
             {
                 ReceiveQueue = secondaryReceiveQueue,
-                MaximumConcurrencyLevel = maximumConcurrencyLevel,
+                MaximumConcurrencyLevel = maximumConcurrencyLevel
             };
         }
 
