@@ -51,18 +51,23 @@
 
             class MyEventHandler : IHandleMessages<MyEvent>
             {
-                public MyContext MyContext { get; set; }
+                readonly MyContext myContext;
+
+                public MyEventHandler(MyContext context)
+                {
+                    myContext = context;
+                }
 
                 public Task Handle(MyEvent message, IMessageHandlerContext context)
                 {
                     if (RuntimeEnvironment.MachineName == "ScaledOutServerA")
                     {
-                        MyContext.ServerAGotTheEvent = true;
+                        myContext.ServerAGotTheEvent = true;
                     }
 
                     if (RuntimeEnvironment.MachineName == "ScaledOutServerB")
                     {
-                        MyContext.ServerBGotTheEvent = true;
+                        myContext.ServerBGotTheEvent = true;
                     }
 
                     return context.Completed();
