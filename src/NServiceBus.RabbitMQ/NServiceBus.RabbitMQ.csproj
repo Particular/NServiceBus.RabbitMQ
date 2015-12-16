@@ -77,6 +77,7 @@
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQTransport.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
+    <Compile Include="Config\RabbitMQTransportFeatureToSupportDIAndPipeline.cs" />
     <Compile Include="ConfirmsAwareChannel.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
@@ -96,12 +97,14 @@
     <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
     <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
+    <Compile Include="RepeatedFailuresOverTimeCircuitBreaker.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
     <Compile Include="ReceiveOptions.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SetOutgoingCallbackAddressBehavior.cs" />
+    <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml">
