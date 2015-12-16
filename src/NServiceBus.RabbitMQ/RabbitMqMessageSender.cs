@@ -36,7 +36,7 @@
                 }
             }
 
-            return Task.FromResult(0);
+            return TaskEx.Completed;
         }
 
         private void SendMessages(IEnumerable<TransportOperation> outgoingMessages, IModel channel)

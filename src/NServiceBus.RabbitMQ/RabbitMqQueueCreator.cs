@@ -29,7 +29,7 @@
                 CreateQueueIfNecessary(sendingAddress);
             }
 
-            return Task.FromResult(0);
+            return TaskEx.Completed;
         }
 
         private void CreateQueueIfNecessary(string receivingAddress)

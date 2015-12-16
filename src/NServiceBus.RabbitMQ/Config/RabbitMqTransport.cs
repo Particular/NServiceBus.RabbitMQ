@@ -25,6 +25,7 @@
         private ConnectionConfiguration connectionConfiguration;
         private IManageRabbitMqConnections connectionManager;
         private IRoutingTopology topology;
+        private string localQueue;
 
         /// <summary>
         ///     Ctor
@@ -196,7 +197,7 @@
         /// </summary>
         public override IManageSubscriptions GetSubscriptionManager()
         {
-            return new RabbitMqSubscriptionManager();
+            return new RabbitMqSubscriptionManager(connectionManager, topology, localQueue);
         }
 
         /// <summary>
@@ -227,7 +228,9 @@
                 queue.Append("." + logicalAddress.Qualifier);
             }
 
-            return queue.ToString();
+            localQueue = queue.ToString();
+
+            return localQueue;
         }
 
         /// <summary>
@@ -236,33 +239,6 @@
         public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
         {
             return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
-        }
-
-        private class FakePusher : IPushMessages
-        {
-            /// <summary>
-            ///     Initializes the <see cref="T:NServiceBus.Transports.IPushMessages" />.
-            /// </summary>
-            public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
-            {
-                throw new NotImplementedException();
-            }
-
-            /// <summary>
-            ///     Starts pushing message/&gt;.
-            /// </summary>
-            public void Start(PushRuntimeSettings limitations)
-            {
-                throw new NotImplementedException();
-            }
-
-            /// <summary>
-            ///     Stops pushing messages.
-            /// </summary>
-            public Task Stop()
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

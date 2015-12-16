@@ -5,35 +5,39 @@
     using NServiceBus.Extensibility;
     using Routing;
 
-    //TODO: Need to figure out how to new this one up ?
     class RabbitMqSubscriptionManager : IManageSubscriptions
     {
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
+        private readonly IManageRabbitMqConnections connectionManager;
+        private readonly IRoutingTopology routingTopology;
+        private readonly string localQueue;
 
-        public string EndpointQueueName { get; set; }
-
-        public IRoutingTopology RoutingTopology { get; set; }
+        public RabbitMqSubscriptionManager(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, string localQueue)
+        {
+            this.connectionManager = connectionManager;
+            this.routingTopology = routingTopology;
+            this.localQueue = localQueue;
+        }
 
         public Task Subscribe(Type eventType, ContextBag context)
         {
-            using (var connection = ConnectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                RoutingTopology.SetupSubscription(channel, eventType, EndpointQueueName);
+                routingTopology.SetupSubscription(channel, eventType, localQueue);
             }
 
-            return Task.FromResult(0);
+            return TaskEx.Completed;
         }
 
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
-            using (var connection = ConnectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                RoutingTopology.TeardownSubscription(channel, eventType, EndpointQueueName);
+                routingTopology.TeardownSubscription(channel, eventType, localQueue);
             }
 
-            return Task.FromResult(0);
+            return TaskEx.Completed;
         }
     }
 }
