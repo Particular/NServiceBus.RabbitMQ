@@ -100,26 +100,33 @@
 
         static string ValueToString(object value)
         {
-            var returnValue = default(string);
-            if (value is string)
+            var s = value as string;
+            if (s != null)
             {
-                returnValue = (string)value;
+                return s;
             }
-            else if (value is byte[])
+
+            var bytes = value as byte[];
+            if (bytes != null)
             {
-                returnValue = Encoding.UTF8.GetString((byte[]) value);
+                return Encoding.UTF8.GetString(bytes);
             }
-            else if (value is IDictionary<string, object>)
+
+            var objects = value as IDictionary<string, object>;
+            if (objects != null)
             {
-                var dict = (IDictionary<string, object>) value;
-                returnValue = String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
+                var dict = objects;
+                return String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
             }
-            else if (value is IList)
+
+            var list1 = value as IList;
+            if (list1 != null)
             {
-                var list = (IList) value;
-                returnValue = String.Join(";", list.Cast<object>().Select(ValueToString));
+                var list = list1;
+                return String.Join(";", list.Cast<object>().Select(ValueToString));
             }
-            return returnValue;
+
+            return null;
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
