@@ -4,11 +4,11 @@ namespace NServiceBus.Transports.RabbitMQ
 
     class ReceiveOptions
     {
-        public MessageConverter Converter { get; private set; }
-        public ushort DefaultPrefetchCount { get; private set; }
-        public int DequeueTimeout { get; private set; }
-        public bool PurgeOnStartup { get; private set; }
-        public string ConsumerTag { get; private set; }
+        public MessageConverter Converter { get; }
+        public ushort DefaultPrefetchCount { get; }
+        public int DequeueTimeout { get; }
+        public bool PurgeOnStartup { get; }
+        public string ConsumerTag { get; }
 
         public ReceiveOptions(Func<string, SecondaryReceiveSettings> getSecondaryReceiveSettings,
             MessageConverter converter,

@@ -18,8 +18,6 @@
 
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
 
-        public ushort Port { get; }
-
         public string VirtualHost { get; }
 
         public string UserName { get; }
@@ -38,18 +36,13 @@
 
         public TimeSpan RetryDelay { get; }
 
-        public IDictionary<string, object> ClientProperties
-        {
-            get { return clientProperties; }
-            private set { clientProperties = value; }
-        }
+        public IDictionary<string, object> ClientProperties => clientProperties;
 
         public HostConfiguration HostConfiguration { get; private set; }
 
         public ConnectionConfiguration()
         {
             // set default values
-            Port = DefaultPort;
             VirtualHost = "/";
             UserName = "guest";
             Password = "guest";
@@ -88,7 +81,7 @@
 
             if (HostConfiguration.Port == 0)
             {
-                HostConfiguration.Port = Port;
+                HostConfiguration.Port = DefaultPort;
             }
         }
 
@@ -103,7 +96,7 @@
                     "If you are using RabbitMQ in a cluster, " +
                         "consider using a load balancer to represent the nodes as a single host.";
 
-                throw new ArgumentException(message, "hostsConnectionString");
+                throw new ArgumentException(message, nameof(hostsConnectionString));
             }
 
             HostConfiguration =
@@ -111,7 +104,7 @@
                  select hostAndPort.Split(':') into hostParts
                  let host = hostParts.ElementAt(0)
                  let portString = hostParts.ElementAtOrDefault(1)
-                 let port = (portString == null) ? Port : ushort.Parse(portString)
+                 let port = (portString == null) ? DefaultPort : ushort.Parse(portString)
                  select new HostConfiguration { Host = host, Port = port })
                 .FirstOrDefault();
         }

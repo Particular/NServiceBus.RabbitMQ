@@ -57,10 +57,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
         void TryToConnect(object timer)
         {
-            if (timer != null)
-            {
-                ((Timer) timer).Dispose();
-            }
+            ((Timer) timer)?.Dispose();
 
             Logger.Debug("Trying to connect");
             if (disposed)
@@ -98,10 +95,7 @@ namespace NServiceBus.Transports.RabbitMQ
                 StartTryToConnect();
             }
         }
-        bool IsConnected
-        {
-            get { return connection != null && connection.IsOpen && !disposed; }
-        }
+        bool IsConnected => connection != null && connection.IsOpen && !disposed;
 
         void LogException(Exception exception)
         {
@@ -145,55 +139,25 @@ namespace NServiceBus.Transports.RabbitMQ
             connection.Abort(reasonCode, reasonText, timeout);
         }
 
-        public AmqpTcpEndpoint Endpoint
-        {
-            get { return connection.Endpoint; }
-        }
+        public AmqpTcpEndpoint Endpoint => connection.Endpoint;
 
-        public IProtocol Protocol
-        {
-            get { return connection.Protocol; }
-        }
+        public IProtocol Protocol => connection.Protocol;
 
-        public ushort ChannelMax
-        {
-            get { return connection.ChannelMax; }
-        }
+        public ushort ChannelMax => connection.ChannelMax;
 
-        public uint FrameMax
-        {
-            get { return connection.FrameMax; }
-        }
+        public uint FrameMax => connection.FrameMax;
 
-        public ushort Heartbeat
-        {
-            get { return connection.Heartbeat; }
-        }
+        public ushort Heartbeat => connection.Heartbeat;
 
-        public IDictionary<string, object> ClientProperties
-        {
-            get { return connection.ClientProperties; }
-        }
+        public IDictionary<string, object> ClientProperties => connection.ClientProperties;
 
-        public IDictionary<string, object> ServerProperties
-        {
-            get { return connection.ServerProperties; }
-        }
+        public IDictionary<string, object> ServerProperties => connection.ServerProperties;
 
-        public AmqpTcpEndpoint[] KnownHosts
-        {
-            get { return connection.KnownHosts; }
-        }
+        public AmqpTcpEndpoint[] KnownHosts => connection.KnownHosts;
 
-        public ShutdownEventArgs CloseReason
-        {
-            get { return connection.CloseReason; }
-        }
+        public ShutdownEventArgs CloseReason => connection.CloseReason;
 
-        public bool IsOpen
-        {
-            get { return connection.IsOpen; }
-        }
+        public bool IsOpen => connection.IsOpen;
 
         public bool AutoClose
         {
@@ -201,12 +165,9 @@ namespace NServiceBus.Transports.RabbitMQ
             set { connection.AutoClose = value; }
         }
 
-        public IList<ShutdownReportEntry> ShutdownReport
-        {
-            get { return connection.ShutdownReport; }
-        }
+        public IList<ShutdownReportEntry> ShutdownReport => connection.ShutdownReport;
 
-        public ConsumerWorkService ConsumerWorkService { get { return connection.ConsumerWorkService; } }
+        public ConsumerWorkService ConsumerWorkService => connection.ConsumerWorkService;
 
         public event EventHandler<ShutdownEventArgs> ConnectionShutdown
         {
@@ -291,9 +252,9 @@ namespace NServiceBus.Transports.RabbitMQ
         readonly string purpose;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof (RabbitMqConnectionManager));
-        public EndPoint LocalEndPoint { get { return connection.LocalEndPoint; }}
-        public EndPoint RemoteEndPoint { get { return connection.RemoteEndPoint; } }
-        public int LocalPort { get { return connection.LocalPort; } }
-        public int RemotePort { get { return connection.RemotePort; } }
+        public EndPoint LocalEndPoint => connection.LocalEndPoint;
+        public EndPoint RemoteEndPoint => connection.RemoteEndPoint;
+        public int LocalPort => connection.LocalPort;
+        public int RemotePort => connection.RemotePort;
     }
 }
