@@ -106,34 +106,32 @@ namespace NServiceBus.Transports.RabbitMQ
             }
         }
 
-        public Task Stop()
+        public async Task Stop()
         {
             if (isStopping)
             {
-                return TaskEx.Completed;
+                return;
             }
 
             isStopping = true;
 
             if (tokenSource == null)
             {
-                return TaskEx.Completed;
+                return;
             }
 
             tokenSource.Cancel();
 
-            WaitForThreadsToStop();
+            await WaitForThreadsToStop();
 
             tokenSource = null;
-
-            return TaskEx.Completed;
         }
 
-        void WaitForThreadsToStop()
+        async Task WaitForThreadsToStop()
         {
             for (var index = 0; index < actualConcurrencyLevel; index++)
             {
-                tracksRunningThreads.Wait();
+                await tracksRunningThreads.WaitAsync().ConfigureAwait(false);
             }
 
             tracksRunningThreads.Release(actualConcurrencyLevel);
@@ -154,7 +152,7 @@ namespace NServiceBus.Transports.RabbitMQ
                 {
                     Queue = queue,
                     CancellationToken = token
-                }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                }, token, TaskCreationOptions.None,  TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
@@ -173,14 +171,15 @@ namespace NServiceBus.Transports.RabbitMQ
 
         async Task ConsumeMessages(object state)
         {
-            if (!tracksRunningThreads.Wait(TimeSpan.FromSeconds(1)))
+            var parameters = (ConsumeParams)state;
+
+            if (!await tracksRunningThreads.WaitAsync(TimeSpan.FromSeconds(1), parameters.CancellationToken))
             {
                 return;
             }
 
             try
             {
-                var parameters = (ConsumeParams) state;
                 var connection = connectionManager.GetConsumeConnection();
 
                 using (var channel = connection.CreateModel())
@@ -204,7 +203,6 @@ namespace NServiceBus.Transports.RabbitMQ
 
                         try
                         {
-                            var messageProcessedOk = false;
                             Dictionary<string, string> headers = null;
                             string messageId = null;
                             var pushMessage = false;
@@ -229,13 +227,15 @@ namespace NServiceBus.Transports.RabbitMQ
                                 }
                                 catch (Exception ex2)
                                 {
-                                     Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
-
-                                    //todo: trigger the circuit breaker
+                                    Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
+                                    throw;
                                 }
 
                                 //just ack the poison message to avoid getting stuck
-                                messageProcessedOk = true;
+                                if (!noAck)
+                                {
+                                    channel.BasicAck(message.DeliveryTag, false);
+                                }
                             }
 
                             if (pushMessage)
@@ -252,18 +252,23 @@ namespace NServiceBus.Transports.RabbitMQ
 
                                 var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(),context);
 
-                                await pipe(pushContext).ConfigureAwait(false);
-                            }
+                                try
+                                {
+                                    await pipe(pushContext).ConfigureAwait(false);
+                                }
+                                catch (Exception)
+                                {
+                                    if (!noAck)
+                                    {
+                                        channel.BasicReject(message.DeliveryTag, true);
+                                    }
 
-                            if (!noAck)
-                            {
-                                if (messageProcessedOk)
+                                    throw;
+                                }
+
+                                if (!noAck)
                                 {
                                     channel.BasicAck(message.DeliveryTag, false);
-                                }
-                                else
-                                {
-                                    channel.BasicReject(message.DeliveryTag, true);
                                 }
                             }
                         }
