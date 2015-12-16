@@ -207,7 +207,7 @@ namespace NServiceBus.Transports.RabbitMQ
                             var messageProcessedOk = false;
                             Dictionary<string, string> headers = null;
                             string messageId = null;
-                            bool pushMessage = false;
+                            var pushMessage = false;
                             try
                             {
                                 messageId = receiveOptions.Converter.RetrieveMessageId(message);
