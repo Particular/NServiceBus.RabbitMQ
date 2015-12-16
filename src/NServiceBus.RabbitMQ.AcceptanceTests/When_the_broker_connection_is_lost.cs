@@ -31,7 +31,7 @@
                 EndpointSetup<DefaultServer>();
             }
 
-            class ConnectionKiller:IWantToRunWhenBusStartsAndStops
+            class ConnectionKiller : IWantToRunWhenBusStartsAndStops
             {
                 readonly IManageRabbitMqConnections connectionManager;
                 readonly MyContext myContext;
@@ -42,7 +42,7 @@
                     this.myContext = myContext;
                 }
 
-                public Task Start(IBusContext context)
+                public Task Start(IBusSession context)
                 {
                     connectionManager.GetConsumeConnection().Abort();
                     return context.SendLocal(new MyRequest
@@ -51,7 +51,7 @@
                     });
                 }
 
-                public Task Stop(IBusContext context)
+                public Task Stop(IBusSession context)
                 {
                     return context.Completed();
                 }

@@ -9,6 +9,11 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
         public static Task Completed(this IBusContext context)
         {
             return done;
-        } 
+        }
+
+        public static Task Completed(this IBusSession context)
+        {
+            return done;
+        }
     }
 }

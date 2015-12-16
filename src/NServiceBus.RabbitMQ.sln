@@ -1,14 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ", "NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj", "{BA731749-22C7-4025-8A4D-465AE8E02E61}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ.Tests", "NServiceBus.RabbitMQ.Tests\NServiceBus.RabbitMQ.Tests.csproj", "{8B773CFD-E0F8-402F-AABC-04580289C76A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{BA731749-22C7-4025-8A4D-465AE8E02E61} = {BA731749-22C7-4025-8A4D-465AE8E02E61}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ.AcceptanceTests", "NServiceBus.RabbitMQ.AcceptanceTests\NServiceBus.RabbitMQ.AcceptanceTests.csproj", "{485F7A18-430D-4FF4-8FB4-41757951B871}"
 EndProject
@@ -32,10 +27,6 @@ Global
 		{BA731749-22C7-4025-8A4D-465AE8E02E61}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA731749-22C7-4025-8A4D-465AE8E02E61}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA731749-22C7-4025-8A4D-465AE8E02E61}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8B773CFD-E0F8-402F-AABC-04580289C76A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8B773CFD-E0F8-402F-AABC-04580289C76A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8B773CFD-E0F8-402F-AABC-04580289C76A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8B773CFD-E0F8-402F-AABC-04580289C76A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{485F7A18-430D-4FF4-8FB4-41757951B871}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{485F7A18-430D-4FF4-8FB4-41757951B871}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{485F7A18-430D-4FF4-8FB4-41757951B871}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -47,7 +47,7 @@
                     this.settings = settings;
                 }
 
-                public Task Start(IBusContext context)
+                public Task Start(IBusSession context)
                 {
                     using (var stream = new MemoryStream())
                     {
@@ -67,7 +67,7 @@
                     return context.Completed();
                 }
 
-                public Task Stop(IBusContext context)
+                public Task Stop(IBusSession context)
                 {
                     return context.Completed();
                 }
