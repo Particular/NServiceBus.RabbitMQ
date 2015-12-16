@@ -9,15 +9,11 @@
 
     class RabbitMqMessageSender : IDispatchMessages
     {
-        public const string CallbackHeaderKey = "NServiceBus.RabbitMQ.CallbackQueue";
-        private static readonly string REPLY = MessageIntentEnum.Reply.ToString();
-        IChannelProvider channelProvider;
-        IRoutingTopology routingTopology;
-
-        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider)
+        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider, CallbackAddress callbackAddress)
         {
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
+            this.callbackAddress = callbackAddress;
         }
 
         public Task Dispatch(IEnumerable<TransportOperation> outgoingMessages, ContextBag context)
@@ -26,14 +22,14 @@
             {
                 foreach (var transportOperation in outgoingMessages)
                 {
-                    SendMessage(transportOperation, confirmsAwareChannel.Channel);
+                    SendMessage(transportOperation, confirmsAwareChannel.Channel, context);
                 }
             }
 
             return TaskEx.Completed;
         }
 
-        void SendMessage(TransportOperation transportOperation, IModel channel)
+        void SendMessage(TransportOperation transportOperation, IModel channel, ContextBag context)
         {
             var dispatchOptions = transportOperation.DispatchOptions;
             var message = transportOperation.Message;
@@ -44,39 +40,41 @@
 
             RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, dispatchOptions, properties);
 
+            //todo: we can optimize this to check if there are callbacks present via the new header set by the callbacks package as well
+            if (callbackAddress.HasValue)
+            {
+                properties.Headers[CallbackAddress.HeaderKey] = callbackAddress.Value;
+            }
+
             if (unicastRouting != null)
             {
-                var destination = DetermineDestination(transportOperation, unicastRouting);
+                var destination = DetermineDestination(transportOperation.Message.Headers, unicastRouting.Destination, context);
 
                 routingTopology.Send(channel, destination, message, properties);
 
                 return;
             }
 
-            var multicastRouting = (MulticastAddressTag) dispatchOptions.AddressTag;
+            var multicastRouting = (MulticastAddressTag)dispatchOptions.AddressTag;
 
             routingTopology.Publish(channel, multicastRouting.MessageType, message, properties);
         }
 
-        static string DetermineDestination(TransportOperation transportOperation, UnicastAddressTag sendOptions)
+        static string DetermineDestination(Dictionary<string, string> headers, string defaultDestination, ContextBag context)
         {
-            return RequestorProvidedCallbackAddress(transportOperation.Message.Headers) ?? SenderProvidedDestination(sendOptions);
-        }
-
-        static string SenderProvidedDestination(UnicastAddressTag sendOptions)
-        {
-            return sendOptions.Destination;
-        }
-
-        static string RequestorProvidedCallbackAddress(IReadOnlyDictionary<string, string> headers)
-        {
-            string callbackAddress;
-            if (IsReply(headers) && headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
+            if (!IsReply(headers))
             {
-                return callbackAddress;
+                return defaultDestination;
             }
 
-            return null;
+            CallbackAddress requestedCallbackAddress;
+
+            if (context.TryGet(out requestedCallbackAddress))
+            {
+                return requestedCallbackAddress.Value;
+            }
+
+            return defaultDestination;
         }
 
         static bool IsReply(IReadOnlyDictionary<string, string> headers)
@@ -89,5 +87,10 @@
 
             return intent == REPLY;
         }
+
+        static string REPLY = MessageIntentEnum.Reply.ToString();
+        IChannelProvider channelProvider;
+        CallbackAddress callbackAddress;
+        IRoutingTopology routingTopology;
     }
 }
