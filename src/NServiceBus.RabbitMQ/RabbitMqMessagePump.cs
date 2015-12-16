@@ -147,12 +147,11 @@ namespace NServiceBus.Transports.RabbitMQ
         void StartConsumer(string queue)
         {
             var token = tokenSource.Token;
-            Task.Factory
-                .StartNew(ConsumeMessages, new ConsumeParams
+            Task.Run(()=>ConsumeMessages(new ConsumeParams
                 {
                     Queue = queue,
                     CancellationToken = token
-                }, token, TaskCreationOptions.None,  TaskScheduler.Default)
+                }), token)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
