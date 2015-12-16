@@ -13,7 +13,7 @@ namespace NServiceBus.Transports.RabbitMQ
             Value = value;
         }
 
-        public CallbackAddress()
+        private CallbackAddress()
         {
             HasValue = false;
         }
