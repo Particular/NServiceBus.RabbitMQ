@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
+    using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NServiceBus.Transports.RabbitMQ;
@@ -134,7 +135,8 @@
         /// </summary>
         public override IEnumerable<Type> GetSupportedDeliveryConstraints()
         {
-            yield break;
+            yield return typeof(DiscardIfNotReceivedBefore);
+            yield return typeof(NonDurableDelivery);
         }
 
         /// <summary>
