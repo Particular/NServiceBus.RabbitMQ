@@ -33,6 +33,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="NServiceBus.AcceptanceTesting, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
       <HintPath>..\packages\NServiceBus.AcceptanceTesting.6.0.0-unstable1291\lib\net452\NServiceBus.AcceptanceTesting.dll</HintPath>
       <Private>True</Private>
@@ -54,6 +58,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Messaging" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
     </Reference>
@@ -269,6 +274,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1291\UnitOfWork\When_a_subscription_message_arrives.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1291\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1291\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="ConfigureRabbitMQTransport.cs" />
     <Compile Include="IMessageHandlerContextExtensions.cs" />
     <Compile Include="When_a_message_is_retried_and_succeeds_with_a_reply.cs" />
     <Compile Include="When_using_direct_routing.cs" />

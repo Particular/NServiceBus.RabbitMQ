@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
+    using Janitor;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
     using NServiceBus.Support;
@@ -17,13 +18,14 @@
     /// <summary>
     ///     Transport definition for RabbirtMQ
     /// </summary>
-    public class RabbitMQTransport : TransportDefinition
+    [SkipWeaving]
+    public class RabbitMQTransport : TransportDefinition, IDisposable
     {
         internal const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
         internal const string UseCallbackReceiverSettingKey = "RabbitMQ.UseCallbackReceiver";
         internal const string MaxConcurrencyForCallbackReceiver = "RabbitMQ.MaxConcurrencyForCallbackReceiver";
         private ConnectionConfiguration connectionConfiguration;
-        private IManageRabbitMqConnections connectionManager;
+        private RabbitMqConnectionManager connectionManager;
         private IRoutingTopology topology;
         private string localQueue;
 
@@ -50,8 +52,17 @@
             return new TransportReceivingConfigurationResult(
                 () =>
                 {
-                    var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
-                    var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiver);
+                    bool useCallbackReceiver;
+
+                    if (!context.Settings.TryGet(UseCallbackReceiverSettingKey, out useCallbackReceiver))
+                    {
+                        useCallbackReceiver = true;
+                    }
+                    int maxConcurrencyForCallbackReceiver;
+                    if (!context.Settings.TryGet(MaxConcurrencyForCallbackReceiver, out maxConcurrencyForCallbackReceiver))
+                    {
+                        maxConcurrencyForCallbackReceiver = 1;
+                    }
                     var queueName = context.Settings.Get<string>("NServiceBus.LocalAddress");
                     var callbackQueue = $"{queueName}.{RuntimeEnvironment.MachineName}";
 
@@ -109,6 +120,13 @@
             return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider), () => Task.FromResult(StartupCheckResult.Success));
         }
 
+        private void Initialize(ReadOnlySettings settings, string connectionString)
+        {
+            CreateTopology(settings);
+            CreateConnectionConfiguration(settings, connectionString);
+            CreateConnectionManager();
+        }
+
         private void CreateConnectionManager()
         {
             if (connectionManager != null)
@@ -117,13 +135,6 @@
             }
 
             connectionManager = new RabbitMqConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration), connectionConfiguration);
-        }
-
-        private void Initialize(ReadOnlySettings settings, string connectionString)
-        {
-            CreateTopology(settings);
-            CreateConnectionConfiguration(settings, connectionString);
-            CreateConnectionManager();
         }
 
         private void CreateConnectionConfiguration(ReadOnlySettings settings, string connectionString)
@@ -239,6 +250,14 @@
         public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
         {
             return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            connectionManager.Dispose();
         }
     }
 }
