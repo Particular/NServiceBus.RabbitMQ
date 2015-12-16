@@ -10,33 +10,33 @@
 
     class ConnectionConfiguration
     {
-        public const ushort DefaultHeartBeatInSeconds = 5;
-        public const int DefaultDequeueTimeout = 1;
-        public const ushort DefaultPort = 5672;
+        const ushort DefaultHeartBeatInSeconds = 5;
+        const int DefaultDequeueTimeout = 1;
+        const ushort DefaultPort = 5672;
 
-        public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
+        static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
 
         IDictionary<string, object> clientProperties = new Dictionary<string, object>();
 
-        public ushort Port { get; set; }
+        public ushort Port { get; }
 
-        public string VirtualHost { get; set; }
+        public string VirtualHost { get; }
 
-        public string UserName { get; set; }
+        public string UserName { get; }
 
-        public string Password { get; set; }
+        public string Password { get; }
 
-        public ushort RequestedHeartbeat { get; set; }
+        public ushort RequestedHeartbeat { get; }
 
-        public int DequeueTimeout { get; set; }
+        public int DequeueTimeout { get; }
 
-        public ushort PrefetchCount { get; set; }
+        public ushort PrefetchCount { get; }
 
         public bool UsePublisherConfirms { get; set; }
 
-        public TimeSpan MaxWaitTimeForConfirms { get; set; }
+        public TimeSpan MaxWaitTimeForConfirms { get; }
 
-        public TimeSpan RetryDelay { get; set; }
+        public TimeSpan RetryDelay { get; }
 
         public IDictionary<string, object> ClientProperties
         {
@@ -59,6 +59,7 @@
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();
             UsePublisherConfirms = true;
+            PrefetchCount = 0;
         }
 
         private void SetDefaultClientProperties()
