@@ -240,7 +240,17 @@ namespace NServiceBus.Transports.RabbitMQ
 
                             if (pushMessage)
                             {
-                                var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), new ContextBag());
+                                var context = new ContextBag();
+
+                                string explicitCallbackAddress;
+
+
+                                if (headers.TryGetValue(CallbackAddress.HeaderKey, out explicitCallbackAddress))
+                                {
+                                    context.Set(new CallbackAddress(explicitCallbackAddress));    
+                                }
+
+                                var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(),context);
 
                                 await pipe(pushContext).ConfigureAwait(false);
                             }
