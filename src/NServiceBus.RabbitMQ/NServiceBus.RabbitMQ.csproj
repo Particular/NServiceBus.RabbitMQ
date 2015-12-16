@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CallbackAddress.cs" />
+    <Compile Include="Callbacks.cs" />
     <Compile Include="ChannelProvider.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQTransport.cs" />
