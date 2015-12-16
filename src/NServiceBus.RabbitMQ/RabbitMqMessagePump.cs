@@ -154,6 +154,7 @@ namespace NServiceBus.Transports.RabbitMQ
                 }), token)
                 .ContinueWith(t =>
                 {
+                    // ReSharper disable once PossibleNullReferenceException
                     t.Exception.Handle(ex =>
                     {
                         Logger.Error("Failed to receive messages from " + queue, t.Exception);
