@@ -77,7 +77,7 @@
         {
             if (maxConcurrency <= 0)
             {
-                throw new ArgumentException("Maximum concurrency value must be greater than zero.", "maxConcurrency");
+                throw new ArgumentException("Maximum concurrency value must be greater than zero.", nameof(maxConcurrency));
             }
             transportExtensions.GetSettings().Set(RabbitMQTransport.MaxConcurrencyForCallbackReceiver, maxConcurrency);
             return transportExtensions;

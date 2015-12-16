@@ -103,20 +103,20 @@
             var returnValue = default(string);
             if (value is string)
             {
-                returnValue = value as string;
+                returnValue = (string)value;
             }
             else if (value is byte[])
             {
-                returnValue = Encoding.UTF8.GetString(value as byte[]);
+                returnValue = Encoding.UTF8.GetString((byte[]) value);
             }
             else if (value is IDictionary<string, object>)
             {
-                var dict = value as IDictionary<string, object>;
+                var dict = (IDictionary<string, object>) value;
                 returnValue = String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
             }
             else if (value is IList)
             {
-                var list = value as IList;
+                var list = (IList) value;
                 returnValue = String.Join(";", list.Cast<object>().Select(ValueToString));
             }
             return returnValue;

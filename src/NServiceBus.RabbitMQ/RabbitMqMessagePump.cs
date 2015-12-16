@@ -57,7 +57,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
             noAck = settings.RequiredTransactionMode == TransportTransactionMode.None;
 
-            if (settings.PurgeOnStartup)
+            if (receiveOptions.PurgeOnStartup)
             {
                 Purge();
             }

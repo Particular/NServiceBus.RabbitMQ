@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using global::RabbitMQ.Client;
     using NServiceBus.DeliveryConstraints;
@@ -29,7 +30,7 @@
 
             if (TryGet(options.DeliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {
-                properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString();
+                properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
             }
 
             properties.Persistent = !options.DeliveryConstraints.Any(c => c is NonDurableDelivery);
