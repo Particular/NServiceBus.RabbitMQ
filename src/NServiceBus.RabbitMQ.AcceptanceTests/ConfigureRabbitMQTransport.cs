@@ -19,6 +19,8 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
     {
         connectionString = settings["Transport.ConnectionString"];
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
+        configuration.LimitMessageProcessingConcurrencyTo(5);
+
         return Task.FromResult(0);
     }
 
