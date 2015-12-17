@@ -18,7 +18,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionPublish ?? (connectionPublish = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Publish"));
+                return connectionPublish ?? (connectionPublish = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay, "Publish"));
             }
         }
 
@@ -27,7 +27,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionConsume ?? (connectionConsume = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Consume"));
+                return connectionConsume ?? (connectionConsume = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay, "Consume"));
             }
         }
 
@@ -36,7 +36,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Administration");
+                return new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay, "Administration");
             }
         }
 

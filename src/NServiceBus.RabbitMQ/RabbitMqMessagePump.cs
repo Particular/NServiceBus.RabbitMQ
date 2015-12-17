@@ -166,7 +166,7 @@ namespace NServiceBus.Transports.RabbitMQ
                     {
                         StartConsumer(queue);
                     }
-                }, TaskContinuationOptions.OnlyOnFaulted);
+                }, token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
         }
 
         async Task ConsumeMessages(object state)

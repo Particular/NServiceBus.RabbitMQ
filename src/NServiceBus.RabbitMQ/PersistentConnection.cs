@@ -48,7 +48,6 @@ namespace NServiceBus.Transports.RabbitMQ
             connection.Close(timeout);
         }
 
-
         void StartTryToConnect()
         {
             var timer = new Timer(TryToConnect);
@@ -57,7 +56,15 @@ namespace NServiceBus.Transports.RabbitMQ
 
         void TryToConnect(object timer)
         {
-            ((Timer) timer)?.Dispose();
+            if (timer != null)
+            {
+                using (var waitHandle = new ManualResetEvent(false))
+                {
+                    ((Timer) timer).Dispose(waitHandle);
+
+                    waitHandle.WaitOne();
+                }
+            }
 
             Logger.Debug("Trying to connect");
             if (disposed)
@@ -68,6 +75,11 @@ namespace NServiceBus.Transports.RabbitMQ
             var success = false;
             try
             {
+                if (connection != null)
+                {
+                    connection.ConnectionShutdown -= OnConnectionShutdown;
+                }
+
                 connection = connectionFactory.CreateConnection(purpose);
                 success = true;
             }
@@ -192,7 +204,6 @@ namespace NServiceBus.Transports.RabbitMQ
             add { connection.ConnectionUnblocked += value; }
             remove { connection.ConnectionUnblocked -= value; }
         }
-
 
         public void Close(ushort reasonCode, string reasonText, int timeout)
         {

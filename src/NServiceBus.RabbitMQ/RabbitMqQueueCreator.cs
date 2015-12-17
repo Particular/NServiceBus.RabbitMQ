@@ -1,20 +1,21 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System.Threading.Tasks;
-    using NServiceBus.Settings;
     using Routing;
 
     class RabbitMqQueueCreator : ICreateQueues
     {
         private readonly IManageRabbitMqConnections connections;
         private readonly IRoutingTopology topology;
-        private readonly ReadOnlySettings settings;
+        readonly Callbacks callbacks;
+        readonly bool durableMessagesEnabled;
 
-        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, ReadOnlySettings settings)
+        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, Callbacks callbacks, bool durableMessagesEnabled)
         {
             this.connections = connections;
             this.topology = topology;
-            this.settings = settings;
+            this.callbacks = callbacks;
+            this.durableMessagesEnabled = durableMessagesEnabled;
         }
 
         public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -29,15 +30,20 @@
                 CreateQueueIfNecessary(sendingAddress);
             }
 
+            if (callbacks.Enabled)
+            {
+                CreateQueueIfNecessary(callbacks.QueueAddress);
+            }
+
             return TaskEx.Completed;
         }
 
-        private void CreateQueueIfNecessary(string receivingAddress)
+        void CreateQueueIfNecessary(string receivingAddress)
         {
             using (var connection = connections.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(receivingAddress, settings.DurableMessagesEnabled(), false, false, null);
+                channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
 
                 topology.Initialize(channel, receivingAddress);
             }

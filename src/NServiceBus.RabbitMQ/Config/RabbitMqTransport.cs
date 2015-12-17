@@ -49,11 +49,11 @@
         {
             Initialize(context.Settings, context.ConnectionString);
 
+            var callbacks = new Callbacks(context.Settings);
+
             return new TransportReceivingConfigurationResult(
                 () =>
                 {
-                    var callbacks = new Callbacks(context.Settings);
-                    
                     MessageConverter messageConverter;
 
                     if (context.Settings.HasSetting(CustomMessageIdStrategy))
@@ -92,7 +92,7 @@
 
                     return new RabbitMqMessagePump(connectionManager, topology, provider, receiveOptions);
                 },
-                () => new RabbitMqQueueCreator(connectionManager, topology, context.Settings),
+                () => new RabbitMqQueueCreator(connectionManager, topology, callbacks, context.Settings.DurableMessagesEnabled()),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
