@@ -7,16 +7,16 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using System.Transactions;
     using global::RabbitMQ.Client;
     using NLog;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
     using Settings;
     using Support;
-    using Unicast;
     using Config;
-    using TransactionSettings = Unicast.Transport.TransactionSettings;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Routing;
+    using NServiceBus.Transports.RabbitMQ.Routing;
 
     public abstract class ClusteredTestContext
     {
@@ -35,9 +35,9 @@
         readonly string rabbitMqServer = "rabbitmq-server.bat";//make sure that you have the PATH environment variable setup
 
         RabbitMqConnectionManager connectionManager;
-        RabbitMqDequeueStrategy dequeueStrategy;
+        RabbitMqMessagePump messagePump;
         protected int[] erlangProcessesRunningBeforeTheTest;
-        BlockingCollection<TransportMessage> receivedMessages;
+        BlockingCollection<IncomingMessage> receivedMessages;
         RabbitMqMessageSender sender;
         IModel publishChannel;
 
@@ -53,10 +53,7 @@
             /// <summary>
             ///     The FQ node name (eg rabbit1@JUSTINT).
             /// </summary>
-            public string Name
-            {
-                get { return string.Format("rabbit{0}@{1}", Number, LocalHostName); }
-            }
+            public string Name => $"rabbit{Number}@{LocalHostName}";
         }
 
         protected Process[] GetExistingErlangProcesses()
@@ -70,7 +67,7 @@
                 {
                     {"RABBITMQ_NODENAME", node.Name},
                     {"RABBITMQ_NODE_PORT", node.Port.ToString(CultureInfo.InvariantCulture)},
-                    {"RABBITMQ_SERVER_START_ARGS", string.Format("-rabbitmq_management listener [{{port,{0}}}]", node.MgmtPort)},
+                    {"RABBITMQ_SERVER_START_ARGS", $"-rabbitmq_management listener [{{port,{node.MgmtPort}}}]"},
                 };
 
             InvokeExternalProgram(rabbitMqServer, "-detached", envVars);
@@ -78,7 +75,7 @@
 
         protected void InvokeRabbitMqCtl(RabbitNode node, string command)
         {
-            var args = (string.Format("-n {0} {1}", node.Name, command));
+            var args = ($"-n {node.Name} {command}");
             InvokeExternalProgram(rabbitMqCtl, args);
         }
 
@@ -130,10 +127,8 @@
         public void TestContextFixtureTearDown()
         {
             Logger.Trace("Running TestContextFixtureTearDown");
-            if (dequeueStrategy != null)
-            {
-                dequeueStrategy.Stop();
-            }
+
+            messagePump?.Stop().GetAwaiter().GetResult();
 
             publishChannel.Close();
             publishChannel.Dispose();
@@ -178,21 +173,26 @@
             {
                 InvokeRabbitMqCtl(node, "reset");
             }
-            InvokeRabbitMqCtl(node, string.Format("join_cluster {0}", clusterToNode.Name));
+            InvokeRabbitMqCtl(node, $"join_cluster {clusterToNode.Name}");
             InvokeRabbitMqCtl(node, "start_app");
         }
 
-        protected TransportMessage SendAndReceiveAMessage()
+        protected IncomingMessage SendAndReceiveAMessage()
         {
-            TransportMessage message;
+            OutgoingMessage message;
             return SendAndReceiveAMessage(out message);
         }
 
-        protected TransportMessage SendAndReceiveAMessage(out TransportMessage sentMessage)
+        protected IncomingMessage SendAndReceiveAMessage(out OutgoingMessage sentMessage)
         {
             Logger.Info("Sending a message");
-            var message = new TransportMessage();
-            sender.Send(message, new SendOptions(QueueName));
+            // TODO: Proper parameters for OutgoingMessage constructor
+            var message = new OutgoingMessage(null, null, null);
+            var transportOperations = new[]
+            {
+                new TransportOperation(message, new DispatchOptions(new UnicastAddressTag(QueueName), DispatchConsistency.Default)) 
+            };
+            sender.Dispatch(transportOperations, new ContextBag());
             sentMessage = message;
             var receivedMessage = WaitForMessage();
             return receivedMessage;
@@ -208,17 +208,24 @@
 
         void SetupQueueListener(string queueName)
         {
-            receivedMessages = new BlockingCollection<TransportMessage>();
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new ReceiveOptions(s => SecondaryReceiveSettings.Disabled(), new MessageConverter(),1,1000,true,"Cluster test"));
-            dequeueStrategy.Init(Address.Parse(queueName), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
-                {
-                    receivedMessages.Add(m);
-                    return true;
-                }, (s, exception) =>
-                    {
-                    });
+            receivedMessages = new BlockingCollection<IncomingMessage>();
+            messagePump = new RabbitMqMessagePump(
+                connectionManager,
+                new ConventionalRoutingTopology(true), 
+                new FakeChannelProvider(publishChannel), 
+                new ReceiveOptions(s => SecondaryReceiveSettings.Disabled(), new MessageConverter(), 1, 1000, true, "Cluster test") 
+            );
 
-            dequeueStrategy.Start(1);
+            messagePump.Init(pushContext =>
+                {
+                    receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
+                    return TaskEx.Completed;
+                }, 
+                new CriticalError((endpoint, error, exception) => TaskEx.Completed), 
+                new PushSettings(queueName, null, true, TransportTransactionMode.ReceiveOnly)
+            ).GetAwaiter().GetResult();
+
+            messagePump.Start(new PushRuntimeSettings());
         }
 
         void EnsureRabbitQueueExists(string queueName)
@@ -232,7 +239,7 @@
 
         void SetupMessageSender()
         {
-            sender = new RabbitMqMessageSender(null, new FakeChannelProvider(publishChannel), new IncomingContext(null, null));
+            sender = new RabbitMqMessageSender(null, new FakeChannelProvider(publishChannel), null);
         }
 
         static RabbitMqConnectionManager SetupRabbitMqConnectionManager(string connectionString)
@@ -244,7 +251,7 @@
             return newConnectionManager;
         }
 
-        TransportMessage WaitForMessage()
+        IncomingMessage WaitForMessage()
         {
             var waitTime = TimeSpan.FromSeconds(1);
 
@@ -253,7 +260,7 @@
                 waitTime = TimeSpan.FromMinutes(10);
             }
 
-            TransportMessage transportMessage;
+            IncomingMessage transportMessage;
             receivedMessages.TryTake(out transportMessage, waitTime);
 
             return transportMessage;
@@ -261,7 +268,7 @@
 
         protected string GetConnectionString()
         {
-            var hosts = RabbitNodes.Values.OrderBy(n => n.Port).Select(n => string.Format("{0}:{1}", RabbitNode.LocalHostName, n.Port));
+            var hosts = RabbitNodes.Values.OrderBy(n => n.Port).Select(n => $"{RabbitNode.LocalHostName}:{n.Port}");
             var connectionString = string.Concat("host=", string.Join(",", hosts));
             Logger.Info("Connection string is: '{0}'", connectionString);
             return connectionString;

@@ -8,12 +8,12 @@ namespace NServiceBus.Transports.RabbitMQ.Tests.ClusteringTests
     [Explicit("Long running test")]
     public class when_connected_to_local_cluster_and_nodes_start_going_down : ClusteredTestContext
     {
-        TransportMessage messageSentWhenAllNodesUp;
-        TransportMessage messageSentWhen1NodeIsDown;
-        TransportMessage messageSentWhen2NodesAreDown;
-        TransportMessage messageReceivedWhenAllNodesUp;
-        TransportMessage messageReceivedWhen1NodeIsDown;
-        TransportMessage messageReceivedWhen2NodesAreDown;
+        OutgoingMessage messageSentWhenAllNodesUp;
+        OutgoingMessage messageSentWhen1NodeIsDown;
+        OutgoingMessage messageSentWhen2NodesAreDown;
+        IncomingMessage messageReceivedWhenAllNodesUp;
+        IncomingMessage messageReceivedWhen1NodeIsDown;
+        IncomingMessage messageReceivedWhen2NodesAreDown;
 
         [TestFixtureSetUp]
         public void TestFixtureSetup() {
@@ -33,19 +33,19 @@ namespace NServiceBus.Transports.RabbitMQ.Tests.ClusteringTests
         [Test]
         public void it_should_be_able_to_round_trip_a_message_when_all_nodes_are_up() {
             messageReceivedWhenAllNodesUp.Should().NotBeNull();
-            messageReceivedWhenAllNodesUp.Id.Should().Be(messageSentWhenAllNodesUp.Id);
+            messageReceivedWhenAllNodesUp.MessageId.Should().Be(messageSentWhenAllNodesUp.MessageId);
         }
 
         [Test]
         public void it_should_be_able_to_round_trip_a_message_when_node_1_is_down() {
             messageReceivedWhen1NodeIsDown.Should().NotBeNull();
-            messageReceivedWhen1NodeIsDown.Id.Should().Be(messageSentWhen1NodeIsDown.Id);
+            messageReceivedWhen1NodeIsDown.MessageId.Should().Be(messageSentWhen1NodeIsDown.MessageId);
         }
 
         [Test]
         public void it_should_be_able_to_round_trip_a_message_when_nodes_1_and_2_are_down() {
             messageReceivedWhen2NodesAreDown.Should().NotBeNull();
-            messageReceivedWhen2NodesAreDown.Id.Should().Be(messageSentWhen2NodesAreDown.Id);
+            messageReceivedWhen2NodesAreDown.MessageId.Should().Be(messageSentWhen2NodesAreDown.MessageId);
         }
     }
 }

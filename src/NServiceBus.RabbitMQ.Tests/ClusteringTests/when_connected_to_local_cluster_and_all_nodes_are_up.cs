@@ -8,8 +8,8 @@
     [Explicit("Long running test")]
     public class when_connected_to_local_cluster_and_all_nodes_are_up : ClusteredTestContext
     {
-        TransportMessage sentMessage;
-        TransportMessage receivedMessage;
+        OutgoingMessage sentMessage;
+        IncomingMessage receivedMessage;
 
         [TestFixtureSetUp]
         public void TestFixtureSetup() {
@@ -24,7 +24,7 @@
         [Test]
         public void it_should_be_able_to_round_trip_a_message() {
             receivedMessage.Should().NotBeNull();
-            receivedMessage.Id.Should().Be(sentMessage.Id);
+            receivedMessage.MessageId.Should().Be(sentMessage.MessageId);
         }
     }
 }
