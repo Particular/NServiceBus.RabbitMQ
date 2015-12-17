@@ -103,11 +103,11 @@
 
 
         [TearDown]
-        public async Task TearDown()
+        public void TearDown()
         {
             if (messagePump != null)
             {
-                await messagePump.Stop();
+                messagePump.Stop().GetAwaiter().GetResult();
             }
 
             publishChannel.Close();
