@@ -1,5 +1,9 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Routing;
     using NUnit.Framework;
     using Unicast;
 
@@ -131,7 +135,7 @@
         {
             Subscribe<MyEvent>();
 
-            subscriptionManager.Unsubscribe(typeof(MyEvent), Address.Parse(ExchangeNameConvention()));
+            subscriptionManager.Unsubscribe(typeof(MyEvent), new ContextBag()); // , ExchangeNameConvention()
 
             //publish a event that that this publisher isn't subscribed to
             Publish<MyEvent>();
@@ -141,16 +145,23 @@
 
         void Subscribe<T>()
         {
-            subscriptionManager.Subscribe(typeof(T), Address.Parse(ExchangeNameConvention()));
+            subscriptionManager.Subscribe(typeof(T), new ContextBag()); //, Address.Parse(ExchangeNameConvention())));
         }
 
         void Publish<T>()
         {
             var type = typeof(T);
-            MessagePublisher.Publish(new TransportMessage
+            messageSender.Dispatch(new[]
             {
-                CorrelationId = type.FullName
-            }, new PublishOptions(type));
+                new TransportOperation(new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]),
+                    new DispatchOptions(new MulticastAddressTag(type), DispatchConsistency.Default)),
+
+            }, new ContextBag()).GetAwaiter().GetResult();
+
+            //MessagePublisher.Publish(new TransportMessage
+            //{
+            //    CorrelationId = type.FullName
+            //}, new PublishOptions(type));
 
         }
 
@@ -162,9 +173,10 @@
             AssertReceived<T>(receivedEvent);
         }
 
-        void AssertReceived<T>(TransportMessage receivedEvent)
+        void AssertReceived<T>(IncomingMessage receivedEvent)
         {
-            Assert.AreEqual(typeof(T).FullName, receivedEvent.CorrelationId);
+            Assert.Fail("CorrelationId is no longer a property of Incoming Message.");
+           // Assert.AreEqual(typeof(T).FullName, receivedEvent.CorrelationId);
 
         }
 

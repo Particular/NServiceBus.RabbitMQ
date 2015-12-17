@@ -8,8 +8,8 @@ namespace NServiceBus.Transports.RabbitMQ.Tests.ClusteringTests
     [Explicit("Long running test")]
     public class when_connected_to_local_cluster_and_first_node_is_unavailable : ClusteredTestContext
     {
-        TransportMessage sentMessage;
-        TransportMessage receivedMessage;
+        OutgoingMessage sentMessage;
+        IncomingMessage receivedMessage;
 
         [TestFixtureSetUp]
         public void TestFixtureSetup() {
@@ -25,7 +25,7 @@ namespace NServiceBus.Transports.RabbitMQ.Tests.ClusteringTests
         [Test]
         public void it_should_be_able_to_round_trip_a_message() {
             receivedMessage.Should().NotBeNull();
-            receivedMessage.Id.Should().Be(sentMessage.Id);
+            receivedMessage.MessageId.Should().Be(sentMessage.MessageId);
         }
     }
 }

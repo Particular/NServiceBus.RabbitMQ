@@ -23,7 +23,8 @@
             Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
-            Assert.AreEqual(connectionConfiguration.Port, 12345);
+            Assert.Fail("Port is no longer a property on ConnectionConfiguration. OK to remove?");
+            //Assert.AreEqual(connectionConfiguration.Port, 12345);
             Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
             Assert.AreEqual(connectionConfiguration.PrefetchCount, 2);
             Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);

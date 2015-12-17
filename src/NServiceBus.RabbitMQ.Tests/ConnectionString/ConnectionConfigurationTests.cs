@@ -61,7 +61,8 @@
         [Test]
         public void Should_set_default_port()
         {
-            Assert.AreEqual(defaults.Port, 5672);
+            Assert.Fail("Port is no longer a property on ConnectionConfiguration");
+           // Assert.AreEqual(defaults.Port, 5672);
         }
 
         [Test]

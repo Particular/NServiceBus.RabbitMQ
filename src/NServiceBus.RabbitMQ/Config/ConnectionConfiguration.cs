@@ -10,9 +10,9 @@
 
     class ConnectionConfiguration
     {
-        const ushort DefaultHeartBeatInSeconds = 5;
-        const int DefaultDequeueTimeout = 1;
-        const ushort DefaultPort = 5672;
+        internal const ushort DefaultHeartBeatInSeconds = 5;
+        internal const int DefaultDequeueTimeout = 1;
+        internal const ushort DefaultPort = 5672;
 
         static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
 

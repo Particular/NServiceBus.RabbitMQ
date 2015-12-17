@@ -1,11 +1,12 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
     using System;
+    using System.IO;
     using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using NServiceBus.Extensibility;
     using NUnit.Framework;
-    using Unicast;
     using Unicast.Queuing;
 
     [TestFixture]
@@ -64,13 +65,13 @@
         [Test]
         public void Should_set_the_reply_to_address()
         {
-            var address = Address.Parse("myAddress");
+            var address = "myAddress";
 
             Verify(new TransportMessageBuilder().ReplyToAddress(address), 
                 (t, r) =>
                 {
-                    Assert.AreEqual(address, t.ReplyToAddress);
-                    Assert.AreEqual(address.Queue, r.BasicProperties.ReplyTo);
+                    Assert.AreEqual(address, t.Headers[Headers.ReplyToAddress]);
+                    Assert.AreEqual(address, r.BasicProperties.ReplyTo);
                 });
 
         }
@@ -78,8 +79,9 @@
         [Test]
         public void Should_not_populate_the_callback_header()
         {
-            Verify(new TransportMessageBuilder(),
-                (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
+            Assert.Fail("CallbackHeaderKey no longer exists. OK to delete test?");
+            //Verify(new TransportMessageBuilder(),
+            //    (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
 
         }
        
@@ -89,21 +91,23 @@
             var correlationId = Guid.NewGuid().ToString();
 
             Verify(new TransportMessageBuilder().CorrelationId(correlationId),
-                result => Assert.AreEqual(correlationId, result.CorrelationId));
+                result => Assert.AreEqual(correlationId, result.Headers[Headers.CorrelationId]));
 
         }
 
         [Test]
         public void Should_preserve_the_recoverable_setting_if_set_to_durable()
         {
-            Verify(new TransportMessageBuilder(),result => Assert.True(result.Recoverable));
+            Assert.Fail("Recoverable is no longer a flag on incoming message. OK to delete test?");
+            //Verify(new TransportMessageBuilder(),result => Assert.True(result.Recoverable));
         }
 
 
         [Test]
         public void Should_preserve_the_recoverable_setting_if_set_to_non_durable()
         {
-            Verify(new TransportMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
+            Assert.Fail("Recoverable is no longer a flag on incoming message. OK to delete test?");
+            //Verify(new TransportMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
         }
 
 
@@ -124,20 +128,39 @@
         public void Should_throw_when_sending_to_a_non_existing_queue()
         {
             Assert.Throws<QueueNotFoundException>(() =>
-                 sender.Send(new TransportMessage(), new SendOptions("NonExistingQueue@localhost")));
+                messageSender.Dispatch(new[]
+                    {
+                        new TransportMessageBuilder().SendTo("NonExistingQueue@localhost").Build()
+                    }, 
+                    new ContextBag()
+                )
+            );
         }
 
-        void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
+        void Verify(TransportMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
         {
-            var message = builder.Build();
+            var operation = builder.SendTo("testEndPoint").Build();
 
-            SendMessage(message);
+            MakeSureQueueAndExchangeExists("testEndPoint");
 
-            var result = Consume(message.Id, alternateQueueToReceiveOn);
+            SendMessage(operation);
 
-            assertion(new MessageConverter().ToTransportMessage(result), result);
+            var result = Consume(operation.Message.MessageId, alternateQueueToReceiveOn);
+
+            var converter = new MessageConverter();
+
+            using (var body = new MemoryStream(result.Body))
+            {
+                var incomingMessage = new IncomingMessage(
+                    converter.RetrieveMessageId(result),
+                    converter.RetrieveHeaders(result),
+                    body
+                );
+
+                assertion(incomingMessage, result);
+            }
         }
-        void Verify(TransportMessageBuilder builder, Action<TransportMessage> assertion)
+        void Verify(TransportMessageBuilder builder, Action<IncomingMessage> assertion)
         {
             Verify(builder, (t, r) => assertion(t));
         }
@@ -147,17 +170,9 @@
             Verify(builder, (t, r) => assertion(r), alternateQueueToReceiveOn);
         }
 
-        void SendMessage(TransportMessage message)
+        void SendMessage(TransportOperation operation)
         {
-            MakeSureQueueAndExchangeExists("testEndPoint");
-
-            var options = new SendOptions("testEndPoint");
-
-            if (message.MessageIntent == MessageIntentEnum.Reply)
-            {
-                
-            }
-            sender.Send(message, options);
+            messageSender.Dispatch(new[] { operation }, new ContextBag());
         }
 
         BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
