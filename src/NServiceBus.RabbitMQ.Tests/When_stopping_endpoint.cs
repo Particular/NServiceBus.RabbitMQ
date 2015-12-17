@@ -1,9 +1,10 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Unicast;
+    using NServiceBus.Routing;
 
     [TestFixture]
     class When_stopping_endpoint : RabbitMqContext
@@ -15,18 +16,25 @@
         }
 
         [Test, Explicit]
-        public void Should__gracefully_shutdown()
+        public async Task Should__gracefully_shutdown()
         {
-            dequeueStrategy.Stop();
+            await messagePump.Stop();
 
-            var address = Address.Parse(ReceiverQueue);
+            //TODO: maybe build up a IEnumerable<TransportOperation> and Dispatch all at once instead?
+            var tasks = new List<Task>();
 
-            Parallel.For(0, 2000, i =>
-                sender.Send(new TransportMessage{Body = new byte[1]}, new SendOptions(address)));
+            for (int i = 0; i < 2000; i++)
+            {
+                //TODO: need real arguments for OutgoingMessage
+                var task = messageSender.Dispatch(new[] { new TransportOperation(new OutgoingMessage("", new Dictionary<string, string>(), new byte[1]), new DispatchOptions(new UnicastAddressTag(ReceiverQueue), DispatchConsistency.Default)) }, new Extensibility.ContextBag());
+                tasks.Add(task);
+            }
 
-            dequeueStrategy.Start(50);
-            Thread.Sleep(1000);
-            dequeueStrategy.Stop();
+            await Task.WhenAll(tasks);
+
+            messagePump.Start(new PushRuntimeSettings(50));
+            await Task.Delay(1000);
+            await messagePump.Stop();
             connectionManager.Dispose();
         }
     }
