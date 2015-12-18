@@ -2968,7 +2968,8 @@ namespace System.Threading.Tasks.Dataflow
 
                     // Set up the target block
                     Observable = observable;
-                    Target = new ActionBlock<TOutput>(ProcessItemAsync, _nonGreedyExecutionOptions);
+                    // ReSharper disable once RedundantCast
+                    Target = new ActionBlock<TOutput>((Func<TOutput, Task>)ProcessItemAsync, _nonGreedyExecutionOptions);
 
                     // If the target block fails due to an unexpected exception (e.g. it calls back to the source and the source throws an error), 
                     // we fault currently registered observers and reset the observable.
