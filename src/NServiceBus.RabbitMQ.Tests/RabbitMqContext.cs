@@ -67,10 +67,7 @@
 
             var connectionFactory = new RabbitMqConnectionFactory(config);
             connectionManager = new RabbitMqConnectionManager(connectionFactory, config);
-
-            publishChannel = connectionManager.GetPublishConnection().CreateModel();
-
-            var channelProvider = new FakeChannelProvider(publishChannel);
+            var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms, config.MaxWaitTimeForConfirms);
 
             var settingsHolder = new SettingsHolder();
             settingsHolder.Set("NServiceBus.LocalAddress", ReceiverQueue);
@@ -104,9 +101,6 @@
                 messagePump.Stop().GetAwaiter().GetResult();
             }
 
-            publishChannel.Close();
-            publishChannel.Dispose();
-
             connectionManager.Dispose();
         }
 
@@ -131,7 +125,6 @@
             return message;
         }
 
-        IModel publishChannel;
         protected string CallbackQueue = "testreceiver." + RuntimeEnvironment.MachineName;
 
         protected const string ReceiverQueue = "testreceiver";
@@ -196,7 +189,7 @@
         }
     }
 
-    class FakeChannelProvider:IChannelProvider
+    class FakeChannelProvider : IChannelProvider
     {
         readonly IModel publishChannel;
 
