@@ -17,7 +17,7 @@
         {
             var body = Encoding.UTF8.GetBytes("<TestMessage/>");
 
-            Verify(new TransportMessageBuilder().WithBody(body),
+            Verify(new OutgoingMessageBuilder().WithBody(body),
                  received => Assert.AreEqual(body, received.Body));
         }
 
@@ -25,28 +25,28 @@
         [Test]
         public void Should_set_the_content_type()
         {
-            VerifyRabbit(new TransportMessageBuilder().WithHeader(Headers.ContentType, "application/json"),
+            VerifyRabbit(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"),
                 received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
 
         }
 
-        
+
         [Test]
         public void Should_default_the_content_type_to_octet_stream_when_no_content_type_is_specified()
         {
-            VerifyRabbit(new TransportMessageBuilder(),
+            VerifyRabbit(new OutgoingMessageBuilder(),
                 received => Assert.AreEqual("application/octet-stream", received.BasicProperties.ContentType));
 
         }
 
-        
+
 
         [Test]
         public void Should_set_the_message_type_based_on_the_encoded_message_types_header()
         {
             var messageType = typeof (MyMessage);
 
-            VerifyRabbit(new TransportMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
+            VerifyRabbit(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
                 received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
 
         }
@@ -58,7 +58,7 @@
             var timeToBeReceived = TimeSpan.FromDays(1);
 
 
-            VerifyRabbit(new TransportMessageBuilder().TimeToBeReceived(timeToBeReceived),
+            VerifyRabbit(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived),
                 received => Assert.AreEqual(timeToBeReceived.TotalMilliseconds.ToString(), received.BasicProperties.Expiration));
         }
 
@@ -67,7 +67,7 @@
         {
             var address = "myAddress";
 
-            Verify(new TransportMessageBuilder().ReplyToAddress(address), 
+            Verify(new OutgoingMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
                     Assert.AreEqual(address, t.Headers[Headers.ReplyToAddress]);
@@ -80,17 +80,17 @@
         public void Should_not_populate_the_callback_header()
         {
             Assert.Fail("CallbackHeaderKey no longer exists. OK to delete test?");
-            //Verify(new TransportMessageBuilder(),
+            //Verify(new OutgoingMessageBuilder(),
             //    (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
 
         }
-       
+
         [Test]
         public void Should_set_correlation_id_if_present()
         {
             var correlationId = Guid.NewGuid().ToString();
 
-            Verify(new TransportMessageBuilder().CorrelationId(correlationId),
+            Verify(new OutgoingMessageBuilder().CorrelationId(correlationId),
                 result => Assert.AreEqual(correlationId, result.Headers[Headers.CorrelationId]));
 
         }
@@ -99,7 +99,7 @@
         public void Should_preserve_the_recoverable_setting_if_set_to_durable()
         {
             Assert.Fail("Recoverable is no longer a flag on incoming message. OK to delete test?");
-            //Verify(new TransportMessageBuilder(),result => Assert.True(result.Recoverable));
+            //Verify(new OutgoingMessageBuilder(),result => Assert.True(result.Recoverable));
         }
 
 
@@ -107,7 +107,7 @@
         public void Should_preserve_the_recoverable_setting_if_set_to_non_durable()
         {
             Assert.Fail("Recoverable is no longer a flag on incoming message. OK to delete test?");
-            //Verify(new TransportMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
+            //Verify(new OutgoingMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
         }
 
 
@@ -115,7 +115,7 @@
         public void Should_transmit_all_transportMessage_headers()
         {
 
-            Verify(new TransportMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
+            Verify(new OutgoingMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
                 result =>
                 {
                     Assert.AreEqual("v1", result.Headers["h1"]);
@@ -130,14 +130,14 @@
             Assert.Throws<QueueNotFoundException>(() =>
                 messageSender.Dispatch(new[]
                     {
-                        new TransportMessageBuilder().SendTo("NonExistingQueue@localhost").Build()
-                    }, 
+                        new OutgoingMessageBuilder().SendTo("NonExistingQueue@localhost").Build()
+                    },
                     new ContextBag()
                 )
             );
         }
 
-        void Verify(TransportMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
+        void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
         {
             var operation = builder.SendTo("testEndPoint").Build();
 
@@ -160,12 +160,12 @@
                 assertion(incomingMessage, result);
             }
         }
-        void Verify(TransportMessageBuilder builder, Action<IncomingMessage> assertion)
+        void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage> assertion)
         {
             Verify(builder, (t, r) => assertion(t));
         }
 
-        void VerifyRabbit(TransportMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
+        void VerifyRabbit(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
             Verify(builder, (t, r) => assertion(r), alternateQueueToReceiveOn);
         }
@@ -208,7 +208,7 @@
 
         class MyMessage
         {
-            
+
         }
 
     }
