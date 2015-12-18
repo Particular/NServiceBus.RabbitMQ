@@ -25,11 +25,11 @@
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
             Assert.Fail("Port is no longer a property on ConnectionConfiguration. OK to remove?");
             //Assert.AreEqual(connectionConfiguration.Port, 12345);
-            Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
-            Assert.AreEqual(connectionConfiguration.PrefetchCount, 2);
-            Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
-            Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
-            Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
+            //Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
+            //Assert.AreEqual(connectionConfiguration.PrefetchCount, 2);
+            //Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
+            //Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
+            //Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
         }
 
         [Test]
