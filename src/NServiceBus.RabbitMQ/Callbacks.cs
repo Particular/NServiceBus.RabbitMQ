@@ -33,7 +33,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
         public bool IsEnabledFor(string queueName)
         {
-            return mainQueue != queueName;
+            return mainQueue == queueName;
         }
 
         static bool UseCallbackReceiver(ReadOnlySettings settings)
