@@ -23,13 +23,12 @@
             Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
-            Assert.Fail("Port is no longer a property on ConnectionConfiguration. OK to remove?");
-            //Assert.AreEqual(connectionConfiguration.Port, 12345);
-            //Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
-            //Assert.AreEqual(connectionConfiguration.PrefetchCount, 2);
-            //Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
-            //Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
-            //Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
+            Assert.AreEqual(connectionConfiguration.Port, 12345);
+            Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
+            Assert.AreEqual(connectionConfiguration.PrefetchCount, 2);
+            Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
+            Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
+            Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
         }
 
         [Test]
@@ -153,7 +152,7 @@
             var parser = new ConnectionStringParser(new SettingsHolder());
             var formatException = Assert.Throws<FormatException>(
                 () => parser.Parse("host=localhost;maxWaitTimeForConfirms=00:0d0:10"));
-            
+
             Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
         }
 
@@ -163,7 +162,7 @@
             var parser = new ConnectionStringParser(new SettingsHolder());
             var formatException = Assert.Throws<FormatException>(
                 () => parser.Parse("host=localhost;retryDelay=00:0d0:10"));
-            
+
             Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
         }
 
