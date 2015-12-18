@@ -83,18 +83,14 @@
 
             subscriptionManager = new RabbitMqSubscriptionManager(connectionManager, routingTopology, ReceiverQueue);
 
-            //commented out for now while sorting it all out
-            //messagePump.Init()
-
-
-            //    var pushSettings = new PushSettings(ReceiverQueue, Er,, TransportTransactionMode.)
-
-
-            //messagePump.Init(Address.Parse(ReceiverQueue), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
-            //{
-            //    receivedMessages.Add(m);
-            //    return true;
-            //}, (s, exception) => { });
+            messagePump.Init(pushContext =>
+            {
+                receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
+                return TaskEx.Completed;
+            },
+                new CriticalError((endpoint, error, exception) => TaskEx.Completed),
+                new PushSettings(ReceiverQueue, "error", true, TransportTransactionMode.ReceiveOnly)
+            ).GetAwaiter().GetResult();
 
             messagePump.Start(new PushRuntimeSettings(MaximumConcurrency));
         }
