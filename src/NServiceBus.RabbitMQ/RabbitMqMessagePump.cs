@@ -49,7 +49,6 @@ namespace NServiceBus.Transports.RabbitMQ
                 delayAfterFailure);
         }
 
-
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
         {
             this.pipe = pipe;
@@ -164,46 +163,62 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             try
             {
-                var connection = connectionManager.GetConsumeConnection();
-                var modelsPool = new ObjectPool<IModel>(() => connection.CreateModel(), maxConcurrency);
-
-                while (!token.IsCancellationRequested)
+                using (var connection = connectionManager.GetConsumeConnection())
                 {
-                    await limiter.WaitAsync(token).ConfigureAwait(false);
+                    var modelsPool = new ObjectPool<IModel>(() => connection.CreateModel(), maxConcurrency);
 
-                    var channel = modelsPool.Allocate();
-                    channel.BasicQos(0, actualPrefetchCount, false);
-
-                    var consumer = new AsyncBasicConsumer(channel, token);
-
-                    channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
-
-                    circuitBreaker.Success();
-
-                    BasicDeliverEventArgs message;
-
-                    try
+                    while (!token.IsCancellationRequested)
                     {
-                        message = await consumer.Queue.ReceiveAsync(token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        //Ignore cancellations
-                        continue;
-                    }
+                        await limiter.WaitAsync(token).ConfigureAwait(false);
 
-                    if (token.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    
-                    Task.Run(() => ProcessMessage(message, channel), token)
-                        .ContinueWith(_ =>
+                        var channel = modelsPool.Allocate();
+                        channel.BasicQos(0, actualPrefetchCount, false);
+
+                        var consumer = new AsyncBasicConsumer(channel, token);
+
+                        channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
+
+                        circuitBreaker.Success();
+
+                        BasicDeliverEventArgs message;
+
+                        try
                         {
-                            modelsPool.Free(channel);
-                            limiter.Release();
+                            message = await consumer.Queue.ReceiveAsync(token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            //Ignore cancellations
+                            break;
+                        }
+
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await ProcessMessage(message, channel);
+
+                                if (!noAck)
+                                {
+
+                                    channel.BasicAck(message.DeliveryTag, false);
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                if (!noAck)
+                                {
+                                    channel.BasicReject(message.DeliveryTag, true);
+                                }
+                            }
                         }, token)
-                        .Ignore();
+                            .ContinueWith(_ =>
+                            {
+                                modelsPool.Free(channel);
+                                limiter.Release();
+                            }, token)
+                            .Ignore();
+                    }
                 }
             }
             catch (EndOfStreamException)
@@ -227,84 +242,49 @@ namespace NServiceBus.Transports.RabbitMQ
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
+            Dictionary<string, string> headers = null;
+            string messageId = null;
+            var pushMessage = false;
             try
             {
-                Dictionary<string, string> headers = null;
-                string messageId = null;
-                var pushMessage = false;
-                try
-                {
-                    messageId = receiveOptions.Converter.RetrieveMessageId(message);
-                    headers = receiveOptions.Converter.RetrieveHeaders(message);
-                    pushMessage = true;
-                }
-                catch (Exception ex)
-                {
-                    var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{settings.ErrorQueue}'.";
-                    Logger.Error(error, ex);
-
-                    try
-                    {
-                        using (var errorChannel = channelProvider.GetNewPublishChannel())
-                        {
-                            routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, settings.ErrorQueue, message.Body, message.BasicProperties);
-                        }
-                    }
-                    catch (Exception ex2)
-                    {
-                        Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
-                        throw;
-                    }
-
-                    //just ack the poison message to avoid getting stuck
-                    if (!noAck)
-                    {
-                        channel.BasicAck(message.DeliveryTag, false);
-                    }
-                }
-
-                if (pushMessage)
-                {
-                    var context = new ContextBag();
-
-                    string explicitCallbackAddress;
-
-
-                    if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
-                    {
-                        context.Set(new CallbackAddress(explicitCallbackAddress));
-                    }
-
-                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), context);
-
-                    try
-                    {
-                        await pipe(pushContext).ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        if (!noAck)
-                        {
-                            channel.BasicReject(message.DeliveryTag, true);
-                        }
-
-                        throw;
-                    }
-
-                    if (!noAck)
-                    {
-                        channel.BasicAck(message.DeliveryTag, false);
-                    }
-                }
+                messageId = receiveOptions.Converter.RetrieveMessageId(message);
+                headers = receiveOptions.Converter.RetrieveHeaders(message);
+                pushMessage = true;
             }
             catch (Exception ex)
             {
-                Logger.Error("A failure occurred at the transport while trying to process a message.", ex);
+                var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{settings.ErrorQueue}'.";
+                Logger.Error(error, ex);
 
-                if (!noAck)
+                try
                 {
-                    channel.BasicReject(message.DeliveryTag, true);
+                    using (var errorChannel = channelProvider.GetNewPublishChannel())
+                    {
+                        routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, settings.ErrorQueue, message.Body, message.BasicProperties);
+                    }
                 }
+                catch (Exception ex2)
+                {
+                    Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
+                    throw;
+                }
+            }
+
+            if (pushMessage)
+            {
+                var context = new ContextBag();
+
+                string explicitCallbackAddress;
+
+
+                if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
+                {
+                    context.Set(new CallbackAddress(explicitCallbackAddress));
+                }
+
+                var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), context);
+
+                await pipe(pushContext).ConfigureAwait(false);
             }
         }
 
