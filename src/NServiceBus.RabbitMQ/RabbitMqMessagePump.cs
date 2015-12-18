@@ -6,11 +6,13 @@ namespace NServiceBus.Transports.RabbitMQ
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Threading.Tasks.Dataflow;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
     using NServiceBus.Transports.RabbitMQ.Routing;
+    using Roslyn.Utilities;
 
     class RabbitMqMessagePump : IPushMessages, IDisposable
     {
@@ -65,47 +67,6 @@ namespace NServiceBus.Transports.RabbitMQ
             return TaskEx.Completed;
         }
 
-        public void Start(PushRuntimeSettings limitations)
-        {
-            isStopping = false;
-
-            if (receiveOptions.DefaultPrefetchCount > 0)
-            {
-                actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
-            }
-            else
-            {
-                actualPrefetchCount = Convert.ToUInt16(limitations.MaxConcurrency);
-
-                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
-            }
-
-
-            var secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
-
-            actualConcurrencyLevel = limitations.MaxConcurrency + secondaryReceiveSettings.MaximumConcurrencyLevel;
-
-            tokenSource = new CancellationTokenSource();
-
-            // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            tracksRunningThreads = new SemaphoreSlim(actualConcurrencyLevel, actualConcurrencyLevel);
-
-            for (var i = 0; i < limitations.MaxConcurrency; i++)
-            {
-                StartConsumer(settings.InputQueue);
-            }
-
-            if (secondaryReceiveSettings.IsEnabled)
-            {
-                for (var i = 0; i < secondaryReceiveSettings.MaximumConcurrencyLevel; i++)
-                {
-                    StartConsumer(secondaryReceiveSettings.ReceiveQueue);
-                }
-
-                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.ReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);
-            }
-        }
-
         public async Task Stop()
         {
             if (isStopping)
@@ -122,21 +83,76 @@ namespace NServiceBus.Transports.RabbitMQ
 
             tokenSource.Cancel();
 
-            await WaitForThreadsToStop();
+            var tasksToWait = new List<Task>(2)
+            {
+                mainConcurrencyLimiter.WaitAsync()
+            };
+            if (secondaryConcurrencyLimiter != null)
+            {
+                tasksToWait.Add(secondaryConcurrencyLimiter.WaitAsync());
+            }
+
+            await Task.WhenAll(tasksToWait).ConfigureAwait(false);
+            await Task.WhenAll(mainMessagePumpTask, secondaryMessagePumpTask).ConfigureAwait(false);
 
             tokenSource = null;
         }
 
-        async Task WaitForThreadsToStop()
+        public void Start(PushRuntimeSettings limitations)
         {
-            for (var index = 0; index < actualConcurrencyLevel; index++)
+            isStopping = false;
+
+            if (receiveOptions.DefaultPrefetchCount > 0)
             {
-                await tracksRunningThreads.WaitAsync().ConfigureAwait(false);
+                actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
+            }
+            else
+            {
+                actualPrefetchCount = Convert.ToUInt16(limitations.MaxConcurrency);
+
+                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
             }
 
-            tracksRunningThreads.Release(actualConcurrencyLevel);
+            var secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
 
-            tracksRunningThreads.Dispose();
+            tokenSource = new CancellationTokenSource();
+
+            mainConcurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
+
+            mainMessagePumpTask = Task.Run(() => StartConsumers(settings.InputQueue, mainConcurrencyLimiter, tokenSource.Token, limitations.MaxConcurrency), CancellationToken.None);
+            
+            if (secondaryReceiveSettings.IsEnabled)
+            {
+                secondaryConcurrencyLimiter = new SemaphoreSlim(secondaryReceiveSettings.MaximumConcurrencyLevel, secondaryReceiveSettings.MaximumConcurrencyLevel);
+
+                secondaryMessagePumpTask = Task.Run(() => StartConsumers(secondaryReceiveSettings.ReceiveQueue, secondaryConcurrencyLimiter, tokenSource.Token, secondaryReceiveSettings.MaximumConcurrencyLevel), CancellationToken.None);
+
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.ReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);
+            }
+            else
+            {
+                secondaryMessagePumpTask = Task.Delay(0);
+            }
+        }
+
+        async Task StartConsumers(string inputQueue, SemaphoreSlim concurrencyLimiter, CancellationToken token, int maxConcurrency)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await ConsumeMessages(inputQueue, concurrencyLimiter, token, maxConcurrency).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // For graceful shutdown purposes
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("RabbitMq Message pump failed", ex);
+                    await circuitBreaker.Failure(ex).ConfigureAwait(false);
+                }
+            }
         }
 
         public void Dispose()
@@ -144,144 +160,50 @@ namespace NServiceBus.Transports.RabbitMQ
             // Injected
         }
 
-        void StartConsumer(string queue)
+        async Task ConsumeMessages(string inputQueue, SemaphoreSlim limiter, CancellationToken token, int maxConcurrency)
         {
-            var token = tokenSource.Token;
-            Task.Run(()=>ConsumeMessages(new ConsumeParams
-                {
-                    Queue = queue,
-                    CancellationToken = token
-                }), token)
-                .ContinueWith(t =>
-                {
-                    // ReSharper disable once PossibleNullReferenceException
-                    t.Exception.Handle(ex =>
-                    {
-                        Logger.Error("Failed to receive messages from " + queue, t.Exception);
-                        circuitBreaker.Failure(ex);
-                        return true;
-                    });
-
-                    if (!tokenSource.IsCancellationRequested)
-                    {
-                        StartConsumer(queue);
-                    }
-                }, token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
-        }
-
-        async Task ConsumeMessages(object state)
-        {
-            var parameters = (ConsumeParams)state;
-
-            if (!await tracksRunningThreads.WaitAsync(TimeSpan.FromSeconds(1), parameters.CancellationToken))
-            {
-                return;
-            }
-
             try
             {
                 var connection = connectionManager.GetConsumeConnection();
+                var modelsPool = new ObjectPool<IModel>(() => connection.CreateModel(), maxConcurrency);
 
-                using (var channel = connection.CreateModel())
+                while (!token.IsCancellationRequested)
                 {
+                    await limiter.WaitAsync(token).ConfigureAwait(false);
+
+                    var channel = modelsPool.Allocate();
                     channel.BasicQos(0, actualPrefetchCount, false);
 
-                    var consumer = new QueueingBasicConsumer(channel);
+                    var consumer = new AsyncBasicConsumer(channel, token);
 
-                    channel.BasicConsume(parameters.Queue, noAck, receiveOptions.ConsumerTag, consumer);
+                    channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
 
                     circuitBreaker.Success();
 
-                    while (!parameters.CancellationToken.IsCancellationRequested)
+                    BasicDeliverEventArgs message;
+
+                    try
                     {
-                        var message = DequeueMessage(consumer, receiveOptions.DequeueTimeout);
-
-                        if (message == null)
-                        {
-                            continue;
-                        }
-
-                        try
-                        {
-                            Dictionary<string, string> headers = null;
-                            string messageId = null;
-                            var pushMessage = false;
-                            try
-                            {
-                                messageId = receiveOptions.Converter.RetrieveMessageId(message);
-                                headers = receiveOptions.Converter.RetrieveHeaders(message);
-                                pushMessage = true;
-                            }
-                            catch (Exception ex)
-                            {
-                                var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{settings.ErrorQueue}'.";
-                                Logger.Error(error, ex);
-
-                                try
-                                {
-                                    using (var errorChannel = channelProvider.GetNewPublishChannel())
-                                    {
-                                        routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, settings.ErrorQueue, message.Body, message.BasicProperties);
-                                    }
-
-                                }
-                                catch (Exception ex2)
-                                {
-                                    Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
-                                    throw;
-                                }
-
-                                //just ack the poison message to avoid getting stuck
-                                if (!noAck)
-                                {
-                                    channel.BasicAck(message.DeliveryTag, false);
-                                }
-                            }
-
-                            if (pushMessage)
-                            {
-                                var context = new ContextBag();
-
-                                string explicitCallbackAddress;
-
-
-                                if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
-                                {
-                                    context.Set(new CallbackAddress(explicitCallbackAddress));    
-                                }
-
-                                var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(),context);
-
-                                try
-                                {
-                                    await pipe(pushContext).ConfigureAwait(false);
-                                }
-                                catch (Exception)
-                                {
-                                    if (!noAck)
-                                    {
-                                        channel.BasicReject(message.DeliveryTag, true);
-                                    }
-
-                                    throw;
-                                }
-
-                                if (!noAck)
-                                {
-                                    channel.BasicAck(message.DeliveryTag, false);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error("A failure occurred at the transport while trying to dequeue/process a message.", ex);
-
-                            if (!noAck)
-                            {
-                                channel.BasicReject(message.DeliveryTag, true);
-                            }
-                        }
+                        message = await consumer.Queue.ReceiveAsync(token);
                     }
+                    catch (OperationCanceledException)
+                    {
+                        //Ignore cancellations
+                        continue;
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    
+                    Task.Run(() => ProcessMessage(message, channel), token)
+                        .ContinueWith(_ =>
+                        {
+                            modelsPool.Free(channel);
+                            limiter.Release();
+                        }, token)
+                        .Ignore();
                 }
             }
             catch (EndOfStreamException)
@@ -290,10 +212,6 @@ namespace NServiceBus.Transports.RabbitMQ
                 // state, or if at any time while waiting the queue
                 // transitions to a closed state (by a call to Close()), this
                 // method will throw EndOfStreamException.
-
-                // We need to put a delay here otherwise we end-up doing a tight loop that causes
-                // CPU spikes
-                Thread.Sleep(1000);
                 throw;
             }
             catch (IOException)
@@ -305,24 +223,89 @@ namespace NServiceBus.Transports.RabbitMQ
                     throw;
                 }
             }
-            finally
-            {
-                tracksRunningThreads.Release();
-            }
         }
 
-        static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer, int dequeueTimeout)
+        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
-            BasicDeliverEventArgs rawMessage;
-
-            var messageDequeued = consumer.Queue.Dequeue(dequeueTimeout, out rawMessage);
-            
-            if (!messageDequeued)
+            try
             {
-                return null;
-            }
+                Dictionary<string, string> headers = null;
+                string messageId = null;
+                var pushMessage = false;
+                try
+                {
+                    messageId = receiveOptions.Converter.RetrieveMessageId(message);
+                    headers = receiveOptions.Converter.RetrieveHeaders(message);
+                    pushMessage = true;
+                }
+                catch (Exception ex)
+                {
+                    var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{settings.ErrorQueue}'.";
+                    Logger.Error(error, ex);
 
-            return rawMessage;
+                    try
+                    {
+                        using (var errorChannel = channelProvider.GetNewPublishChannel())
+                        {
+                            routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, settings.ErrorQueue, message.Body, message.BasicProperties);
+                        }
+                    }
+                    catch (Exception ex2)
+                    {
+                        Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
+                        throw;
+                    }
+
+                    //just ack the poison message to avoid getting stuck
+                    if (!noAck)
+                    {
+                        channel.BasicAck(message.DeliveryTag, false);
+                    }
+                }
+
+                if (pushMessage)
+                {
+                    var context = new ContextBag();
+
+                    string explicitCallbackAddress;
+
+
+                    if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
+                    {
+                        context.Set(new CallbackAddress(explicitCallbackAddress));
+                    }
+
+                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), context);
+
+                    try
+                    {
+                        await pipe(pushContext).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        if (!noAck)
+                        {
+                            channel.BasicReject(message.DeliveryTag, true);
+                        }
+
+                        throw;
+                    }
+
+                    if (!noAck)
+                    {
+                        channel.BasicAck(message.DeliveryTag, false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("A failure occurred at the transport while trying to process a message.", ex);
+
+                if (!noAck)
+                {
+                    channel.BasicReject(message.DeliveryTag, true);
+                }
+            }
         }
 
         void Purge()
@@ -341,19 +324,46 @@ namespace NServiceBus.Transports.RabbitMQ
         Func<PushContext, Task> pipe;
         PushSettings settings;
         CancellationTokenSource tokenSource;
-        SemaphoreSlim tracksRunningThreads;
+        SemaphoreSlim mainConcurrencyLimiter, secondaryConcurrencyLimiter;
+        Task mainMessagePumpTask, secondaryMessagePumpTask;
         bool noAck;
-        int actualConcurrencyLevel;
         readonly ReceiveOptions receiveOptions;
-        private readonly IRoutingTopology routingTopology;
-        private readonly IChannelProvider channelProvider;
+        readonly IRoutingTopology routingTopology;
+        readonly IChannelProvider channelProvider;
         ushort actualPrefetchCount;
         bool isStopping;
 
-        class ConsumeParams
+        class AsyncBasicConsumer : DefaultBasicConsumer
         {
-            public CancellationToken CancellationToken;
-            public string Queue;
+            public AsyncBasicConsumer(IModel model, CancellationToken token) : base(model)
+            {
+                Queue = new BufferBlock<BasicDeliverEventArgs>(new DataflowBlockOptions
+                {
+                    CancellationToken = token
+                });
+            }
+
+            public override void HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, byte[] body)
+            {
+                Queue.Post(new BasicDeliverEventArgs
+                {
+                    ConsumerTag = consumerTag,
+                    DeliveryTag = deliveryTag,
+                    Redelivered = redelivered,
+                    Exchange = exchange,
+                    RoutingKey = routingKey,
+                    BasicProperties = properties,
+                    Body = body
+                });
+            }
+
+            public override void OnCancel()
+            {
+                base.OnCancel();
+                Queue.Complete();
+            }
+
+            public BufferBlock<BasicDeliverEventArgs> Queue { get; }
         }
     }
 }
