@@ -6,16 +6,16 @@
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Routing;
 
-    public class TransportMessageBuilder
+    public class OutgoingMessageBuilder
     {
         string _messageId = Guid.NewGuid().ToString();
         byte[] _body;
         Dictionary<string, string> _headers = new Dictionary<string, string>();
-        IList<DeliveryConstraint> _constraints = new List<DeliveryConstraint>(); 
+        IList<DeliveryConstraint> _constraints = new List<DeliveryConstraint>();
         DispatchConsistency _dispatchConsistency = DispatchConsistency.Default;
         AddressTag _addressTag;
 
-        public TransportMessageBuilder WithBody(byte[] body)
+        public OutgoingMessageBuilder WithBody(byte[] body)
         {
             _body = body;
             return this;
@@ -25,45 +25,45 @@
         {
             return new TransportOperation(
                 new OutgoingMessage(_messageId, _headers, _body),
-                new DispatchOptions(_addressTag, _dispatchConsistency, _constraints) 
+                new DispatchOptions(_addressTag, _dispatchConsistency, _constraints)
             );
         }
 
-        public TransportMessageBuilder SendTo(string unicastAddress)
+        public OutgoingMessageBuilder SendTo(string unicastAddress)
         {
             _addressTag = new UnicastAddressTag(unicastAddress);
             return this;
         }
 
-        public TransportMessageBuilder WithHeader(string key,string value)
+        public OutgoingMessageBuilder WithHeader(string key,string value)
         {
             _headers[key] = value;
             return this;
         }
 
-        public TransportMessageBuilder TimeToBeReceived(TimeSpan timeToBeReceived)
+        public OutgoingMessageBuilder TimeToBeReceived(TimeSpan timeToBeReceived)
         {
             _constraints.Add(new DiscardIfNotReceivedBefore(timeToBeReceived));
             return this;
         }
 
-        public TransportMessageBuilder ReplyToAddress(string address)
+        public OutgoingMessageBuilder ReplyToAddress(string address)
         {
             return WithHeader(Headers.ReplyToAddress, address);
         }
 
-        public TransportMessageBuilder CorrelationId(string correlationId)
+        public OutgoingMessageBuilder CorrelationId(string correlationId)
         {
             return WithHeader(Headers.CorrelationId, correlationId);
         }
 
-        public TransportMessageBuilder NonDurable()
+        public OutgoingMessageBuilder NonDurable()
         {
             _constraints.Add(new NonDurableDelivery());
             return this;
         }
 
-        public TransportMessageBuilder WithIntent(MessageIntentEnum intent)
+        public OutgoingMessageBuilder WithIntent(MessageIntentEnum intent)
         {
             return WithHeader(Headers.MessageIntent, intent.ToString());
         }
