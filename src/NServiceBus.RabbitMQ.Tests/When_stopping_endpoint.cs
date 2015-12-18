@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
     using System.Collections.Generic;
-    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
     using NServiceBus.Routing;
@@ -23,7 +22,7 @@
             //TODO: maybe build up a IEnumerable<TransportOperation> and Dispatch all at once instead?
             var tasks = new List<Task>();
 
-            for (int i = 0; i < 2000; i++)
+            for (var i = 0; i < 2000; i++)
             {
                 //TODO: need real arguments for OutgoingMessage
                 var task = messageSender.Dispatch(new[] { new TransportOperation(new OutgoingMessage("", new Dictionary<string, string>(), new byte[1]), new DispatchOptions(new UnicastAddressTag(ReceiverQueue), DispatchConsistency.Default)) }, new Extensibility.ContextBag());

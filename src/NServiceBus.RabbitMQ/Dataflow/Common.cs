@@ -212,6 +212,7 @@ namespace System.Threading.Tasks.Dataflow.Internal
 
             // Get the string value to store
             var strValue = messageValue as string;
+            // ReSharper disable once CompareNonConstrainedGenericWithNull
             if (strValue == null && messageValue != null)
             {
                 try
