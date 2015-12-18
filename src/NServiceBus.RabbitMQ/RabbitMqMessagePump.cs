@@ -163,34 +163,24 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             try
             {
-                using (var connection = connectionManager.GetConsumeConnection())
+                var connection = connectionManager.GetConsumeConnection();
+                var modelsPool = new ObjectPool<IModel>(() => connection.CreateModel(), maxConcurrency);
+                var channel = modelsPool.Allocate();
+
+                channel.BasicQos(0, actualPrefetchCount, false);
+
+                var consumer = new AsyncBasicConsumer(channel, token);
+
+                channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
+
+                circuitBreaker.Success();
+
+                while (!token.IsCancellationRequested)
                 {
-                    var modelsPool = new ObjectPool<IModel>(() => connection.CreateModel(), maxConcurrency);
-
-                    while (!token.IsCancellationRequested)
+                    await limiter.WaitAsync(token).ConfigureAwait(false);
+                    try
                     {
-                        await limiter.WaitAsync(token).ConfigureAwait(false);
-
-                        var channel = modelsPool.Allocate();
-                        channel.BasicQos(0, actualPrefetchCount, false);
-
-                        var consumer = new AsyncBasicConsumer(channel, token);
-
-                        channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
-
-                        circuitBreaker.Success();
-
-                        BasicDeliverEventArgs message;
-
-                        try
-                        {
-                            message = await consumer.Queue.ReceiveAsync(token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            //Ignore cancellations
-                            break;
-                        }
+                        var message = await consumer.Queue.ReceiveAsync(token);
 
                         Task.Run(async () =>
                         {
@@ -200,7 +190,6 @@ namespace NServiceBus.Transports.RabbitMQ
 
                                 if (!noAck)
                                 {
-
                                     channel.BasicAck(message.DeliveryTag, false);
                                 }
                             }
@@ -216,8 +205,12 @@ namespace NServiceBus.Transports.RabbitMQ
                             {
                                 modelsPool.Free(channel);
                                 limiter.Release();
-                            }, token)
+                            }, CancellationToken.None)
                             .Ignore();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        limiter.Release();
                     }
                 }
             }
@@ -275,7 +268,6 @@ namespace NServiceBus.Transports.RabbitMQ
                 var context = new ContextBag();
 
                 string explicitCallbackAddress;
-
 
                 if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
                 {
