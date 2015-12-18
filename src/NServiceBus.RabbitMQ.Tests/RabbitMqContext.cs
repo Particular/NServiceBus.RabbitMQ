@@ -72,7 +72,9 @@
 
             var channelProvider = new FakeChannelProvider(publishChannel);
 
-            messageSender = new RabbitMqMessageSender(routingTopology, channelProvider, new Callbacks(new SettingsHolder()));
+            var settingsHolder = new SettingsHolder();
+            settingsHolder.Set("NServiceBus.LocalAddress", ReceiverQueue);
+            messageSender = new RabbitMqMessageSender(routingTopology, channelProvider, new Callbacks(settingsHolder));
 
             messagePump = new RabbitMqMessagePump(connectionManager, routingTopology, channelProvider,
                 new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(), 1, 1000, false, "Unit test"));
