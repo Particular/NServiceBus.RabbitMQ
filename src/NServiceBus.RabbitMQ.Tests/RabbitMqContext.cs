@@ -4,17 +4,13 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Transactions;
-    using System.Threading.Tasks;
     using Config;
     using global::RabbitMQ.Client;
-    using NServiceBus.Pipeline.Contexts;
     using NServiceBus.Support;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using NUnit.Framework;
     using ObjectBuilder.Common;
     using Routing;
-    using TransactionSettings = Unicast.Transport.TransactionSettings;
     using Settings;
 
     class RabbitMqContext

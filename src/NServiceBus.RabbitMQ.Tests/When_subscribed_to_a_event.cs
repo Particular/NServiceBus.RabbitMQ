@@ -5,7 +5,6 @@
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
     using NUnit.Framework;
-    using Unicast;
 
     [TestFixture]
     class When_subscribed_to_a_event : RabbitMqContext
