@@ -35,6 +35,12 @@
             return this;
         }
 
+        public OutgoingMessageBuilder PublishType(Type messageType)
+        {
+            _addressTag = new MulticastAddressTag(messageType);
+            return this;
+        }
+
         public OutgoingMessageBuilder WithHeader(string key,string value)
         {
             _headers[key] = value;
