@@ -150,18 +150,8 @@
         void Publish<T>()
         {
             var type = typeof(T);
-            messageSender.Dispatch(new[]
-            {
-                new TransportOperation(new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]),
-                    new DispatchOptions(new MulticastAddressTag(type), DispatchConsistency.Default)),
-
-            }, new ContextBag()).GetAwaiter().GetResult();
-
-            //MessagePublisher.Publish(new TransportMessage
-            //{
-            //    CorrelationId = type.FullName
-            //}, new PublishOptions(type));
-
+            messageSender.Dispatch(new[] { new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build() }
+            , new ContextBag()).GetAwaiter().GetResult();
         }
 
 
@@ -174,9 +164,7 @@
 
         void AssertReceived<T>(IncomingMessage receivedEvent)
         {
-            Assert.Fail("CorrelationId is no longer a property of Incoming Message.");
-           // Assert.AreEqual(typeof(T).FullName, receivedEvent.CorrelationId);
-
+            Assert.AreEqual(typeof(T).FullName, receivedEvent.Headers[Headers.CorrelationId]);
         }
 
         void AssertNoEventReceived()
