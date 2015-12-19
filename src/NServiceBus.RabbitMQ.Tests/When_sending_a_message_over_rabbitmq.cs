@@ -44,7 +44,7 @@
         [Test]
         public void Should_set_the_message_type_based_on_the_encoded_message_types_header()
         {
-            var messageType = typeof (MyMessage);
+            var messageType = typeof(MyMessage);
 
             VerifyRabbit(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
                 received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
@@ -79,10 +79,10 @@
         [Test]
         public void Should_not_populate_the_callback_header()
         {
-            Assert.Fail("CallbackHeaderKey no longer exists. OK to delete test?");
-            //Verify(new OutgoingMessageBuilder(),
-            //    (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
-
+            //this test is failing, but I'm not sure why. Is this text expecting callbacks to be disabled,
+            //or is the logic around when to add this header not right yet?
+            Verify(new OutgoingMessageBuilder(),
+                (t, r) => Assert.IsFalse(t.Headers.ContainsKey(Callbacks.HeaderKey)));
         }
 
         [Test]
@@ -98,16 +98,14 @@
         [Test]
         public void Should_preserve_the_recoverable_setting_if_set_to_durable()
         {
-            Assert.Fail("Recoverable is no longer a flag on incoming message. OK to delete test?");
-            //Verify(new OutgoingMessageBuilder(),result => Assert.True(result.Recoverable));
+            Verify(new OutgoingMessageBuilder(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == "False"));
         }
 
 
         [Test]
         public void Should_preserve_the_recoverable_setting_if_set_to_non_durable()
         {
-            Assert.Fail("Recoverable is no longer a flag on incoming message. OK to delete test?");
-            //Verify(new OutgoingMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
+            Verify(new OutgoingMessageBuilder().NonDurable(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == "True"));
         }
 
 
@@ -137,7 +135,7 @@
             );
         }
 
-        void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
+        void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
             var operation = builder.SendTo("testEndPoint").Build();
 
@@ -198,7 +196,7 @@
                 if (e.BasicProperties.MessageId != id)
                     throw new InvalidOperationException("Unexpected message found in queue");
 
-                channel.BasicAck(e.DeliveryTag,false);
+                channel.BasicAck(e.DeliveryTag, false);
 
                 return e;
             }
