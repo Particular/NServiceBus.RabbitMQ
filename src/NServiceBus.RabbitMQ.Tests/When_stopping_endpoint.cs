@@ -15,7 +15,7 @@
         }
 
         [Test, Explicit]
-        public async Task Should__gracefully_shutdown()
+        public async Task Should_gracefully_shutdown()
         {
             await messagePump.Stop();
 
@@ -24,8 +24,9 @@
 
             for (var i = 0; i < 2000; i++)
             {
-                //TODO: need real arguments for OutgoingMessage
-                var task = messageSender.Dispatch(new[] { new TransportOperation(new OutgoingMessage("", new Dictionary<string, string>(), new byte[1]), new DispatchOptions(new UnicastAddressTag(ReceiverQueue), DispatchConsistency.Default)) }, new Extensibility.ContextBag());
+                var operation = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build();
+                var task = messageSender.Dispatch(new[] { operation }, new Extensibility.ContextBag());
+
                 tasks.Add(task);
             }
 
