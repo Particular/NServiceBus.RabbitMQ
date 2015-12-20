@@ -93,7 +93,7 @@
     <Compile Include="When_consuming_messages.cs" />
     <Compile Include="When_stopping_endpoint.cs" />
     <Compile Include="When_sending_a_message_over_rabbitmq.cs" />
-    <Compile Include="TransportMessageBuilder.cs" />
+    <Compile Include="OutgoingMessageBuilder.cs" />
     <Compile Include="When_subscribed_to_a_event.cs" />
   </ItemGroup>
   <ItemGroup>
