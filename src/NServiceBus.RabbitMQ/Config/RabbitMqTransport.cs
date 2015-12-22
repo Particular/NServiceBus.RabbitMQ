@@ -6,6 +6,7 @@
     using System.Threading.Tasks;
     using Janitor;
     using NServiceBus.Performance.TimeToBeReceived;
+    using NServiceBus.Routing;
     using NServiceBus.Settings;
     using NServiceBus.Support;
     using NServiceBus.Transports;
@@ -204,9 +205,9 @@
         /// <summary>
         /// Returns the discriminator for this endpoint instance.
         /// </summary>
-        public override string GetDiscriminatorForThisEndpointInstance(ReadOnlySettings settings)
+        public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance, ReadOnlySettings settings)
         {
-            return null;
+            return instance;
         }
 
         /// <summary>
@@ -220,9 +221,9 @@
         {
             var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint.ToString());
 
-            if (logicalAddress.EndpointInstance.UserDiscriminator != null)
+            if (logicalAddress.EndpointInstance.Discriminator != null)
             {
-                queue.Append("-" + logicalAddress.EndpointInstance.UserDiscriminator);
+                queue.Append("-" + logicalAddress.EndpointInstance.Discriminator);
             }
             if (logicalAddress.Qualifier != null)
             {
@@ -242,10 +243,11 @@
             return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
         }
 
-        private ConnectionConfiguration connectionConfiguration;
-        private RabbitMqConnectionManager connectionManager;
-        private string localQueue;
-        private IRoutingTopology topology;
+        ConnectionConfiguration connectionConfiguration;
+        RabbitMqConnectionManager connectionManager;
+        string localQueue;
+        IRoutingTopology topology;
+
         internal const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
     }
 }

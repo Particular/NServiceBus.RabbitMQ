@@ -4,52 +4,56 @@
     using System.Collections.Generic;
     using NServiceBus.DeliveryConstraints;
     using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
 
     public class OutgoingMessageBuilder
     {
-        string _messageId = Guid.NewGuid().ToString();
-        byte[] _body;
-        Dictionary<string, string> _headers = new Dictionary<string, string>();
-        IList<DeliveryConstraint> _constraints = new List<DeliveryConstraint>();
-        DispatchConsistency _dispatchConsistency = DispatchConsistency.Default;
-        AddressTag _addressTag;
-
         public OutgoingMessageBuilder WithBody(byte[] body)
         {
-            _body = body;
+            this.body = body;
             return this;
         }
 
-        public TransportOperation Build()
+        public TransportOperations Build()
         {
-            return new TransportOperation(
-                new OutgoingMessage(_messageId, _headers, _body),
-                new DispatchOptions(_addressTag, _dispatchConsistency, _constraints)
-            );
+            var message = new OutgoingMessage(messageId, headers, body);
+
+            var multicastOps = new List<MulticastTransportOperation>();
+
+            if (eventType != null)
+            {
+                multicastOps.Add(new MulticastTransportOperation(message, eventType, constraints, dispatchConsistency));
+            }
+            var unicastOps = new List<UnicastTransportOperation>();
+
+            if (!string.IsNullOrEmpty(destination))
+            {
+                unicastOps.Add(new UnicastTransportOperation(message, destination, constraints, dispatchConsistency));
+            }
+
+            return new TransportOperations(multicastOps, unicastOps);
         }
 
         public OutgoingMessageBuilder SendTo(string unicastAddress)
         {
-            _addressTag = new UnicastAddressTag(unicastAddress);
+            destination = unicastAddress;
             return this;
         }
 
         public OutgoingMessageBuilder PublishType(Type messageType)
         {
-            _addressTag = new MulticastAddressTag(messageType);
+            eventType = messageType;
             return this;
         }
 
-        public OutgoingMessageBuilder WithHeader(string key,string value)
+        public OutgoingMessageBuilder WithHeader(string key, string value)
         {
-            _headers[key] = value;
+            headers[key] = value;
             return this;
         }
 
         public OutgoingMessageBuilder TimeToBeReceived(TimeSpan timeToBeReceived)
         {
-            _constraints.Add(new DiscardIfNotReceivedBefore(timeToBeReceived));
+            constraints.Add(new DiscardIfNotReceivedBefore(timeToBeReceived));
             return this;
         }
 
@@ -65,7 +69,7 @@
 
         public OutgoingMessageBuilder NonDurable()
         {
-            _constraints.Add(new NonDurableDelivery());
+            constraints.Add(new NonDurableDelivery());
             return this;
         }
 
@@ -73,5 +77,13 @@
         {
             return WithHeader(Headers.MessageIntent, intent.ToString());
         }
+
+        string destination;
+        Type eventType;
+        string messageId = Guid.NewGuid().ToString();
+        byte[] body;
+        Dictionary<string, string> headers = new Dictionary<string, string>();
+        IList<DeliveryConstraint> constraints = new List<DeliveryConstraint>();
+        DispatchConsistency dispatchConsistency = DispatchConsistency.Default;
     }
 }

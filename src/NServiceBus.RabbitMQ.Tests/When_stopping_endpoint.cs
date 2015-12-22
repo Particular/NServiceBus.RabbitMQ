@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using NServiceBus.Routing;
 
     [TestFixture]
     class When_stopping_endpoint : RabbitMqContext
@@ -24,8 +23,8 @@
 
             for (var i = 0; i < 2000; i++)
             {
-                var operation = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build();
-                var task = messageSender.Dispatch(new[] { operation }, new Extensibility.ContextBag());
+                var operations = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build();
+                var task = messageSender.Dispatch(operations, new Extensibility.ContextBag());
 
                 tasks.Add(task);
             }

@@ -1,9 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
-    using System;
-    using System.Collections.Generic;
     using NServiceBus.Extensibility;
-    using NServiceBus.Routing;
     using NUnit.Framework;
 
     [TestFixture]
@@ -150,7 +147,7 @@
         void Publish<T>()
         {
             var type = typeof(T);
-            messageSender.Dispatch(new[] { new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build() }
+            messageSender.Dispatch(new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build()
             , new ContextBag()).GetAwaiter().GetResult();
         }
 

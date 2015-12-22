@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using NServiceBus.Extensibility;
-    using NServiceBus.Routing;
     using NServiceBus.Support;
     using NUnit.Framework;
 
@@ -21,10 +20,13 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
-            messageSender.Dispatch(new[]
-            {
-                new TransportOperation(message, new DispatchOptions(new UnicastAddressTag(ReceiverQueue), DispatchConsistency.Default))
-            }, new ContextBag());
+            var transportOperations = new TransportOperations(new List<MulticastTransportOperation>(),
+                new List<UnicastTransportOperation>
+                {
+                     new UnicastTransportOperation(message,ReceiverQueue)
+                });
+
+messageSender.Dispatch(transportOperations, new ContextBag());
 
             var received = WaitForMessage();
 

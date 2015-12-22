@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Extensibility;
-    using NServiceBus.Routing;
     using NServiceBus.Transports.RabbitMQ.Routing;
 
     class RabbitMqMessageSender : IDispatchMessages
@@ -16,48 +15,53 @@
             this.callbacks = callbacks;
         }
 
-        public Task Dispatch(IEnumerable<TransportOperation> outgoingMessages, ContextBag context)
+        public Task Dispatch(TransportOperations operations, ContextBag context)
         {
             using (var confirmsAwareChannel = channelProvider.GetNewPublishChannel())
             {
-                foreach (var transportOperation in outgoingMessages)
+                foreach (var unicastTransportOperation in operations.UnicastTransportOperations)
                 {
-                    SendMessage(transportOperation, confirmsAwareChannel.Channel, context);
+                    SendMessage(unicastTransportOperation, confirmsAwareChannel.Channel, context);
+                }
+
+                foreach (var multicastTransportOperation in operations.MulticastTransportOperations)
+                {
+                    PublishMessage(multicastTransportOperation, confirmsAwareChannel.Channel, context);
                 }
             }
 
             return TaskEx.Completed;
         }
 
-        void SendMessage(TransportOperation transportOperation, IModel channel, ContextBag context)
+        void SendMessage(UnicastTransportOperation transportOperation, IModel channel, ContextBag context)
         {
-            var dispatchOptions = transportOperation.DispatchOptions;
             var message = transportOperation.Message;
-
-            var unicastRouting = dispatchOptions.AddressTag as UnicastAddressTag;
-
+        
             var properties = channel.CreateBasicProperties();
 
-            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, dispatchOptions, properties);
+            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
 
             //todo: we can optimize this to check if there are callbacks present via the new header set by the callbacks package as well
+            //note: we only support callbacks for sends
             if (callbacks.Enabled)
             {
                 properties.Headers[Callbacks.HeaderKey] = callbacks.QueueAddress;
             }
 
-            if (unicastRouting != null)
-            {
-                var destination = DetermineDestination(transportOperation.Message.Headers, unicastRouting.Destination, context);
+            var destination = DetermineDestination(transportOperation.Message.Headers, transportOperation.Destination, context);
 
-                routingTopology.Send(channel, destination, message, properties);
+            routingTopology.Send(channel, destination, message, properties);
+        }
 
-                return;
-            }
+        void PublishMessage(MulticastTransportOperation transportOperation, IModel channel, ContextBag context)
+        {
+            var message = transportOperation.Message;
 
-            var multicastRouting = (MulticastAddressTag)dispatchOptions.AddressTag;
+            var properties = channel.CreateBasicProperties();
 
-            routingTopology.Publish(channel, multicastRouting.MessageType, message, properties);
+            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
+
+            routingTopology.Publish(channel, transportOperation.MessageType, message, properties);
         }
 
         static string DetermineDestination(Dictionary<string, string> headers, string defaultDestination, ContextBag context)

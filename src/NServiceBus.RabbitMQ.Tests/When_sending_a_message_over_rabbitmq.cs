@@ -2,12 +2,13 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Text;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NServiceBus.Extensibility;
     using NUnit.Framework;
-    using Unicast.Queuing;
 
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
@@ -122,28 +123,17 @@
 
         }
 
-        [Test, Ignore("Not sure we should enforce this")]
-        public void Should_throw_when_sending_to_a_non_existing_queue()
-        {
-            Assert.Throws<QueueNotFoundException>(() =>
-                messageSender.Dispatch(new[]
-                    {
-                        new OutgoingMessageBuilder().SendTo("NonExistingQueue@localhost").Build()
-                    },
-                    new ContextBag()
-                )
-            );
-        }
-
         void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
-            var operation = builder.SendTo("testEndPoint").Build();
+            var operations = builder.SendTo("testEndPoint").Build();
 
             MakeSureQueueAndExchangeExists("testEndPoint");
 
-            SendMessage(operation);
+            SendMessage(operations).GetAwaiter().GetResult();
 
-            var result = Consume(operation.Message.MessageId, alternateQueueToReceiveOn);
+            var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
+
+            var result = Consume(messageId, alternateQueueToReceiveOn);
 
             var converter = new MessageConverter();
 
@@ -168,9 +158,9 @@
             Verify(builder, (t, r) => assertion(r), alternateQueueToReceiveOn);
         }
 
-        void SendMessage(TransportOperation operation)
+        Task SendMessage(TransportOperations operations)
         {
-            messageSender.Dispatch(new[] { operation }, new ContextBag());
+            return messageSender.Dispatch(operations, new ContextBag());
         }
 
         BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
