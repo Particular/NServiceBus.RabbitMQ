@@ -17,7 +17,8 @@
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 //create main q
                 channel.QueueDeclare(queueName, true, false, false, null);
@@ -36,7 +37,7 @@
 
         void DeleteExchange(string exchangeName)
         {
-            var connection = connectionManager.GetAdministrationConnection();
+            using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 try
@@ -96,12 +97,9 @@
         [TearDown]
         public void TearDown()
         {
-            if (messagePump != null)
-            {
-                messagePump.Stop().GetAwaiter().GetResult();
-            }
+            messagePump?.Stop().GetAwaiter().GetResult();
 
-            connectionManager.Dispose();
+            connectionManager?.Dispose();
         }
 
         protected virtual string ExchangeNameConvention()
