@@ -26,7 +26,7 @@
                      new UnicastTransportOperation(message,ReceiverQueue)
                 });
 
-messageSender.Dispatch(transportOperations, new ContextBag());
+            messageSender.Dispatch(transportOperations, new ContextBag());
 
             var received = WaitForMessage();
 
@@ -88,7 +88,7 @@ messageSender.Dispatch(transportOperations, new ContextBag());
             {
                 var properties = channel.CreateBasicProperties();
 
-                properties.MessageId = message.MessageId; 
+                properties.MessageId = message.MessageId;
                 properties.Type = typeName;
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, true, false, properties, message.Body);
@@ -111,7 +111,7 @@ messageSender.Dispatch(transportOperations, new ContextBag());
 
                 properties.MessageId = message.MessageId;
 
-                channel.BasicPublish(string.Empty, ReceiverQueue + "."+RuntimeEnvironment.MachineName, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, ReceiverQueue + "." + RuntimeEnvironment.MachineName, true, false, properties, message.Body);
             }
 
 

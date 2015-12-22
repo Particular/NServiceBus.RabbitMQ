@@ -112,7 +112,7 @@
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Dictionary<string,object>
+                    Headers = new Dictionary<string, object>
                 {
                     {"Foo", new ArrayList{"Bing"}}
                 }

@@ -43,9 +43,9 @@
                 {
                     channel.ExchangeDelete(exchangeName);
                 }
-                    // ReSharper disable EmptyGeneralCatchClause
+                // ReSharper disable EmptyGeneralCatchClause
                 catch (Exception)
-                    // ReSharper restore EmptyGeneralCatchClause
+                // ReSharper restore EmptyGeneralCatchClause
                 {
                 }
             }

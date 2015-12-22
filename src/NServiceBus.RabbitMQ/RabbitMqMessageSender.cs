@@ -36,7 +36,7 @@
         void SendMessage(UnicastTransportOperation transportOperation, IModel channel, ContextBag context)
         {
             var message = transportOperation.Message;
-        
+
             var properties = channel.CreateBasicProperties();
 
             RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
