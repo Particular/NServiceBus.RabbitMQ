@@ -15,7 +15,8 @@
                    .WithEndpoint<Publisher>(b => b.When(c => c.ServerASubscribed && c.ServerBSubscribed, bus => bus.Publish<MyEvent>()))
                    .WithEndpoint<ScaledOutSubscriber>(b =>
                    {
-                       b.CustomConfig(c => RuntimeEnvironment.MachineNameAction = () => "ScaledOutServerA");
+                       //note the scaleout setting will make pubsub break for now
+                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("InstanceA"));
                        b.When((bus, c) =>
                        {
                            bus.Subscribe<MyEvent>();
@@ -25,7 +26,8 @@
                    })
                    .WithEndpoint<ScaledOutSubscriber>(b =>
                    {
-                       b.CustomConfig(c => RuntimeEnvironment.MachineNameAction = () => "ScaledOutServerB");
+                       //note the scaleout setting will make pubsub break for now
+                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("InstanceB"));
                        b.When((bus, c) =>
                        {
                            bus.Subscribe<MyEvent>();
@@ -45,8 +47,7 @@
         {
             public ScaledOutSubscriber()
             {
-                //note the scaleout setting will make pubsub break for now
-                EndpointSetup<DefaultPublisher>(c => c.ScaleOut().UniqueQueuePerEndpointInstance());
+                EndpointSetup<DefaultPublisher>();
             }
 
             class MyEventHandler : IHandleMessages<MyEvent>

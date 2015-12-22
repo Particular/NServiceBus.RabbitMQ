@@ -17,7 +17,7 @@
             return constraint != null;
         }
 
-        public static void FillRabbitMqProperties(OutgoingMessage message, DispatchOptions options, IBasicProperties properties)
+        public static void FillRabbitMqProperties(OutgoingMessage message, IEnumerable<DeliveryConstraint> deliveryConstraints, IBasicProperties properties)
         {
             properties.MessageId = message.MessageId;
 
@@ -28,12 +28,12 @@
 
             DiscardIfNotReceivedBefore timeToBeReceived;
 
-            if (TryGet(options.DeliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
+            if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {
                 properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
             }
 
-            properties.Persistent = !options.DeliveryConstraints.Any(c => c is NonDurableDelivery);
+            properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
 
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
