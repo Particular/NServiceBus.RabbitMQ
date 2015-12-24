@@ -57,6 +57,7 @@
         {
             var connection = connectionManager.GetConsumeConnection();
             var model = connection.CreateModel();
+            model.BasicQos(0, GetPrefetchGount(limitations.MaxConcurrency), false);
 
             consumer = new EventingBasicConsumer(model);
             consumerShutdownCompleted = new TaskCompletionSource<bool>();
@@ -78,6 +79,22 @@
             {
                 model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, noAck, consumer);
             }
+        }
+
+        ushort GetPrefetchGount(int max)
+        {
+            ushort actualPrefetchCount;
+            if (receiveOptions.DefaultPrefetchCount > 0)
+            {
+                actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
+            }
+            else
+            {
+                actualPrefetchCount = Convert.ToUInt16(max);
+
+                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
+            }
+            return actualPrefetchCount;
         }
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
