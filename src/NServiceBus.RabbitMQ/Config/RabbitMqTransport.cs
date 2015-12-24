@@ -91,7 +91,7 @@
 
                     var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
 
-                    return new RabbitMqMessagePump(connectionManager, topology, provider, receiveOptions, callbacks);
+                    return new MessagePump(connectionManager, topology, provider, receiveOptions);
                 },
                 () => new RabbitMqQueueCreator(connectionManager, topology, callbacks, context.Settings.DurableMessagesEnabled()),
                 () => Task.FromResult(StartupCheckResult.Success));
