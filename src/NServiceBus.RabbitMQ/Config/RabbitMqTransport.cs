@@ -91,7 +91,10 @@
 
                     var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
 
-                    return new MessagePump(connectionManager, topology, provider, receiveOptions);
+                    var queuePurger = new QueuePurger(connectionManager);
+                    var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
+
+                    return new MessagePump(receiveOptions, connectionConfiguration, poisonMessageForwarder, queuePurger);
                 },
                 () => new RabbitMqQueueCreator(connectionManager, topology, callbacks, context.Settings.DurableMessagesEnabled()),
                 () => Task.FromResult(StartupCheckResult.Success));

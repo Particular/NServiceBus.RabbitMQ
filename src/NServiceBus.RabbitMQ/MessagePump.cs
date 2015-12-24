@@ -3,21 +3,20 @@
     using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.Transports.RabbitMQ.Routing;
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
     using NServiceBus.Logging;
+    using NServiceBus.Transports.RabbitMQ.Config;
+    using NServiceBus.Transports.RabbitMQ.Connection;
 
     class MessagePump : IPushMessages
     {
-        readonly IManageRabbitMqConnections connectionManager;
         readonly ReceiveOptions receiveOptions;
-        readonly IRoutingTopology routingTopology;
-        readonly IChannelProvider channelProvider;
+        ConnectionConfiguration connectionConfiguration;
+        PoisonMessageForwarder poisonMessageForwarder;
+        QueuePurger queuePurger;
 
         Func<PushContext, Task> pipe;
         //CriticalError criticalError;
@@ -28,12 +27,12 @@
         TaskCompletionSource<bool> consumerShutdownCompleted;
         private bool noAck;
 
-        public MessagePump(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, IChannelProvider channelProvider, ReceiveOptions receiveOptions)
+        public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
         {
-            this.connectionManager = connectionManager;
             this.receiveOptions = receiveOptions;
-            this.routingTopology = routingTopology;
-            this.channelProvider = channelProvider;
+            this.connectionConfiguration = connectionConfiguration;
+            this.poisonMessageForwarder = poisonMessageForwarder;
+            this.queuePurger = queuePurger;
         }
 
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
@@ -47,7 +46,7 @@
 
             if (settings.PurgeOnStartup)
             {
-                Purge(settings.InputQueue);
+                queuePurger.Purge(settings.InputQueue);
             }
 
             return TaskEx.Completed;
@@ -55,7 +54,9 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
-            var connection = connectionManager.GetConsumeConnection();
+            var taskScheduler = new LimitedConcurrencyLevelTaskScheduler(limitations.MaxConcurrency);
+            var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler);
+            var connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
             var model = connection.CreateModel();
             model.BasicQos(0, GetPrefetchGount(limitations.MaxConcurrency), false);
 
@@ -112,7 +113,7 @@
                 }
                 catch (Exception ex)
                 {
-                    ForwardPoisonMessageToErrorQueue(message, ex);
+                    poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue);
                 }
 
                 if (pushMessage)
@@ -148,34 +149,6 @@
             var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), contextBag);
 
             await pipe(pushContext).ConfigureAwait(false);
-        }
-
-        void ForwardPoisonMessageToErrorQueue(BasicDeliverEventArgs message, Exception ex)
-        {
-            var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{settings.ErrorQueue}'.";
-            Logger.Error(error, ex);
-
-            try
-            {
-                using (var errorChannel = channelProvider.GetNewPublishChannel())
-                {
-                    routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, settings.ErrorQueue, message.Body, message.BasicProperties);
-                }
-            }
-            catch (Exception ex2)
-            {
-                Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
-                throw;
-            }
-        }
-
-        void Purge(string queue)
-        {
-            using (var connection = connectionManager.GetAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueuePurge(queue);
-            }
         }
 
         public Task Stop()

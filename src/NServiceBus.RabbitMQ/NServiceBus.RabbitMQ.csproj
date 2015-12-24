@@ -112,9 +112,12 @@
     <Compile Include="Connection\HostConfiguration.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="LimitedConcurrencyLevelTaskScheduler.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
+    <Compile Include="PoisonMessageForwarder.cs" />
+    <Compile Include="QueuePurger.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RabbitMqMessagePump.cs" />
