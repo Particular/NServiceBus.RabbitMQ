@@ -45,6 +45,11 @@
             secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
             noAck = settings.RequiredTransactionMode == TransportTransactionMode.None;
 
+            if (settings.PurgeOnStartup)
+            {
+                Purge(settings.InputQueue);
+            }
+
             return TaskEx.Completed;
         }
 
@@ -137,6 +142,15 @@
             {
                 Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
                 throw;
+            }
+        }
+
+        void Purge(string queue)
+        {
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueuePurge(queue);
             }
         }
 
