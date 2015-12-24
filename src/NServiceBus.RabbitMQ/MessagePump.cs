@@ -10,13 +10,14 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using NServiceBus.Logging;
 
     class MessagePump : IPushMessages
     {
         readonly IManageRabbitMqConnections connectionManager;
         readonly ReceiveOptions receiveOptions;
-        //readonly IRoutingTopology routingTopology;
-        //readonly IChannelProvider channelProvider;
+        readonly IRoutingTopology routingTopology;
+        readonly IChannelProvider channelProvider;
 
         Func<PushContext, Task> pipe;
         //CriticalError criticalError;
@@ -31,8 +32,8 @@
         {
             this.connectionManager = connectionManager;
             this.receiveOptions = receiveOptions;
-            //this.routingTopology = routingTopology;
-            //this.channelProvider = channelProvider;
+            this.routingTopology = routingTopology;
+            this.channelProvider = channelProvider;
         }
 
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
@@ -76,16 +77,26 @@
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
+            Dictionary<string, string> headers = null;
+            string messageId = null;
+            var pushMessage = false;
             try
             {
-                var messageId = receiveOptions.Converter.RetrieveMessageId(message);
-                var headers = receiveOptions.Converter.RetrieveHeaders(message);
+                try
+                {
+                    messageId = receiveOptions.Converter.RetrieveMessageId(message);
+                    headers = receiveOptions.Converter.RetrieveHeaders(message);
+                    pushMessage = true;
+                }
+                catch (Exception ex)
+                {
+                    ForwardPoisonMessageToErrorQueue(message, ex);
+                }
 
-                var contextBag = new ContextBag();
-
-                var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), contextBag);
-
-                await pipe(pushContext).ConfigureAwait(false);
+                if (pushMessage)
+                {
+                    await PushMessageToPipe(messageId, headers, new MemoryStream(message.Body ?? new byte[0]));
+                }
 
                 if (!noAck)
                 {
@@ -101,11 +112,41 @@
             }
         }
 
+        async Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, Stream stream)
+        {
+            var contextBag = new ContextBag();
+
+            var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), contextBag);
+
+            await pipe(pushContext).ConfigureAwait(false);
+        }
+
+        void ForwardPoisonMessageToErrorQueue(BasicDeliverEventArgs message, Exception ex)
+        {
+            var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{settings.ErrorQueue}'.";
+            Logger.Error(error, ex);
+
+            try
+            {
+                using (var errorChannel = channelProvider.GetNewPublishChannel())
+                {
+                    routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, settings.ErrorQueue, message.Body, message.BasicProperties);
+                }
+            }
+            catch (Exception ex2)
+            {
+                Logger.Error($"Poison message failed to be moved to '{settings.ErrorQueue}'.", ex2);
+                throw;
+            }
+        }
+
         public Task Stop()
         {
             consumer?.Model?.Close();
 
             return consumerShutdownCompleted?.Task ?? TaskEx.Completed;
         }
+
+        static ILog Logger = LogManager.GetLogger(typeof(MessagePump));
     }
 }
