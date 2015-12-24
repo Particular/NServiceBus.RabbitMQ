@@ -25,6 +25,7 @@
 
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> consumerShutdownCompleted;
+        private bool noAck;
 
         public MessagePump(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, IChannelProvider channelProvider, ReceiveOptions receiveOptions)
         {
@@ -41,6 +42,7 @@
             this.settings = settings;
 
             secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
+            noAck = settings.RequiredTransactionMode == TransportTransactionMode.None;
 
             return TaskEx.Completed;
         }
@@ -64,25 +66,39 @@
                 consumerShutdownCompleted.TrySetResult(true);
             };
 
-            model.BasicConsume(settings.InputQueue, true, consumer);
+            model.BasicConsume(settings.InputQueue, noAck, consumer);
 
             if (secondaryReceiveSettings.IsEnabled)
             {
-                model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, true, consumer);
+                model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, noAck, consumer);
             }
         }
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
-            var messageId = receiveOptions.Converter.RetrieveMessageId(message);
-            var headers = receiveOptions.Converter.RetrieveHeaders(message);
+            try
+            {
+                var messageId = receiveOptions.Converter.RetrieveMessageId(message);
+                var headers = receiveOptions.Converter.RetrieveHeaders(message);
 
-            var contextBag = new ContextBag();
+                var contextBag = new ContextBag();
 
-            var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), contextBag);
+                var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), contextBag);
 
-            await pipe(pushContext).ConfigureAwait(false);
+                await pipe(pushContext).ConfigureAwait(false);
 
+                if (!noAck)
+                {
+                    channel.BasicAck(message.DeliveryTag, false);
+                }
+            }
+            catch (Exception)
+            {
+                if (!noAck)
+                {
+                    channel.BasicReject(message.DeliveryTag, true);
+                }
+            }
         }
 
         public Task Stop()
