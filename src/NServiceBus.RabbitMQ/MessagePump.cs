@@ -121,6 +121,13 @@
         {
             var contextBag = new ContextBag();
 
+            string explicitCallbackAddress;
+
+            if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
+            {
+                contextBag.Set(new CallbackAddress(explicitCallbackAddress));
+            }
+
             var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), contextBag);
 
             await pipe(pushContext).ConfigureAwait(false);
