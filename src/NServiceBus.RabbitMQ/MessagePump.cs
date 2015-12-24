@@ -15,28 +15,32 @@
     {
         readonly IManageRabbitMqConnections connectionManager;
         readonly ReceiveOptions receiveOptions;
-        readonly IRoutingTopology routingTopology;
-        readonly IChannelProvider channelProvider;
+        //readonly IRoutingTopology routingTopology;
+        //readonly IChannelProvider channelProvider;
 
         Func<PushContext, Task> pipe;
-        CriticalError criticalError;
+        //CriticalError criticalError;
         PushSettings settings;
+        SecondaryReceiveSettings secondaryReceiveSettings;
 
         EventingBasicConsumer consumer;
+        TaskCompletionSource<bool> consumerShutdownCompleted;
 
         public MessagePump(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, IChannelProvider channelProvider, ReceiveOptions receiveOptions)
         {
             this.connectionManager = connectionManager;
             this.receiveOptions = receiveOptions;
-            this.routingTopology = routingTopology;
-            this.channelProvider = channelProvider;
+            //this.routingTopology = routingTopology;
+            //this.channelProvider = channelProvider;
         }
 
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
         {
             this.pipe = pipe;
-            this.criticalError = criticalError;
+            //this.criticalError = criticalError;
             this.settings = settings;
+
+            secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
 
             return TaskEx.Completed;
         }
@@ -47,14 +51,25 @@
             var model = connection.CreateModel();
 
             consumer = new EventingBasicConsumer(model);
+            consumerShutdownCompleted = new TaskCompletionSource<bool>();
 
             consumer.Received += (sender, eventArgs) =>
             {
-                var blah = (EventingBasicConsumer)sender;
-                ProcessMessage(eventArgs, blah.Model).GetAwaiter().GetResult();
+                var originalConsumer = (EventingBasicConsumer)sender;
+                ProcessMessage(eventArgs, originalConsumer.Model).GetAwaiter().GetResult();
+            };
+
+            consumer.Shutdown += (sender, eventArgs) =>
+            {
+                consumerShutdownCompleted.TrySetResult(true);
             };
 
             model.BasicConsume(settings.InputQueue, true, consumer);
+
+            if (secondaryReceiveSettings.IsEnabled)
+            {
+                model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, true, consumer);
+            }
         }
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
@@ -72,11 +87,9 @@
 
         public Task Stop()
         {
-            var model = consumer?.Model;
+            consumer?.Model?.Close();
 
-            model?.BasicCancel(consumer.ConsumerTag);
-
-            return TaskEx.Completed;
+            return consumerShutdownCompleted?.Task ?? TaskEx.Completed;
         }
     }
 }
