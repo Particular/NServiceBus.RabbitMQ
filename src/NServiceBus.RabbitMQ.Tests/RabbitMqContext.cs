@@ -74,8 +74,14 @@
             settingsHolder.Set("NServiceBus.LocalAddress", ReceiverQueue);
             messageSender = new RabbitMqMessageSender(routingTopology, channelProvider);
 
-            messagePump = new MessagePump(connectionManager, routingTopology, channelProvider,
-                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(), 1, 1000, false, "Unit test"), config);
+            var purger = new QueuePurger(connectionManager);
+            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
+
+            messagePump = new MessagePump(
+                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(), 1, 1000, false, "Unit test"), 
+                config, 
+                poisonMessageForwarder, 
+                purger);
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
