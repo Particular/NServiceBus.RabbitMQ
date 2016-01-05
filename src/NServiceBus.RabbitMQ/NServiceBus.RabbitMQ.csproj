@@ -76,6 +76,7 @@
     <Compile Include="CallbackAddress.cs" />
     <Compile Include="Callbacks.cs" />
     <Compile Include="ChannelProvider.cs" />
+    <Compile Include="Config\RabbitMQTransportCallbacks.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQTransport.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="RabbitMqSubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
+    <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
     <Compile Include="RepeatedFailuresOverTimeCircuitBreaker.cs" />
     <Compile Include="Roslyn\ObjectPool.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
@@ -128,6 +130,7 @@
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
     <Compile Include="ReceiveOptions.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
+    <Compile Include="SetOutgoingCallbackAddressBehavior.cs" />
     <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -16,17 +16,17 @@ namespace NServiceBus.Transports.RabbitMQ
 
     class RabbitMqMessagePump : IPushMessages, IDisposable
     {
-        public RabbitMqMessagePump(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, IChannelProvider channelProvider, ReceiveOptions receiveOptions)
+        public RabbitMqMessagePump(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, IChannelProvider channelProvider, ReceiveOptions receiveOptions, Callbacks callbacks)
         {
             this.connectionManager = connectionManager;
             this.receiveOptions = receiveOptions;
+            this.callbacks = callbacks;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
         }
 
         static RepeatedFailuresOverTimeCircuitBreaker SetupCircuitBreaker(CriticalError criticalError)
         {
-
             var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
             var timeToWaitBeforeTriggeringOverride = ConfigurationManager.AppSettings["NServiceBus/RabbitMqDequeueStrategy/TimeToWaitBeforeTriggering"];
 
@@ -75,26 +75,38 @@ namespace NServiceBus.Transports.RabbitMQ
 
             isStopping = true;
 
-            if (tokenSource == null)
+            if (parentSource == null)
             {
                 return;
             }
 
-            tokenSource.Cancel();
+            childrenSource.Cancel();
 
-            var tasksToWait = new List<Task>(2)
-            {
-                mainConcurrencyLimiter.WaitAsync()
-            };
-            if (secondaryConcurrencyLimiter != null)
-            {
-                tasksToWait.Add(secondaryConcurrencyLimiter.WaitAsync());
-            }
+            var tasksToWait = WaitForSemaphores();
 
             await Task.WhenAll(tasksToWait).ConfigureAwait(false);
+
+            parentSource.Cancel();
+
             await Task.WhenAll(mainMessagePumpTask, secondaryMessagePumpTask).ConfigureAwait(false);
 
-            tokenSource = null;
+            parentSource = null;
+        }
+
+        IEnumerable<Task> WaitForSemaphores()
+        {
+            for (var i = 0; i < mainConcurrency; i++)
+            {
+                yield return mainConcurrencyLimiter.WaitAsync();
+            }
+
+            if (secondaryConcurrencyLimiter != null)
+            {
+                for (var i = 0; i < secondaryConcurrency; i++)
+                {
+                    yield return secondaryConcurrencyLimiter.WaitAsync();
+                }
+            }
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -114,17 +126,19 @@ namespace NServiceBus.Transports.RabbitMQ
 
             var secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
 
-            tokenSource = new CancellationTokenSource();
+            parentSource = new CancellationTokenSource();
+            childrenSource = new CancellationTokenSource();
 
             mainConcurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
+            mainConcurrency = limitations.MaxConcurrency;
 
-            mainMessagePumpTask = Task.Run(() => StartConsumers(settings.InputQueue, mainConcurrencyLimiter, tokenSource.Token, limitations.MaxConcurrency), CancellationToken.None);
+            mainMessagePumpTask = Task.Run(() => StartConsumers(settings.InputQueue, mainConcurrencyLimiter, parentSource.Token, limitations.MaxConcurrency), CancellationToken.None);
             
             if (secondaryReceiveSettings.IsEnabled)
             {
                 secondaryConcurrencyLimiter = new SemaphoreSlim(secondaryReceiveSettings.MaximumConcurrencyLevel, secondaryReceiveSettings.MaximumConcurrencyLevel);
-
-                secondaryMessagePumpTask = Task.Run(() => StartConsumers(secondaryReceiveSettings.ReceiveQueue, secondaryConcurrencyLimiter, tokenSource.Token, secondaryReceiveSettings.MaximumConcurrencyLevel), CancellationToken.None);
+                secondaryConcurrency = secondaryReceiveSettings.MaximumConcurrencyLevel;
+                secondaryMessagePumpTask = Task.Run(() => StartConsumers(secondaryReceiveSettings.ReceiveQueue, secondaryConcurrencyLimiter, parentSource.Token, secondaryReceiveSettings.MaximumConcurrencyLevel), CancellationToken.None);
 
                 Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.ReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);
             }
@@ -140,7 +154,7 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 try
                 {
-                    await ConsumeMessages(inputQueue, concurrencyLimiter, token, maxConcurrency).ConfigureAwait(false);
+                    await ConsumeMessages(inputQueue, concurrencyLimiter, childrenSource.Token, maxConcurrency).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -185,8 +199,9 @@ namespace NServiceBus.Transports.RabbitMQ
                         var consumer = consumersPool.Allocate();
                         var message = await consumer.Queue.ReceiveAsync(token);
 
-                        Task.Factory.StartNew(async obj => {
-                            var consumerParam = (AsyncBasicConsumer)obj;
+                        Task.Factory.StartNew(async obj =>
+                        {
+                            var consumerParam = (AsyncBasicConsumer) obj;
                             try
                             {
                                 await ProcessMessage(message);
@@ -203,13 +218,13 @@ namespace NServiceBus.Transports.RabbitMQ
                                     consumerParam.Model.BasicReject(message.DeliveryTag, true);
                                 }
                             }
-                        }, consumer, token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
-                        .ContinueWith((_, obj) =>
-                        {
-                            consumersPool.Free((AsyncBasicConsumer)obj);
-                            limiter.Release();
-                        }, consumer, CancellationToken.None)
-                        .Ignore();
+                            finally
+                            {
+                                consumersPool.Free(consumerParam);
+                                limiter.Release();
+                            }
+                        }, consumer, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
+                            .Ignore();
                     }
                     catch (OperationCanceledException)
                     {
@@ -269,13 +284,7 @@ namespace NServiceBus.Transports.RabbitMQ
             if (pushMessage)
             {
                 var context = new ContextBag();
-
-                string explicitCallbackAddress;
-
-                if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
-                {
-                    context.Set(new CallbackAddress(explicitCallbackAddress));
-                }
+                context.Set(callbacks);
 
                 var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), context);
 
@@ -298,15 +307,17 @@ namespace NServiceBus.Transports.RabbitMQ
         IManageRabbitMqConnections connectionManager;
         Func<PushContext, Task> pipe;
         PushSettings settings;
-        CancellationTokenSource tokenSource;
+        CancellationTokenSource parentSource, childrenSource;
         SemaphoreSlim mainConcurrencyLimiter, secondaryConcurrencyLimiter;
         Task mainMessagePumpTask, secondaryMessagePumpTask;
         bool noAck;
         readonly ReceiveOptions receiveOptions;
+        readonly Callbacks callbacks;
         readonly IRoutingTopology routingTopology;
         readonly IChannelProvider channelProvider;
         ushort actualPrefetchCount;
         bool isStopping;
+        int mainConcurrency, secondaryConcurrency;
 
         class AsyncBasicConsumer : DefaultBasicConsumer
         {

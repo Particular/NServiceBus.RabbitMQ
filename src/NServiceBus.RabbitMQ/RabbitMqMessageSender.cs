@@ -8,11 +8,10 @@
 
     class RabbitMqMessageSender : IDispatchMessages
     {
-        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider, Callbacks callbacks)
+        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider)
         {
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
-            this.callbacks = callbacks;
         }
 
         public Task Dispatch(TransportOperations operations, ContextBag context)
@@ -26,7 +25,7 @@
 
                 foreach (var multicastTransportOperation in operations.MulticastTransportOperations)
                 {
-                    PublishMessage(multicastTransportOperation, confirmsAwareChannel.Channel, context);
+                    PublishMessage(multicastTransportOperation, confirmsAwareChannel.Channel);
                 }
             }
 
@@ -41,19 +40,12 @@
 
             RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
 
-            //todo: we can optimize this to check if there are callbacks present via the new header set by the callbacks package as well
-            //note: we only support callbacks for sends
-            if (callbacks.Enabled)
-            {
-                properties.Headers[Callbacks.HeaderKey] = callbacks.QueueAddress;
-            }
-
             var destination = DetermineDestination(transportOperation.Message.Headers, transportOperation.Destination, context);
 
             routingTopology.Send(channel, destination, message, properties);
         }
 
-        void PublishMessage(MulticastTransportOperation transportOperation, IModel channel, ContextBag context)
+        void PublishMessage(MulticastTransportOperation transportOperation, IModel channel)
         {
             var message = transportOperation.Message;
 
@@ -94,7 +86,6 @@
 
         static string REPLY = MessageIntentEnum.Reply.ToString();
         IChannelProvider channelProvider;
-        Callbacks callbacks;
         IRoutingTopology routingTopology;
     }
 }

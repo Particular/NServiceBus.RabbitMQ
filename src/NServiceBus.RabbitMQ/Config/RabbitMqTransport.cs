@@ -91,7 +91,7 @@
 
                     var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
 
-                    return new RabbitMqMessagePump(connectionManager, topology, provider, receiveOptions);
+                    return new RabbitMqMessagePump(connectionManager, topology, provider, receiveOptions, callbacks);
                 },
                 () => new RabbitMqQueueCreator(connectionManager, topology, callbacks, context.Settings.DurableMessagesEnabled()),
                 () => Task.FromResult(StartupCheckResult.Success));
@@ -104,11 +104,9 @@
         {
             Initialize(context.Settings, context.ConnectionString);
 
-            var callbacks = new Callbacks(context.Settings);
-            
             var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
 
-            return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider, callbacks), () => Task.FromResult(StartupCheckResult.Success));
+            return new TransportSendingConfigurationResult(() => new RabbitMqMessageSender(topology, provider), () => Task.FromResult(StartupCheckResult.Success));
         }
 
         private void Initialize(ReadOnlySettings settings, string connectionString)
