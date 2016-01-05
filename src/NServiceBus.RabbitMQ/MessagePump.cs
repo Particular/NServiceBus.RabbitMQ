@@ -23,6 +23,7 @@
         PushSettings settings;
         SecondaryReceiveSettings secondaryReceiveSettings;
 
+        PersistentConnection connection;
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> consumerShutdownCompleted;
         private bool noAck;
@@ -56,7 +57,8 @@
         {
             var taskScheduler = new LimitedConcurrencyLevelTaskScheduler(limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler);
-            var connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
+            connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
+
             var model = connection.CreateModel();
             model.BasicQos(0, GetPrefetchGount(limitations.MaxConcurrency), false);
 
@@ -153,7 +155,12 @@
 
         public Task Stop()
         {
-            consumer?.Model?.Close();
+            var connectionIsOpen = connection?.IsOpen ?? false;
+
+            if (connectionIsOpen)
+            {
+                connection.Close();
+            }
 
             return consumerShutdownCompleted?.Task ?? TaskEx.Completed;
         }
