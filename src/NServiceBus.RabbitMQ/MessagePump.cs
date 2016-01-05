@@ -27,7 +27,6 @@
         bool noAck;
 
         PersistentConnection connection;
-        EventingBasicConsumer consumer;
         TaskCompletionSource<bool> consumerShutdownCompleted;
 
         public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
@@ -57,20 +56,20 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
-            var taskScheduler = new LimitedConcurrencyLevelTaskScheduler(limitations.MaxConcurrency);
-            var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler);
+            var taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
+            var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
             connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
 
             var model = connection.CreateModel();
-            model.BasicQos(0, GetPrefetchGount(limitations.MaxConcurrency), false);
+            model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
-            consumer = new EventingBasicConsumer(model);
+            var consumer = new EventingBasicConsumer(model);
             consumerShutdownCompleted = new TaskCompletionSource<bool>();
 
-            consumer.Received += (sender, eventArgs) =>
+            consumer.Received += async (sender, eventArgs) =>
             {
                 var originalConsumer = (EventingBasicConsumer)sender;
-                ProcessMessage(eventArgs, originalConsumer.Model).GetAwaiter().GetResult();
+                await ProcessMessage(eventArgs, originalConsumer.Model, taskScheduler.ExclusiveScheduler).ConfigureAwait(false);
             };
 
             consumer.Shutdown += (sender, eventArgs) =>
@@ -86,23 +85,24 @@
             }
         }
 
-        ushort GetPrefetchGount(int max)
-        {
-            ushort actualPrefetchCount;
-            if (receiveOptions.DefaultPrefetchCount > 0)
-            {
-                actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
-            }
-            else
-            {
-                actualPrefetchCount = Convert.ToUInt16(max);
+        //In this MessagePump, this shouldn't be a configurable option
+        //ushort GetPrefetchGount(int max)
+        //{
+        //    ushort actualPrefetchCount;
+        //    if (receiveOptions.DefaultPrefetchCount > 0)
+        //    {
+        //        actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
+        //    }
+        //    else
+        //    {
+        //        actualPrefetchCount = Convert.ToUInt16(max);
 
-                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
-            }
-            return actualPrefetchCount;
-        }
+        //        Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
+        //    }
+        //    return actualPrefetchCount;
+        //}
 
-        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
+        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel, TaskScheduler taskScheduler)
         {
             Dictionary<string, string> headers = null;
             string messageId = null;
@@ -128,14 +128,18 @@
 
                 if (!noAck)
                 {
-                    channel.BasicAck(message.DeliveryTag, false);
+                    var task = new Task(() => channel.BasicAck(message.DeliveryTag, false));
+                    task.Start(taskScheduler);
+                    await task.ConfigureAwait(false);
                 }
             }
             catch (Exception)
             {
                 if (!noAck)
                 {
-                    channel.BasicReject(message.DeliveryTag, true);
+                    var task = new Task(() => channel.BasicReject(message.DeliveryTag, true));
+                    task.Start(taskScheduler);
+                    await task.ConfigureAwait(false);
                 }
             }
         }
@@ -153,7 +157,7 @@
 
             var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), contextBag);
 
-            await pipe(pushContext).ConfigureAwait(false);
+            await Task.Run(() => pipe(pushContext)).ConfigureAwait(false);
         }
 
         public Task Stop()
