@@ -120,7 +120,7 @@
 
                 if (pushMessage)
                 {
-                    await PushMessageToPipe(messageId, headers, new MemoryStream(message.Body ?? new byte[0]));
+                    await PushMessageToPipe(messageId, headers, new MemoryStream(message.Body ?? new byte[0])).ConfigureAwait(false);
                 }
 
                 if (!noAck)
