@@ -13,20 +13,22 @@
 
     class MessagePump : IPushMessages
     {
+        static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
+
         readonly ReceiveOptions receiveOptions;
-        ConnectionConfiguration connectionConfiguration;
-        PoisonMessageForwarder poisonMessageForwarder;
-        QueuePurger queuePurger;
+        readonly ConnectionConfiguration connectionConfiguration;
+        readonly PoisonMessageForwarder poisonMessageForwarder;
+        readonly QueuePurger queuePurger;
 
         Func<PushContext, Task> pipe;
         //CriticalError criticalError;
         PushSettings settings;
         SecondaryReceiveSettings secondaryReceiveSettings;
+        bool noAck;
 
         PersistentConnection connection;
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> consumerShutdownCompleted;
-        private bool noAck;
 
         public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
         {
@@ -164,7 +166,5 @@
 
             return consumerShutdownCompleted?.Task ?? TaskEx.Completed;
         }
-
-        static ILog Logger = LogManager.GetLogger(typeof(MessagePump));
     }
 }
