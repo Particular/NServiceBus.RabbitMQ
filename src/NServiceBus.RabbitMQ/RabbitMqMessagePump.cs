@@ -49,14 +49,14 @@ namespace NServiceBus.Transports.RabbitMQ
                 delayAfterFailure);
         }
 
-        public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
+        public Task Init(Func<PushContext, Task> pipeline, CriticalError criticalError, PushSettings pushSettings)
         {
-            this.pipe = pipe;
-            this.settings = settings;
+            pipe = pipeline;
+            settings = pushSettings;
 
             circuitBreaker = SetupCircuitBreaker(criticalError);
 
-            noAck = settings.RequiredTransactionMode == TransportTransactionMode.None;
+            noAck = pushSettings.RequiredTransactionMode == TransportTransactionMode.None;
 
             if (receiveOptions.PurgeOnStartup)
             {
@@ -164,14 +164,16 @@ namespace NServiceBus.Transports.RabbitMQ
             try
             {
                 var connection = connectionManager.GetConsumeConnection();
-                var modelsPool = new ObjectPool<IModel>(() => connection.CreateModel(), maxConcurrency);
-                var channel = modelsPool.Allocate();
+                var consumersPool = new ObjectPool<AsyncBasicConsumer>(() =>
+                {
+                    var channel = connection.CreateModel();
+                    channel.BasicQos(0, actualPrefetchCount, false);
 
-                channel.BasicQos(0, actualPrefetchCount, false);
+                    var consumer = new AsyncBasicConsumer(channel, token);
+                    channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
 
-                var consumer = new AsyncBasicConsumer(channel, token);
-
-                channel.BasicConsume(inputQueue, noAck, receiveOptions.ConsumerTag, consumer);
+                    return consumer;
+                }, maxConcurrency);
 
                 circuitBreaker.Success();
 
@@ -180,33 +182,34 @@ namespace NServiceBus.Transports.RabbitMQ
                     await limiter.WaitAsync(token).ConfigureAwait(false);
                     try
                     {
+                        var consumer = consumersPool.Allocate();
                         var message = await consumer.Queue.ReceiveAsync(token);
 
-                        Task.Run(async () =>
-                        {
+                        Task.Factory.StartNew(async obj => {
+                            var consumerParam = (AsyncBasicConsumer)obj;
                             try
                             {
-                                await ProcessMessage(message, channel);
+                                await ProcessMessage(message);
 
                                 if (!noAck)
                                 {
-                                    channel.BasicAck(message.DeliveryTag, false);
+                                    consumerParam.Model.BasicAck(message.DeliveryTag, false);
                                 }
                             }
                             catch (Exception)
                             {
                                 if (!noAck)
                                 {
-                                    channel.BasicReject(message.DeliveryTag, true);
+                                    consumerParam.Model.BasicReject(message.DeliveryTag, true);
                                 }
                             }
-                        }, token)
-                            .ContinueWith(_ =>
-                            {
-                                modelsPool.Free(channel);
-                                limiter.Release();
-                            }, CancellationToken.None)
-                            .Ignore();
+                        }, consumer, token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
+                        .ContinueWith((_, obj) =>
+                        {
+                            consumersPool.Free((AsyncBasicConsumer)obj);
+                            limiter.Release();
+                        }, consumer, CancellationToken.None)
+                        .Ignore();
                     }
                     catch (OperationCanceledException)
                     {
@@ -233,7 +236,7 @@ namespace NServiceBus.Transports.RabbitMQ
             }
         }
 
-        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
+        async Task ProcessMessage(BasicDeliverEventArgs message)
         {
             Dictionary<string, string> headers = null;
             string messageId = null;
