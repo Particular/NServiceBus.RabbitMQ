@@ -7,8 +7,10 @@
 
     class PoisonMessageForwarder
     {
-        IChannelProvider channelProvider;
-        IRoutingTopology routingTopology;
+        static readonly ILog Logger = LogManager.GetLogger(typeof(PoisonMessageForwarder));
+
+        readonly IChannelProvider channelProvider;
+        readonly IRoutingTopology routingTopology;
 
         public PoisonMessageForwarder(IChannelProvider channelProvider, IRoutingTopology routingTopology)
         {
@@ -34,7 +36,5 @@
                 throw;
             }
         }
-
-        static ILog Logger = LogManager.GetLogger(typeof(PoisonMessageForwarder));
     }
 }
