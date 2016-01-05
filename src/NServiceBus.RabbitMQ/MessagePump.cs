@@ -107,6 +107,7 @@
             Dictionary<string, string> headers = null;
             string messageId = null;
             var pushMessage = false;
+
             try
             {
                 try
