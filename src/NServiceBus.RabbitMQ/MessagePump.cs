@@ -6,6 +6,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Logging;
     using NServiceBus.Transports.RabbitMQ.Config;
@@ -27,7 +28,6 @@
         bool noAck;
 
         PersistentConnection connection;
-        TaskCompletionSource<bool> consumerShutdownCompleted;
 
         public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
         {
@@ -54,29 +54,25 @@
             return TaskEx.Completed;
         }
 
+        ConcurrentExclusiveSchedulerPair taskScheduler;
+        CancellationTokenSource cancelSource;
+
         public void Start(PushRuntimeSettings limitations)
         {
-            var taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
+            executingCounter = 0;
+            taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
             connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
-
+            cancelSource = new CancellationTokenSource();
             var model = connection.CreateModel();
             model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
             var consumer = new EventingBasicConsumer(model);
-            consumerShutdownCompleted = new TaskCompletionSource<bool>();
 
-            consumer.Received += async (sender, eventArgs) =>
-            {
-                var originalConsumer = (EventingBasicConsumer)sender;
-                await ProcessMessage(eventArgs, originalConsumer.Model, taskScheduler.ExclusiveScheduler).ConfigureAwait(false);
-            };
-
-            consumer.Shutdown += (sender, eventArgs) =>
-            {
-                consumerShutdownCompleted.TrySetResult(true);
-            };
-
+            cancelSource.Token.Register(() => consumer.Received -= ConsumerOnReceived);
+            
+            consumer.Received += ConsumerOnReceived;
+            
             model.BasicConsume(settings.InputQueue, noAck, consumer);
 
             if (secondaryReceiveSettings.IsEnabled)
@@ -85,24 +81,37 @@
             }
         }
 
-        //In this MessagePump, this shouldn't be a configurable option
-        //ushort GetPrefetchGount(int max)
-        //{
-        //    ushort actualPrefetchCount;
-        //    if (receiveOptions.DefaultPrefetchCount > 0)
-        //    {
-        //        actualPrefetchCount = receiveOptions.DefaultPrefetchCount;
-        //    }
-        //    else
-        //    {
-        //        actualPrefetchCount = Convert.ToUInt16(max);
+        int executingCounter;
 
-        //        Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
-        //    }
-        //    return actualPrefetchCount;
-        //}
+        public async Task Stop()
+        {
+            cancelSource.Cancel();
 
-        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel, TaskScheduler taskScheduler)
+            while (Interlocked.CompareExchange(ref executingCounter, 0, 0) != 0)
+            {
+                await Task.Yield();
+            }
+
+            connection.Close();
+
+            cancelSource.Dispose();
+        }
+
+        async void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
+        {
+            try
+            {
+                Interlocked.Increment(ref executingCounter);
+                var originalConsumer = (EventingBasicConsumer) sender;
+                await ProcessMessage(eventArgs, originalConsumer.Model, taskScheduler.ExclusiveScheduler).ConfigureAwait(false);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref executingCounter);
+            }
+        }
+
+        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel, TaskScheduler scheduler)
         {
             Dictionary<string, string> headers = null;
             string messageId = null;
@@ -128,8 +137,8 @@
 
                 if (!noAck)
                 {
-                    var task = new Task(() => { if (channel.IsOpen) channel.BasicAck(message.DeliveryTag, false); });
-                    task.Start(taskScheduler);
+                    var task = new Task(() => { channel.BasicAck(message.DeliveryTag, false); });
+                    task.Start(scheduler);
                     await task.ConfigureAwait(false);
                 }
             }
@@ -137,8 +146,8 @@
             {
                 if (!noAck)
                 {
-                    var task = new Task(() => { if (channel.IsOpen) channel.BasicReject(message.DeliveryTag, true); });
-                    task.Start(taskScheduler);
+                    var task = new Task(() => { channel.BasicReject(message.DeliveryTag, true); });
+                    task.Start(scheduler);
                     await task.ConfigureAwait(false);
                 }
             }
@@ -158,18 +167,6 @@
             var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), contextBag);
 
             await Task.Run(() => pipe(pushContext)).ConfigureAwait(false);
-        }
-
-        public Task Stop()
-        {
-            var connectionIsOpen = connection?.IsOpen ?? false;
-
-            if (connectionIsOpen)
-            {
-                connection.Close();
-            }
-
-            return consumerShutdownCompleted?.Task ?? TaskEx.Completed;
         }
 
         public void Dispose()
