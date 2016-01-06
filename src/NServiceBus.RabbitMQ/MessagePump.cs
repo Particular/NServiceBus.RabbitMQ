@@ -3,15 +3,14 @@
     using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using NServiceBus.Logging;
+    using NServiceBus.Transports.RabbitMQ.Config;
+    using NServiceBus.Transports.RabbitMQ.Connection;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
-    using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Logging;
-    using NServiceBus.Transports.RabbitMQ.Config;
-    using NServiceBus.Transports.RabbitMQ.Connection;
 
     class MessagePump : IPushMessages, IDisposable
     {
