@@ -4,6 +4,7 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading;
@@ -27,8 +28,10 @@
         SecondaryReceiveSettings secondaryReceiveSettings;
         bool noAck;
 
+        ConcurrentDictionary<int, Task> inFlightMessages;
         PersistentConnection connection;
         EventingBasicConsumer consumer;
+        TaskCompletionSource<bool> consumerShutdownCompleted;
 
         public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
         {
@@ -67,7 +70,8 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
-            executingCounter = 0;
+            inFlightMessages = new ConcurrentDictionary<int, Task>(limitations.MaxConcurrency, limitations.MaxConcurrency);
+
             taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
             connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
@@ -76,7 +80,14 @@
             model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
             consumer = new EventingBasicConsumer(model);
+            consumerShutdownCompleted = new TaskCompletionSource<bool>();
+
             consumer.Received += ConsumerOnReceived;
+
+            consumer.Shutdown += (sender, eventArgs) =>
+            {
+                consumerShutdownCompleted.TrySetResult(true);
+            };
 
             model.BasicConsume(settings.InputQueue, noAck, consumer);
 
@@ -86,35 +97,37 @@
             }
         }
 
-        int executingCounter;
-
         public async Task Stop()
         {
             consumer.Received -= ConsumerOnReceived;
 
-            while (Interlocked.CompareExchange(ref executingCounter, 0, 0) != 0)
-            {
-                await Task.Yield();
-            }
+            await Task.WhenAll(inFlightMessages.Values).ConfigureAwait(false);
 
             if (connection.IsOpen)
             {
                 connection.Close();
             }
+
+            await (consumerShutdownCompleted?.Task ?? TaskEx.Completed).ConfigureAwait(false);
         }
 
         async void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
         {
+            Task task = null;
+
             try
             {
-                Interlocked.Increment(ref executingCounter);
                 circuitBreaker.Success();
-                var originalConsumer = (EventingBasicConsumer)sender;
-                await ProcessMessage(eventArgs, originalConsumer.Model, taskScheduler.ExclusiveScheduler).ConfigureAwait(false);
+
+                var consumer = (EventingBasicConsumer)sender;
+                task = ProcessMessage(eventArgs, consumer.Model, taskScheduler.ExclusiveScheduler);
+                inFlightMessages.TryAdd(task.Id, task);
+
+                await task.ConfigureAwait(false);
             }
             finally
             {
-                Interlocked.Decrement(ref executingCounter);
+                inFlightMessages.TryRemove(task.Id, out task);
             }
         }
 
