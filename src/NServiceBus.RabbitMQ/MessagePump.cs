@@ -11,7 +11,7 @@
     using NServiceBus.Transports.RabbitMQ.Config;
     using NServiceBus.Transports.RabbitMQ.Connection;
 
-    class MessagePump : IPushMessages
+    class MessagePump : IPushMessages, IDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
 
@@ -170,6 +170,11 @@
             }
 
             return consumerShutdownCompleted?.Task ?? TaskEx.Completed;
+        }
+
+        public void Dispose()
+        {
+            // Injected
         }
     }
 }
