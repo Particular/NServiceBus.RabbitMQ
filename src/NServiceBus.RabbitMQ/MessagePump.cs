@@ -128,7 +128,7 @@
 
                 if (!noAck)
                 {
-                    var task = new Task(() => channel.BasicAck(message.DeliveryTag, false));
+                    var task = new Task(() => { if (channel.IsOpen) channel.BasicAck(message.DeliveryTag, false); });
                     task.Start(taskScheduler);
                     await task.ConfigureAwait(false);
                 }
@@ -137,7 +137,7 @@
             {
                 if (!noAck)
                 {
-                    var task = new Task(() => channel.BasicReject(message.DeliveryTag, true));
+                    var task = new Task(() => { if (channel.IsOpen) channel.BasicReject(message.DeliveryTag, true); });
                     task.Start(taskScheduler);
                     await task.ConfigureAwait(false);
                 }
