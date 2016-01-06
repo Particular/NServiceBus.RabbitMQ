@@ -46,9 +46,9 @@
             var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
             var delayAfterFailure = TimeSpan.FromSeconds(5);
 
-            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity", 
-                timeToWaitBeforeTriggering, 
-                ex => criticalError.Raise("Repeated failures when communicating with the broker", 
+            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+                timeToWaitBeforeTriggering,
+                ex => criticalError.Raise("Repeated failures when communicating with the broker",
                 ex), delayAfterFailure);
 
             secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
@@ -78,9 +78,9 @@
             var consumer = new EventingBasicConsumer(model);
 
             cancelSource.Token.Register(() => consumer.Received -= ConsumerOnReceived);
-            
+
             consumer.Received += ConsumerOnReceived;
-            
+
             model.BasicConsume(settings.InputQueue, noAck, consumer);
 
             if (secondaryReceiveSettings.IsEnabled)
@@ -116,7 +116,7 @@
             {
                 Interlocked.Increment(ref executingCounter);
                 circuitBreaker.Success();
-                var originalConsumer = (EventingBasicConsumer) sender;
+                var originalConsumer = (EventingBasicConsumer)sender;
                 await ProcessMessage(eventArgs, originalConsumer.Model, taskScheduler.ExclusiveScheduler).ConfigureAwait(false);
             }
             finally
