@@ -3,7 +3,6 @@
     using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.Logging;
     using NServiceBus.Transports.RabbitMQ.Config;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using System;
@@ -14,8 +13,6 @@
 
     class MessagePump : IPushMessages, IDisposable
     {
-        static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
-
         readonly ReceiveOptions receiveOptions;
         readonly ConnectionConfiguration connectionConfiguration;
         readonly PoisonMessageForwarder poisonMessageForwarder;
@@ -98,10 +95,21 @@
 
         public async Task Stop()
         {
+            // This handles the scenario when autoack is ON, in this case we want to stop receiving messages
+            // from the consumer so no messages fall through between shutdown starting and finishing.
+            if (noAck)
+            {
+                if (connection.IsOpen)
+                {
+                    connection.Close();
+                    await (consumerShutdownCompleted?.Task ?? TaskEx.Completed).ConfigureAwait(false);
+                }
+            }
+
             consumer.Received -= ConsumerOnReceived;
 
             await Task.WhenAll(inFlightMessages.Values).ConfigureAwait(false);
-
+            
             if (connection.IsOpen)
             {
                 connection.Close();
