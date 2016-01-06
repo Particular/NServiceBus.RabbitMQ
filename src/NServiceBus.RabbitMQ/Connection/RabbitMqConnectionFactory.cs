@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
@@ -8,7 +9,7 @@
     {
         public ConnectionConfiguration Configuration { get; }
 
-        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
         {
             if (connectionConfiguration == null)
             {
@@ -33,6 +34,11 @@
                 RequestedHeartbeat = Configuration.RequestedHeartbeat,
                 ClientProperties = Configuration.ClientProperties
             };
+
+            if (scheduler != null)
+            {
+                connectionFactory.TaskScheduler = scheduler;
+            }
         }
 
         public virtual IConnection CreateConnection(string purpose)

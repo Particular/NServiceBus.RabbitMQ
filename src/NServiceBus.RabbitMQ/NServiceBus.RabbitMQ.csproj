@@ -81,42 +81,19 @@
     <Compile Include="Config\RabbitMQTransport.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
     <Compile Include="ConfirmsAwareChannel.cs" />
-    <Compile Include="Dataflow\ActionBlock.cs" />
-    <Compile Include="Dataflow\ActionOnDispose.cs" />
-    <Compile Include="Dataflow\BufferBlock.cs" />
-    <Compile Include="Dataflow\Common.cs" />
-    <Compile Include="Dataflow\DataflowBlock.cs" />
-    <Compile Include="Dataflow\DataflowBlockOptions.cs" />
-    <Compile Include="Dataflow\DataflowLinkOptions.cs" />
-    <Compile Include="Dataflow\DataflowMessageHeader.cs" />
-    <Compile Include="Dataflow\DataflowMessageStatus.cs" />
-    <Compile Include="Dataflow\EnumerableDebugView.cs" />
-    <Compile Include="Dataflow\IDataflowBlock.cs" />
-    <Compile Include="Dataflow\IDebuggerDisplay.cs" />
-    <Compile Include="Dataflow\ImmutableList.cs" />
-    <Compile Include="Dataflow\IPropagatorBlock.cs" />
-    <Compile Include="Dataflow\IReceivableSourceBlock.cs" />
-    <Compile Include="Dataflow\ISourceBlock.cs" />
-    <Compile Include="Dataflow\ITargetBlock.cs" />
-    <Compile Include="Dataflow\Padding.cs" />
-    <Compile Include="Dataflow\ProducerConsumerQueues.cs" />
-    <Compile Include="Dataflow\QueuedMap.cs" />
-    <Compile Include="Dataflow\ReorderingBuffer.cs" />
-    <Compile Include="Dataflow\SourceCore.cs" />
-    <Compile Include="Dataflow\SpscTargetCore.cs" />
-    <Compile Include="Dataflow\TargetCore.cs" />
-    <Compile Include="Dataflow\TargetRegistry.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
     <Compile Include="Connection\RabbitMqConnectionFactory.cs" />
     <Compile Include="Connection\HostConfiguration.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="MessagePump.cs" />
     <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
+    <Compile Include="PoisonMessageForwarder.cs" />
+    <Compile Include="QueuePurger.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RabbitMqMessagePump.cs" />
     <Compile Include="RabbitMqMessageSender.cs" />
     <Compile Include="RabbitMqQueueCreator.cs" />
     <Compile Include="RabbitMqSubscriptionManager.cs" />
@@ -124,7 +101,6 @@
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
     <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
     <Compile Include="RepeatedFailuresOverTimeCircuitBreaker.cs" />
-    <Compile Include="Roslyn\ObjectPool.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
@@ -137,10 +113,8 @@
     <Content Include="FodyWeavers.xml">
       <SubType>Designer</SubType>
     </Content>
-    <Content Include="Roslyn\License.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Dataflow\LICENSE" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
