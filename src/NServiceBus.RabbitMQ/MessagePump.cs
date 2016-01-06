@@ -105,12 +105,7 @@
             cancelSource.Dispose();
         }
 
-        void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
-        {
-            MessageReceived(sender, eventArgs).GetAwaiter().GetResult();
-        }
-
-        async Task MessageReceived(object sender, BasicDeliverEventArgs eventArgs)
+        async void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
         {
             try
             {
