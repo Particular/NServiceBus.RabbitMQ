@@ -28,6 +28,7 @@
         bool noAck;
 
         PersistentConnection connection;
+        EventingBasicConsumer consumer;
 
         public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
         {
@@ -63,7 +64,6 @@
         }
 
         ConcurrentExclusiveSchedulerPair taskScheduler;
-        CancellationTokenSource cancelSource;
 
         public void Start(PushRuntimeSettings limitations)
         {
@@ -71,14 +71,11 @@
             taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
             connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, "Consume");
-            cancelSource = new CancellationTokenSource();
+
             var model = connection.CreateModel();
             model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
-            var consumer = new EventingBasicConsumer(model);
-
-            cancelSource.Token.Register(() => consumer.Received -= ConsumerOnReceived);
-
+            consumer = new EventingBasicConsumer(model);
             consumer.Received += ConsumerOnReceived;
 
             model.BasicConsume(settings.InputQueue, noAck, consumer);
@@ -93,7 +90,7 @@
 
         public async Task Stop()
         {
-            cancelSource?.Cancel();
+            consumer.Received -= ConsumerOnReceived;
 
             while (Interlocked.CompareExchange(ref executingCounter, 0, 0) != 0)
             {
@@ -104,9 +101,6 @@
             {
                 connection.Close();
             }
-
-            cancelSource?.Dispose();
-            cancelSource = null;
         }
 
         async void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
