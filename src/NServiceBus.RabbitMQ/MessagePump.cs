@@ -93,16 +93,20 @@
 
         public async Task Stop()
         {
-            cancelSource.Cancel();
+            cancelSource?.Cancel();
 
             while (Interlocked.CompareExchange(ref executingCounter, 0, 0) != 0)
             {
                 await Task.Yield();
             }
 
-            connection.Close();
+            if (connection.IsOpen)
+            {
+                connection.Close();
+            }
 
-            cancelSource.Dispose();
+            cancelSource?.Dispose();
+            cancelSource = null;
         }
 
         async void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
