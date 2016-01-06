@@ -19,7 +19,6 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
     {
         connectionString = settings["Transport.ConnectionString"];
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
-        configuration.LimitMessageProcessingConcurrencyTo(5);
 
         return Task.FromResult(0);
     }
@@ -44,8 +43,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
             {
                 try
                 {
-                    var cleared = model.QueuePurge(queue.Name);
-                    Console.WriteLine("Cleared {0} message(s) out of {1}", cleared, queue.Name);
+                    model.QueuePurge(queue.Name);
                 }
                 catch (Exception ex)
                 {
