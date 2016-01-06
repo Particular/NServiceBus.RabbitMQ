@@ -21,8 +21,8 @@
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
 
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         Func<PushContext, Task> pipe;
-        //CriticalError criticalError;
         PushSettings settings;
         SecondaryReceiveSettings secondaryReceiveSettings;
         bool noAck;
@@ -40,8 +40,16 @@
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
         {
             this.pipe = pipe;
-            //this.criticalError = criticalError;
             this.settings = settings;
+
+            // TODO: Read these from config
+            var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
+            var delayAfterFailure = TimeSpan.FromSeconds(5);
+
+            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity", 
+                timeToWaitBeforeTriggering, 
+                ex => criticalError.Raise("Repeated failures when communicating with the broker", 
+                ex), delayAfterFailure);
 
             secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
             noAck = settings.RequiredTransactionMode == TransportTransactionMode.None;
@@ -107,6 +115,7 @@
             try
             {
                 Interlocked.Increment(ref executingCounter);
+                circuitBreaker.Success();
                 var originalConsumer = (EventingBasicConsumer) sender;
                 await ProcessMessage(eventArgs, originalConsumer.Model, taskScheduler.ExclusiveScheduler).ConfigureAwait(false);
             }
