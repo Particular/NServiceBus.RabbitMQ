@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.AcceptanceTests.Recoverability.Retries
+namespace NServiceBus.AcceptanceTests.Recoverability.Retries
 {
     using System;
     using System.Linq;
@@ -8,21 +8,29 @@
     using NServiceBus.Config;
     using NServiceBus.Features;
     using NServiceBus.MessageMutator;
+    using NUnit.Framework;
 
-    public class When_performing_slr : NServiceBusAcceptanceTest
+    public class When_performing_slr_with_regular_exception : NServiceBusAcceptanceTest
     {
         public class Context : ScenarioContext
         {
             public byte OriginalBodyChecksum { get; set; }
-
             public byte SlrChecksum { get; set; }
-
-            public bool SimulateSerializationException { get; set; }
-
-            public bool ForwardedToErrorQueue { get; set; }
-
-            public string PhysicalMessageId { get; set; }
         }
+
+        [Test]
+        public async Task Should_preserve_the_original_body_for_regular_exceptions()
+        {
+            var context = await Scenario.Define<Context>()
+                .WithEndpoint<RetryEndpoint>(b => b
+                    .When(bus => bus.SendLocal(new MessageToBeRetried()))
+                    .DoNotFailOnErrorMessages())
+                .Done(c => c.SlrChecksum != default(byte))
+                .Run();
+
+            Assert.AreEqual(context.OriginalBodyChecksum, context.SlrChecksum, "The body of the message sent to slr should be the same as the original message coming off the queue");
+        }
+
 
         public class RetryEndpoint : EndpointConfigurationBuilder
         {
@@ -35,24 +43,29 @@
                     configure.EnableFeature<TimeoutManager>();
                     configure.RegisterComponents(c => c.ConfigureComponent<BodyMutator>(DependencyLifecycle.InstancePerCall));
                 })
-                .WithConfig<SecondLevelRetriesConfig>(c => c.TimeIncrease = TimeSpan.FromSeconds(1));
+                .WithConfig<SecondLevelRetriesConfig>(c => c.TimeIncrease = TimeSpan.FromMilliseconds(1));
             }
 
             public static byte Checksum(byte[] data)
             {
-                var longSum = data.Sum(x => (long) x);
-                return unchecked((byte) longSum);
+                var longSum = data.Sum(x => (long)x);
+                return unchecked((byte)longSum);
             }
 
             class BodyMutator : IMutateOutgoingTransportMessages, IMutateIncomingTransportMessages
             {
-                public Context Context { get; set; }
+                Context testContext;
+
+                public BodyMutator(Context testContext)
+                {
+                    this.testContext = testContext;
+                }
 
                 public Task MutateIncoming(MutateIncomingTransportMessageContext transportMessage)
                 {
                     var originalBody = transportMessage.Body;
 
-                    Context.OriginalBodyChecksum = Checksum(originalBody);
+                    testContext.OriginalBodyChecksum = Checksum(originalBody);
 
                     var decryptedBody = new byte[originalBody.Length];
 
@@ -60,11 +73,6 @@
 
                     //decrypt
                     decryptedBody[0]++;
-
-                    if (Context.SimulateSerializationException)
-                    {
-                        decryptedBody[1]++;
-                    }
 
                     transportMessage.Body = decryptedBody;
                     return Task.FromResult(0);
@@ -79,15 +87,20 @@
 
             class ErrorNotificationSpy : IWantToRunWhenBusStartsAndStops
             {
-                public Context Context { get; set; }
-                public BusNotifications BusNotifications { get; set; }
+                BusNotifications notifications;
+                Context context;
+
+                public ErrorNotificationSpy(Context context, BusNotifications notifications)
+                {
+                    this.notifications = notifications;
+                    this.context = context;
+                }
 
                 public Task Start(IBusSession session)
                 {
-                    BusNotifications.Errors.MessageSentToErrorQueue += (sender, message) =>
+                    notifications.Errors.MessageSentToErrorQueue += (sender, message) =>
                     {
-                        Context.ForwardedToErrorQueue = true;
-                        Context.SlrChecksum = Checksum(message.Body);
+                        context.SlrChecksum = Checksum(message.Body);
                     };
                     return Task.FromResult(0);
                 }
@@ -100,11 +113,8 @@
 
             class MessageToBeRetriedHandler : IHandleMessages<MessageToBeRetried>
             {
-                public Context TestContext { get; set; }
-
                 public Task Handle(MessageToBeRetried message, IMessageHandlerContext context)
                 {
-                    TestContext.PhysicalMessageId = context.MessageId;
                     throw new SimulatedException();
                 }
             }

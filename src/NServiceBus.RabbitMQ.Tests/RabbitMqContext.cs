@@ -92,7 +92,7 @@
                 receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
                 return TaskEx.Completed;
             },
-                new CriticalError((endpoint, error, exception) => TaskEx.Completed),
+                new CriticalError(_ => TaskEx.Completed),
                 new PushSettings(ReceiverQueue, "error", true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
 

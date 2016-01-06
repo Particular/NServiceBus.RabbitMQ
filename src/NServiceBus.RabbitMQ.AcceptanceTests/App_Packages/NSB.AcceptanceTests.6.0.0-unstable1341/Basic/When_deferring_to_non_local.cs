@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.AcceptanceTests.DelayedDelivery
+﻿namespace NServiceBus.AcceptanceTests.Basic
 {
     using System;
     using System.Threading.Tasks;
@@ -7,43 +7,45 @@
     using NServiceBus.Features;
     using NUnit.Framework;
 
-    public class When_Deferring_a_message : NServiceBusAcceptanceTest
+    public class When_deferring_to_non_local : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Delivery_should_be_delayed()
+        public async Task Message_should_be_received()
         {
-            var delay = TimeSpan.FromSeconds(5);
-
             var context = await Scenario.Define<Context>()
                     .WithEndpoint<Endpoint>(b => b.When((bus, c) =>
                     {
                         var options = new SendOptions();
 
-                        options.DelayDeliveryWith(delay);
-                        options.RouteToLocalEndpointInstance();
-
-                        c.SentAt = DateTime.UtcNow;
-
+                        options.DelayDeliveryWith(TimeSpan.FromMilliseconds(3));
                         return bus.Send(new MyMessage(), options);
                     }))
+                    .WithEndpoint<Receiver>()
                     .Done(c => c.WasCalled)
                     .Run();
 
-            Assert.GreaterOrEqual(context.ReceivedAt - context.SentAt, delay);
+            Assert.IsTrue(context.WasCalled);
         }
 
         public class Context : ScenarioContext
         {
             public bool WasCalled { get; set; }
-            public DateTime SentAt { get; set; }
-            public DateTime ReceivedAt { get; set; }
         }
 
         public class Endpoint : EndpointConfigurationBuilder
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config => config.EnableFeature<TimeoutManager>());
+                EndpointSetup<DefaultServer>(config => config.EnableFeature<TimeoutManager>())
+                    .AddMapping<MyMessage>(typeof(Receiver));
+            }
+        }
+
+        public class Receiver : EndpointConfigurationBuilder
+        {
+            public Receiver()
+            {
+                EndpointSetup<DefaultServer>();
             }
             public class MyMessageHandler : IHandleMessages<MyMessage>
             {
@@ -51,7 +53,6 @@
 
                 public Task Handle(MyMessage message, IMessageHandlerContext context)
                 {
-                    Context.ReceivedAt = DateTime.UtcNow;
                     Context.WasCalled = true;
                     return Task.FromResult(0);
                 }
@@ -59,7 +60,7 @@
         }
 
         [Serializable]
-        public class MyMessage : IMessage
+        public class MyMessage : ICommand
         {
         }
     }
