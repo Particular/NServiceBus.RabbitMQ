@@ -6,9 +6,10 @@
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Extensibility;
     using NServiceBus.Serialization;
     using NServiceBus.Settings;
-    using NServiceBus.Transports.RabbitMQ;
+    using NServiceBus.Transports;
     using NUnit.Framework;
 
     public class When_using_a_custom_message_id_strategy
@@ -36,13 +37,13 @@
 
             class Starter: IWantToRunWhenBusStartsAndStops
             {
-                private readonly IManageRabbitMqConnections connectionManager;
+                readonly IDispatchMessages dispatchMessages;
                 private readonly IMessageSerializer serializer;
                 private readonly ReadOnlySettings settings;
 
-                public Starter(IManageRabbitMqConnections connectionManager, IMessageSerializer serializer, ReadOnlySettings settings)
+                public Starter(IDispatchMessages dispatchMessages, IMessageSerializer serializer, ReadOnlySettings settings)
                 {
-                    this.connectionManager = connectionManager;
+                    this.dispatchMessages = dispatchMessages;
                     this.serializer = serializer;
                     this.settings = settings;
                 }
@@ -53,15 +54,13 @@
                     {
                         serializer.Serialize(new MyRequest(), stream);
 
-                        using (var channel = connectionManager.GetPublishConnection().CreateModel())
+                        dispatchMessages.Dispatch(new TransportOperations(new List<MulticastTransportOperation>(), new List<UnicastTransportOperation>
                         {
-                            var properties = channel.CreateBasicProperties();
-
-                            //for now until we can patch the serializer to infer the type based on the root node
-                            properties.Headers = new Dictionary<string, object> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } };
-                            channel.BasicPublish(string.Empty, settings.EndpointName().ToString(), true, false, properties, stream.ToArray());
-                        }
-
+                            new UnicastTransportOperation(new OutgoingMessage(String.Empty, new Dictionary<string, string>
+                            {
+                                {Headers.EnclosedMessageTypes, typeof(MyRequest).FullName}
+                            }, stream.ToArray()), settings.EndpointName().ToString())
+                        }), new ContextBag());
                     }
 
                     return context.Completed();
