@@ -16,7 +16,7 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<OriginatingEndpoint>(c => c.When(bus => bus.Send(new Request())))
-                .WithEndpoint<ReceivingEndpoint>()
+                .WithEndpoint<ReceivingEndpoint>(b => b.DoNotFailOnErrorMessages())
                 .WithEndpoint<ErrorSpyEndpoint>()
                 .Done(c => c.Done)
                 .Run(TimeSpan.FromMinutes(1));
@@ -60,8 +60,8 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
 
                 public Task Handle(IMessage message, IMessageHandlerContext context)
                 {
-                    myContext.Done = true;
                     myContext.CallbackReceiverHeader = context.MessageHeaders["NServiceBus.RabbitMQ.CallbackQueue"];
+                    myContext.Done = true;
 
                     return context.Completed();
                 }
@@ -82,7 +82,7 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
                     })
                     .WithConfig<MessageForwardingInCaseOfFaultConfig>(c =>
                     {
-                        c.ErrorQueue = "AMessageIsRetriedAndSucceedsWithAReply.ErrorSpyEndpoint";
+                        c.ErrorQueue = "ErrorSpyEndpoint";
                     });
             }
 

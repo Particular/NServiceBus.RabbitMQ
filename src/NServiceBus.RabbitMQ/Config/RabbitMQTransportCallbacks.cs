@@ -21,8 +21,10 @@
         /// </summary>
         protected override void Setup(FeatureConfigurationContext context)
         {
+            var callbacks = new Callbacks(context.Settings);
+
             context.Pipeline.Register<ReadIncomingCallbackAddressBehavior.Registration>();
-            context.Pipeline.Register<SetOutgoingCallbackAddressBehavior.Registration>();
+            context.Pipeline.Register("SetOutgoingCallbackAddressBehavior", builder => new SetOutgoingCallbackAddressBehavior(callbacks), "Writes out callback address to in outgoing message.");
         }
     }
 }
