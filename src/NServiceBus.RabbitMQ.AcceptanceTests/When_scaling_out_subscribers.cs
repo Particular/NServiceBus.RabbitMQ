@@ -1,9 +1,9 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
+    using System;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Support;
     using NUnit.Framework;
 
     public class When_scaling_out_subscribers
@@ -34,13 +34,10 @@
                            c.ServerBSubscribed = true;
                            return bus.Completed();
                        });
-
                    })
-                   .Done(c => c.ServerAGotTheEvent && c.ServerBGotTheEvent)
-                   .Run();
+                   .Run(TimeSpan.FromSeconds(10));
 
-            Assert.False(context.ServerAGotTheEvent && context.ServerBGotTheEvent, "Both scaled out instances should not get the event");
-            Assert.True(context.ServerAGotTheEvent || context.ServerBGotTheEvent, "One of the scaled out instances should get the event");
+            Assert.AreEqual(1, context.Counter, "One of the scaled out instances should get the event");
         }
 
         public class ScaledOutSubscriber : EndpointConfigurationBuilder
@@ -61,18 +58,15 @@
 
                 public Task Handle(MyEvent message, IMessageHandlerContext context)
                 {
-                    if (RuntimeEnvironment.MachineName == "ScaledOutServerA")
+                    lock (objLock)
                     {
-                        myContext.ServerAGotTheEvent = true;
+                        myContext.Counter++;
                     }
-
-                    if (RuntimeEnvironment.MachineName == "ScaledOutServerB")
-                    {
-                        myContext.ServerBGotTheEvent = true;
-                    }
-
+                    
                     return context.Completed();
                 }
+
+                static Object objLock = new object();
             }
         }
 
@@ -93,8 +87,7 @@
         {
             public bool ServerASubscribed { get; set; }
             public bool ServerBSubscribed { get; set; }
-            public bool ServerBGotTheEvent { get; set; }
-            public bool ServerAGotTheEvent { get; set; }
+            public int Counter { get; set; }
         }
     }
 }
