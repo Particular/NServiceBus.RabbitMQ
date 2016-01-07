@@ -125,8 +125,15 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 return;
             }
-        
-            Logger.InfoFormat("Disconnected from RabbitMQ Broker, reason: {0} , going to reconnect", reason);
+
+            if (reason.ReplyCode == 541)
+            {
+                Logger.InfoFormat("Disconnected from RabbitMQ Broker, reason: {0} , not going to reconnect.", reason);
+
+                return;
+            }
+
+            Logger.InfoFormat("Disconnected from RabbitMQ Broker, reason: {0} , going to reconnect.", reason);
 
             TryToConnect(null);
         }
