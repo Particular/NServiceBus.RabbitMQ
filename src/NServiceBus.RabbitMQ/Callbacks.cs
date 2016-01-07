@@ -1,7 +1,6 @@
 namespace NServiceBus.Transports.RabbitMQ
 {
     using NServiceBus.Settings;
-    using NServiceBus.Support;
 
     class Callbacks
     {
@@ -10,7 +9,13 @@ namespace NServiceBus.Transports.RabbitMQ
             if (UseCallbackReceiver(settings))
             {
                 mainQueue = settings.Get<string>("NServiceBus.LocalAddress");
-                var callbackQueue = $"{mainQueue}.{RuntimeEnvironment.MachineName}";
+                var logicalAddress = settings.Get<LogicalAddress>();
+                var callbackQueue = logicalAddress.EndpointInstance.Endpoint.ToString();
+
+                if (logicalAddress.EndpointInstance.Discriminator != null)
+                {
+                    callbackQueue  += $"-{logicalAddress.EndpointInstance.Discriminator}";
+                }
 
                 int maxConcurrencyForCallbackReceiver;
                 if (!settings.TryGet(MaxConcurrencyForCallbackReceiver, out maxConcurrencyForCallbackReceiver))
