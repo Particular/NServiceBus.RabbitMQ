@@ -6,6 +6,8 @@
     using NServiceBus.Extensibility;
     using NServiceBus.Transports.RabbitMQ.Routing;
 
+    using Headers = NServiceBus.Headers;
+
     class RabbitMqMessageSender : IDispatchMessages
     {
         public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider)

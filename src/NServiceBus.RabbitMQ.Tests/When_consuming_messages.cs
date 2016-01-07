@@ -6,6 +6,8 @@
     using NServiceBus.Support;
     using NUnit.Framework;
 
+    using Headers = NServiceBus.Headers;
+
     [TestFixture]
     class When_consuming_messages : RabbitMqContext
     {
@@ -46,7 +48,7 @@
 
                 properties.MessageId = message.MessageId;
 
-                channel.BasicPublish(string.Empty, ReceiverQueue, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, ReceiverQueue, true, properties, message.Body);
             }
 
             var received = WaitForMessage();
@@ -67,7 +69,7 @@
 
                 properties.MessageId = message.MessageId;
 
-                channel.BasicPublish(string.Empty, ReceiverQueue, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, ReceiverQueue, true, properties, message.Body);
             }
 
             var received = WaitForMessage();
@@ -91,7 +93,7 @@
                 properties.MessageId = message.MessageId;
                 properties.Type = typeName;
 
-                channel.BasicPublish(string.Empty, ReceiverQueue, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, ReceiverQueue, true, properties, message.Body);
             }
 
             var received = WaitForMessage();
@@ -111,7 +113,7 @@
 
                 properties.MessageId = message.MessageId;
 
-                channel.BasicPublish(string.Empty, ReceiverQueue + "." + RuntimeEnvironment.MachineName, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, ReceiverQueue + "." + RuntimeEnvironment.MachineName, true, properties, message.Body);
             }
 
 

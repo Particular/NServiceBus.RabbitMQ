@@ -8,6 +8,8 @@
     using NServiceBus.DeliveryConstraints;
     using NServiceBus.Performance.TimeToBeReceived;
 
+    using Headers = NServiceBus.Headers;
+
     static class RabbitMqTransportMessageExtensions
     {
         static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint

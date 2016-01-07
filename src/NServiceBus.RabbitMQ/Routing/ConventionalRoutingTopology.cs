@@ -58,17 +58,17 @@
         public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
             SetupTypeSubscriptions(channel, type);
-            channel.BasicPublish(ExchangeName(type), String.Empty, true, false, properties, message.Body);
+            channel.BasicPublish(ExchangeName(type), String.Empty, true, properties, message.Body);
         }
 
         public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, false, properties, message.Body);
+            channel.BasicPublish(address, String.Empty, true, properties, message.Body);
         }
 
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, false, properties, body);
+            channel.BasicPublish(address, String.Empty, true, properties, body);
         }
 
         public void Initialize(IModel channel, string mainQueue)

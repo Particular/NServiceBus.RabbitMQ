@@ -10,6 +10,8 @@
     using NServiceBus.Extensibility;
     using NUnit.Framework;
 
+    using Headers = NServiceBus.Headers;
+
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {

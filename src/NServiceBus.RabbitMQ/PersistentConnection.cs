@@ -35,7 +35,7 @@ namespace NServiceBus.Transports.RabbitMQ
             return connection.CreateModel();
         }
 
-       
+
         public void Close()
         {
             connection.ConnectionShutdown -= OnConnectionShutdown;
@@ -227,7 +227,7 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             connection.HandleConnectionBlocked(reason);
         }
-        
+
         public void HandleConnectionUnblocked()
         {
             connection.HandleConnectionUnblocked();
@@ -271,8 +271,6 @@ namespace NServiceBus.Transports.RabbitMQ
         readonly string purpose;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof (RabbitMqConnectionManager));
-        public EndPoint LocalEndPoint => connection.LocalEndPoint;
-        public EndPoint RemoteEndPoint => connection.RemoteEndPoint;
         public int LocalPort => connection.LocalPort;
         public int RemotePort => connection.RemotePort;
     }
