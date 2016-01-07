@@ -2,7 +2,6 @@ namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
-    using System.Net;
     using System.Threading;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
