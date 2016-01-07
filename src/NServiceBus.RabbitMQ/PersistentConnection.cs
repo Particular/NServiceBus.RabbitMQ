@@ -126,6 +126,7 @@ namespace NServiceBus.Transports.RabbitMQ
                 return;
             }
 
+            // Domain Unloading case
             if (reason.ReplyCode == 541)
             {
                 Logger.InfoFormat("Disconnected from RabbitMQ Broker, reason: {0} , not going to reconnect.", reason);
