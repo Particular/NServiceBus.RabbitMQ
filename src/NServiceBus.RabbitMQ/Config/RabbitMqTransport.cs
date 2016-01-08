@@ -231,9 +231,9 @@
                 queue.Append("." + logicalAddress.Qualifier);
             }
 
-            localQueue = queue.ToString();
+            localQueue = logicalAddress.EndpointInstance.Endpoint.ToString();
 
-            return localQueue;
+            return queue.ToString();
         }
 
         /// <summary>
