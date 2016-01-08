@@ -23,22 +23,17 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
         return Task.FromResult(0);
     }
 
-    public Task Cleanup()
-    {
-        PurgeQueues();
-        return Task.FromResult(0);
-    }
+    public Task Cleanup() => PurgeQueues();
 
-    private void PurgeQueues()
+    private async Task PurgeQueues()
     {
         var connectionFactory = CreateConnectionFactory(connectionString);
 
-        var queues = GetQueues(connectionFactory);
+        var queues = await GetQueues(connectionFactory);
 
-        var connection = connectionFactory.CreateConnection();
+        using (var connection = connectionFactory.CreateConnection())
         using (var model = connection.CreateModel())
         {
-            connection.AutoClose = true;
             foreach (var queue in queues)
             {
                 try
@@ -62,7 +57,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
         var host = match.Groups["host"].Success ? match.Groups["host"].Value : "localhost";
         var virtualHost = match.Groups["VirtualHost"].Success ? match.Groups["VirtualHost"].Value : "/";
 
-        return new ConnectionFactory
+        var connectionFactory = new ConnectionFactory
         {
             UserName = username,
             Password = password,
@@ -70,15 +65,23 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
             HostName = host,
             AutomaticRecoveryEnabled = true
         };
+
+        connectionFactory.ClientProperties["purpose"] = "Test Queue Purger";
+
+        return connectionFactory;
     }
 
     // Requires that the RabbitMQ Management API has been enabled: https://www.rabbitmq.com/management.html
-    private IEnumerable<Queue> GetQueues(ConnectionFactory connectionFactory)
+    private async Task<IEnumerable<Queue>> GetQueues(ConnectionFactory connectionFactory)
     {
         var httpClient = CreateHttpClient(connectionFactory);
-        var queueResult = httpClient.GetAsync(string.Format(CultureInfo.InvariantCulture, "api/queues/{0}", Uri.EscapeDataString(connectionFactory.VirtualHost))).Result;
+
+        var queueResult = await httpClient.GetAsync(string.Format(CultureInfo.InvariantCulture, "api/queues/{0}", Uri.EscapeDataString(connectionFactory.VirtualHost)));
         queueResult.EnsureSuccessStatusCode();
-        return JsonConvert.DeserializeObject<List<Queue>>(queueResult.Content.ReadAsStringAsync().Result);
+
+        var content = await queueResult.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<List<Queue>>(content);
     }
 
     private HttpClient CreateHttpClient(ConnectionFactory details)
@@ -87,10 +90,12 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
         {
             Credentials = new NetworkCredential(details.UserName, details.Password)
         };
+
         var httpClient = new HttpClient(handler)
         {
             BaseAddress = new Uri(string.Format(CultureInfo.InvariantCulture, "http://{0}:15672/", details.HostName))
         };
+
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         return httpClient;
