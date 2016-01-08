@@ -222,6 +222,10 @@
         {
             var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint.ToString());
 
+            if (logicalAddress.EndpointInstance.Discriminator != null)
+            {
+                queue.Append("-" + logicalAddress.EndpointInstance.Discriminator);
+            }
             if (logicalAddress.Qualifier != null)
             {
                 queue.Append("." + logicalAddress.Qualifier);
