@@ -65,12 +65,12 @@
                 return defaultDestination;
             }
 
-            CallbackAddress callbackAddress;
+            //CallbackAddress callbackAddress;
 
-            if (context.TryGet(out callbackAddress))
-            {
-                return callbackAddress.Address;
-            }
+            //if (context.TryGet(out callbackAddress))
+            //{
+            //    return callbackAddress.Address;
+            //}
 
             return defaultDestination;
         }
