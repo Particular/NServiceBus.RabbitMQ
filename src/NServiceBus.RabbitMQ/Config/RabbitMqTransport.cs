@@ -85,7 +85,7 @@
                     },
                         messageConverter,
                         connectionConfiguration.PrefetchCount,
-                        connectionConfiguration.DequeueTimeout*1000,
+                        connectionConfiguration.DequeueTimeout * 1000,
                         context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
                         consumerTag);
 
