@@ -1,10 +1,15 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Transports.RabbitMQ;
+    using NServiceBus.DeliveryConstraints;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Performance.TimeToBeReceived;
+    using NServiceBus.Settings;
+    using NServiceBus.Transports;
     using NUnit.Framework;
 
     public class When_the_broker_connection_is_lost
@@ -33,22 +38,43 @@
 
             class ConnectionKiller : IWantToRunWhenBusStartsAndStops
             {
-                readonly IManageRabbitMqConnections connectionManager;
+                readonly IDispatchMessages sender;
+                readonly ReadOnlySettings settings;
                 readonly MyContext myContext;
 
-                public ConnectionKiller(IManageRabbitMqConnections connectionManager, MyContext myContext)
+                public ConnectionKiller(IDispatchMessages sender, ReadOnlySettings settings, MyContext myContext)
                 {
-                    this.connectionManager = connectionManager;
+                    this.sender = sender;
+                    this.settings = settings;
                     this.myContext = myContext;
                 }
 
                 public Task Start(IBusSession context)
                 {
-                    connectionManager.GetConsumeConnection().Abort();
+                    BreakConnectionBySendingInvalidMessage();
+
                     return context.SendLocal(new MyRequest
                     {
                         MessageId = myContext.MessageId
                     });
+                }
+
+                void BreakConnectionBySendingInvalidMessage()
+                {
+                    try
+                    {
+                        sender.Dispatch(new TransportOperations(new List<MulticastTransportOperation>(), new List<UnicastTransportOperation>
+                        {
+                            new UnicastTransportOperation(new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]), settings.EndpointName().ToString(), new List<DeliveryConstraint>
+                            {
+                                new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1))
+                            })
+                        }), new ContextBag());
+                    }
+                    catch (Exception)
+                    {
+                        // Don't care
+                    }
                 }
 
                 public Task Stop(IBusSession context)
