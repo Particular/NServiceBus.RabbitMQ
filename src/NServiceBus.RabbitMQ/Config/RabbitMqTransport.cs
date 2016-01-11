@@ -76,14 +76,12 @@
 
                     var receiveOptions = new ReceiveOptions(workQueue =>
                     {
-                        return SecondaryReceiveSettings.Disabled();
-
-                        ////if this isn't the main queue we shouldn't use callback receiver
-                        //if (!callbacks.IsEnabledFor(workQueue))
-                        //{
-                        //    return SecondaryReceiveSettings.Disabled();
-                        //}
-                        //return SecondaryReceiveSettings.Enabled(callbacks.QueueAddress, callbacks.MaxConcurrency);
+                        //if this isn't the main queue we shouldn't use callback receiver
+                        if (!callbacks.IsEnabledFor(workQueue))
+                        {
+                            return SecondaryReceiveSettings.Disabled();
+                        }
+                        return SecondaryReceiveSettings.Enabled(callbacks.QueueAddress, callbacks.MaxConcurrency);
                     },
                         messageConverter,
                         connectionConfiguration.PrefetchCount,
