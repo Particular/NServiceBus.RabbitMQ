@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.DeliveryConstraints;
     using NServiceBus.Extensibility;
@@ -12,7 +13,7 @@
     using NServiceBus.Transports;
     using NUnit.Framework;
 
-    public class When_the_broker_connection_is_lost
+    public class When_the_broker_connection_is_lost : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_reconnect()

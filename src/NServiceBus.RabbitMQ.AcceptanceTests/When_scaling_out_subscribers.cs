@@ -3,10 +3,11 @@
     using System;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_scaling_out_subscribers
+    public class When_scaling_out_subscribers : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_only_deliver_event_to_one_of_the_instances()
@@ -62,7 +63,7 @@
                     {
                         myContext.Counter++;
                     }
-                    
+
                     return context.Completed();
                 }
 

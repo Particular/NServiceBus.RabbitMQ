@@ -3,13 +3,13 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
     using System;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Config;
     using NServiceBus.Features;
     using NUnit.Framework;
 
-    [TestFixture]
-    public class When_a_message_is_retried_and_succeeds_with_a_reply
+    public class When_a_message_is_retried_and_succeeds_with_a_reply : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task The_message_send_to_error_queue_should_have_its_callback_receiver_header_intact()
@@ -82,7 +82,7 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
                     })
                     .WithConfig<MessageForwardingInCaseOfFaultConfig>(c =>
                     {
-                        c.ErrorQueue = "ErrorSpyEndpoint";
+                        c.ErrorQueue = "AMessageIsRetriedAndSucceedsWithAReply.ErrorSpyEndpoint";
                     });
             }
 

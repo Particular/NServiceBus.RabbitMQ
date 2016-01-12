@@ -1,10 +1,11 @@
 ﻿//namespace NServiceBus.RabbitMQ.AcceptanceTests
 //{
 //    using NServiceBus.AcceptanceTesting;
+//    using NServiceBus.AcceptanceTests;
 //    using NServiceBus.AcceptanceTests.EndpointTemplates;
 //    using NUnit.Framework;
 
-//    public class When_callback_receiver_is_disabled
+//    public class When_callback_receiver_is_disabled : NServiceBusAcceptanceTest
 //    {
 //        [Test]
 //        public void Should_still_receive_callbacks()

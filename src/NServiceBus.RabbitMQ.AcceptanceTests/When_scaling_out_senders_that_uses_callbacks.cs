@@ -3,11 +3,12 @@
 //    using System;
 //    using NServiceBus.AcceptanceTesting;
 //    using NServiceBus.AcceptanceTesting.Support;
+//    using NServiceBus.AcceptanceTests;
 //    using NServiceBus.AcceptanceTests.EndpointTemplates;
 //    using NServiceBus.Support;
 //    using NUnit.Framework;
 
-//    public class When_scaling_out_senders_that_uses_callbacks
+//    public class When_scaling_out_senders_that_uses_callbacks : NServiceBusAcceptanceTest
 //    {
 //        const int numMessagesToSend = 5;
 

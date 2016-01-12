@@ -2,10 +2,11 @@
 {
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_using_direct_routing
+    public class When_using_direct_routing : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_receive_the_message()

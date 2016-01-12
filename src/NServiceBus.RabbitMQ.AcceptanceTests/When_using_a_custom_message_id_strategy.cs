@@ -5,6 +5,7 @@
     using System.IO;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Extensibility;
     using NServiceBus.Serialization;
@@ -12,7 +13,7 @@
     using NServiceBus.Transports;
     using NUnit.Framework;
 
-    public class When_using_a_custom_message_id_strategy
+    public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_be_able_to_receive_messages_with_no_id()
@@ -30,12 +31,12 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
+                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
                     //just returning a guid here, not suitable for production use
                     .CustomMessageIdStrategy(m => Guid.NewGuid().ToString()));
             }
 
-            class Starter: IWantToRunWhenBusStartsAndStops
+            class Starter : IWantToRunWhenBusStartsAndStops
             {
                 readonly IDispatchMessages dispatchMessages;
                 private readonly IMessageSerializer serializer;
