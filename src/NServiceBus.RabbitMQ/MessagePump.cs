@@ -9,6 +9,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class MessagePump : IPushMessages, IDisposable
@@ -157,12 +158,23 @@
                     poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue);
                 }
 
+                CancellationTokenSource tokenSource = null;
+
                 if (pushMessage)
                 {
-                    await PushMessageToPipe(messageId, headers, new MemoryStream(message.Body ?? new byte[0])).ConfigureAwait(false);
+                    tokenSource = new CancellationTokenSource();
+                    await PushMessageToPipe(messageId, headers, tokenSource, new MemoryStream(message.Body ?? new byte[0])).ConfigureAwait(false);
                 }
 
-                if (!noAck)
+                var cancellationRequested = tokenSource?.IsCancellationRequested ?? false;
+
+                if (cancellationRequested)
+                {
+                    var task = new Task(() => { channel.BasicReject(message.DeliveryTag, true); });
+                    task.Start(scheduler);
+                    await task.ConfigureAwait(false);
+                }
+                else if (!noAck)
                 {
                     var task = new Task(() => { channel.BasicAck(message.DeliveryTag, false); });
                     task.Start(scheduler);
@@ -180,7 +192,7 @@
             }
         }
 
-        async Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, Stream stream)
+        async Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, CancellationTokenSource tokenSource, Stream stream)
         {
             var contextBag = new ContextBag();
 
@@ -191,7 +203,7 @@
                 contextBag.Set(new CallbackAddress(explicitCallbackAddress));
             }
 
-            var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), contextBag);
+            var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), tokenSource, contextBag);
 
             await Task.Run(() => pipe(pushContext)).ConfigureAwait(false);
         }
