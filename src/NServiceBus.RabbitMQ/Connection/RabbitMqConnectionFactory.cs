@@ -32,7 +32,9 @@
                 UserName = Configuration.UserName,
                 Password = Configuration.Password,
                 RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                ClientProperties = Configuration.ClientProperties
+                ClientProperties = Configuration.ClientProperties,
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = Configuration.RetryDelay
             };
 
             if (scheduler != null)

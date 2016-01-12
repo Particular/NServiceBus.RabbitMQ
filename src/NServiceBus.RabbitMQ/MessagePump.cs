@@ -25,7 +25,7 @@
         bool noAck;
 
         ConcurrentDictionary<int, Task> inFlightMessages;
-        PersistentConnection connection;
+        IConnection connection;
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> consumerShutdownCompleted;
 
@@ -70,7 +70,7 @@
 
             taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
-            connection = new PersistentConnection(factory, connectionConfiguration.RetryDelay, $"{settings.InputQueue} MessagePump");
+            connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var model = connection.CreateModel();
             model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), true);

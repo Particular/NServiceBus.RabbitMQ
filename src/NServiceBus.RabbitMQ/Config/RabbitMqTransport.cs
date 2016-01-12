@@ -126,7 +126,7 @@
                 return;
             }
 
-            connectionManager = new RabbitMqConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration), connectionConfiguration);
+            connectionManager = new RabbitMqConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration));
         }
 
         private void CreateConnectionConfiguration(ReadOnlySettings settings, string connectionString)

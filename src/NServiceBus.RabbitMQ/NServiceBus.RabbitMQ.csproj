@@ -88,7 +88,6 @@
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="MessagePump.cs" />
-    <Compile Include="PersistentConnection.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
     <Compile Include="PoisonMessageForwarder.cs" />
     <Compile Include="QueuePurger.cs" />

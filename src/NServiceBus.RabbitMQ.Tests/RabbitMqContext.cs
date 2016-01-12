@@ -67,7 +67,7 @@
             config.ParseHosts("localhost:5672");
 
             var connectionFactory = new RabbitMqConnectionFactory(config);
-            connectionManager = new RabbitMqConnectionManager(connectionFactory, config);
+            connectionManager = new RabbitMqConnectionManager(connectionFactory);
             var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms, config.MaxWaitTimeForConfirms);
 
             var settingsHolder = new SettingsHolder();
