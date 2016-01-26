@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using NServiceBus.DeliveryConstraints;
     using NServiceBus.Performance.TimeToBeReceived;
+    using NServiceBus.Routing;
 
     public class OutgoingMessageBuilder
     {
@@ -17,20 +18,19 @@
         {
             var message = new OutgoingMessage(messageId, headers, body);
 
-            var multicastOps = new List<MulticastTransportOperation>();
+            var transportOperations = new List<TransportOperation>();
 
             if (eventType != null)
             {
-                multicastOps.Add(new MulticastTransportOperation(message, eventType, constraints, dispatchConsistency));
+                transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), dispatchConsistency, constraints));
             }
-            var unicastOps = new List<UnicastTransportOperation>();
 
             if (!string.IsNullOrEmpty(destination))
             {
-                unicastOps.Add(new UnicastTransportOperation(message, destination, constraints, dispatchConsistency));
+                transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), dispatchConsistency, constraints));
             }
 
-            return new TransportOperations(multicastOps, unicastOps);
+            return new TransportOperations(transportOperations.ToArray());
         }
 
         public OutgoingMessageBuilder SendTo(string unicastAddress)

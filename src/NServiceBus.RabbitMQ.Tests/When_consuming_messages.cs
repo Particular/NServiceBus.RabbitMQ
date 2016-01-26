@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using NServiceBus.Extensibility;
+    using NServiceBus.Routing;
     using NServiceBus.Support;
     using NUnit.Framework;
 
@@ -22,11 +23,7 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
-            var transportOperations = new TransportOperations(new List<MulticastTransportOperation>(),
-                new List<UnicastTransportOperation>
-                {
-                     new UnicastTransportOperation(message,ReceiverQueue)
-                });
+            var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue)));
 
             messageSender.Dispatch(transportOperations, new ContextBag());
 

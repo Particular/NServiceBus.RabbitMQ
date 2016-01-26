@@ -6,9 +6,9 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.DeliveryConstraints;
     using NServiceBus.Extensibility;
     using NServiceBus.Performance.TimeToBeReceived;
+    using NServiceBus.Routing;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NUnit.Framework;
@@ -50,27 +50,20 @@
                     this.myContext = myContext;
                 }
 
-                public Task Start(IBusSession context)
+                public async Task Start(IBusSession context)
                 {
-                    BreakConnectionBySendingInvalidMessage();
+                    await BreakConnectionBySendingInvalidMessage();
 
-                    return context.SendLocal(new MyRequest
-                    {
-                        MessageId = myContext.MessageId
-                    });
+                    await context.SendLocal(new MyRequest { MessageId = myContext.MessageId });
                 }
 
-                void BreakConnectionBySendingInvalidMessage()
+                async Task BreakConnectionBySendingInvalidMessage()
                 {
                     try
                     {
-                        sender.Dispatch(new TransportOperations(new List<MulticastTransportOperation>(), new List<UnicastTransportOperation>
-                        {
-                            new UnicastTransportOperation(new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]), settings.EndpointName().ToString(), new List<DeliveryConstraint>
-                            {
-                                new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1))
-                            })
-                        }), new ContextBag());
+                        var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
+                        var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new [] { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
+                        await sender.Dispatch(new TransportOperations(operation), new ContextBag());
                     }
                     catch (Exception)
                     {

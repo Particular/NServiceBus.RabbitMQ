@@ -8,6 +8,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Extensibility;
+    using NServiceBus.Routing;
     using NServiceBus.Serialization;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
@@ -49,22 +50,19 @@
                     this.settings = settings;
                 }
 
-                public Task Start(IBusSession context)
+                public async Task Start(IBusSession context)
                 {
                     using (var stream = new MemoryStream())
                     {
                         serializer.Serialize(new MyRequest(), stream);
 
-                        dispatchMessages.Dispatch(new TransportOperations(new List<MulticastTransportOperation>(), new List<UnicastTransportOperation>
-                        {
-                            new UnicastTransportOperation(new OutgoingMessage(String.Empty, new Dictionary<string, string>
-                            {
-                                {Headers.EnclosedMessageTypes, typeof(MyRequest).FullName}
-                            }, stream.ToArray()), settings.EndpointName().ToString())
-                        }), new ContextBag());
+                        var message = new OutgoingMessage(
+                            string.Empty, 
+                            new Dictionary<string, string> { {Headers.EnclosedMessageTypes, typeof(MyRequest).FullName} }, 
+                            stream.ToArray());
+                        var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName().ToString()));
+                        await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new ContextBag());
                     }
-
-                    return context.Completed();
                 }
 
                 public Task Stop(IBusSession context)
