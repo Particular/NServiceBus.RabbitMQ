@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
-    using Config;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Connection;
 
