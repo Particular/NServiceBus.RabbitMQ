@@ -23,7 +23,6 @@
         Func<PushContext, Task> pipe;
         PushSettings settings;
         SecondaryReceiveSettings secondaryReceiveSettings;
-        bool noAck;
 
         ConcurrentDictionary<int, Task> inFlightMessages;
         IConnection connection;
@@ -53,7 +52,6 @@
                 ex), delayAfterFailure);
 
             secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
-            noAck = settings.RequiredTransactionMode == TransportTransactionMode.None;
 
             if (settings.PurgeOnStartup)
             {
@@ -86,27 +84,16 @@
                 consumerShutdownCompleted.TrySetResult(true);
             };
 
-            model.BasicConsume(settings.InputQueue, noAck, consumer);
+            model.BasicConsume(settings.InputQueue, false, consumer);
 
             if (secondaryReceiveSettings.IsEnabled)
             {
-                model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, noAck, consumer);
+                model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, false, consumer);
             }
         }
 
         public async Task Stop()
         {
-            // This handles the scenario when autoack is ON, in this case we want to stop receiving messages
-            // from the consumer so no messages fall through between shutdown starting and finishing.
-            if (noAck)
-            {
-                if (connection.IsOpen)
-                {
-                    connection.Close();
-                    await (consumerShutdownCompleted?.Task ?? TaskEx.Completed).ConfigureAwait(false);
-                }
-            }
-
             consumer.Received -= ConsumerOnReceived;
 
             await Task.WhenAll(inFlightMessages.Values).ConfigureAwait(false);
@@ -174,7 +161,7 @@
                     task.Start(scheduler);
                     await task.ConfigureAwait(false);
                 }
-                else if (!noAck)
+                else
                 {
                     var task = new Task(() => { channel.BasicAck(message.DeliveryTag, false); });
                     task.Start(scheduler);
@@ -183,12 +170,9 @@
             }
             catch (Exception)
             {
-                if (!noAck)
-                {
-                    var task = new Task(() => { channel.BasicReject(message.DeliveryTag, true); });
-                    task.Start(scheduler);
-                    await task.ConfigureAwait(false);
-                }
+                var task = new Task(() => { channel.BasicReject(message.DeliveryTag, true); });
+                task.Start(scheduler);
+                await task.ConfigureAwait(false);
             }
         }
 
