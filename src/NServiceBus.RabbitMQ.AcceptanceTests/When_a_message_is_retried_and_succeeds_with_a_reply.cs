@@ -1,26 +1,24 @@
 namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Config;
     using NServiceBus.Features;
     using NUnit.Framework;
 
-    [TestFixture]
-    public class When_a_message_is_retried_and_succeeds_with_a_reply
+    public class When_a_message_is_retried_and_succeeds_with_a_reply : NServiceBusAcceptanceTest
     {
         [Test]
-        public void The_message_send_to_error_queue_should_have_its_callback_receiver_header_intact()
+        public async Task The_message_send_to_error_queue_should_have_its_callback_receiver_header_intact()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
-                .WithEndpoint<OriginatingEndpoint>(c => c.Given(bus => bus.Send(new Request())))
-                .WithEndpoint<ReceivingEndpoint>()
+            var context = await Scenario.Define<MyContext>()
+                .WithEndpoint<OriginatingEndpoint>(c => c.When(bus => bus.Send(new Request())))
+                .WithEndpoint<ReceivingEndpoint>(b => b.DoNotFailOnErrorMessages())
                 .WithEndpoint<ErrorSpyEndpoint>()
                 .Done(c => c.Done)
-                .AllowExceptions()
                 .Run(TimeSpan.FromMinutes(1));
 
             Assert.IsTrue(context.Done);
@@ -29,7 +27,7 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
 
         class Request : IMessage { }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool Done { get; set; }
             public string CallbackReceiverHeader { get; set; }
@@ -53,14 +51,19 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
 
             public class SpyHandler : IHandleMessages<IMessage>
             {
-                public Context Context { get; set; }
+                private readonly MyContext myContext;
 
-                public IBus Bus { get; set; }
-
-                public void Handle(IMessage message)
+                public SpyHandler(MyContext myContext)
                 {
-                    Context.Done = true;
-                    Context.CallbackReceiverHeader = Bus.CurrentMessageContext.Headers["NServiceBus.RabbitMQ.CallbackQueue"];
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(IMessage message, IMessageHandlerContext context)
+                {
+                    myContext.CallbackReceiverHeader = context.MessageHeaders["NServiceBus.RabbitMQ.CallbackQueue"];
+                    myContext.Done = true;
+
+                    return context.Completed();
                 }
             }
         }
@@ -69,7 +72,10 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
         {
             public ReceivingEndpoint()
             {
-                EndpointSetup<DefaultServer>(c => c.DisableFeature<SecondLevelRetries>())
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    c.DisableFeature<SecondLevelRetries>();
+                })
                     .WithConfig<TransportConfig>(c =>
                     {
                         c.MaxRetries = 1;
@@ -82,7 +88,7 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
 
             public class RequestHandler : IHandleMessages<Request>
             {
-                public void Handle(Request message)
+                public Task Handle(Request message, IMessageHandlerContext context)
                 {
                     throw new Exception("Simulated");
                 }

@@ -152,7 +152,7 @@
             var parser = new ConnectionStringParser(new SettingsHolder());
             var formatException = Assert.Throws<FormatException>(
                 () => parser.Parse("host=localhost;maxWaitTimeForConfirms=00:0d0:10"));
-            
+
             Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
         }
 
@@ -162,7 +162,7 @@
             var parser = new ConnectionStringParser(new SettingsHolder());
             var formatException = Assert.Throws<FormatException>(
                 () => parser.Parse("host=localhost;retryDelay=00:0d0:10"));
-            
+
             Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
         }
 

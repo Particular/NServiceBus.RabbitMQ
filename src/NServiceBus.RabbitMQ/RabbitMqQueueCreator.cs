@@ -1,25 +1,52 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
+    using System.Threading.Tasks;
     using Routing;
 
     class RabbitMqQueueCreator : ICreateQueues
     {
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
+        private readonly IManageRabbitMqConnections connections;
+        private readonly IRoutingTopology topology;
+        readonly Callbacks callbacks;
+        readonly bool durableMessagesEnabled;
 
-        public IRoutingTopology RoutingTopology { get; set; }
-
-        public Configure Configure { get; set; }
-
-        public void CreateQueueIfNecessary(Address address, string account)
+        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, Callbacks callbacks, bool durableMessagesEnabled)
         {
-            using (var connection = ConnectionManager.GetAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueueDeclare(address.Queue, Configure.DurableMessagesEnabled(), false, false, null);
+            this.connections = connections;
+            this.topology = topology;
+            this.callbacks = callbacks;
+            this.durableMessagesEnabled = durableMessagesEnabled;
+        }
 
-                RoutingTopology.Initialize(channel, address.Queue);
+        public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
+        {
+            foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+            {
+                CreateQueueIfNecessary(receivingAddress);
             }
 
+            foreach (var sendingAddress in queueBindings.SendingAddresses)
+            {
+                CreateQueueIfNecessary(sendingAddress);
+            }
+
+            if (callbacks.Enabled)
+            {
+                CreateQueueIfNecessary(callbacks.QueueAddress);
+            }
+
+            return TaskEx.Completed;
+        }
+
+        void CreateQueueIfNecessary(string receivingAddress)
+        {
+            using (var connection = connections.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
+
+                topology.Initialize(channel, receivingAddress);
+            }
         }
     }
 }

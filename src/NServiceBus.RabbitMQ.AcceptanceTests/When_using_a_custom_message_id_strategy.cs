@@ -3,46 +3,25 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Routing;
     using NServiceBus.Serialization;
-    using NServiceBus.Transports.RabbitMQ;
-    using NServiceBus.Unicast;
+    using NServiceBus.Settings;
+    using NServiceBus.Transports;
     using NUnit.Framework;
 
-    public class When_using_a_custom_message_id_strategy
+    public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_be_able_to_receive_messages_with_no_id()
+        public async Task Should_be_able_to_receive_messages_with_no_id()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.Given((bus, c) =>
-                   {
-                       var unicastBus = (UnicastBus)bus;
-                       var connectionManager = unicastBus.Builder.Build<IManageRabbitMqConnections>();
-
-                       var serializer = unicastBus.Builder.Build<IMessageSerializer>();
-
-                       using (var stream = new MemoryStream())
-                       {
-                           serializer.Serialize(new MyRequest(), stream);
-
-                           using (var channel = connectionManager.GetPublishConnection().CreateModel())
-                           {
-                               var properties = channel.CreateBasicProperties();
-
-                               //for now until we can patch the serializer to infer the type based on the root node
-                               properties.Headers = new Dictionary<string, object> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } };
-
-                               channel.BasicPublish(string.Empty, unicastBus.Configure.LocalAddress.Queue, true, false, properties, stream.ToArray());
-                           }
-
-                       }
-
-                   }))
-                   .Done(c => context.GotTheMessage)
+            var context = await Scenario.Define<MyContext>()
+                   .WithEndpoint<Receiver>()
+                   .Done(c => c.GotTheMessage)
                    .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
@@ -53,18 +32,59 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
+                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
                     //just returning a guid here, not suitable for production use
                     .CustomMessageIdStrategy(m => Guid.NewGuid().ToString()));
             }
 
+            class Starter : IWantToRunWhenBusStartsAndStops
+            {
+                readonly IDispatchMessages dispatchMessages;
+                private readonly IMessageSerializer serializer;
+                private readonly ReadOnlySettings settings;
+
+                public Starter(IDispatchMessages dispatchMessages, IMessageSerializer serializer, ReadOnlySettings settings)
+                {
+                    this.dispatchMessages = dispatchMessages;
+                    this.serializer = serializer;
+                    this.settings = settings;
+                }
+
+                public async Task Start(IBusSession context)
+                {
+                    using (var stream = new MemoryStream())
+                    {
+                        serializer.Serialize(new MyRequest(), stream);
+
+                        var message = new OutgoingMessage(
+                            string.Empty, 
+                            new Dictionary<string, string> { {Headers.EnclosedMessageTypes, typeof(MyRequest).FullName} }, 
+                            stream.ToArray());
+                        var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName().ToString()));
+                        await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new ContextBag());
+                    }
+                }
+
+                public Task Stop(IBusSession context)
+                {
+                    return context.Completed();
+                }
+            }
+
             class MyEventHandler : IHandleMessages<MyRequest>
             {
-                public Context Context { get; set; }
+                private readonly MyContext myContext;
 
-                public void Handle(MyRequest message)
+                public MyEventHandler(MyContext myContext)
                 {
-                    Context.GotTheMessage = true;
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                {
+                    myContext.GotTheMessage = true;
+
+                    return context.Completed();
                 }
             }
         }
@@ -73,7 +93,7 @@
         {
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
         }

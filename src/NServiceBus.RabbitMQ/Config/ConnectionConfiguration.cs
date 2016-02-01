@@ -14,9 +14,7 @@
         public const int DefaultDequeueTimeout = 1;
         public const ushort DefaultPort = 5672;
 
-        public static TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
-
-        IDictionary<string, object> clientProperties = new Dictionary<string, object>();
+        public static readonly TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
 
         public ushort Port { get; set; }
 
@@ -38,11 +36,7 @@
 
         public TimeSpan RetryDelay { get; set; }
 
-        public IDictionary<string, object> ClientProperties
-        {
-            get { return clientProperties; }
-            private set { clientProperties = value; }
-        }
+        public IDictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
 
         public HostConfiguration HostConfiguration { get; private set; }
 
@@ -59,6 +53,7 @@
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();
             UsePublisherConfirms = true;
+            PrefetchCount = 0;
         }
 
         private void SetDefaultClientProperties()
@@ -69,13 +64,13 @@
             var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
             var hostname = RuntimeEnvironment.MachineName;
 
-            clientProperties.Add("client_api", "NServiceBus");
-            clientProperties.Add("nservicebus_version", version);
-            clientProperties.Add("application", applicationName);
-            clientProperties.Add("application_location", applicationPath);
-            clientProperties.Add("machine_name", hostname);
-            clientProperties.Add("user", UserName);
-            clientProperties.Add("connected", DateTime.Now.ToString("G"));
+            ClientProperties.Add("client_api", "NServiceBus");
+            ClientProperties.Add("nservicebus_version", version);
+            ClientProperties.Add("application", applicationName);
+            ClientProperties.Add("application_location", applicationPath);
+            ClientProperties.Add("machine_name", hostname);
+            ClientProperties.Add("user", UserName);
+            ClientProperties.Add("connected", DateTime.Now.ToString("G"));
         }
 
         public void Validate()
@@ -102,7 +97,7 @@
                     "If you are using RabbitMQ in a cluster, " +
                         "consider using a load balancer to represent the nodes as a single host.";
 
-                throw new ArgumentException(message, "hostsConnectionString");
+                throw new ArgumentException(message, nameof(hostsConnectionString));
             }
 
             HostConfiguration =

@@ -10,7 +10,6 @@
 
     class MessageConverter
     {
-      
         public MessageConverter()
         {
             messageIdStrategy = DefaultMessageIdStrategy;
@@ -21,20 +20,16 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public TransportMessage ToTransportMessage(BasicDeliverEventArgs message)
+        public string RetrieveMessageId(BasicDeliverEventArgs message)
+        {
+            return messageIdStrategy(message);
+        }
+
+        public Dictionary<string, string> RetrieveHeaders(BasicDeliverEventArgs message)
         {
             var properties = message.BasicProperties;
 
-            var messageId = messageIdStrategy(message);
-
             var headers = DeserializeHeaders(message);
-
-
-
-            var result = new TransportMessage(messageId, headers)
-            {
-                Body = message.Body ?? new byte[0],
-            };
 
             if (properties.IsReplyToPresent())
             {
@@ -57,22 +52,21 @@
 
             if (properties.IsCorrelationIdPresent())
             {
-                result.CorrelationId = properties.CorrelationId;
+                headers[Headers.CorrelationId] = properties.CorrelationId;
             }
 
             //When doing native interop we only require the type to be set the "fullName" of the message
-            if (!result.Headers.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
+            if (!headers.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
-                result.Headers[Headers.EnclosedMessageTypes] = properties.Type;
+                headers[Headers.EnclosedMessageTypes] = properties.Type;
             }
 
             if (properties.IsDeliveryModePresent())
             {
-                result.Recoverable = properties.DeliveryMode == 2;
+                headers[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
             }
 
-
-            return result;
+            return headers;
         }
 
         string DefaultMessageIdStrategy(BasicDeliverEventArgs message)
@@ -106,26 +100,33 @@
 
         static string ValueToString(object value)
         {
-            var returnValue = default(string);
-            if (value is string)
+            var s = value as string;
+            if (s != null)
             {
-                returnValue = value as string;
+                return s;
             }
-            else if (value is byte[])
+
+            var bytes = value as byte[];
+            if (bytes != null)
             {
-                returnValue = Encoding.UTF8.GetString(value as byte[]);
+                return Encoding.UTF8.GetString(bytes);
             }
-            else if (value is IDictionary<string, object>)
+
+            var objects = value as IDictionary<string, object>;
+            if (objects != null)
             {
-                var dict = value as IDictionary<string, object>;
-                returnValue = String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
+                var dict = objects;
+                return String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
             }
-            else if (value is IList)
+
+            var list1 = value as IList;
+            if (list1 != null)
             {
-                var list = value as IList;
-                returnValue = String.Join(";", list.Cast<object>().Select(ValueToString));
+                var list = list1;
+                return String.Join(";", list.Cast<object>().Select(ValueToString));
             }
-            return returnValue;
+
+            return null;
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;

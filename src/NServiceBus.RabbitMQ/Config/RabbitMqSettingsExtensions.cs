@@ -17,7 +17,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="routingKeyConvention">The routing key conventions.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<Address, Type, string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string, Type, string> exchangeNameConvention = null)
         {
             if (routingKeyConvention == null)
             {
@@ -63,7 +63,7 @@
         /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> DisableCallbackReceiver(this TransportExtensions<RabbitMQTransport> transportExtensions) 
         {
-            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.UseCallbackReceiverSettingKey, false);
+            transportExtensions.GetSettings().Set(Callbacks.UseCallbackReceiverSettingKey, false);
             return transportExtensions;
         }
 
@@ -77,9 +77,9 @@
         {
             if (maxConcurrency <= 0)
             {
-                throw new ArgumentException("Maximum concurrency value must be greater than zero.", "maxConcurrency");
+                throw new ArgumentException("Maximum concurrency value must be greater than zero.", nameof(maxConcurrency));
             }
-            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.MaxConcurrencyForCallbackReceiver, maxConcurrency);
+            transportExtensions.GetSettings().Set(Callbacks.MaxConcurrencyForCallbackReceiver, maxConcurrency);
             return transportExtensions;
         }
 
@@ -92,7 +92,7 @@
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs,string> customIdStrategy)
         {
 
-            transportExtensions.GetSettings().Set(Features.RabbitMqTransportFeature.CustomMessageIdStrategy, customIdStrategy);
+            transportExtensions.GetSettings().Set(RabbitMQTransport.CustomMessageIdStrategy, customIdStrategy);
             return transportExtensions;
         }
     }

@@ -1,12 +1,16 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
     using System;
+    using System.IO;
+    using System.Linq;
     using System.Text;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using NServiceBus.Extensibility;
     using NUnit.Framework;
-    using Unicast;
-    using Unicast.Queuing;
+
+    using Headers = NServiceBus.Headers;
 
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
@@ -16,7 +20,7 @@
         {
             var body = Encoding.UTF8.GetBytes("<TestMessage/>");
 
-            Verify(new TransportMessageBuilder().WithBody(body),
+            Verify(new OutgoingMessageBuilder().WithBody(body),
                  received => Assert.AreEqual(body, received.Body));
         }
 
@@ -24,28 +28,28 @@
         [Test]
         public void Should_set_the_content_type()
         {
-            VerifyRabbit(new TransportMessageBuilder().WithHeader(Headers.ContentType, "application/json"),
+            VerifyRabbit(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"),
                 received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
 
         }
 
-        
+
         [Test]
         public void Should_default_the_content_type_to_octet_stream_when_no_content_type_is_specified()
         {
-            VerifyRabbit(new TransportMessageBuilder(),
+            VerifyRabbit(new OutgoingMessageBuilder(),
                 received => Assert.AreEqual("application/octet-stream", received.BasicProperties.ContentType));
 
         }
 
-        
+
 
         [Test]
         public void Should_set_the_message_type_based_on_the_encoded_message_types_header()
         {
-            var messageType = typeof (MyMessage);
+            var messageType = typeof(MyMessage);
 
-            VerifyRabbit(new TransportMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
+            VerifyRabbit(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
                 received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
 
         }
@@ -57,20 +61,20 @@
             var timeToBeReceived = TimeSpan.FromDays(1);
 
 
-            VerifyRabbit(new TransportMessageBuilder().TimeToBeReceived(timeToBeReceived),
+            VerifyRabbit(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived),
                 received => Assert.AreEqual(timeToBeReceived.TotalMilliseconds.ToString(), received.BasicProperties.Expiration));
         }
 
         [Test]
         public void Should_set_the_reply_to_address()
         {
-            var address = Address.Parse("myAddress");
+            var address = "myAddress";
 
-            Verify(new TransportMessageBuilder().ReplyToAddress(address), 
+            Verify(new OutgoingMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
-                    Assert.AreEqual(address, t.ReplyToAddress);
-                    Assert.AreEqual(address.Queue, r.BasicProperties.ReplyTo);
+                    Assert.AreEqual(address, t.Headers[Headers.ReplyToAddress]);
+                    Assert.AreEqual(address, r.BasicProperties.ReplyTo);
                 });
 
         }
@@ -78,32 +82,33 @@
         [Test]
         public void Should_not_populate_the_callback_header()
         {
-            Verify(new TransportMessageBuilder(),
-                (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
-
+            //this test is failing, but I'm not sure why. Is this text expecting callbacks to be disabled,
+            //or is the logic around when to add this header not right yet?
+            Verify(new OutgoingMessageBuilder(),
+                (t, r) => Assert.IsFalse(t.Headers.ContainsKey(Callbacks.HeaderKey)));
         }
-       
+
         [Test]
         public void Should_set_correlation_id_if_present()
         {
             var correlationId = Guid.NewGuid().ToString();
 
-            Verify(new TransportMessageBuilder().CorrelationId(correlationId),
-                result => Assert.AreEqual(correlationId, result.CorrelationId));
+            Verify(new OutgoingMessageBuilder().CorrelationId(correlationId),
+                result => Assert.AreEqual(correlationId, result.Headers[Headers.CorrelationId]));
 
         }
 
         [Test]
         public void Should_preserve_the_recoverable_setting_if_set_to_durable()
         {
-            Verify(new TransportMessageBuilder(),result => Assert.True(result.Recoverable));
+            Verify(new OutgoingMessageBuilder(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == "False"));
         }
 
 
         [Test]
         public void Should_preserve_the_recoverable_setting_if_set_to_non_durable()
         {
-            Verify(new TransportMessageBuilder().NonDurable(), result => Assert.False(result.Recoverable));
+            Verify(new OutgoingMessageBuilder().NonDurable(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == "True"));
         }
 
 
@@ -111,7 +116,7 @@
         public void Should_transmit_all_transportMessage_headers()
         {
 
-            Verify(new TransportMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
+            Verify(new OutgoingMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
                 result =>
                 {
                     Assert.AreEqual("v1", result.Headers["h1"]);
@@ -120,44 +125,44 @@
 
         }
 
-        [Test, Ignore("Not sure we should enforce this")]
-        public void Should_throw_when_sending_to_a_non_existing_queue()
+        void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
-            Assert.Throws<QueueNotFoundException>(() =>
-                 sender.Send(new TransportMessage(), new SendOptions("NonExistingQueue@localhost")));
+            var operations = builder.SendTo("testEndPoint").Build();
+
+            MakeSureQueueAndExchangeExists("testEndPoint");
+
+            SendMessage(operations).GetAwaiter().GetResult();
+
+            var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
+
+            var result = Consume(messageId, alternateQueueToReceiveOn);
+
+            var converter = new MessageConverter();
+
+            using (var body = new MemoryStream(result.Body))
+            {
+                var incomingMessage = new IncomingMessage(
+                    converter.RetrieveMessageId(result),
+                    converter.RetrieveHeaders(result),
+                    body
+                );
+
+                assertion(incomingMessage, result);
+            }
         }
-
-        void Verify(TransportMessageBuilder builder, Action<TransportMessage, BasicDeliverEventArgs> assertion,string alternateQueueToReceiveOn=null)
-        {
-            var message = builder.Build();
-
-            SendMessage(message);
-
-            var result = Consume(message.Id, alternateQueueToReceiveOn);
-
-            assertion(new MessageConverter().ToTransportMessage(result), result);
-        }
-        void Verify(TransportMessageBuilder builder, Action<TransportMessage> assertion)
+        void Verify(OutgoingMessageBuilder builder, Action<IncomingMessage> assertion)
         {
             Verify(builder, (t, r) => assertion(t));
         }
 
-        void VerifyRabbit(TransportMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
+        void VerifyRabbit(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string alternateQueueToReceiveOn = null)
         {
             Verify(builder, (t, r) => assertion(r), alternateQueueToReceiveOn);
         }
 
-        void SendMessage(TransportMessage message)
+        Task SendMessage(TransportOperations operations)
         {
-            MakeSureQueueAndExchangeExists("testEndPoint");
-
-            var options = new SendOptions("testEndPoint");
-
-            if (message.MessageIntent == MessageIntentEnum.Reply)
-            {
-                
-            }
-            sender.Send(message, options);
+            return messageSender.Dispatch(operations, new ContextBag());
         }
 
         BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
@@ -183,7 +188,7 @@
                 if (e.BasicProperties.MessageId != id)
                     throw new InvalidOperationException("Unexpected message found in queue");
 
-                channel.BasicAck(e.DeliveryTag,false);
+                channel.BasicAck(e.DeliveryTag, false);
 
                 return e;
             }
@@ -193,7 +198,7 @@
 
         class MyMessage
         {
-            
+
         }
 
     }

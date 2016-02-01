@@ -1,26 +1,30 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Transports.RabbitMQ;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Performance.TimeToBeReceived;
+    using NServiceBus.Routing;
+    using NServiceBus.Settings;
+    using NServiceBus.Transports;
     using NUnit.Framework;
 
-    public class When_the_broker_connection_is_lost
+    public class When_the_broker_connection_is_lost : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_reconnect()
+        public async Task Should_reconnect()
         {
-            var context = new Context
+            var context = await Scenario.Define<MyContext>(myContext =>
             {
-                MessageId = Guid.NewGuid().ToString()
-            };
-
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>()
-                   .Done(c => context.GotTheMessage)
-                   .AllowExceptions()
-                   .Run();
+                myContext.MessageId = Guid.NewGuid().ToString();
+            })
+                .WithEndpoint<Receiver>()
+                .Done(c => c.GotTheMessage)
+                .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
@@ -33,43 +37,63 @@
                 EndpointSetup<DefaultServer>();
             }
 
-            class ConnectionKiller:IWantToRunWhenBusStartsAndStops
+            class ConnectionKiller : IWantToRunWhenBusStartsAndStops
             {
-                readonly IManageRabbitMqConnections connectionManager;
-                readonly IBus bus;
-                readonly Context context;
+                readonly IDispatchMessages sender;
+                readonly ReadOnlySettings settings;
+                readonly MyContext myContext;
 
-                public ConnectionKiller(IManageRabbitMqConnections connectionManager,IBus bus,Context context)
+                public ConnectionKiller(IDispatchMessages sender, ReadOnlySettings settings, MyContext myContext)
                 {
-                    this.connectionManager = connectionManager;
-                    this.bus = bus;
-                    this.context = context;
+                    this.sender = sender;
+                    this.settings = settings;
+                    this.myContext = myContext;
                 }
 
-                public void Start()
+                public async Task Start(IBusSession context)
                 {
-                    connectionManager.GetConsumeConnection().Abort();
-                    bus.SendLocal(new MyRequest
+                    await BreakConnectionBySendingInvalidMessage();
+
+                    await context.SendLocal(new MyRequest { MessageId = myContext.MessageId });
+                }
+
+                async Task BreakConnectionBySendingInvalidMessage()
+                {
+                    try
                     {
-                        MessageId = context.MessageId
-                    });
+                        var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
+                        var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new [] { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
+                        await sender.Dispatch(new TransportOperations(operation), new ContextBag());
+                    }
+                    catch (Exception)
+                    {
+                        // Don't care
+                    }
                 }
 
-                public void Stop()
+                public Task Stop(IBusSession context)
                 {
+                    return context.Completed();
                 }
             }
 
             class MyHandler : IHandleMessages<MyRequest>
             {
-                public Context Context { get; set; }
+                private readonly MyContext myContext;
 
-                public void Handle(MyRequest message)
+                public MyHandler(MyContext myContext)
                 {
-                    if (message.MessageId == Context.MessageId)
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                {
+                    if (message.MessageId == myContext.MessageId)
                     {
-                        Context.GotTheMessage = true;             
+                        myContext.GotTheMessage = true;
                     }
+
+                    return context.Completed();
                 }
             }
         }
@@ -79,7 +103,7 @@
             public string MessageId { get; set; }
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
             public string MessageId { get; set; }

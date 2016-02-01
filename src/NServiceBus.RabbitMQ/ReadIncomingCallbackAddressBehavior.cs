@@ -1,19 +1,20 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.Threading.Tasks;
     using NServiceBus.Pipeline;
-    using NServiceBus.Pipeline.Contexts;
 
-    class ReadIncomingCallbackAddressBehavior : IBehavior<IncomingContext>
+    class ReadIncomingCallbackAddressBehavior : Behavior<IIncomingLogicalMessageContext>
     {
-        public void Invoke(IncomingContext context, Action next)
+        public override async Task Invoke(IIncomingLogicalMessageContext context, Func<Task> next)
         {
             string incomingCallbackQueue;
-            if (context.IncomingLogicalMessage != null && context.IncomingLogicalMessage.Headers.TryGetValue(RabbitMqMessageSender.CallbackHeaderKey, out incomingCallbackQueue))
+            if (context.Message != null && context.Headers.TryGetValue(Callbacks.HeaderKey, out incomingCallbackQueue))
             {
-                context.Set(RabbitMqMessageSender.CallbackHeaderKey, incomingCallbackQueue);
+                context.Extensions.Set(new CallbackAddress(incomingCallbackQueue));
             }
-            next();
+
+            await next().ConfigureAwait(false);
         }
 
         public class Registration : RegisterStep
@@ -21,7 +22,6 @@
             public Registration()
                 : base("ReadIncomingCallbackAddressBehavior", typeof(ReadIncomingCallbackAddressBehavior), "Reads the callback address specified by the message sender and puts it into the context.")
             {
-                InsertBefore(WellKnownStep.LoadHandlers);
             }
         }
     }
