@@ -42,10 +42,10 @@
                 connectionConfiguration.UsePublisherConfirms = settings.GetOrDefault<bool>("Endpoint.DurableMessages");
             }
 
-
-            connectionConfiguration.ClientProperties["endpoint_name"] = settings.GetOrDefault<string>("EndpointName");
+            connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();
 
             connectionConfiguration.Validate();
+
             return connectionConfiguration;
         }
     }
