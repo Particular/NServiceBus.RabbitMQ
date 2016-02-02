@@ -26,10 +26,10 @@
                  let match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", property.Name), RegexOptions.IgnoreCase)
                  where match.Success
                  select new
-                        {
-                            Property = property,
-                            match.Groups[property.Name].Value
-                        }))
+                 {
+                     Property = property,
+                     match.Groups[property.Name].Value
+                 }))
                 pair.Property.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(pair.Property.PropertyType).ConvertFromString(pair.Value), null);
 
             if (ContainsKey("host"))
@@ -39,7 +39,7 @@
 
             if (settings.HasSetting("Endpoint.DurableMessages"))
             {
-                connectionConfiguration.UsePublisherConfirms = settings.GetOrDefault<bool>("Endpoint.DurableMessages");
+                connectionConfiguration.UsePublisherConfirms = settings.DurableMessagesEnabled();
             }
 
             connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();

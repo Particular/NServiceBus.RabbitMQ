@@ -152,7 +152,7 @@
             }
             else
             {
-                var durable = GetDurableMessagesEnabled(settings);
+                var durable = settings.DurableMessagesEnabled();
 
                 DirectRoutingTopology.Conventions conventions;
 
@@ -165,16 +165,6 @@
                     topology = new ConventionalRoutingTopology(durable);
                 }
             }
-        }
-
-        private static bool GetDurableMessagesEnabled(ReadOnlySettings settings)
-        {
-            bool durableMessagesEnabled;
-            if (settings.TryGet("Endpoint.DurableMessages", out durableMessagesEnabled))
-            {
-                return durableMessagesEnabled;
-            }
-            return true;
         }
 
         /// <summary>
