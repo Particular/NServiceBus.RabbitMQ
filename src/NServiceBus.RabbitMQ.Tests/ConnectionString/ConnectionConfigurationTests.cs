@@ -11,7 +11,10 @@
         [SetUp]
         public void Setup()
         {
-            parser = new ConnectionStringParser(new SettingsHolder());
+            var settings = new SettingsHolder();
+            settings.Set<NServiceBus.Routing.EndpointName>(new NServiceBus.Routing.EndpointName("endpoint"));
+
+            parser = new ConnectionStringParser(settings);
             defaults = new ConnectionConfiguration();
         }
 
