@@ -11,11 +11,11 @@
     class ConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
-        public const ushort DefaultPort = 5672;
+        public const int DefaultPort = 5672;
 
         public static readonly TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
 
-        public ushort Port { get; set; }
+        public int Port { get; set; }
 
         public string VirtualHost { get; set; }
 
@@ -101,7 +101,7 @@
                  select hostAndPort.Split(':') into hostParts
                  let host = hostParts.ElementAt(0)
                  let portString = hostParts.ElementAtOrDefault(1)
-                 let port = (portString == null) ? Port : ushort.Parse(portString)
+                 let port = (portString == null) ? Port : int.Parse(portString)
                  select new HostConfiguration { Host = host, Port = port })
                 .FirstOrDefault();
         }
