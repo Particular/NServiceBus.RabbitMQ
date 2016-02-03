@@ -11,7 +11,6 @@
     class ConnectionConfiguration
     {
         public const ushort DefaultHeartBeatInSeconds = 5;
-        public const int DefaultDequeueTimeout = 1;
         public const ushort DefaultPort = 5672;
 
         public static readonly TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
@@ -25,8 +24,6 @@
         public string Password { get; set; }
 
         public ushort RequestedHeartbeat { get; set; }
-
-        public int DequeueTimeout { get; set; }
 
         public ushort PrefetchCount { get; set; }
 
@@ -48,7 +45,6 @@
             UserName = "guest";
             Password = "guest";
             RequestedHeartbeat = DefaultHeartBeatInSeconds;
-            DequeueTimeout = DefaultDequeueTimeout;
             MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
             RetryDelay = TimeSpan.FromSeconds(10);
             SetDefaultClientProperties();

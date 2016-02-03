@@ -78,7 +78,7 @@
             var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
 
             messagePump = new MessagePump(
-                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(), 1, 1000, false, "Unit test"),
+                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(), 1, false, "Unit test"),
                 config,
                 poisonMessageForwarder,
                 purger);
