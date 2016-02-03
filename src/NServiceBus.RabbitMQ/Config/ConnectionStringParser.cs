@@ -37,11 +37,6 @@
                 connectionConfiguration.ParseHosts(this["host"] as string);
             }
 
-            if (settings.HasSetting("Endpoint.DurableMessages"))
-            {
-                connectionConfiguration.UsePublisherConfirms = settings.DurableMessagesEnabled();
-            }
-
             connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();
 
             connectionConfiguration.Validate();
