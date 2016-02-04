@@ -3,7 +3,7 @@
     using System.ComponentModel;
     using System.Data.Common;
     using System.Linq;
-    using System.Text.RegularExpressions;
+    using System.Reflection;
     using Settings;
 
     class ConnectionStringParser : DbConnectionStringBuilder
@@ -20,17 +20,13 @@
             ConnectionString = connectionString;
 
             var connectionConfiguration = new ConnectionConfiguration();
+            var connectionConfigurationType = typeof(ConnectionConfiguration);
 
-            foreach (var pair in
-                (from property in typeof(ConnectionConfiguration).GetProperties()
-                 let match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", property.Name), RegexOptions.IgnoreCase)
-                 where match.Success
-                 select new
-                 {
-                     Property = property,
-                     match.Groups[property.Name].Value
-                 }))
-                pair.Property.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(pair.Property.PropertyType).ConvertFromString(pair.Value), null);
+            foreach (var key in Keys.Cast<string>())
+            {
+                var property = connectionConfigurationType.GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                property?.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(property.PropertyType).ConvertFrom(this[key]));
+            }
 
             if (ContainsKey("host"))
             {
