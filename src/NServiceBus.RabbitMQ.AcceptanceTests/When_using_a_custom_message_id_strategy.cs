@@ -1,18 +1,20 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Extensibility;
+    using NServiceBus.MessageInterfaces;
     using NServiceBus.Routing;
     using NServiceBus.Serialization;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NUnit.Framework;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Runtime.Serialization.Formatters.Binary;
+    using System.Threading.Tasks;
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
@@ -32,21 +34,23 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
-                    //just returning a guid here, not suitable for production use
-                    .CustomMessageIdStrategy(m => Guid.NewGuid().ToString()));
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    c.UseSerialization<MyCustomSerializerDefinition>();
+                    c.UseTransport<RabbitMQTransport>()
+                        //just returning a guid here, not suitable for production use
+                        .CustomMessageIdStrategy(m => Guid.NewGuid().ToString());
+                });
             }
 
             class Starter : IWantToRunWhenBusStartsAndStops
             {
                 readonly IDispatchMessages dispatchMessages;
-                private readonly IMessageSerializer serializer;
                 private readonly ReadOnlySettings settings;
 
-                public Starter(IDispatchMessages dispatchMessages, IMessageSerializer serializer, ReadOnlySettings settings)
+                public Starter(IDispatchMessages dispatchMessages, ReadOnlySettings settings)
                 {
                     this.dispatchMessages = dispatchMessages;
-                    this.serializer = serializer;
                     this.settings = settings;
                 }
 
@@ -54,12 +58,14 @@
                 {
                     using (var stream = new MemoryStream())
                     {
+                        var serializer = new MyCustomSerializer();
                         serializer.Serialize(new MyRequest(), stream);
 
                         var message = new OutgoingMessage(
-                            string.Empty, 
-                            new Dictionary<string, string> { {Headers.EnclosedMessageTypes, typeof(MyRequest).FullName} }, 
+                            string.Empty,
+                            new Dictionary<string, string> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } },
                             stream.ToArray());
+
                         var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName().ToString()));
                         await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new ContextBag());
                     }
@@ -89,6 +95,7 @@
             }
         }
 
+        [Serializable]
         class MyRequest : IMessage
         {
         }
@@ -96,6 +103,38 @@
         class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
+        }
+
+        class MyCustomSerializerDefinition : SerializationDefinition
+        {
+            protected override Func<IMessageMapper, IMessageSerializer> Configure(ReadOnlySettings settings)
+            {
+                return mapper => new MyCustomSerializer();
+            }
+        }
+
+        class MyCustomSerializer : IMessageSerializer
+        {
+            public void Serialize(object message, Stream stream)
+            {
+                var serializer = new BinaryFormatter();
+                serializer.Serialize(stream, message);
+            }
+
+            public object[] Deserialize(Stream stream, IList<Type> messageTypes = null)
+            {
+                var serializer = new BinaryFormatter();
+
+                stream.Position = 0;
+                var msg = serializer.Deserialize(stream);
+
+                return new[]
+                {
+                    msg
+                };
+            }
+
+            public string ContentType => "MyCustomSerializer";
         }
     }
 }
