@@ -15,6 +15,8 @@
 
         public static readonly TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
 
+        public string Host { get; set; }
+
         public int Port { get; set; }
 
         public string VirtualHost { get; set; }
@@ -34,8 +36,6 @@
         public TimeSpan RetryDelay { get; set; }
 
         public IDictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
-
-        public HostConfiguration HostConfiguration { get; private set; }
 
         public ConnectionConfiguration()
         {
@@ -71,14 +71,9 @@
 
         public void Validate()
         {
-            if (HostConfiguration == null)
+            if (Host == null)
             {
                 throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
-            }
-
-            if (HostConfiguration.Port == 0)
-            {
-                HostConfiguration.Port = Port;
             }
         }
 
@@ -96,14 +91,11 @@
                 throw new ArgumentException(message, nameof(hostsConnectionString));
             }
 
-            HostConfiguration =
-                (from hostAndPort in hostsAndPorts
-                 select hostAndPort.Split(':') into hostParts
-                 let host = hostParts.ElementAt(0)
-                 let portString = hostParts.ElementAtOrDefault(1)
-                 let port = (portString == null) ? Port : int.Parse(portString)
-                 select new HostConfiguration { Host = host, Port = port })
-                .FirstOrDefault();
+            var parts = hostsConnectionString.Split(':');
+            Host = parts.ElementAt(0);
+
+            var portString = parts.ElementAtOrDefault(1);
+            Port = (portString == null) ? Port : int.Parse(portString);
         }
     }
 }

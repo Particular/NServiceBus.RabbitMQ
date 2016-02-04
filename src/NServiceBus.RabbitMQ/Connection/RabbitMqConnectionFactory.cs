@@ -16,18 +16,18 @@
                 throw new ArgumentNullException(nameof(connectionConfiguration));
             }
 
-            if (connectionConfiguration.HostConfiguration == null)
+            if (connectionConfiguration.Host == null)
             {
                 throw new ArgumentException(
-                    "The connectionConfiguration has a null HostConfiguration.", nameof(connectionConfiguration));
+                    "The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
             }
 
             Configuration = connectionConfiguration;
 
             connectionFactory = new ConnectionFactory
             {
-                HostName = connectionConfiguration.HostConfiguration.Host,
-                Port = connectionConfiguration.HostConfiguration.Port,
+                HostName = connectionConfiguration.Host,
+                Port = connectionConfiguration.Port,
                 VirtualHost = Configuration.VirtualHost,
                 UserName = Configuration.UserName,
                 Password = Configuration.Password,

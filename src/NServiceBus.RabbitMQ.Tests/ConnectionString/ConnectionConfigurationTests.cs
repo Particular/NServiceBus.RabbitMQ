@@ -28,7 +28,7 @@
         {
             connectionString = ("host=myHost");
             connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(ConnectionConfiguration.DefaultPort, connectionConfiguration.HostConfiguration.Port);
+            Assert.AreEqual(ConnectionConfiguration.DefaultPort, connectionConfiguration.Port);
         }
 
         [Test]
