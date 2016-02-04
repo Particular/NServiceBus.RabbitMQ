@@ -84,7 +84,6 @@
                         return SecondaryReceiveSettings.Enabled(callbacks.QueueAddress, callbacks.MaxConcurrency);
                     },
                         messageConverter,
-                        connectionConfiguration.PrefetchCount,
                         context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
                         consumerTag);
 

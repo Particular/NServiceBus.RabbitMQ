@@ -40,6 +40,12 @@
                 throw new NotSupportedException(message);
             }
 
+            if (ContainsKey("prefetchcount"))
+            {
+                var message = "The 'PrefetchCount' configuration setting has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+                throw new NotSupportedException(message);
+            }
+
             connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();
 
             connectionConfiguration.Validate();

@@ -32,14 +32,6 @@
         }
 
         [Test]
-        public void Should_not_default_the_prefetch_count()
-        {
-            connectionString = ("host=localhost");
-            connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(0, connectionConfiguration.PrefetchCount);
-        }
-
-        [Test]
         public void Should_default_the_requested_heartbeat()
         {
             connectionString = ("host=localhost");
@@ -106,6 +98,24 @@
 
             Assert.IsNotNull(exception);
             Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' configuration setting has been removed"));
+        }
+
+        [Test]
+        public void Should_inform_that_prefetchcount_has_been_removed()
+        {
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;prefetchcount=100");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The 'PrefetchCount' configuration setting has been removed"));
         }
     }
 }

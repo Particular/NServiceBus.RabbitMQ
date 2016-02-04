@@ -10,7 +10,7 @@
     {
         const string connectionString =
             "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
+            "maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
 
         SettingsHolder settings;
 
@@ -33,7 +33,6 @@
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
             Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
-            Assert.AreEqual(connectionConfiguration.PrefetchCount, 2);
             Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
             Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
             Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
@@ -100,14 +99,6 @@
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;port=8181");
             Assert.AreEqual(8181, connectionConfiguration.Port);
-        }
-
-        [Test]
-        public void Should_parse_the_prefetch_count()
-        {
-            var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;prefetchcount=10");
-            Assert.AreEqual(10, connectionConfiguration.PrefetchCount);
         }
 
         [Test]
