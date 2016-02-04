@@ -36,8 +36,8 @@
 
             if (ContainsKey("dequeuetimeout"))
             {
-                var message = "The DequeueTimeout configuation setting is no longer used.";
-                throw new ArgumentException(message);
+                var message = "The 'DequeueTimeout' configuration setting has been removed. Please consult the documentation for further information.";
+                throw new NotSupportedException(message);
             }
 
             connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();

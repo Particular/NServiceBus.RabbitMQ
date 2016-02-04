@@ -91,7 +91,7 @@
         }
 
         [Test]
-        public void Should_inform_that_dequeuetimeout_is__no_longer_used()
+        public void Should_inform_that_dequeuetimeout_has_been_removed()
         {
             Exception exception = null;
 
@@ -105,7 +105,7 @@
             }
 
             Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The DequeueTimeout configuation setting is no longer used."));
+            Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' configuration setting has been removed"));
         }
     }
 }
