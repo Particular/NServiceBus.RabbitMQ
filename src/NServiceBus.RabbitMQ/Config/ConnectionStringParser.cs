@@ -1,10 +1,11 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Config
 {
+    using Settings;
+    using System;
     using System.ComponentModel;
     using System.Data.Common;
     using System.Linq;
     using System.Reflection;
-    using Settings;
 
     class ConnectionStringParser : DbConnectionStringBuilder
     {
@@ -31,6 +32,12 @@
             if (ContainsKey("host"))
             {
                 connectionConfiguration.ParseHosts(this["host"] as string);
+            }
+
+            if (ContainsKey("dequeuetimeout"))
+            {
+                var message = "The DequeueTimeout configuation setting is no longer used.";
+                throw new ArgumentException(message);
             }
 
             connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();

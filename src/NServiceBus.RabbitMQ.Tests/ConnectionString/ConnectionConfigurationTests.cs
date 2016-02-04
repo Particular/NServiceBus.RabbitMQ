@@ -89,5 +89,23 @@
             Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
         }
+
+        [Test]
+        public void Should_inform_that_dequeuetimeout_is__no_longer_used()
+        {
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;dequeuetimeout=1");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The DequeueTimeout configuation setting is no longer used."));
+        }
     }
 }
