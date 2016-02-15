@@ -50,7 +50,7 @@
                     this.myContext = myContext;
                 }
 
-                public async Task Start(IBusSession context)
+                public async Task Start(IMessageSession context)
                 {
                     await BreakConnectionBySendingInvalidMessage();
 
@@ -71,7 +71,7 @@
                     }
                 }
 
-                public Task Stop(IBusSession context)
+                public Task Stop(IMessageSession context)
                 {
                     return context.Completed();
                 }

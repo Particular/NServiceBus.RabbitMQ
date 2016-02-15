@@ -6,12 +6,12 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
     {
         private static Task done = Task.FromResult(0);
 
-        public static Task Completed(this IBusContext context)
+        public static Task Completed(this IMessageHandlerContext context)
         {
             return done;
         }
 
-        public static Task Completed(this IBusSession context)
+        public static Task Completed(this IMessageSession context)
         {
             return done;
         }

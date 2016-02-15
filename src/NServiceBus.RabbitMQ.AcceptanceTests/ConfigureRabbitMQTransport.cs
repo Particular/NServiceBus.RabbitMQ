@@ -15,7 +15,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
 {
     private string connectionString;
 
-    public Task Configure(BusConfiguration configuration, IDictionary<string, string> settings)
+    public Task Configure(EndpointConfiguration configuration, IDictionary<string, string> settings)
     {
         connectionString = settings["Transport.ConnectionString"];
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);

@@ -54,7 +54,7 @@
                     this.settings = settings;
                 }
 
-                public async Task Start(IBusSession context)
+                public async Task Start(IMessageSession context)
                 {
                     using (var stream = new MemoryStream())
                     {
@@ -71,7 +71,7 @@
                     }
                 }
 
-                public Task Stop(IBusSession context)
+                public Task Stop(IMessageSession context)
                 {
                     return context.Completed();
                 }
@@ -107,7 +107,7 @@
 
         class MyCustomSerializerDefinition : SerializationDefinition
         {
-            protected override Func<IMessageMapper, IMessageSerializer> Configure(ReadOnlySettings settings)
+            public override Func<IMessageMapper, IMessageSerializer> Configure(ReadOnlySettings settings)
             {
                 return mapper => new MyCustomSerializer();
             }
