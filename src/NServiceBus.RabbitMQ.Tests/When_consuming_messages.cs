@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
-    using NServiceBus.Support;
     using NUnit.Framework;
 
     using Headers = NServiceBus.Headers;
@@ -97,27 +96,6 @@
 
             Assert.AreEqual(typeName, received.Headers[Headers.EnclosedMessageTypes]);
             Assert.AreEqual(typeof(MyMessage), Type.GetType(received.Headers[Headers.EnclosedMessageTypes]));
-        }
-
-        [Test]
-        public void Should_listen_to_the_callback_queue_as_well()
-        {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-
-            using (var channel = connectionManager.GetPublishConnection().CreateModel())
-            {
-                var properties = channel.CreateBasicProperties();
-
-                properties.MessageId = message.MessageId;
-
-                channel.BasicPublish(string.Empty, ReceiverQueue + "." + RuntimeEnvironment.MachineName, true, properties, message.Body);
-            }
-
-
-            var received = WaitForMessage();
-
-
-            Assert.AreEqual(message.MessageId, received.MessageId);
         }
 
         class MyMessage

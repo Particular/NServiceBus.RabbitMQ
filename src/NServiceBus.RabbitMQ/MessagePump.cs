@@ -22,7 +22,6 @@
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         Func<PushContext, Task> pipe;
         PushSettings settings;
-        SecondaryReceiveSettings secondaryReceiveSettings;
 
         ConcurrentDictionary<int, Task> inFlightMessages;
         IConnection connection;
@@ -50,8 +49,6 @@
                 timeToWaitBeforeTriggering,
                 ex => criticalError.Raise("Repeated failures when communicating with the broker",
                 ex), delayAfterFailure);
-
-            secondaryReceiveSettings = receiveOptions.GetSettings(settings.InputQueue);
 
             if (settings.PurgeOnStartup)
             {
@@ -85,11 +82,6 @@
             };
 
             model.BasicConsume(settings.InputQueue, false, consumer);
-
-            if (secondaryReceiveSettings.IsEnabled)
-            {
-                model.BasicConsume(secondaryReceiveSettings.ReceiveQueue, false, consumer);
-            }
         }
 
         public async Task Stop()
@@ -179,14 +171,6 @@
         async Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, CancellationTokenSource tokenSource, Stream stream)
         {
             var contextBag = new ContextBag();
-
-            string explicitCallbackAddress;
-
-            if (headers.TryGetValue(Callbacks.HeaderKey, out explicitCallbackAddress))
-            {
-                contextBag.Set(new CallbackAddress(explicitCallbackAddress));
-            }
-
             var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), tokenSource, contextBag);
 
             await Task.Run(() => pipe(pushContext)).ConfigureAwait(false);

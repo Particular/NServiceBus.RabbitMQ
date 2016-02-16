@@ -1,10 +1,10 @@
 namespace NServiceBus.Transports.RabbitMQ
 {
-    class CallbackAddress
+    class LegacyCallbackAddress
     {
         public string Address { get; }
 
-        public CallbackAddress(string address)
+        public LegacyCallbackAddress(string address)
         {
             Address = address;
         }

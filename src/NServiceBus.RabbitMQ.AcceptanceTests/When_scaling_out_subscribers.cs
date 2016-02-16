@@ -16,24 +16,20 @@
                    .WithEndpoint<Publisher>(b => b.When(c => c.ServerASubscribed && c.ServerBSubscribed, bus => bus.Publish<MyEvent>()))
                    .WithEndpoint<ScaledOutSubscriber>(b =>
                    {
-                       //note the scaleout setting will make pubsub break for now
-                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("InstanceA"));
-                       b.When((bus, c) =>
+                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("A"));
+                       b.When(async (bus, c) =>
                        {
-                           bus.Subscribe<MyEvent>();
+                           await bus.Subscribe<MyEvent>();
                            c.ServerASubscribed = true;
-                           return bus.Completed();
                        });
                    })
                    .WithEndpoint<ScaledOutSubscriber>(b =>
                    {
-                       //note the scaleout setting will make pubsub break for now
-                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("InstanceB"));
-                       b.When((bus, c) =>
+                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("B"));
+                       b.When(async (bus, c) =>
                        {
-                           bus.Subscribe<MyEvent>();
+                           await bus.Subscribe<MyEvent>();
                            c.ServerBSubscribed = true;
-                           return bus.Completed();
                        });
                    })
                    .Run(TimeSpan.FromSeconds(10));

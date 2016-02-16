@@ -74,10 +74,7 @@
     <Reference Include="System.Web.Services" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CallbackAddress.cs" />
-    <Compile Include="Callbacks.cs" />
     <Compile Include="ChannelProvider.cs" />
-    <Compile Include="Config\RabbitMQTransportCallbacks.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQTransport.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
@@ -87,8 +84,11 @@
     <Compile Include="Connection\RabbitMqConnectionFactory.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="LegacyCallbacks\LegacyCallbackAddress.cs" />
+    <Compile Include="LegacyCallbacks\LegacyCallbacksFeature.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
+    <Compile Include="LegacyCallbacks\OverrideOutgoingReplyAddressIfLegacyCallbackAddressExistsBehavior.cs" />
     <Compile Include="PoisonMessageForwarder.cs" />
     <Compile Include="QueuePurger.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
@@ -98,14 +98,12 @@
     <Compile Include="RabbitMqSubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
-    <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
+    <Compile Include="LegacyCallbacks\ReadIncomingLegacyCallbackAddressBehavior.cs" />
     <Compile Include="RepeatedFailuresOverTimeCircuitBreaker.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
     <Compile Include="ReceiveOptions.cs" />
-    <Compile Include="SecondaryReceiveSettings.cs" />
-    <Compile Include="SetOutgoingCallbackAddressBehavior.cs" />
     <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>

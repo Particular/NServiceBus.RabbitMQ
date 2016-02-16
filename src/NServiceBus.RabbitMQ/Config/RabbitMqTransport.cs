@@ -50,8 +50,6 @@
         {
             Initialize(context.Settings, context.ConnectionString);
 
-            var callbacks = new Callbacks(context.Settings);
-
             return new TransportReceivingConfigurationResult(
                 () =>
                 {
@@ -74,27 +72,15 @@
 
                     var consumerTag = $"{hostDisplayName} - {context.Settings.EndpointName()}";
 
-                    var receiveOptions = new ReceiveOptions(workQueue =>
-                    {
-                        //if this isn't the main queue we shouldn't use callback receiver
-                        if (!callbacks.IsEnabledFor(workQueue))
-                        {
-                            return SecondaryReceiveSettings.Disabled();
-                        }
-                        return SecondaryReceiveSettings.Enabled(callbacks.QueueAddress, callbacks.MaxConcurrency);
-                    },
-                        messageConverter,
-                        context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"),
-                        consumerTag);
+                    var receiveOptions = new ReceiveOptions(messageConverter, context.Settings.GetOrDefault<bool>("Transport.PurgeOnStartup"), consumerTag);
 
                     var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
-
                     var queuePurger = new QueuePurger(connectionManager);
                     var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
 
                     return new MessagePump(receiveOptions, connectionConfiguration, poisonMessageForwarder, queuePurger);
                 },
-                () => new RabbitMqQueueCreator(connectionManager, topology, callbacks, context.Settings.DurableMessagesEnabled()),
+                () => new RabbitMqQueueCreator(connectionManager, topology, context.Settings.DurableMessagesEnabled()),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 

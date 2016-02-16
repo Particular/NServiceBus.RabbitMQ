@@ -5,16 +5,14 @@
 
     class RabbitMqQueueCreator : ICreateQueues
     {
-        private readonly IManageRabbitMqConnections connections;
-        private readonly IRoutingTopology topology;
-        readonly Callbacks callbacks;
+        readonly IManageRabbitMqConnections connections;
+        readonly IRoutingTopology topology;
         readonly bool durableMessagesEnabled;
 
-        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, Callbacks callbacks, bool durableMessagesEnabled)
+        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, bool durableMessagesEnabled)
         {
             this.connections = connections;
             this.topology = topology;
-            this.callbacks = callbacks;
             this.durableMessagesEnabled = durableMessagesEnabled;
         }
 
@@ -28,11 +26,6 @@
             foreach (var sendingAddress in queueBindings.SendingAddresses)
             {
                 CreateQueueIfNecessary(sendingAddress);
-            }
-
-            if (callbacks.Enabled)
-            {
-                CreateQueueIfNecessary(callbacks.QueueAddress);
             }
 
             return TaskEx.Completed;

@@ -282,11 +282,10 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1543\Volatile\When_sending_to_non_durable_endpoint.cs" />
     <Compile Include="ConfigureRabbitMQTransport.cs" />
     <Compile Include="IMessageHandlerContextExtensions.cs" />
-    <Compile Include="When_a_message_is_retried_and_succeeds_with_a_reply.cs" />
+    <Compile Include="When_the_message_contains_a_legacy_callback_header.cs" />
     <Compile Include="When_using_direct_routing.cs" />
     <Compile Include="When_the_broker_connection_is_lost.cs" />
     <Compile Include="When_using_a_custom_message_id_strategy.cs" />
-    <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="When_scaling_out_senders_that_uses_callbacks.cs" />
     <Compile Include="When_scaling_out_subscribers.cs" />
   </ItemGroup>

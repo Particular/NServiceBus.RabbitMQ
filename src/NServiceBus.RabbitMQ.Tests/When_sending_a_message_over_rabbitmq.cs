@@ -80,15 +80,6 @@
         }
 
         [Test]
-        public void Should_not_populate_the_callback_header()
-        {
-            //this test is failing, but I'm not sure why. Is this text expecting callbacks to be disabled,
-            //or is the logic around when to add this header not right yet?
-            Verify(new OutgoingMessageBuilder(),
-                (t, r) => Assert.IsFalse(t.Headers.ContainsKey(Callbacks.HeaderKey)));
-        }
-
-        [Test]
         public void Should_set_correlation_id_if_present()
         {
             var correlationId = Guid.NewGuid().ToString();
