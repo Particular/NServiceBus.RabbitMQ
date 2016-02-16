@@ -77,6 +77,19 @@
         }
     }
 
+    public class AllTransportsWithoutNativeDeferralAndAtomicSendAndReceive : AllTransports
+    {
+        public AllTransportsWithoutNativeDeferralAndAtomicSendAndReceive()
+        {
+            AllTransportsFilter.Run(t =>
+            {
+                var mode = t.GetSupportedTransactionMode();
+                var noAtomicSendAndReceive = mode == TransportTransactionMode.ReceiveOnly || mode == TransportTransactionMode.None;
+                return noAtomicSendAndReceive || t.GetSupportedDeliveryConstraints().Any(c => typeof(DelayedDeliveryConstraint).IsAssignableFrom(c));
+            }, Remove);
+        }
+    }
+
     public class TypeScanner
     {
 
