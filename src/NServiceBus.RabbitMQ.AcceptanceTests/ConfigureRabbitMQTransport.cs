@@ -9,11 +9,14 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
+using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using RabbitMQ.Client;
 
 internal class ConfigureRabbitMQTransport : IConfigureTestExecution
 {
     private string connectionString;
+
+    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub) };
 
     public Task Configure(EndpointConfiguration configuration, IDictionary<string, string> settings)
     {

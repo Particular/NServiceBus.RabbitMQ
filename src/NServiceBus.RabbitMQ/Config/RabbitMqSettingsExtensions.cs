@@ -65,7 +65,7 @@
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs, string> customIdStrategy)
         {
 
-            transportExtensions.GetSettings().Set(RabbitMQTransport.CustomMessageIdStrategy, customIdStrategy);
+            transportExtensions.GetSettings().Set(RabbitMQTransportInfrastructure.CustomMessageIdStrategy, customIdStrategy);
             return transportExtensions;
         }
     }

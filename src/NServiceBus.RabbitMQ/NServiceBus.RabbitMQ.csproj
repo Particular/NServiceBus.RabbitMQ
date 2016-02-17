@@ -78,6 +78,7 @@
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQTransport.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />
+    <Compile Include="Config\RabbitMQTransportInfrastructure.cs" />
     <Compile Include="ConfirmsAwareChannel.cs" />
     <Compile Include="DefaultRoutingKeyConvention.cs" />
     <Compile Include="Config\ConnectionConfiguration.cs" />
