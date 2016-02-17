@@ -1,38 +1,46 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
     class RabbitMqConnectionFactory
     {
-        public ConnectionConfiguration Configuration { get; private set; }
+        public ConnectionConfiguration Configuration { get; }
 
-        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
         {
             if (connectionConfiguration == null)
             {
-                throw new ArgumentNullException("connectionConfiguration");
+                throw new ArgumentNullException(nameof(connectionConfiguration));
             }
 
-            if (connectionConfiguration.HostConfiguration == null)
+            if (connectionConfiguration.Host == null)
             {
                 throw new ArgumentException(
-                    "The connectionConfiguration has a null HostConfiguration.", "connectionConfiguration");
+                    "The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
             }
 
             Configuration = connectionConfiguration;
 
             connectionFactory = new ConnectionFactory
             {
-                HostName = connectionConfiguration.HostConfiguration.Host,
-                Port = connectionConfiguration.HostConfiguration.Port,
+                HostName = connectionConfiguration.Host,
+                Port = connectionConfiguration.Port,
                 VirtualHost = Configuration.VirtualHost,
                 UserName = Configuration.UserName,
                 Password = Configuration.Password,
                 RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                ClientProperties = Configuration.ClientProperties
+                ClientProperties = Configuration.ClientProperties,
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = Configuration.RetryDelay
             };
+
+            if (scheduler != null)
+            {
+                connectionFactory.TaskScheduler = scheduler;
+            }
         }
 
         public virtual IConnection CreateConnection(string purpose)

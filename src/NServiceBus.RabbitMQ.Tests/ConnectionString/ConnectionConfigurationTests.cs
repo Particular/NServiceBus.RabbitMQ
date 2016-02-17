@@ -11,7 +11,10 @@
         [SetUp]
         public void Setup()
         {
-            parser = new ConnectionStringParser(new SettingsHolder());
+            var settings = new SettingsHolder();
+            settings.Set<NServiceBus.Routing.EndpointName>(new NServiceBus.Routing.EndpointName("endpoint"));
+
+            parser = new ConnectionStringParser(settings);
             defaults = new ConnectionConfiguration();
         }
 
@@ -25,15 +28,7 @@
         {
             connectionString = ("host=myHost");
             connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(ConnectionConfiguration.DefaultPort, connectionConfiguration.HostConfiguration.Port);
-        }
-
-        [Test]
-        public void Should_not_default_the_prefetch_count()
-        {
-            connectionString = ("host=localhost");
-            connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(0, connectionConfiguration.PrefetchCount);
+            Assert.AreEqual(ConnectionConfiguration.DefaultPort, connectionConfiguration.Port);
         }
 
         [Test]
@@ -42,14 +37,6 @@
             connectionString = ("host=localhost");
             connectionConfiguration = parser.Parse(connectionString);
             Assert.AreEqual(ConnectionConfiguration.DefaultHeartBeatInSeconds, connectionConfiguration.RequestedHeartbeat);
-        }
-
-        [Test]
-        public void Should_default_the_dequeue_timeout()
-        {
-            connectionString = ("host=localhost");
-            connectionConfiguration = parser.Parse(connectionString);
-            Assert.AreEqual(ConnectionConfiguration.DefaultDequeueTimeout, connectionConfiguration.DequeueTimeout);
         }
 
         [Test]
@@ -93,6 +80,42 @@
             Assert.IsNotNull(exception);
             Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
+        }
+
+        [Test]
+        public void Should_inform_that_dequeuetimeout_has_been_removed()
+        {
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;dequeuetimeout=1");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' configuration setting has been removed"));
+        }
+
+        [Test]
+        public void Should_inform_that_prefetchcount_has_been_removed()
+        {
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;prefetchcount=100");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The 'PrefetchCount' configuration setting has been removed"));
         }
     }
 }

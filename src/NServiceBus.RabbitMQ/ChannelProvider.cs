@@ -1,38 +1,23 @@
 namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
-    using global::RabbitMQ.Client;
-    using Pipeline;
 
     class ChannelProvider:IChannelProvider
     {
-        public PipelineExecutor PipelineExecutor { get; set; }
-
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
-
-        public bool UsePublisherConfirms { get; set; }
-
-        public TimeSpan MaxWaitTimeForConfirms { get; set; }
-
-
-        bool IChannelProvider.TryGetPublishChannel(out IModel channel)
+        public ChannelProvider(IManageRabbitMqConnections connectionManager, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
         {
-            Lazy<ConfirmsAwareChannel> lazyChannel;
-
-            if (!PipelineExecutor.CurrentContext.TryGet("RabbitMq.PublishChannel", out lazyChannel))
-            {
-                channel = null;
-                return false;
-            }
-
-            channel = lazyChannel.Value.Channel;
-
-            return true;
+            this.connectionManager = connectionManager;
+            this.usePublisherConfirms = usePublisherConfirms;
+            this.maxWaitTimeForConfirms = maxWaitTimeForConfirms;
         }
-
+        
         public ConfirmsAwareChannel GetNewPublishChannel()
         {
-           return new ConfirmsAwareChannel(ConnectionManager.GetPublishConnection(),UsePublisherConfirms,MaxWaitTimeForConfirms);
+           return new ConfirmsAwareChannel(connectionManager.GetPublishConnection(), usePublisherConfirms, maxWaitTimeForConfirms);
         }
+
+        IManageRabbitMqConnections connectionManager;
+        bool usePublisherConfirms;
+        TimeSpan maxWaitTimeForConfirms;
     }
 }

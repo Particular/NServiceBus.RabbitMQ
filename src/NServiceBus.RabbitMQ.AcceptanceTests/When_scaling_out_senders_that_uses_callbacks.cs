@@ -1,76 +1,68 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading;
     using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTesting.Support;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Support;
     using NUnit.Framework;
+    using System.Threading.Tasks;
+    using NServiceBus.Configuration.AdvanceExtensibility;
+    using NServiceBus.Settings;
 
-    public class When_scaling_out_senders_that_uses_callbacks
+    public class When_scaling_out_senders_that_uses_callbacks : NServiceBusAcceptanceTest
     {
         const int numMessagesToSend = 5;
 
         [Test]
-        public void Should_only_deliver_response_to_one_of_the_instances()
+        public async Task Should_only_deliver_response_to_one_of_the_instances()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<ServerThatRespondsToCallbacks>()
                 .WithEndpoint<ScaledOutClient>(b =>
                 {
-                    b.CustomConfig(c => RuntimeEnvironment.MachineNameAction = () => "ScaledOutClientA");
-                    b.Given((bus, c) =>
+                    b.CustomConfig(c =>
+                    {
+                        c.ScaleOut().InstanceDiscriminator("A");
+                        c.GetSettings().Set("Client", "A");
+                    });
+                    b.When(async (bus, c) =>
                     {
                         for (var i = 0; i < numMessagesToSend; i++)
                         {
-                            bus.Send(new MyRequest
+                            var sendOptions = new SendOptions();
+                            sendOptions.RouteReplyToThisInstance();
+                            await bus.Send(new MyRequest()
                             {
-                                ReturnCode = 1
-                            })
-                                .Register<int>(r =>
-                                {
-                                    if (r != 1)
-                                    {
-                                        throw new Exception("Wrong server got the response");
-                                    }
-                                    c.ServerAGotTheCallback++;
-                                });
+                                Client = "A"
+                            }, sendOptions);
                         }
                     });
                 })
                 .WithEndpoint<ScaledOutClient>(b =>
                 {
-                    b.CustomConfig(c => RuntimeEnvironment.MachineNameAction = () => "ScaledOutClientB");
-                    b.Given((bus, c) =>
+                    b.CustomConfig(c =>
+                    {
+                        c.ScaleOut().InstanceDiscriminator("B");
+                        c.GetSettings().Set("Client", "B");
+                    });
+                    b.When(async (bus, c) =>
                     {
                         for (var i = 0; i < numMessagesToSend; i++)
                         {
-                            bus.Send(new MyRequest
+                            var sendOptions = new SendOptions();
+                            sendOptions.RouteReplyToThisInstance();
+                            await bus.Send(new MyRequest()
                             {
-                                ReturnCode = 2
-                            })
-                                .Register<int>(r =>
-                                {
-                                    if (r != 2)
-                                    {
-                                        throw new Exception("Wrong server got the response");
-                                    }
-                                    c.ServerBGotTheCallback++;
-                                });
+                                Client = "B"
+                            }, sendOptions);
                         }
                     });
                 })
-                .Done(c => (context.ServerAGotTheCallback + context.ServerBGotTheCallback) >= numMessagesToSend*2)
-                .Run(new RunSettings
-                {
-                    UseSeparateAppDomains = true,
-                });
+                .Done(c => c.RepliesReceived >= numMessagesToSend * 2)
+                .Run();
 
-            Assert.AreEqual(numMessagesToSend, context.ServerAGotTheCallback, "Both scaled out instances should get the callback");
-
-            Assert.AreEqual(numMessagesToSend, context.ServerBGotTheCallback, "Both scaled out instances should get the callback");
+            Assert.AreEqual(2 * numMessagesToSend, context.RepliesReceived);
         }
 
         public class ScaledOutClient : EndpointConfigurationBuilder
@@ -79,6 +71,23 @@
             {
                 EndpointSetup<DefaultServer>()
                     .AddMapping<MyRequest>(typeof(ServerThatRespondsToCallbacks));
+            }
+
+            class MyResponseHandler : IHandleMessages<MyReposnse>
+            {
+                public ReadOnlySettings Settings { get; set; }
+
+                public Context Context { get; set; }
+
+                public Task Handle(MyReposnse message, IMessageHandlerContext context)
+                {
+                    if (Settings.Get<string>("Client") != message.Client)
+                    {
+                        throw new Exception("Wrong endpoint got the response.");
+                    }
+                    Context.ReplyReceived();
+                    return context.Completed();
+                }
             }
         }
 
@@ -89,26 +98,41 @@
                 EndpointSetup<DefaultServer>();
             }
 
-            class MyEventHandler : IHandleMessages<MyRequest>
+            class MyRequestHandler : IHandleMessages<MyRequest>
             {
-                public IBus Bus { get; set; }
-
-                public void Handle(MyRequest message)
+                public async Task Handle(MyRequest message, IMessageHandlerContext context)
                 {
-                    Bus.Return(message.ReturnCode);
+                    await context.Reply(new MyReposnse()
+                    {
+                        Client = message.Client
+                    });
                 }
             }
         }
 
         class MyRequest : IMessage
         {
-            public int ReturnCode { get; set; }
+            public string Client { get; set; }
+        }
+
+        class MyReposnse : IMessage
+        {
+            public string Client { get; set; }
         }
 
         class Context : ScenarioContext
         {
-            public int ServerAGotTheCallback { get; set; }
-            public int ServerBGotTheCallback { get; set; }
+            int repliesReceived;
+
+            public int RepliesReceived
+            {
+                get { return repliesReceived; }
+            }
+
+            public void ReplyReceived()
+            {
+                Interlocked.Increment(ref repliesReceived);
+            }
         }
     }
 }

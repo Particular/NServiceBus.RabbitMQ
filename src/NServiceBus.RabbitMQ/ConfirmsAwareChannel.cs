@@ -10,7 +10,7 @@ namespace NServiceBus.Transports.RabbitMQ
     [SkipWeaving]
     class ConfirmsAwareChannel : IDisposable
     {
-        public IModel Channel { get; private set; }
+        public IModel Channel { get; }
 
         public ConfirmsAwareChannel(IConnection connection, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
         {
@@ -40,7 +40,7 @@ namespace NServiceBus.Transports.RabbitMQ
                         {
                             var msg = ex.ShutdownReason.ReplyText;
                             var matches = Regex.Matches(msg, @"'([^' ]*)'");
-                            var exchangeName = matches.Count > 0 && matches[0].Groups.Count > 1 ? Address.Parse(matches[0].Groups[1].Value) : null;
+                            var exchangeName = matches.Count > 0 && matches[0].Groups.Count > 1 ? matches[0].Groups[1].Value : null;
                             throw new QueueNotFoundException(exchangeName, "Exchange for the recipient does not exist", ex);
                         }
 

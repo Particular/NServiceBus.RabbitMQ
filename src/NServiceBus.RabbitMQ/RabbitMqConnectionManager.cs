@@ -1,16 +1,14 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
-    using Config;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Connection;
 
     class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
     {
-        public RabbitMqConnectionManager(RabbitMqConnectionFactory connectionFactory, ConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionManager(RabbitMqConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
-            this.connectionConfiguration = connectionConfiguration;
         }
 
         public IConnection GetPublishConnection()
@@ -18,7 +16,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionPublish ?? (connectionPublish = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Publish"));
+                return connectionPublish ?? (connectionPublish = connectionFactory.CreateConnection("Publish"));
             }
         }
 
@@ -27,7 +25,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return connectionConsume ?? (connectionConsume = new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Consume"));
+                return connectionConsume ?? (connectionConsume = connectionFactory.CreateConnection("Consume"));
             }
         }
 
@@ -36,7 +34,7 @@
             //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
-                return new PersistentConnection(connectionFactory, connectionConfiguration.RetryDelay,"Administration");
+                return connectionFactory.CreateConnection("Administration");
             }
         }
 
@@ -47,20 +45,12 @@
 
         public void DisposeManaged()
         {
-
-            if (connectionConsume != null)
-            {
-                connectionConsume.Dispose();
-            }
-            if (connectionPublish != null)
-            {
-                connectionPublish.Dispose();
-            }
+            connectionConsume?.Dispose();
+            connectionPublish?.Dispose();
         }
 
-        RabbitMqConnectionFactory connectionFactory;
-        ConnectionConfiguration connectionConfiguration;
-        PersistentConnection connectionConsume;
-        PersistentConnection connectionPublish;
+        readonly RabbitMqConnectionFactory connectionFactory;
+        IConnection connectionConsume;
+        IConnection connectionPublish;
     }
 }

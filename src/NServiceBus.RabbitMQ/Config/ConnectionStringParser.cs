@@ -1,15 +1,15 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Config
 {
+    using Settings;
+    using System;
     using System.ComponentModel;
     using System.Data.Common;
     using System.Linq;
-    using System.Text.RegularExpressions;
-    using Settings;
+    using System.Reflection;
 
     class ConnectionStringParser : DbConnectionStringBuilder
     {
         readonly ReadOnlySettings settings;
-        ConnectionConfiguration connectionConfiguration;
 
         public ConnectionStringParser(ReadOnlySettings settings)
         {
@@ -20,33 +20,36 @@
         {
             ConnectionString = connectionString;
 
-            connectionConfiguration = new ConnectionConfiguration();
+            var connectionConfiguration = new ConnectionConfiguration();
+            var connectionConfigurationType = typeof(ConnectionConfiguration);
 
-            foreach (var pair in
-                (from property in typeof(ConnectionConfiguration).GetProperties()
-                 let match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", property.Name), RegexOptions.IgnoreCase)
-                 where match.Success
-                 select new
-                        {
-                            Property = property,
-                            match.Groups[property.Name].Value
-                        }))
-                pair.Property.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(pair.Property.PropertyType).ConvertFromString(pair.Value), null);
+            foreach (var key in Keys.Cast<string>())
+            {
+                var property = connectionConfigurationType.GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                property?.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(property.PropertyType).ConvertFrom(this[key]));
+            }
 
             if (ContainsKey("host"))
             {
                 connectionConfiguration.ParseHosts(this["host"] as string);
             }
 
-            if (settings.HasSetting("Endpoint.DurableMessages"))
+            if (ContainsKey("dequeuetimeout"))
             {
-                connectionConfiguration.UsePublisherConfirms = settings.GetOrDefault<bool>("Endpoint.DurableMessages");
+                var message = "The 'DequeueTimeout' configuration setting has been removed. Please consult the documentation for further information.";
+                throw new NotSupportedException(message);
             }
 
+            if (ContainsKey("prefetchcount"))
+            {
+                var message = "The 'PrefetchCount' configuration setting has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+                throw new NotSupportedException(message);
+            }
 
-            connectionConfiguration.ClientProperties["endpoint_name"] = settings.GetOrDefault<string>("EndpointName");
+            connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();
 
             connectionConfiguration.Validate();
+
             return connectionConfiguration;
         }
     }
