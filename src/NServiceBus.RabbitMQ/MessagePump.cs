@@ -81,7 +81,7 @@
                 consumerShutdownCompleted.TrySetResult(true);
             };
 
-            model.BasicConsume(settings.InputQueue, false, consumer);
+            model.BasicConsume(settings.InputQueue, false, receiveOptions.ConsumerTag, consumer);
         }
 
         public async Task Stop()
