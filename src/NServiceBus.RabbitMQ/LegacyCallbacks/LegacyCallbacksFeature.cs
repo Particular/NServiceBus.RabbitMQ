@@ -11,7 +11,6 @@ namespace NServiceBus
 
         protected override void Setup(FeatureConfigurationContext context)
         {
-            context.Pipeline.Register("ReadIncomingLegacyCallbackAddressBehavior", new ReadIncomingLegacyCallbackAddressBehavior(), "Reads the legacy callback header from the incoming message.");
             context.Pipeline.Register("OverrideOutgoingReplyAddressIfLegacyCallbackAddressExistsBehavior", new OverrideOutgoingReplyAddressIfLegacyCallbackAddressExistsBehavior(), "Overrides the destination of replies if the legacy callback header has been provided.");
         }
     }

@@ -84,7 +84,6 @@
     <Compile Include="Connection\RabbitMqConnectionFactory.cs" />
     <Compile Include="IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="LegacyCallbacks\LegacyCallbackAddress.cs" />
     <Compile Include="LegacyCallbacks\LegacyCallbacksFeature.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="IManageRabbitMqConnections.cs" />
@@ -98,7 +97,6 @@
     <Compile Include="RabbitMqSubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
-    <Compile Include="LegacyCallbacks\ReadIncomingLegacyCallbackAddressBehavior.cs" />
     <Compile Include="RepeatedFailuresOverTimeCircuitBreaker.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
