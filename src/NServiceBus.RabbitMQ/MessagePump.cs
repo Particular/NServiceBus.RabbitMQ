@@ -69,7 +69,7 @@
             connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var model = connection.CreateModel();
-            model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), true);
+            model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
             consumer = new EventingBasicConsumer(model);
             consumerShutdownCompleted = new TaskCompletionSource<bool>();
