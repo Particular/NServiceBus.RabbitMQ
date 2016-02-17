@@ -2,28 +2,38 @@
 {
     using System;
     using System.Threading.Tasks;
+    using NServiceBus.Extensibility;
     using NServiceBus.Pipeline;
     using NServiceBus.Routing;
-    using NServiceBus.Transports.RabbitMQ;
+    using NServiceBus.Transports;
 
     class OverrideOutgoingReplyAddressIfLegacyCallbackAddressExistsBehavior : Behavior<IRoutingContext>
     {
         public override Task Invoke(IRoutingContext context, Func<Task> next)
         {
-            LegacyCallbackAddress state;
+            string legacyCallbackAddress;
             string messageIntent;
 
-            if (context.Extensions.TryGet(out state)
+            if (TryGetLegacyCallbackAddress(context, out legacyCallbackAddress)
                 && context.Message.Headers.TryGetValue(Headers.MessageIntent, out messageIntent)
                 && messageIntent == MessageIntentEnum.Reply.ToString())
             {
                 context.RoutingStrategies = new[]
                 {
-                    new UnicastRoutingStrategy(state.Address)
+                    new UnicastRoutingStrategy(legacyCallbackAddress)
                 };
             }
 
             return next();
+        }
+
+        static bool TryGetLegacyCallbackAddress(IExtendable context, out string callbackAddress)
+        {
+            callbackAddress = null;
+            IncomingMessage incomingMessage;
+
+            return context.Extensions.TryGet(out incomingMessage)
+                && incomingMessage.Headers.TryGetValue("NServiceBus.RabbitMQ.CallbackQueue", out callbackAddress);
         }
     }
 }
