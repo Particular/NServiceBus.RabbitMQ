@@ -5,13 +5,12 @@ namespace NServiceBus.Transports.RabbitMQ
     using System.Threading.Tasks;
     using NServiceBus.Logging;
 
-    class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
+    class MessagePumpConnectionFailedCircuitBreaker : IDisposable
     {
-        public RepeatedFailuresOverTimeCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<Exception> triggerAction, TimeSpan delayAfterFailure)
+        public MessagePumpConnectionFailedCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<Exception> triggerAction)
         {
             this.name = name;
             this.triggerAction = triggerAction;
-            this.delayAfterFailure = delayAfterFailure;
             this.timeToWaitBeforeTriggering = timeToWaitBeforeTriggering;
 
             timer = new Timer(CircuitBreakerTriggered);
@@ -30,7 +29,7 @@ namespace NServiceBus.Transports.RabbitMQ
             Logger.InfoFormat("The circuit breaker for {0} is now disarmed", name);
         }
 
-        public Task Failure(Exception exception)
+        public void Failure(Exception exception)
         {
             lastException = exception;
             var newValue = Interlocked.Increment(ref failureCount);
@@ -40,8 +39,6 @@ namespace NServiceBus.Transports.RabbitMQ
                 timer.Change(timeToWaitBeforeTriggering, NoPeriodicTriggering);
                 Logger.WarnFormat("The circuit breaker for {0} is now in the armed state", name);
             }
-
-            return Task.Delay(delayAfterFailure);
         }
 
         public void Dispose()
@@ -59,12 +56,11 @@ namespace NServiceBus.Transports.RabbitMQ
         }
 
         static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
-        static ILog Logger = LogManager.GetLogger<RepeatedFailuresOverTimeCircuitBreaker>();
+        static ILog Logger = LogManager.GetLogger<MessagePumpConnectionFailedCircuitBreaker>();
         string name;
         TimeSpan timeToWaitBeforeTriggering;
         Timer timer;
         Action<Exception> triggerAction;
-        private readonly TimeSpan delayAfterFailure;
         long failureCount;
         Exception lastException;
     }

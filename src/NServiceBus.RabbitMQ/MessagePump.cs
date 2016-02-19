@@ -19,14 +19,14 @@
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
 
-        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
+        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         Func<PushContext, Task> pipe;
         PushSettings settings;
 
         ConcurrentDictionary<int, Task> inFlightMessages;
         IConnection connection;
         EventingBasicConsumer consumer;
-        TaskCompletionSource<bool> consumerShutdownCompleted;
+        TaskCompletionSource<bool> connectionShutdownCompleted;
 
         public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
         {
@@ -41,14 +41,12 @@
             this.pipe = pipe;
             this.settings = settings;
 
-            // TODO: Read these from config
+            // TODO: Read from config and deprecate delayAfterFailure
             var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
-            var delayAfterFailure = TimeSpan.FromSeconds(5);
 
-            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'",
                 timeToWaitBeforeTriggering,
-                ex => criticalError.Raise("Repeated failures when communicating with the broker",
-                ex), delayAfterFailure);
+                ex => criticalError.Raise($"{settings.InputQueue} MessagePump's connection to the broker has failed.", ex));
 
             if (settings.PurgeOnStartup)
             {
@@ -72,40 +70,58 @@
             model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
             consumer = new EventingBasicConsumer(model);
-            consumerShutdownCompleted = new TaskCompletionSource<bool>();
 
-            consumer.Received += ConsumerOnReceived;
+            consumer.Registered += Consumer_Registered;
+            connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
-            consumer.Shutdown += (sender, eventArgs) =>
-            {
-                consumerShutdownCompleted.TrySetResult(true);
-            };
+            consumer.Received += Consumer_Received;
 
             model.BasicConsume(settings.InputQueue, false, receiveOptions.ConsumerTag, consumer);
         }
 
         public async Task Stop()
         {
-            consumer.Received -= ConsumerOnReceived;
+            consumer.Received -= Consumer_Received;
 
             await Task.WhenAll(inFlightMessages.Values).ConfigureAwait(false);
+
+            connectionShutdownCompleted = new TaskCompletionSource<bool>();
 
             if (connection.IsOpen)
             {
                 connection.Close();
             }
+            else
+            {
+                connectionShutdownCompleted.SetResult(true);
+            }
 
-            await (consumerShutdownCompleted?.Task ?? TaskEx.Completed).ConfigureAwait(false);
+            await connectionShutdownCompleted.Task.ConfigureAwait(false);
         }
 
-        async void ConsumerOnReceived(object sender, BasicDeliverEventArgs eventArgs)
+        void Consumer_Registered(object sender, ConsumerEventArgs e)
+        {
+            circuitBreaker.Success();
+        }
+
+        void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
+        {
+            if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
+            {
+                connectionShutdownCompleted?.TrySetResult(true);
+            }
+            else
+            {
+                circuitBreaker.Failure(new Exception());
+            }
+        }
+
+        async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
             Task task = null;
 
             try
             {
-                circuitBreaker.Success();
-
                 var consumer = (EventingBasicConsumer)sender;
                 task = ProcessMessage(eventArgs, consumer.Model, taskScheduler.ExclusiveScheduler);
                 inFlightMessages.TryAdd(task.Id, task);
