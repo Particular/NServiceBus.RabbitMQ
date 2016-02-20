@@ -62,7 +62,6 @@
             ClientProperties.Add("application_location", applicationPath);
             ClientProperties.Add("machine_name", hostname);
             ClientProperties.Add("user", UserName);
-            ClientProperties.Add("connected", DateTime.Now.ToString("G"));
         }
 
         public void Validate()

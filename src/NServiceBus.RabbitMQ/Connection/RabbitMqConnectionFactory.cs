@@ -7,7 +7,7 @@
 
     class RabbitMqConnectionFactory
     {
-        public ConnectionConfiguration Configuration { get; }
+        readonly ConnectionFactory connectionFactory;
 
         public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
         {
@@ -18,24 +18,27 @@
 
             if (connectionConfiguration.Host == null)
             {
-                throw new ArgumentException(
-                    "The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
+                throw new ArgumentException("The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
             }
-
-            Configuration = connectionConfiguration;
 
             connectionFactory = new ConnectionFactory
             {
                 HostName = connectionConfiguration.Host,
                 Port = connectionConfiguration.Port,
-                VirtualHost = Configuration.VirtualHost,
-                UserName = Configuration.UserName,
-                Password = Configuration.Password,
-                RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                ClientProperties = Configuration.ClientProperties,
+                VirtualHost = connectionConfiguration.VirtualHost,
+                UserName = connectionConfiguration.UserName,
+                Password = connectionConfiguration.Password,
+                RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
                 AutomaticRecoveryEnabled = true,
-                NetworkRecoveryInterval = Configuration.RetryDelay
+                NetworkRecoveryInterval = connectionConfiguration.RetryDelay
             };
+
+            connectionFactory.ClientProperties.Clear();
+
+            foreach (var item in connectionConfiguration.ClientProperties)
+            {
+                connectionFactory.ClientProperties.Add(item.Key, item.Value);
+            }
 
             if (scheduler != null)
             {
@@ -43,12 +46,12 @@
             }
         }
 
-        public virtual IConnection CreateConnection(string purpose)
+        public IConnection CreateConnection(string purpose)
         {
             connectionFactory.ClientProperties["purpose"] = purpose;
+            connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
+
             return connectionFactory.CreateConnection();
         }
-
-        readonly ConnectionFactory connectionFactory;
     }
 }
