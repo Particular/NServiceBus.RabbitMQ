@@ -1,8 +1,10 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
-    using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using global::RabbitMQ.Client.Exceptions;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Logging;
     using NServiceBus.Transports.RabbitMQ.Config;
     using NServiceBus.Transports.RabbitMQ.Connection;
     using System;
@@ -14,6 +16,8 @@
 
     class MessagePump : IPushMessages, IDisposable
     {
+        static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
+
         readonly ReceiveOptions receiveOptions;
         readonly ConnectionConfiguration connectionConfiguration;
         readonly PoisonMessageForwarder poisonMessageForwarder;
@@ -24,6 +28,7 @@
         PushSettings settings;
 
         ConcurrentDictionary<int, Task> inFlightMessages;
+        ConcurrentExclusiveSchedulerPair taskScheduler;
         IConnection connection;
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -55,8 +60,6 @@
 
             return TaskEx.Completed;
         }
-
-        ConcurrentExclusiveSchedulerPair taskScheduler;
 
         public void Start(PushRuntimeSettings limitations)
         {
@@ -123,7 +126,7 @@
             try
             {
                 var consumer = (EventingBasicConsumer)sender;
-                task = ProcessMessage(eventArgs, consumer.Model, taskScheduler.ExclusiveScheduler);
+                task = ProcessMessage(eventArgs, consumer.Model);
                 inFlightMessages.TryAdd(task.Id, task);
 
                 await task.ConfigureAwait(false);
@@ -134,7 +137,7 @@
             }
         }
 
-        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel, TaskScheduler scheduler)
+        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
             Dictionary<string, string> headers = null;
             string messageId = null;
@@ -165,31 +168,68 @@
 
                 if (cancellationRequested)
                 {
-                    var task = new Task(() => { channel.BasicReject(message.DeliveryTag, true); });
-                    task.Start(scheduler);
-                    await task.ConfigureAwait(false);
+                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
                 else
                 {
-                    var task = new Task(() => { channel.BasicAck(message.DeliveryTag, false); });
-                    task.Start(scheduler);
-                    await task.ConfigureAwait(false);
+                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
             }
-            catch (Exception)
+            catch
             {
-                var task = new Task(() => { channel.BasicReject(message.DeliveryTag, true); });
-                task.Start(scheduler);
-                await task.ConfigureAwait(false);
+                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
             }
         }
 
-        async Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, CancellationTokenSource tokenSource, Stream stream)
+        Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, CancellationTokenSource tokenSource, Stream stream)
         {
             var contextBag = new ContextBag();
             var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), tokenSource, contextBag);
 
-            await Task.Run(() => pipe(pushContext)).ConfigureAwait(false);
+            return Task.Run(() => pipe(pushContext));
+        }
+
+        async Task AcknowledgeMessage(IModel channel, ulong deliveryTag, string messageId)
+        {
+            try
+            {
+                var task = new Task(() =>
+                {
+                    if (channel.IsOpen)
+                    {
+                        channel.BasicAck(deliveryTag, false);
+                    }
+                });
+
+                task.Start(taskScheduler.ExclusiveScheduler);
+                await task.ConfigureAwait(false);
+            }
+            catch (AlreadyClosedException ex)
+            {
+                Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+            }
+        }
+
+        async Task RejectMessage(IModel channel, ulong deliveryTag, string messageId)
+        {
+            try
+            {
+                var task = new Task(() =>
+                {
+                    if (channel.IsOpen)
+                    {
+                        channel.BasicReject(deliveryTag, true);
+                    }
+                });
+
+                task.Start(taskScheduler.ExclusiveScheduler);
+                await task.ConfigureAwait(false);
+
+            }
+            catch (AlreadyClosedException ex)
+            {
+                Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+            }
         }
 
         public void Dispose()
