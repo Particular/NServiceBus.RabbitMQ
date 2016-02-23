@@ -14,20 +14,23 @@
             return this;
         }
 
-        public TransportOperations Build()
+        public TransportOperations Build(int copies = 1)
         {
             var message = new OutgoingMessage(messageId, headers, body);
 
             var transportOperations = new List<TransportOperation>();
 
-            if (eventType != null)
+            for (int i = 0; i < copies; i++)
             {
-                transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), dispatchConsistency, constraints));
-            }
+                if (eventType != null)
+                {
+                    transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), dispatchConsistency, constraints));
+                }
 
-            if (!string.IsNullOrEmpty(destination))
-            {
-                transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), dispatchConsistency, constraints));
+                if (!string.IsNullOrEmpty(destination))
+                {
+                    transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), dispatchConsistency, constraints));
+                }
             }
 
             return new TransportOperations(transportOperations.ToArray());
