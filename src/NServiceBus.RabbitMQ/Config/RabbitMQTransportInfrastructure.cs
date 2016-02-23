@@ -22,8 +22,6 @@
     [SkipWeaving]
     public class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
-        internal const string CustomMessageIdStrategy = "RabbitMQ.CustomMessageIdStrategy";
-
         readonly SettingsHolder settings;
         readonly ConnectionConfiguration connectionConfiguration;
         readonly RabbitMqConnectionManager connectionManager;
@@ -154,9 +152,9 @@
         {
             MessageConverter messageConverter;
 
-            if (settings.HasSetting(CustomMessageIdStrategy))
+            if (settings.HasSetting(SettingsKeys.CustomMessageIdStrategy))
             {
-                messageConverter = new MessageConverter(settings.Get<Func<BasicDeliverEventArgs, string>>(CustomMessageIdStrategy));
+                messageConverter = new MessageConverter(settings.Get<Func<BasicDeliverEventArgs, string>>(SettingsKeys.CustomMessageIdStrategy));
             }
             else
             {
@@ -177,7 +175,13 @@
             var queuePurger = new QueuePurger(connectionManager);
             var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
 
-            return new MessagePump(receiveOptions, connectionConfiguration, poisonMessageForwarder, queuePurger);
+            TimeSpan timeToWaitBeforeTriggering;
+            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggering))
+            {
+                timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
+            }
+
+            return new MessagePump(receiveOptions, connectionConfiguration, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggering);
         }
     }
 }

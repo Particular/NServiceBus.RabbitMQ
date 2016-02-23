@@ -22,6 +22,7 @@
         readonly ConnectionConfiguration connectionConfiguration;
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
+        readonly TimeSpan timeToWaitBeforeTriggering;
 
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         Func<PushContext, Task> pipe;
@@ -33,21 +34,19 @@
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger)
+        public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggering)
         {
             this.receiveOptions = receiveOptions;
             this.connectionConfiguration = connectionConfiguration;
             this.poisonMessageForwarder = poisonMessageForwarder;
             this.queuePurger = queuePurger;
+            this.timeToWaitBeforeTriggering = timeToWaitBeforeTriggering;
         }
 
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
         {
             this.pipe = pipe;
             this.settings = settings;
-
-            // TODO: Read from config and deprecate delayAfterFailure
-            var timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'",
                 timeToWaitBeforeTriggering,

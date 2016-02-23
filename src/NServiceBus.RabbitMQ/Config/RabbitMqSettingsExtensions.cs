@@ -64,7 +64,19 @@
         /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs, string> customIdStrategy)
         {
-            transportExtensions.GetSettings().Set(RabbitMQTransportInfrastructure.CustomMessageIdStrategy, customIdStrategy);
+            transportExtensions.GetSettings().Set(SettingsKeys.CustomMessageIdStrategy, customIdStrategy);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure when the message pump's connection to the broker is lost and cannot be recovered.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="waitTime">Time to wait before triggering the circuit breaker</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan waitTime)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, waitTime);
             return transportExtensions;
         }
     }

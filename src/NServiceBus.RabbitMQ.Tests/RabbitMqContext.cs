@@ -81,7 +81,8 @@
                 new ReceiveOptions(new MessageConverter(), false, "Unit test"),
                 config,
                 poisonMessageForwarder,
-                purger);
+                purger,
+                TimeSpan.FromMinutes(2));
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
