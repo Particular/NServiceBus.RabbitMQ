@@ -199,6 +199,10 @@
                     {
                         channel.BasicAck(deliveryTag, false);
                     }
+                    else
+                    {
+                        Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.");
+                    }
                 });
 
                 task.Start(taskScheduler.ExclusiveScheduler);
@@ -219,6 +223,10 @@
                     if (channel.IsOpen)
                     {
                         channel.BasicReject(deliveryTag, true);
+                    }
+                    else
+                    {
+                        Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.");
                     }
                 });
 
