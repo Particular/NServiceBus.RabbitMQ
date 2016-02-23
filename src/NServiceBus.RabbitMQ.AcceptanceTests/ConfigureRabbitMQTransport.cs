@@ -16,7 +16,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
 {
     private string connectionString;
 
-    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub) };
+    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferralAndWithAtomicSendAndReceive) };
 
     public Task Configure(EndpointConfiguration configuration, IDictionary<string, string> settings)
     {

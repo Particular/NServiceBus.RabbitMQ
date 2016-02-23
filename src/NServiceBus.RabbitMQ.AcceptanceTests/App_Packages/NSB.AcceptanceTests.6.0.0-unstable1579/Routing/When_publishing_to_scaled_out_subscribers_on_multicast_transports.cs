@@ -3,8 +3,8 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
 
     public class When_publishing_to_scaled_out_subscribers_on_multicast_transports : NServiceBusAcceptanceTest
