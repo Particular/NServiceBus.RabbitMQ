@@ -9,7 +9,7 @@
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object
     /// </summary>
-    public static class RabbitMqSettingsExtensions
+    public static partial class RabbitMqSettingsExtensions
     {
         /// <summary>
         /// Use the direct routing topology with the given conventions
@@ -64,7 +64,6 @@
         /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs, string> customIdStrategy)
         {
-
             transportExtensions.GetSettings().Set(RabbitMQTransportInfrastructure.CustomMessageIdStrategy, customIdStrategy);
             return transportExtensions;
         }
