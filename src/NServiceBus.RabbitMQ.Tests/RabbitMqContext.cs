@@ -20,13 +20,8 @@
             using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                //create main q
                 channel.QueueDeclare(queueName, true, false, false, null);
                 channel.QueuePurge(queueName);
-
-                //create callback q
-                channel.QueueDeclare(CallbackQueue, true, false, false, null);
-                channel.QueuePurge(CallbackQueue);
 
                 //to make sure we kill old subscriptions
                 DeleteExchange(queueName);
@@ -52,10 +47,7 @@
             }
         }
 
-        public virtual int MaximumConcurrency
-        {
-            get { return 1; }
-        }
+        public virtual int MaximumConcurrency => 1;
 
         [SetUp]
         public void SetUp()
@@ -70,8 +62,6 @@
             connectionManager = new RabbitMqConnectionManager(connectionFactory);
             var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms, config.MaxWaitTimeForConfirms);
 
-            var settingsHolder = new SettingsHolder();
-            settingsHolder.Set("NServiceBus.LocalAddress", ReceiverQueue);
             messageSender = new RabbitMqMessageSender(routingTopology, channelProvider);
 
             var purger = new QueuePurger(connectionManager);
@@ -100,7 +90,6 @@
             messagePump.Start(new PushRuntimeSettings(MaximumConcurrency));
         }
 
-
         [TearDown]
         public void TearDown()
         {
@@ -109,11 +98,7 @@
             connectionManager?.Dispose();
         }
 
-        protected virtual string ExchangeNameConvention()
-        {
-            return "amq.topic";
-        }
-
+        protected virtual string ExchangeNameConvention() => "amq.topic";
 
         protected IncomingMessage WaitForMessage()
         {
@@ -130,8 +115,6 @@
             return message;
         }
 
-        protected string CallbackQueue = "testreceiver." + RuntimeEnvironment.MachineName;
-
         protected const string ReceiverQueue = "testreceiver";
         protected RabbitMqMessageSender messageSender;
         protected RabbitMqConnectionManager connectionManager;
@@ -140,79 +123,5 @@
 
         protected ConventionalRoutingTopology routingTopology;
         protected RabbitMqSubscriptionManager subscriptionManager;
-    }
-
-    class FakeContainer : IContainer
-    {
-        public void Dispose()
-        {
-        }
-
-        public object Build(Type typeToBuild)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IContainer BuildChildContainer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<object> BuildAll(Type typeToBuild)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Configure(Type component, DependencyLifecycle dependencyLifecycle)
-        {
-
-        }
-
-        public void Configure<T>(Func<T> component, DependencyLifecycle dependencyLifecycle)
-        {
-
-        }
-
-        public void ConfigureProperty(Type component, string property, object value)
-        {
-
-        }
-
-        public void RegisterSingleton(Type lookupType, object instance)
-        {
-
-        }
-
-        public bool HasComponent(Type componentType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Release(object instance)
-        {
-
-        }
-    }
-
-    class FakeChannelProvider : IChannelProvider
-    {
-        readonly IModel publishChannel;
-
-        public FakeChannelProvider(IModel publishChannel)
-        {
-            this.publishChannel = publishChannel;
-        }
-
-        public bool TryGetPublishChannel(out IModel channel)
-        {
-            channel = publishChannel;
-
-            return true;
-        }
-
-        public ConfirmsAwareChannel GetNewPublishChannel()
-        {
-            throw new NotImplementedException();
-        }
     }
 }
