@@ -75,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChannelProvider.cs" />
+    <Compile Include="Config\ObsoleteAppSettings.cs" />
     <Compile Include="Config\ConnectionStringParser.cs" />
     <Compile Include="Config\RabbitMQTransport.cs" />
     <Compile Include="Config\RabbitMqSettingsExtensions.cs" />

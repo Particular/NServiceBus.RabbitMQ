@@ -72,7 +72,7 @@
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
                     () => new RabbitMqQueueCreator(connectionManager, topology, settings.DurableMessagesEnabled()),
-                    () => Task.FromResult(StartupCheckResult.Success));
+                    () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
         /// <summary>
