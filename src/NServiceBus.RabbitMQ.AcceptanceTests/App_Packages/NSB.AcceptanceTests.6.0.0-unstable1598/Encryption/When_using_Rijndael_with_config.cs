@@ -2,14 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
     using EndpointTemplates;
     using AcceptanceTesting;
-    using NServiceBus.Encryption;
+    using NServiceBus.Config;
+    using NServiceBus.Config.ConfigurationSource;
     using NUnit.Framework;
 
-    public class When_using_encryption_with_custom_service : NServiceBusAcceptanceTest
+    public class When_using_Rijndael_with_config : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_receive_decrypted_message()
@@ -59,7 +59,7 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(builder => builder.RegisterEncryptionService(() => new MyEncryptionService()));
+                EndpointSetup<DefaultServer>(builder => builder.RijndaelEncryptionService());
             }
 
             public class Handler : IHandleMessages<MessageWithSecretData>
@@ -74,7 +74,7 @@
 
                     Context.CreditCards = new List<string>
                     {
-                        message.CreditCards[0].Number.Value,
+                        message.CreditCards[0].Number.Value, 
                         message.CreditCards[1].Number.Value
                     };
 
@@ -106,19 +106,15 @@
             public WireEncryptedString Secret { get; set; }
         }
 
-        public class MyEncryptionService : IEncryptionService
+        public class ConfigureEncryption: IProvideConfiguration<RijndaelEncryptionServiceConfig>
         {
-            public EncryptedValue Encrypt(string value)
+            public RijndaelEncryptionServiceConfig GetConfiguration()
             {
-                return new EncryptedValue
+                return new RijndaelEncryptionServiceConfig
                 {
-                    EncryptedBase64Value = new string(value.Reverse().ToArray())
+                    KeyIdentifier = "1st",
+                    Key = "gdDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6"
                 };
-            }
-
-            public string Decrypt(EncryptedValue encryptedValue)
-            {
-                return new string(encryptedValue.EncryptedBase64Value.Reverse().ToArray());
             }
         }
     }

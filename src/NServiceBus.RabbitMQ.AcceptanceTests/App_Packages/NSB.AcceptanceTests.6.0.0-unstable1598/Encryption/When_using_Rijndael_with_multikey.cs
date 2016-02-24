@@ -3,12 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using System.Text;
     using EndpointTemplates;
     using AcceptanceTesting;
     using NUnit.Framework;
     using ScenarioDescriptors;
 
-    public class When_using_Rijndael_with_multikey: NServiceBusAcceptanceTest
+    public class When_using_Rijndael_with_multikey : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_receive_decrypted_message()
@@ -35,7 +36,7 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(builder => builder.RijndaelEncryptionService("gdDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6"))
+                EndpointSetup<DefaultServer>(builder => builder.RijndaelEncryptionService("1st", Encoding.ASCII.GetBytes("gdDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6")))
                     .AddMapping<MessageWithSecretData>(typeof(Receiver));
             }
 
@@ -45,11 +46,15 @@
         {
             public Receiver()
             {
-                var expiredKeys = new List<string>
+                var key = Encoding.ASCII.GetBytes("gdDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6");
+                var keys = new Dictionary<string, byte[]>
                 {
-                    "gdDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6"
+                    {"2nd", Encoding.ASCII.GetBytes("gdDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6") },
+                    {"1st", key  }
                 };
-                EndpointSetup<DefaultServer>(builder => builder.RijndaelEncryptionService("adDbqRpqdRbTs3mhdZh9qCaDaxJXl+e6", expiredKeys));
+
+                var expiredKeys = new[] { key };
+                EndpointSetup<DefaultServer>(builder => builder.RijndaelEncryptionService("2nd", keys, expiredKeys));
             }
 
             public class Handler : IHandleMessages<MessageWithSecretData>
