@@ -10,7 +10,7 @@
     {
         const string connectionString =
             "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
+            "usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
 
         SettingsHolder settings;
 
@@ -81,15 +81,16 @@
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=myHost");
+
             Assert.AreEqual("myHost", connectionConfiguration.Host);
         }
-
 
         [Test]
         public void Should_parse_the_password()
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;password=test");
+
             Assert.AreEqual("test", connectionConfiguration.Password);
         }
 
@@ -98,6 +99,7 @@
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;port=8181");
+
             Assert.AreEqual(8181, connectionConfiguration.Port);
         }
 
@@ -106,6 +108,7 @@
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;requestedHeartbeat=5");
+
             Assert.AreEqual(5, connectionConfiguration.RequestedHeartbeat);
         }
 
@@ -114,6 +117,7 @@
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;retryDelay=00:00:10");
+
             Assert.AreEqual(TimeSpan.FromSeconds(10), connectionConfiguration.RetryDelay);
         }
 
@@ -122,6 +126,7 @@
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;username=test");
+
             Assert.AreEqual("test", connectionConfiguration.UserName);
         }
 
@@ -130,6 +135,7 @@
         {
             var parser = new ConnectionStringParser(settings);
             var connectionConfiguration = parser.Parse("host=localhost;virtualHost=myVirtualHost");
+
             Assert.AreEqual("myVirtualHost", connectionConfiguration.VirtualHost);
         }
 
@@ -159,6 +165,64 @@
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
             parser.Parse("not a well formed name value pair;");
+        }
+
+        [Test]
+        public void Should_inform_that_multiple_hosts_are_not_supported()
+        {
+            var parser = new ConnectionStringParser(settings);
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost,host=localhost2");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
+            Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
+        }
+
+        [Test]
+        public void Should_inform_that_dequeuetimeout_has_been_removed()
+        {
+            var parser = new ConnectionStringParser(settings);
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;dequeuetimeout=1");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' connection string option has been removed"));
+        }
+
+        [Test]
+        public void Should_inform_that_prefetchcount_has_been_removed()
+        {
+            var parser = new ConnectionStringParser(settings);
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;prefetchcount=100");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The 'PrefetchCount' connection string option has been removed"));
         }
     }
 }

@@ -1,14 +1,17 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Config
 {
-    using Settings;
     using System;
     using System.ComponentModel;
     using System.Data.Common;
     using System.Linq;
     using System.Reflection;
+    using NServiceBus.Logging;
+    using NServiceBus.Settings;
 
     class ConnectionStringParser : DbConnectionStringBuilder
     {
+        static readonly ILog Logger = LogManager.GetLogger(typeof(ConnectionStringParser));
+
         readonly ReadOnlySettings settings;
 
         public ConnectionStringParser(ReadOnlySettings settings)
@@ -20,7 +23,7 @@
         {
             ConnectionString = connectionString;
 
-            var connectionConfiguration = new ConnectionConfiguration();
+            var connectionConfiguration = new ConnectionConfiguration(settings);
             var connectionConfigurationType = typeof(ConnectionConfiguration);
 
             foreach (var key in Keys.Cast<string>())
@@ -31,26 +34,55 @@
 
             if (ContainsKey("host"))
             {
-                connectionConfiguration.ParseHosts(this["host"] as string);
+                ParseHosts(connectionConfiguration, this["host"] as string);
+            }
+            else
+            {
+                throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
 
             if (ContainsKey("dequeuetimeout"))
             {
-                var message = "The 'DequeueTimeout' configuration setting has been removed. Please consult the documentation for further information.";
+                var message = "The 'DequeueTimeout' connection string option has been removed. Please consult the documentation for further information.";
+
+                Logger.Error(message);
+
                 throw new NotSupportedException(message);
             }
 
             if (ContainsKey("prefetchcount"))
             {
-                var message = "The 'PrefetchCount' configuration setting has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+                var message = "The 'PrefetchCount' connection string option has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+
+                Logger.Error(message);
+
                 throw new NotSupportedException(message);
             }
 
-            connectionConfiguration.ClientProperties["endpoint_name"] = settings.EndpointName().ToString();
-
-            connectionConfiguration.Validate();
-
             return connectionConfiguration;
+        }
+
+        void ParseHosts(ConnectionConfiguration connectionConfiguration, string hostsConnectionString)
+        {
+            var hostsAndPorts = hostsConnectionString.Split(',');
+
+            if (hostsAndPorts.Length > 1)
+            {
+                var message =
+                    "Multiple hosts are no longer supported. " +
+                    "If you are using RabbitMQ in a cluster, " +
+                        "consider using a load balancer to represent the nodes as a single host.";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
+            var parts = hostsConnectionString.Split(':');
+            connectionConfiguration.Host = parts.ElementAt(0);
+
+            var portString = parts.ElementAtOrDefault(1);
+            connectionConfiguration.Port = (portString == null) ? connectionConfiguration.Port : int.Parse(portString);
         }
     }
 }

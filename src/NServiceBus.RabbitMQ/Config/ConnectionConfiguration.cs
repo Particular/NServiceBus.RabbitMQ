@@ -5,15 +5,11 @@
     using System.IO;
     using System.Linq;
     using System.Reflection;
-    using Support;
+    using NServiceBus.Settings;
+    using NServiceBus.Support;
 
     class ConnectionConfiguration
     {
-        public const ushort DefaultHeartBeatInSeconds = 5;
-        public const int DefaultPort = 5672;
-
-        public static readonly TimeSpan DefaultWaitTimeForConfirms = TimeSpan.FromSeconds(30);
-
         public string Host { get; set; }
 
         public int Port { get; set; }
@@ -34,21 +30,22 @@
 
         public IDictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
 
-        public ConnectionConfiguration()
+        public ConnectionConfiguration(ReadOnlySettings settings)
         {
             // set default values
-            Port = DefaultPort;
+            Port = 5672;
             VirtualHost = "/";
             UserName = "guest";
             Password = "guest";
-            RequestedHeartbeat = DefaultHeartBeatInSeconds;
-            MaxWaitTimeForConfirms = DefaultWaitTimeForConfirms;
-            RetryDelay = TimeSpan.FromSeconds(10);
-            SetDefaultClientProperties();
+            RequestedHeartbeat = 5;
             UsePublisherConfirms = true;
+            MaxWaitTimeForConfirms = TimeSpan.FromSeconds(30);
+            RetryDelay = TimeSpan.FromSeconds(10);
+
+            SetDefaultClientProperties(settings);
         }
 
-        private void SetDefaultClientProperties()
+        void SetDefaultClientProperties(ReadOnlySettings settings)
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
@@ -62,35 +59,7 @@
             ClientProperties.Add("application_location", applicationPath);
             ClientProperties.Add("machine_name", hostname);
             ClientProperties.Add("user", UserName);
-        }
-
-        public void Validate()
-        {
-            if (Host == null)
-            {
-                throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
-            }
-        }
-
-        public void ParseHosts(string hostsConnectionString)
-        {
-            var hostsAndPorts = hostsConnectionString.Split(',');
-
-            if (hostsAndPorts.Length > 1)
-            {
-                var message =
-                    "Multiple hosts are no longer supported. " +
-                    "If you are using RabbitMQ in a cluster, " +
-                        "consider using a load balancer to represent the nodes as a single host.";
-
-                throw new ArgumentException(message, nameof(hostsConnectionString));
-            }
-
-            var parts = hostsConnectionString.Split(':');
-            Host = parts.ElementAt(0);
-
-            var portString = parts.ElementAtOrDefault(1);
-            Port = (portString == null) ? Port : int.Parse(portString);
+            ClientProperties.Add("endpoint_name", settings.EndpointName().ToString());
         }
     }
 }

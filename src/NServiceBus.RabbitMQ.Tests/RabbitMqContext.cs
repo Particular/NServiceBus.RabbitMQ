@@ -55,8 +55,11 @@
             routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var config = new ConnectionConfiguration();
-            config.ParseHosts("localhost:5672");
+            var settings = new SettingsHolder();
+            settings.Set<NServiceBus.Routing.EndpointName>(new NServiceBus.Routing.EndpointName(ReceiverQueue));
+
+            var config = new ConnectionConfiguration(settings);
+            config.Host = "localhost";
 
             var connectionFactory = new RabbitMqConnectionFactory(config);
             connectionManager = new RabbitMqConnectionManager(connectionFactory);
