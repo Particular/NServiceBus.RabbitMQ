@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Reflection;
     using NServiceBus.Settings;
@@ -46,14 +47,23 @@
 
         void SetDefaultClientProperties(ReadOnlySettings settings)
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            var nsb = typeof(Endpoint).Assembly.Location;
+            var nsbVersion = FileVersionInfo.GetVersionInfo(nsb);
+            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
+
+            var rabbitMQ = typeof(ConnectionConfiguration).Assembly.Location;
+            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(rabbitMQ);
+            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
+
             var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
             var applicationName = Path.GetFileName(applicationNameAndPath);
             var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
+
             var hostname = RuntimeEnvironment.MachineName;
 
             ClientProperties.Add("client_api", "NServiceBus");
-            ClientProperties.Add("nservicebus_version", version);
+            ClientProperties.Add("nservicebus_version", nsbFileVersion);
+            ClientProperties.Add("nservicebus.rabbitmq_version", rabbitMQFileVersion);
             ClientProperties.Add("application", applicationName);
             ClientProperties.Add("application_location", applicationPath);
             ClientProperties.Add("machine_name", hostname);
