@@ -132,7 +132,10 @@
             }
             finally
             {
-                inFlightMessages.TryRemove(task.Id, out task);
+                if (task != null)
+                {
+                    inFlightMessages.TryRemove(task.Id, out task);
+                }
             }
         }
 
