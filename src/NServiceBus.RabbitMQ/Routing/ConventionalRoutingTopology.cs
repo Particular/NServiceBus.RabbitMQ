@@ -128,9 +128,9 @@
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
             }
-// ReSharper disable EmptyGeneralCatchClause
+            // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
-// ReSharper restore EmptyGeneralCatchClause
+            // ReSharper restore EmptyGeneralCatchClause
             {
                 // TODO: Any better way to make this idempotent?
             }

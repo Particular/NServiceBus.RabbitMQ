@@ -15,7 +15,7 @@
             messageIdStrategy = DefaultMessageIdStrategy;
         }
 
-        public MessageConverter(Func<BasicDeliverEventArgs,string> messageIdStrategy)
+        public MessageConverter(Func<BasicDeliverEventArgs, string> messageIdStrategy)
         {
             this.messageIdStrategy = messageIdStrategy;
         }
@@ -40,13 +40,13 @@
                 {
                     if (replyToAddressNSBHeaders != nativeReplyToAddress)
                     {
-                        Logger.WarnFormat("Missmatching replyto address properties found, the address specified by the NServiceBus headers '{1}' will override the native one '{0}'", nativeReplyToAddress, replyToAddressNSBHeaders);         
+                        Logger.WarnFormat("Missmatching replyto address properties found, the address specified by the NServiceBus headers '{1}' will override the native one '{0}'", nativeReplyToAddress, replyToAddressNSBHeaders);
                     }
                 }
                 else
                 {
                     //promote the native address
-                    headers[Headers.ReplyToAddress] = nativeReplyToAddress;             
+                    headers[Headers.ReplyToAddress] = nativeReplyToAddress;
                 }
             }
 

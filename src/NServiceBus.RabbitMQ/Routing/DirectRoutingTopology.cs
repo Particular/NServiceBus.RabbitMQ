@@ -35,7 +35,6 @@
             channel.BasicPublish(string.Empty, address, true, properties, message.Body);
         }
 
-        
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
         {
             channel.BasicPublish(string.Empty, address, true, properties, body);
@@ -59,9 +58,9 @@
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
             }
-                // ReSharper disable EmptyGeneralCatchClause
+            // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
-                // ReSharper restore EmptyGeneralCatchClause
+            // ReSharper restore EmptyGeneralCatchClause
             {
 
             }

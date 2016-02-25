@@ -11,7 +11,7 @@
         [Test]
         public async Task Should_receive_the_message()
         {
-            var context = await Scenario.Define< MyContext>()
+            var context = await Scenario.Define<MyContext>()
                    .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
                    .Done(c => c.GotTheMessage)
                    .Run();
@@ -23,7 +23,7 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
+                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
                     .UseDirectRoutingTopology());
             }
 

@@ -7,4 +7,3 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("NServiceBus Ltd.")]
 [assembly: AssemblyConfiguration("release")]
 [assembly: ComVisible(false)]
-
