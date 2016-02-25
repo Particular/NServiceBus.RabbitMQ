@@ -55,7 +55,7 @@
                 BasicProperties = new BasicProperties
                 {
                     ReplyTo = "myaddress",
-                    MessageId = "Blah",
+                    MessageId = "Blah"
                 }
             };
             var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
