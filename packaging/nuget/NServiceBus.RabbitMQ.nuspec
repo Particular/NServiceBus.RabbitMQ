@@ -12,7 +12,7 @@
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>RabbitMQ support for NServicebus</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright 2010-2015 NServiceBus. All rights reserved</copyright>
+    <copyright>Copyright 2010-2016 NServiceBus. All rights reserved</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
       <dependency id="NServiceBus" version="[5.0.0, 6.0.0)" />
