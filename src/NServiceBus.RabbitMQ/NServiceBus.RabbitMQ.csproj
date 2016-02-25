@@ -105,7 +105,6 @@
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
     <Compile Include="Routing\ConventionalRoutingTopology.cs" />
-    <Compile Include="ReceiveOptions.cs" />
     <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>

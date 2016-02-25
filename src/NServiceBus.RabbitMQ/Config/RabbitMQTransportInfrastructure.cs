@@ -161,18 +161,16 @@
             }
 
             string hostDisplayName;
-            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName)) //this was added in 5.1.2 of the core
+            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName))
             {
                 hostDisplayName = Support.RuntimeEnvironment.MachineName;
             }
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var receiveOptions = new ReceiveOptions(messageConverter, settings.GetOrDefault<bool>("Transport.PurgeOnStartup"), consumerTag);
-
             var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
-            var queuePurger = new QueuePurger(connectionManager);
             var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
+            var queuePurger = new QueuePurger(connectionManager);
 
             TimeSpan timeToWaitBeforeTriggering;
             if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggering))
@@ -180,7 +178,7 @@
                 timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(receiveOptions, connectionConfiguration, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggering);
+            return new MessagePump(connectionConfiguration, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggering);
         }
     }
 }

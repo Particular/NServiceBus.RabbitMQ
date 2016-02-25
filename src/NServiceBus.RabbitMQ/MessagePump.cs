@@ -18,8 +18,9 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
 
-        readonly ReceiveOptions receiveOptions;
         readonly ConnectionConfiguration connectionConfiguration;
+        readonly MessageConverter messageConverter;
+        readonly string consumerTag;
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggering;
@@ -34,10 +35,11 @@
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ReceiveOptions receiveOptions, ConnectionConfiguration connectionConfiguration, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggering)
+        public MessagePump(ConnectionConfiguration connectionConfiguration, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggering)
         {
-            this.receiveOptions = receiveOptions;
             this.connectionConfiguration = connectionConfiguration;
+            this.messageConverter = messageConverter;
+            this.consumerTag = consumerTag;
             this.poisonMessageForwarder = poisonMessageForwarder;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggering = timeToWaitBeforeTriggering;
@@ -78,7 +80,7 @@
 
             consumer.Received += Consumer_Received;
 
-            model.BasicConsume(settings.InputQueue, false, receiveOptions.ConsumerTag, consumer);
+            model.BasicConsume(settings.InputQueue, false, consumerTag, consumer);
         }
 
         public async Task Stop()
@@ -149,8 +151,8 @@
             {
                 try
                 {
-                    messageId = receiveOptions.Converter.RetrieveMessageId(message);
-                    headers = receiveOptions.Converter.RetrieveHeaders(message);
+                    messageId = messageConverter.RetrieveMessageId(message);
+                    headers = messageConverter.RetrieveHeaders(message);
                     pushMessage = true;
                 }
                 catch (Exception ex)
