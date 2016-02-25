@@ -40,7 +40,7 @@
                 {
                     myContext.GotTheMessage = true;
 
-                    return context.Completed();
+                    return TaskEx.CompletedTask;
                 }
             }
         }

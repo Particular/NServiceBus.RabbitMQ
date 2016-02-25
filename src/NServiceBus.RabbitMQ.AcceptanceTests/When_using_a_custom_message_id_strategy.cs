@@ -71,10 +71,7 @@
                     }
                 }
 
-                public Task Stop(IMessageSession context)
-                {
-                    return context.Completed();
-                }
+                public Task Stop(IMessageSession context) => TaskEx.CompletedTask;
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>
@@ -90,7 +87,7 @@
                 {
                     myContext.GotTheMessage = true;
 
-                    return context.Completed();
+                    return TaskEx.CompletedTask;
                 }
             }
         }

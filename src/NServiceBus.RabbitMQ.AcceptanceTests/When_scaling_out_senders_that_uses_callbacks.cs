@@ -86,7 +86,7 @@
                         throw new Exception("Wrong endpoint got the response.");
                     }
                     Context.ReplyReceived();
-                    return context.Completed();
+                    return TaskEx.CompletedTask;
                 }
             }
         }

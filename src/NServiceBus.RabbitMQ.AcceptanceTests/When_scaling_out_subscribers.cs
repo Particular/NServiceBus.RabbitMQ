@@ -60,7 +60,7 @@
                         myContext.Counter++;
                     }
 
-                    return context.Completed();
+                    return TaskEx.CompletedTask;
                 }
 
                 static Object objLock = new object();
