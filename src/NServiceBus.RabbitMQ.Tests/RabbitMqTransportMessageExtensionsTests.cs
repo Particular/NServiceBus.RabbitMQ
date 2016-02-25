@@ -15,7 +15,15 @@
         [Test]
         public void TestCanHandleNoInterestingProperties()
         {
-            Assert.IsNotNull(converter.ToTransportMessage(new BasicDeliverEventArgs { BasicProperties = new BasicProperties { MessageId = "Blah" } }));
+            var rabbitDetails = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
+                {
+                    MessageId = "Blah"
+                }
+            };
+            Assert.IsNotNull(converter.RetrieveMessageId(rabbitDetails));
+            Assert.IsNotNull(converter.RetrieveHeaders(rabbitDetails));
         }
 
         [Test]
@@ -32,9 +40,11 @@
                     }
                 }
             };
-            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("blah", transportMessage.Headers["Foo"]);
+
+            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+            //var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
+            //Assert.NotNull(transportMessage);
+            Assert.AreEqual("blah", headers["Foo"]);
         }
 
         [Test]
@@ -48,9 +58,9 @@
                     MessageId = "Blah",
                 }
             };
-            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("myaddress", transportMessage.Headers[Headers.ReplyToAddress]);
+            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+            Assert.NotNull(headers);
+            Assert.AreEqual("myaddress", headers[Headers.ReplyToAddress]);
         }
 
         [Test]
@@ -68,9 +78,9 @@
                     }
                 }
             };
-            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("nsb set address", transportMessage.Headers[Headers.ReplyToAddress]);
+            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+            Assert.NotNull(headers);
+            Assert.AreEqual("nsb set address", headers[Headers.ReplyToAddress]);
         }
 
 
@@ -89,27 +99,27 @@
                     }
                 }
             };
-            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("ni", transportMessage.Headers["Foo"]);
+            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+            Assert.NotNull(headers);
+            Assert.AreEqual("ni", headers["Foo"]);
         }
 
         [Test]
         public void TestCanHandleStringArrayListsHeader()
         {
-            var transportMessage = converter.ToTransportMessage(new BasicDeliverEventArgs
+            var headers = converter.RetrieveHeaders(new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah",
-                    Headers = new Dictionary<string,object>
+                    Headers = new Dictionary<string, object>
                 {
                     {"Foo", new ArrayList{"Bing"}}
                 }
                 }
             });
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("Bing", transportMessage.Headers["Foo"]);
+            Assert.NotNull(headers);
+            Assert.AreEqual("Bing", headers["Foo"]);
         }
 
         [Test]
@@ -126,14 +136,14 @@
                     }
                 }
             };
-            var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("Bing", transportMessage.Headers["Foo"]);
+            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+            Assert.NotNull(headers);
+            Assert.AreEqual("Bing", headers["Foo"]);
         }
         [Test]
         public void TestCanHandleTablesListHeader()
         {
-            var transportMessage = converter.ToTransportMessage(new BasicDeliverEventArgs
+            var headers = converter.RetrieveHeaders(new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -144,8 +154,8 @@
                 }
                 }
             });
-            Assert.NotNull(transportMessage);
-            Assert.AreEqual("key1=value1,key2=value2", Convert.ToString(transportMessage.Headers["Foo"]));
+            Assert.NotNull(headers);
+            Assert.AreEqual("key1=value1,key2=value2", Convert.ToString(headers["Foo"]));
         }
     }
 }

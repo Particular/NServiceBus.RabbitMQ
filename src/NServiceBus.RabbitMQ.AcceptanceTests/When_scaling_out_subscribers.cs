@@ -1,72 +1,69 @@
 ﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTesting.Support;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Support;
     using NUnit.Framework;
 
-    public class When_scaling_out_subscribers
+    public class When_scaling_out_subscribers : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_only_deliver_event_to_one_of_the_instances()
+        public async Task Should_only_deliver_event_to_one_of_the_instances()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
+            var context = await Scenario.Define<MyContext>()
                    .WithEndpoint<Publisher>(b => b.When(c => c.ServerASubscribed && c.ServerBSubscribed, bus => bus.Publish<MyEvent>()))
                    .WithEndpoint<ScaledOutSubscriber>(b =>
                    {
-                       b.CustomConfig(c => RuntimeEnvironment.MachineNameAction = () => "ScaledOutServerA");
-                       b.Given((bus, c) =>
+                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("A"));
+                       b.When(async (bus, c) =>
                        {
-                           bus.Subscribe<MyEvent>();
+                           await bus.Subscribe<MyEvent>();
                            c.ServerASubscribed = true;
                        });
                    })
                    .WithEndpoint<ScaledOutSubscriber>(b =>
                    {
-                       b.CustomConfig(c => RuntimeEnvironment.MachineNameAction = () => "ScaledOutServerB");
-                       b.Given((bus, c) =>
+                       b.CustomConfig(c => c.ScaleOut().InstanceDiscriminator("B"));
+                       b.When(async (bus, c) =>
                        {
-                           bus.Subscribe<MyEvent>();
+                           await bus.Subscribe<MyEvent>();
                            c.ServerBSubscribed = true;
                        });
-                   
                    })
-                   //.Done(c => context.ServerAGotTheEvent && context.ServerBGotTheEvent)
-                   .Run(new RunSettings { UseSeparateAppDomains = true, TestExecutionTimeout = TimeSpan.FromSeconds(20) });
+                   .Run(TimeSpan.FromSeconds(10));
 
-
-            Assert.False(context.ServerAGotTheEvent && context.ServerBGotTheEvent, "Both scaled out instances should not get the event");
-            Assert.True(context.ServerAGotTheEvent || context.ServerBGotTheEvent, "One of the scaled out instances should get the event");
+            Assert.AreEqual(1, context.Counter, "One of the scaled out instances should get the event");
         }
 
         public class ScaledOutSubscriber : EndpointConfigurationBuilder
         {
             public ScaledOutSubscriber()
             {
-                //note the scaleout setting will make pubsub break for now
-                EndpointSetup<DefaultPublisher>(c => c.ScaleOut().UseUniqueBrokerQueuePerMachine());
-                //EndpointSetup<DefaultPublisher>();
+                EndpointSetup<DefaultPublisher>();
             }
 
             class MyEventHandler : IHandleMessages<MyEvent>
             {
-                public Context Context { get; set; }
-                public void Handle(MyEvent message)
+                readonly MyContext myContext;
+
+                public MyEventHandler(MyContext context)
                 {
-                    if (RuntimeEnvironment.MachineName == "ScaledOutServerA")
+                    myContext = context;
+                }
+
+                public Task Handle(MyEvent message, IMessageHandlerContext context)
+                {
+                    lock (objLock)
                     {
-                        Context.ServerAGotTheEvent = true;
+                        myContext.Counter++;
                     }
 
-                    if (RuntimeEnvironment.MachineName == "ScaledOutServerB")
-                    {
-                        Context.ServerBGotTheEvent = true;
-                    }
+                    return context.Completed();
                 }
+
+                static Object objLock = new object();
             }
         }
 
@@ -76,7 +73,6 @@
             {
                 EndpointSetup<DefaultPublisher>();
             }
-
         }
 
         class MyEvent : IEvent
@@ -84,12 +80,11 @@
 
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool ServerASubscribed { get; set; }
             public bool ServerBSubscribed { get; set; }
-            public bool ServerBGotTheEvent { get; set; }
-            public bool ServerAGotTheEvent { get; set; }
+            public int Counter { get; set; }
         }
     }
 }

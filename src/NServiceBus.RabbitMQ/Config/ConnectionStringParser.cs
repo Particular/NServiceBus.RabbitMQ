@@ -1,15 +1,18 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Config
 {
+    using System;
     using System.ComponentModel;
     using System.Data.Common;
     using System.Linq;
-    using System.Text.RegularExpressions;
-    using Settings;
+    using System.Reflection;
+    using NServiceBus.Logging;
+    using NServiceBus.Settings;
 
     class ConnectionStringParser : DbConnectionStringBuilder
     {
+        static readonly ILog Logger = LogManager.GetLogger(typeof(ConnectionStringParser));
+
         readonly ReadOnlySettings settings;
-        ConnectionConfiguration connectionConfiguration;
 
         public ConnectionStringParser(ReadOnlySettings settings)
         {
@@ -20,34 +23,66 @@
         {
             ConnectionString = connectionString;
 
-            connectionConfiguration = new ConnectionConfiguration();
+            var connectionConfiguration = new ConnectionConfiguration(settings);
+            var connectionConfigurationType = typeof(ConnectionConfiguration);
 
-            foreach (var pair in
-                (from property in typeof(ConnectionConfiguration).GetProperties()
-                 let match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", property.Name), RegexOptions.IgnoreCase)
-                 where match.Success
-                 select new
-                        {
-                            Property = property,
-                            match.Groups[property.Name].Value
-                        }))
-                pair.Property.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(pair.Property.PropertyType).ConvertFromString(pair.Value), null);
+            foreach (var key in Keys.Cast<string>())
+            {
+                var property = connectionConfigurationType.GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                property?.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(property.PropertyType).ConvertFrom(this[key]));
+            }
 
             if (ContainsKey("host"))
             {
-                connectionConfiguration.ParseHosts(this["host"] as string);
+                ParseHosts(connectionConfiguration, this["host"] as string);
             }
-
-            if (settings.HasSetting("Endpoint.DurableMessages"))
+            else
             {
-                connectionConfiguration.UsePublisherConfirms = settings.GetOrDefault<bool>("Endpoint.DurableMessages");
+                throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
 
+            if (ContainsKey("dequeuetimeout"))
+            {
+                var message = "The 'DequeueTimeout' connection string option has been removed. Please consult the documentation for further information.";
 
-            connectionConfiguration.ClientProperties["endpoint_name"] = settings.GetOrDefault<string>("EndpointName");
+                Logger.Error(message);
 
-            connectionConfiguration.Validate();
+                throw new NotSupportedException(message);
+            }
+
+            if (ContainsKey("prefetchcount"))
+            {
+                var message = "The 'PrefetchCount' connection string option has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
             return connectionConfiguration;
+        }
+
+        void ParseHosts(ConnectionConfiguration connectionConfiguration, string hostsConnectionString)
+        {
+            var hostsAndPorts = hostsConnectionString.Split(',');
+
+            if (hostsAndPorts.Length > 1)
+            {
+                var message =
+                    "Multiple hosts are no longer supported. " +
+                    "If you are using RabbitMQ in a cluster, " +
+                        "consider using a load balancer to represent the nodes as a single host.";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
+            var parts = hostsConnectionString.Split(':');
+            connectionConfiguration.Host = parts.ElementAt(0);
+
+            var portString = parts.ElementAtOrDefault(1);
+            connectionConfiguration.Port = (portString == null) ? connectionConfiguration.Port : int.Parse(portString);
         }
     }
 }

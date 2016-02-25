@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
+    using NServiceBus.Extensibility;
     using NUnit.Framework;
-    using Unicast;
 
     [TestFixture]
     class When_subscribed_to_a_event : RabbitMqContext
@@ -131,7 +131,7 @@
         {
             Subscribe<MyEvent>();
 
-            subscriptionManager.Unsubscribe(typeof(MyEvent), Address.Parse(ExchangeNameConvention()));
+            subscriptionManager.Unsubscribe(typeof(MyEvent), new ContextBag()); // , ExchangeNameConvention()
 
             //publish a event that that this publisher isn't subscribed to
             Publish<MyEvent>();
@@ -141,17 +141,14 @@
 
         void Subscribe<T>()
         {
-            subscriptionManager.Subscribe(typeof(T), Address.Parse(ExchangeNameConvention()));
+            subscriptionManager.Subscribe(typeof(T), new ContextBag()); //, Address.Parse(ExchangeNameConvention())));
         }
 
         void Publish<T>()
         {
             var type = typeof(T);
-            MessagePublisher.Publish(new TransportMessage
-            {
-                CorrelationId = type.FullName
-            }, new PublishOptions(type));
-
+            messageSender.Dispatch(new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build()
+            , new ContextBag()).GetAwaiter().GetResult();
         }
 
 
@@ -162,10 +159,9 @@
             AssertReceived<T>(receivedEvent);
         }
 
-        void AssertReceived<T>(TransportMessage receivedEvent)
+        void AssertReceived<T>(IncomingMessage receivedEvent)
         {
-            Assert.AreEqual(typeof(T).FullName, receivedEvent.CorrelationId);
-
+            Assert.AreEqual(typeof(T).FullName, receivedEvent.Headers[Headers.CorrelationId]);
         }
 
         void AssertNoEventReceived()

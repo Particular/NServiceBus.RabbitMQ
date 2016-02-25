@@ -1,32 +1,43 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
+    using System.Threading.Tasks;
+    using NServiceBus.Extensibility;
     using Routing;
 
     class RabbitMqSubscriptionManager : IManageSubscriptions
     {
-        public IManageRabbitMqConnections ConnectionManager { get; set; }
+        readonly IManageRabbitMqConnections connectionManager;
+        readonly IRoutingTopology routingTopology;
+        readonly string localQueue;
 
-        public string EndpointQueueName { get; set; }
-
-        public IRoutingTopology RoutingTopology { get; set; }
-
-        public void Subscribe(Type eventType, Address publisherAddress)
+        public RabbitMqSubscriptionManager(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, string localQueue)
         {
-            using (var connection = ConnectionManager.GetAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                RoutingTopology.SetupSubscription(channel, eventType, EndpointQueueName);
-            }
+            this.connectionManager = connectionManager;
+            this.routingTopology = routingTopology;
+            this.localQueue = localQueue;
         }
 
-        public void Unsubscribe(Type eventType, Address publisherAddress)
+        public Task Subscribe(Type eventType, ContextBag context)
         {
-            using (var connection = ConnectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                RoutingTopology.TeardownSubscription(channel, eventType, EndpointQueueName);
+                routingTopology.SetupSubscription(channel, eventType, localQueue);
             }
+
+            return TaskEx.Completed;
+        }
+
+        public Task Unsubscribe(Type eventType, ContextBag context)
+        {
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
+            {
+                routingTopology.TeardownSubscription(channel, eventType, localQueue);
+            }
+
+            return TaskEx.Completed;
         }
     }
 }

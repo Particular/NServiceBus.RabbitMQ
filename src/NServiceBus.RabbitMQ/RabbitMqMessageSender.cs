@@ -1,75 +1,57 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ
 {
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
-    using NServiceBus.Pipeline;
-    using Routing;
-    using Unicast;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Transports.RabbitMQ.Routing;
 
-    class RabbitMqMessageSender : ISendMessages
+    class RabbitMqMessageSender : IDispatchMessages
     {
-        IRoutingTopology routingTopology;
-        IChannelProvider channelProvider;
-        BehaviorContext context;
+        readonly IChannelProvider channelProvider;
+        readonly IRoutingTopology routingTopology;
 
-        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider, BehaviorContext context)
+        public RabbitMqMessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider)
         {
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
-            this.context = context;
         }
 
-        public void Send(TransportMessage message, SendOptions sendOptions)
+        public Task Dispatch(TransportOperations operations, ContextBag context)
         {
-            IModel channel;
-
-            if (channelProvider.TryGetPublishChannel(out channel))
+            using (var confirmsAwareChannel = channelProvider.GetNewPublishChannel())
             {
-                SendMessage(message, sendOptions, channel);
-            }
-            else
-            {
-                using (var confirmsAwareChannel = channelProvider.GetNewPublishChannel())
+                foreach (var unicastTransportOperation in operations.UnicastTransportOperations)
                 {
-                    SendMessage(message, sendOptions, confirmsAwareChannel.Channel);
+                    SendMessage(unicastTransportOperation, confirmsAwareChannel.Channel);
+                }
+
+                foreach (var multicastTransportOperation in operations.MulticastTransportOperations)
+                {
+                    PublishMessage(multicastTransportOperation, confirmsAwareChannel.Channel);
                 }
             }
+
+            return TaskEx.Completed;
         }
 
-        void SendMessage(TransportMessage message, SendOptions sendOptions, IModel channel)
+        void SendMessage(UnicastTransportOperation transportOperation, IModel channel)
         {
-            var destination = DetermineDestination(sendOptions);
+            var message = transportOperation.Message;
+
             var properties = channel.CreateBasicProperties();
+            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
 
-            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, sendOptions, properties);
-
-            routingTopology.Send(channel, destination, message, properties);
+            routingTopology.Send(channel, transportOperation.Destination, message, properties);
         }
 
-        Address DetermineDestination(SendOptions sendOptions)
+        void PublishMessage(MulticastTransportOperation transportOperation, IModel channel)
         {
-            return RequestorProvidedCallbackAddress(sendOptions) ?? SenderProvidedDestination(sendOptions);
-        }
+            var message = transportOperation.Message;
 
-        static Address SenderProvidedDestination(SendOptions sendOptions)
-        {
-            return sendOptions.Destination;
-        }
+            var properties = channel.CreateBasicProperties();
+            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
 
-        Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
-        {
-            string callbackAddress;
-            if (IsReply(sendOptions) && context.TryGet(CallbackHeaderKey, out callbackAddress))
-            {
-                return Address.Parse(callbackAddress);
-            }
-            return null;
+            routingTopology.Publish(channel, transportOperation.MessageType, message, properties);
         }
-
-        static bool IsReply(SendOptions sendOptions)
-        {
-            return sendOptions.GetType().FullName.EndsWith("ReplyOptions");
-        }
-
-        public const string CallbackHeaderKey = "NServiceBus.RabbitMQ.CallbackQueue";
     }
 }

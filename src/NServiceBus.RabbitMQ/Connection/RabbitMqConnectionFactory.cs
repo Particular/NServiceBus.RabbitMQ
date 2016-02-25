@@ -1,46 +1,57 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
     class RabbitMqConnectionFactory
     {
-        public ConnectionConfiguration Configuration { get; private set; }
+        readonly ConnectionFactory connectionFactory;
 
-        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration)
+        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
         {
             if (connectionConfiguration == null)
             {
-                throw new ArgumentNullException("connectionConfiguration");
+                throw new ArgumentNullException(nameof(connectionConfiguration));
             }
 
-            if (connectionConfiguration.HostConfiguration == null)
+            if (connectionConfiguration.Host == null)
             {
-                throw new ArgumentException(
-                    "The connectionConfiguration has a null HostConfiguration.", "connectionConfiguration");
+                throw new ArgumentException("The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
             }
-
-            Configuration = connectionConfiguration;
 
             connectionFactory = new ConnectionFactory
             {
-                HostName = connectionConfiguration.HostConfiguration.Host,
-                Port = connectionConfiguration.HostConfiguration.Port,
-                VirtualHost = Configuration.VirtualHost,
-                UserName = Configuration.UserName,
-                Password = Configuration.Password,
-                RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                ClientProperties = Configuration.ClientProperties
+                HostName = connectionConfiguration.Host,
+                Port = connectionConfiguration.Port,
+                VirtualHost = connectionConfiguration.VirtualHost,
+                UserName = connectionConfiguration.UserName,
+                Password = connectionConfiguration.Password,
+                RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = connectionConfiguration.RetryDelay
             };
+
+            connectionFactory.ClientProperties.Clear();
+
+            foreach (var item in connectionConfiguration.ClientProperties)
+            {
+                connectionFactory.ClientProperties.Add(item.Key, item.Value);
+            }
+
+            if (scheduler != null)
+            {
+                connectionFactory.TaskScheduler = scheduler;
+            }
         }
 
-        public virtual IConnection CreateConnection(string purpose)
+        public IConnection CreateConnection(string purpose)
         {
             connectionFactory.ClientProperties["purpose"] = purpose;
+            connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
+
             return connectionFactory.CreateConnection();
         }
-
-        readonly ConnectionFactory connectionFactory;
     }
 }

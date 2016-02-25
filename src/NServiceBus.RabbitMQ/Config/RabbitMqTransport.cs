@@ -1,33 +1,24 @@
 ﻿namespace NServiceBus
 {
-    using Configuration.AdvanceExtensibility;
-    using Features;
-    using Transports;
+    using NServiceBus.Settings;
+    using NServiceBus.Transports;
 
     /// <summary>
-    /// Transport definition for RabbirtMQ
+    /// Transport definition for RabbitMQ
     /// </summary>
     public class RabbitMQTransport : TransportDefinition
     {
         /// <summary>
-        /// Ctor
+        /// Initializes all the factories and supported features for the transport.
         /// </summary>
-        public RabbitMQTransport()
-        {
-            HasNativePubSubSupport = true;
-            HasSupportForCentralizedPubSub = true;
-            HasSupportForDistributedTransactions = false;
-        }
+        /// <param name="settings">An instance of the current settings.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>The supported factories.</returns>
+        protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString) => new RabbitMQTransportInfrastructure(settings, connectionString);
 
         /// <summary>
-        /// Gives implementations access to the <see cref="T:NServiceBus.BusConfiguration"/> instance at configuration time.
+        /// Gets an example connection string to use when reporting lack of configured connection string to the user.
         /// </summary>
-        protected override void Configure(BusConfiguration config)
-        {
-            config.EnableFeature<RabbitMqTransportFeature>();
-            config.EnableFeature<TimeoutManagerBasedDeferral>();
-
-            config.GetSettings().EnableFeatureByDefault<TimeoutManager>();
-        }
+        public override string ExampleConnectionStringForErrorMessage => "host=localhost";
     }
 }
