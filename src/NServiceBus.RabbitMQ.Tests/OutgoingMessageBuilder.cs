@@ -20,7 +20,7 @@
 
             var transportOperations = new List<TransportOperation>();
 
-            for (int i = 0; i < copies; i++)
+            for (var i = 0; i < copies; i++)
             {
                 if (eventType != null)
                 {

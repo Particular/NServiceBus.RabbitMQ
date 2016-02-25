@@ -46,7 +46,7 @@
             class Starter : IWantToRunWhenBusStartsAndStops
             {
                 readonly IDispatchMessages dispatchMessages;
-                private readonly ReadOnlySettings settings;
+                readonly ReadOnlySettings settings;
 
                 public Starter(IDispatchMessages dispatchMessages, ReadOnlySettings settings)
                 {
@@ -79,7 +79,7 @@
 
             class MyEventHandler : IHandleMessages<MyRequest>
             {
-                private readonly MyContext myContext;
+                readonly MyContext myContext;
 
                 public MyEventHandler(MyContext myContext)
                 {

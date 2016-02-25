@@ -12,9 +12,9 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using RabbitMQ.Client;
 
-internal class ConfigureRabbitMQTransport : IConfigureTestExecution
+class ConfigureRabbitMQTransport : IConfigureTestExecution
 {
-    private string connectionString;
+    string connectionString;
 
     public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferralAndWithAtomicSendAndReceive) };
 
@@ -28,7 +28,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
 
     public Task Cleanup() => PurgeQueues();
 
-    private async Task PurgeQueues()
+    async Task PurgeQueues()
     {
         var connectionFactory = CreateConnectionFactory(connectionString);
 
@@ -51,7 +51,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
         }
     }
 
-    private ConnectionFactory CreateConnectionFactory(string connectionString)
+    ConnectionFactory CreateConnectionFactory(string connectionString)
     {
         var match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", "host"), RegexOptions.IgnoreCase);
 
@@ -75,7 +75,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
     }
 
     // Requires that the RabbitMQ Management API has been enabled: https://www.rabbitmq.com/management.html
-    private async Task<IEnumerable<Queue>> GetQueues(ConnectionFactory connectionFactory)
+    async Task<IEnumerable<Queue>> GetQueues(ConnectionFactory connectionFactory)
     {
         var httpClient = CreateHttpClient(connectionFactory);
 
@@ -87,7 +87,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
         return JsonConvert.DeserializeObject<List<Queue>>(content);
     }
 
-    private HttpClient CreateHttpClient(ConnectionFactory details)
+    HttpClient CreateHttpClient(ConnectionFactory details)
     {
         var handler = new HttpClientHandler
         {
@@ -104,7 +104,7 @@ internal class ConfigureRabbitMQTransport : IConfigureTestExecution
         return httpClient;
     }
 
-    private class Queue
+    class Queue
     {
         public string Name { get; set; }
     }

@@ -2,16 +2,12 @@
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using Config;
-    using global::RabbitMQ.Client;
-    using NServiceBus.Support;
+    using NServiceBus.Settings;
+    using NServiceBus.Transports.RabbitMQ.Config;
     using NServiceBus.Transports.RabbitMQ.Connection;
+    using NServiceBus.Transports.RabbitMQ.Routing;
     using NUnit.Framework;
-    using ObjectBuilder.Common;
-    using Routing;
-    using Settings;
 
     class RabbitMqContext
     {

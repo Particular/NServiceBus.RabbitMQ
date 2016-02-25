@@ -29,7 +29,7 @@
 
             class MyEventHandler : IHandleMessages<MyRequest>
             {
-                private readonly MyContext myContext;
+                readonly MyContext myContext;
 
                 public MyEventHandler(MyContext myContext)
                 {

@@ -7,9 +7,9 @@
 
     class RabbitMqSubscriptionManager : IManageSubscriptions
     {
-        private readonly IManageRabbitMqConnections connectionManager;
-        private readonly IRoutingTopology routingTopology;
-        private readonly string localQueue;
+        readonly IManageRabbitMqConnections connectionManager;
+        readonly IRoutingTopology routingTopology;
+        readonly string localQueue;
 
         public RabbitMqSubscriptionManager(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, string localQueue)
         {

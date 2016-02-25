@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
-    using System.Collections.Concurrent;
     using System.Threading.Tasks;
     using NUnit.Framework;
 

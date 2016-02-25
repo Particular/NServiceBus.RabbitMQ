@@ -4,7 +4,7 @@ namespace NServiceBus.RabbitMQ.AcceptanceTests
 
     public static class IBusContextExtensions
     {
-        private static Task done = Task.FromResult(0);
+        static Task done = Task.FromResult(0);
 
         public static Task Completed(this IMessageProcessingContext context)
         {
