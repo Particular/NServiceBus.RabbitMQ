@@ -26,7 +26,7 @@
                 routingTopology.SetupSubscription(channel, eventType, localQueue);
             }
 
-            return TaskEx.Completed;
+            return TaskEx.CompletedTask;
         }
 
         public Task Unsubscribe(Type eventType, ContextBag context)
@@ -37,7 +37,7 @@
                 routingTopology.TeardownSubscription(channel, eventType, localQueue);
             }
 
-            return TaskEx.Completed;
+            return TaskEx.CompletedTask;
         }
     }
 }

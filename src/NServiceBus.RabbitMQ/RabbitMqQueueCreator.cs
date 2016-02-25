@@ -28,7 +28,7 @@
                 CreateQueueIfNecessary(sendingAddress);
             }
 
-            return TaskEx.Completed;
+            return TaskEx.CompletedTask;
         }
 
         void CreateQueueIfNecessary(string receivingAddress)

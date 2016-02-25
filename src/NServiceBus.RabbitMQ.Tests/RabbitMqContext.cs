@@ -75,9 +75,9 @@
             messagePump.Init(pushContext =>
             {
                 receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
-                return TaskEx.Completed;
+                return TaskEx.CompletedTask;
             },
-                new CriticalError(_ => TaskEx.Completed),
+                new CriticalError(_ => TaskEx.CompletedTask),
                 new PushSettings(ReceiverQueue, "error", true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
 

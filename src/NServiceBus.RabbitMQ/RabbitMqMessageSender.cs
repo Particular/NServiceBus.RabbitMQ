@@ -31,7 +31,7 @@
                 }
             }
 
-            return TaskEx.Completed;
+            return TaskEx.CompletedTask;
         }
 
         void SendMessage(UnicastTransportOperation transportOperation, IModel channel)
