@@ -30,7 +30,7 @@ class ConfigureRabbitMQTransport : IConfigureTestExecution
 
     async Task PurgeQueues()
     {
-        var connectionFactory = CreateConnectionFactory(connectionString);
+        var connectionFactory = CreateConnectionFactory();
 
         var queues = await GetQueues(connectionFactory);
 
@@ -51,7 +51,7 @@ class ConfigureRabbitMQTransport : IConfigureTestExecution
         }
     }
 
-    ConnectionFactory CreateConnectionFactory(string connectionString)
+    ConnectionFactory CreateConnectionFactory()
     {
         var match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", "host"), RegexOptions.IgnoreCase);
 
