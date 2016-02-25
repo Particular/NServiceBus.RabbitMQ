@@ -168,8 +168,9 @@
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var provider = new ChannelProvider(connectionManager, false, connectionConfiguration.MaxWaitTimeForConfirms);
+            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
             var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
+
             var queuePurger = new QueuePurger(connectionManager);
 
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
