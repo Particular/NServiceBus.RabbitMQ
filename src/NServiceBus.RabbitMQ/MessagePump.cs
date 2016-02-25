@@ -23,7 +23,7 @@
         readonly string consumerTag;
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
-        readonly TimeSpan timeToWaitBeforeTriggering;
+        readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
 
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         Func<PushContext, Task> pipe;
@@ -35,14 +35,14 @@
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionConfiguration connectionConfiguration, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggering)
+        public MessagePump(ConnectionConfiguration connectionConfiguration, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
         {
             this.connectionConfiguration = connectionConfiguration;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.poisonMessageForwarder = poisonMessageForwarder;
             this.queuePurger = queuePurger;
-            this.timeToWaitBeforeTriggering = timeToWaitBeforeTriggering;
+            this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
         }
 
         public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
@@ -51,7 +51,7 @@
             this.settings = settings;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'",
-                timeToWaitBeforeTriggering,
+                timeToWaitBeforeTriggeringCircuitBreaker,
                 ex => criticalError.Raise($"{settings.InputQueue} MessagePump's connection to the broker has failed.", ex));
 
             if (settings.PurgeOnStartup)

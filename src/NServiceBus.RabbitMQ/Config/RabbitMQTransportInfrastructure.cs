@@ -172,13 +172,13 @@
             var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
             var queuePurger = new QueuePurger(connectionManager);
 
-            TimeSpan timeToWaitBeforeTriggering;
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggering))
+            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
+            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggeringCircuitBreaker))
             {
-                timeToWaitBeforeTriggering = TimeSpan.FromMinutes(2);
+                timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionConfiguration, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggering);
+            return new MessagePump(connectionConfiguration, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
         }
     }
 }
