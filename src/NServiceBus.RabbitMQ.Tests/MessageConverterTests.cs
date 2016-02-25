@@ -9,27 +9,32 @@
     using global::RabbitMQ.Client.Events;
 
     [TestFixture]
-    class RabbitMqTransportMessageExtensionsTests
+    class MessageConverterTests
     {
         MessageConverter converter = new MessageConverter();
+
         [Test]
         public void TestCanHandleNoInterestingProperties()
         {
-            var rabbitDetails = new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
                     MessageId = "Blah"
                 }
             };
-            Assert.IsNotNull(converter.RetrieveMessageId(rabbitDetails));
-            Assert.IsNotNull(converter.RetrieveHeaders(rabbitDetails));
+
+            var messageId = converter.RetrieveMessageId(message);
+            var headers = converter.RetrieveHeaders(message);
+
+            Assert.IsNotNull(messageId);
+            Assert.IsNotNull(headers);
         }
 
         [Test]
         public void TestCanHandleByteArrayHeader()
         {
-            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -41,16 +46,16 @@
                 }
             };
 
-            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
-            //var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
-            //Assert.NotNull(transportMessage);
+            var headers = converter.RetrieveHeaders(message);
+
+            Assert.NotNull(headers);
             Assert.AreEqual("blah", headers["Foo"]);
         }
 
         [Test]
         public void Should_set_replyto_header_if_present_in_native_message_and_not_already_set()
         {
-            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -58,7 +63,9 @@
                     MessageId = "Blah"
                 }
             };
-            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+
+            var headers = converter.RetrieveHeaders(message);
+
             Assert.NotNull(headers);
             Assert.AreEqual("myaddress", headers[Headers.ReplyToAddress]);
         }
@@ -66,7 +73,7 @@
         [Test]
         public void Should_not_override_replyto_header_if_native_replyto_is_present()
         {
-            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -78,17 +85,17 @@
                     }
                 }
             };
-            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+
+            var headers = converter.RetrieveHeaders(message);
+
             Assert.NotNull(headers);
             Assert.AreEqual("nsb set address", headers[Headers.ReplyToAddress]);
         }
 
-
-
         [Test]
         public void TestCanHandleStringHeader()
         {
-            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -99,7 +106,9 @@
                     }
                 }
             };
-            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+
+            var headers = converter.RetrieveHeaders(message);
+
             Assert.NotNull(headers);
             Assert.AreEqual("ni", headers["Foo"]);
         }
@@ -107,7 +116,7 @@
         [Test]
         public void TestCanHandleStringArrayListsHeader()
         {
-            var headers = converter.RetrieveHeaders(new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -117,7 +126,10 @@
                     {"Foo", new ArrayList{"Bing"}}
                 }
                 }
-            });
+            };
+
+            var headers = converter.RetrieveHeaders(message);
+
             Assert.NotNull(headers);
             Assert.AreEqual("Bing", headers["Foo"]);
         }
@@ -125,7 +137,7 @@
         [Test]
         public void TestCanHandleStringObjectListHeader()
         {
-            var basicDeliverEventArgs = new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -136,14 +148,17 @@
                     }
                 }
             };
-            var headers = converter.RetrieveHeaders(basicDeliverEventArgs);
+
+            var headers = converter.RetrieveHeaders(message);
+
             Assert.NotNull(headers);
             Assert.AreEqual("Bing", headers["Foo"]);
         }
+
         [Test]
         public void TestCanHandleTablesListHeader()
         {
-            var headers = converter.RetrieveHeaders(new BasicDeliverEventArgs
+            var message = new BasicDeliverEventArgs
             {
                 BasicProperties = new BasicProperties
                 {
@@ -153,7 +168,10 @@
                     {"Foo", new List<object>{new Dictionary<string, object>{{"key1", Encoding.UTF8.GetBytes("value1")}, {"key2", Encoding.UTF8.GetBytes("value2")}}}}
                 }
                 }
-            });
+            };
+
+            var headers = converter.RetrieveHeaders(message);
+
             Assert.NotNull(headers);
             Assert.AreEqual("key1=value1,key2=value2", Convert.ToString(headers["Foo"]));
         }

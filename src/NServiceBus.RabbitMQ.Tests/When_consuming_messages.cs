@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
     using NUnit.Framework;
@@ -11,27 +12,18 @@
     [TestFixture]
     class When_consuming_messages : RabbitMqContext
     {
-        [SetUp]
-        public new void SetUp()
-        {
-            MakeSureQueueAndExchangeExists(ReceiverQueue);
-        }
-
         [Test]
-        public void Should_block_until_a_message_is_available()
+        public async Task Should_block_until_a_message_is_available()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-
             var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue)));
 
-            messageSender.Dispatch(transportOperations, new ContextBag());
+            await messageSender.Dispatch(transportOperations, new ContextBag());
 
             var received = WaitForMessage();
 
-
             Assert.AreEqual(message.MessageId, received.MessageId);
         }
-
 
         [Test]
         public void Should_be_able_to_receive_messages_without_headers()
@@ -49,7 +41,6 @@
 
             var received = WaitForMessage();
 
-
             Assert.AreEqual(message.MessageId, received.MessageId);
         }
 
@@ -57,7 +48,6 @@
         public void Should_be_able_to_receive_a_blank_message()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-
 
             using (var channel = connectionManager.GetPublishConnection().CreateModel())
             {
@@ -70,10 +60,8 @@
 
             var received = WaitForMessage();
 
-
             Assert.NotNull(received.MessageId, "The message id should be defaulted to a new guid if not set");
         }
-
 
         [Test]
         public void Should_up_convert_the_native_type_to_the_enclosed_message_types_header_if_empty()

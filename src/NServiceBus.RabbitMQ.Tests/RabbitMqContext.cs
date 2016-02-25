@@ -92,8 +92,6 @@
             connectionManager?.Dispose();
         }
 
-        protected virtual string ExchangeNameConvention() => "amq.topic";
-
         protected IncomingMessage WaitForMessage()
         {
             var waitTime = TimeSpan.FromSeconds(1);

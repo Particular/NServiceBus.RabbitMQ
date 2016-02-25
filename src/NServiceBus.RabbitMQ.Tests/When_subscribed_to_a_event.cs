@@ -1,156 +1,148 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Tests
 {
+    using System.Threading.Tasks;
     using NServiceBus.Extensibility;
     using NUnit.Framework;
 
     [TestFixture]
     class When_subscribed_to_a_event : RabbitMqContext
     {
-
         [Test]
-        public void Should_receive_published_events_of_that_type()
+        public async Task Should_receive_published_events_of_that_type()
         {
-            Subscribe<MyEvent>();
+            await Subscribe<MyEvent>();
 
-            Publish<MyEvent>();
+            await Publish<MyEvent>();
 
             AssertReceived<MyEvent>();
         }
 
-
         [Test]
-        public void Should_receive_the_event_if_subscribed_to_the_base_class()
+        public async Task Should_receive_the_event_if_subscribed_to_the_base_class()
         {
-            Subscribe<EventBase>();
+            await Subscribe<EventBase>();
 
-            Publish<SubEvent1>();
-            Publish<SubEvent2>();
+            await Publish<SubEvent1>();
+            await Publish<SubEvent2>();
 
             AssertReceived<SubEvent1>();
             AssertReceived<SubEvent2>();
         }
 
-
         [Test]
-        public void Should_not_receive_the_event_if_subscribed_to_the_specific_class()
+        public async Task Should_not_receive_the_event_if_subscribed_to_the_specific_class()
         {
-            Subscribe<SubEvent1>();
+            await Subscribe<SubEvent1>();
 
-            Publish<EventBase>();
+            await Publish<EventBase>();
+
             AssertNoEventReceived();
         }
 
-
-
         [Test]
-        public void Should_receive_the_event_if_subscribed_to_the_base_interface()
+        public async Task Should_receive_the_event_if_subscribed_to_the_base_interface()
         {
-            Subscribe<IMyEvent>();
+            await Subscribe<IMyEvent>();
 
-            Publish<MyEvent1>();
-            Publish<MyEvent2>();
+            await Publish<MyEvent1>();
+            await Publish<MyEvent2>();
 
             AssertReceived<MyEvent1>();
             AssertReceived<MyEvent2>();
         }
 
         [Test]
-        public void Should_not_receive_the_event_if_subscribed_to_specific_interface()
+        public async Task Should_not_receive_the_event_if_subscribed_to_specific_interface()
         {
-            Subscribe<MyEvent1>();
+            await Subscribe<MyEvent1>();
 
-            Publish<IMyEvent>();
+            await Publish<IMyEvent>();
+
             AssertNoEventReceived();
         }
 
-
         [Test]
-        public void Should_not_receive_events_of_other_types()
+        public async Task Should_not_receive_events_of_other_types()
         {
-            Subscribe<MyEvent>();
+            await Subscribe<MyEvent>();
 
             //publish a event that that this publisher isn't subscribed to
-            Publish<MyOtherEvent>();
-            Publish<MyEvent>();
+            await Publish<MyOtherEvent>();
+            await Publish<MyEvent>();
 
             AssertReceived<MyEvent>();
         }
 
         [Test]
-        public void Subscribing_to_IEvent_should_subscribe_to_all_published_messages()
+        public async Task Subscribing_to_IEvent_should_subscribe_to_all_published_messages()
         {
-            Subscribe<IEvent>();
+            await Subscribe<IEvent>();
 
-            Publish<MyOtherEvent>();
-            Publish<MyEvent>();
+            await Publish<MyOtherEvent>();
+            await Publish<MyEvent>();
 
             AssertReceived<MyOtherEvent>();
             AssertReceived<MyEvent>();
         }
 
         [Test]
-        public void Subscribing_to_Object_should_subscribe_to_all_published_messages()
+        public async Task Subscribing_to_Object_should_subscribe_to_all_published_messages()
         {
-            Subscribe<object>();
+            await Subscribe<object>();
 
-            Publish<MyOtherEvent>();
-            Publish<MyEvent>();
+            await Publish<MyOtherEvent>();
+            await Publish<MyEvent>();
 
             AssertReceived<MyOtherEvent>();
             AssertReceived<MyEvent>();
         }
 
         [Test]
-        public void Subscribing_to_a_class_implementing_a_interface_should_only_give_the_concrete_class()
+        public async Task Subscribing_to_a_class_implementing_a_interface_should_only_give_the_concrete_class()
         {
-            Subscribe<CombinedClassAndInterface>();
+            await Subscribe<CombinedClassAndInterface>();
 
-            Publish<CombinedClassAndInterface>();
-            Publish<IMyEvent>();
+            await Publish<CombinedClassAndInterface>();
+            await Publish<IMyEvent>();
 
             AssertReceived<CombinedClassAndInterface>();
             AssertNoEventReceived();
         }
 
-
         [Test]
-        public void Subscribing_to_a_interface_that_is_implemented_be_a_class_should_give_the_event_if_the_class_is_published()
+        public async Task Subscribing_to_a_interface_that_is_implemented_be_a_class_should_give_the_event_if_the_class_is_published()
         {
-            Subscribe<IMyEvent>();
+            await Subscribe<IMyEvent>();
 
-            Publish<CombinedClassAndInterface>();
-            Publish<IMyEvent>();
+            await Publish<CombinedClassAndInterface>();
+            await Publish<IMyEvent>();
 
             AssertReceived<CombinedClassAndInterface>();
             AssertReceived<IMyEvent>();
         }
 
-
         [Test]
-        public void Should_not_receive_events_after_unsubscribing()
+        public async Task Should_not_receive_events_after_unsubscribing()
         {
-            Subscribe<MyEvent>();
+            await Subscribe<MyEvent>();
 
-            subscriptionManager.Unsubscribe(typeof(MyEvent), new ContextBag()); // , ExchangeNameConvention()
+            await subscriptionManager.Unsubscribe(typeof(MyEvent), new ContextBag());
 
             //publish a event that that this publisher isn't subscribed to
-            Publish<MyEvent>();
+            await Publish<MyEvent>();
 
             AssertNoEventReceived();
         }
 
-        void Subscribe<T>()
-        {
-            subscriptionManager.Subscribe(typeof(T), new ContextBag()); //, Address.Parse(ExchangeNameConvention())));
-        }
+        Task Subscribe<T>() => subscriptionManager.Subscribe(typeof(T), new ContextBag());
 
-        void Publish<T>()
+        Task Publish<T>()
         {
             var type = typeof(T);
-            messageSender.Dispatch(new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build()
-            , new ContextBag()).GetAwaiter().GetResult();
-        }
+            var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build();
 
+            return messageSender.Dispatch(message, new ContextBag());
+        }
 
         void AssertReceived<T>()
         {
@@ -170,14 +162,7 @@
 
             Assert.Null(receivedEvent);
         }
-
-        protected override string ExchangeNameConvention()
-        {
-            return "nservicebus.events";
-        }
-
     }
-
 
     public class MyOtherEvent
     {
@@ -202,7 +187,6 @@
 
     }
 
-
     public interface IMyEvent : IEvent
     {
 
@@ -218,11 +202,8 @@
 
     }
 
-
     public class CombinedClassAndInterface : IMyEvent
     {
 
     }
-
-
 }
