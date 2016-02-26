@@ -58,13 +58,13 @@
         public void Publish(IModel channel, Type type, TransportMessage message, IBasicProperties properties)
         {
             SetupTypeSubscriptions(channel, type);
-            channel.BasicPublish(ExchangeName(type), String.Empty, true, false, properties, message.Body);
+            channel.BasicPublish(ExchangeName(type), String.Empty, true, properties, message.Body);
         }
 
         public void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties)
         {
             var subscriberName = address.Queue;
-            channel.BasicPublish(subscriberName, String.Empty, true, false, properties, message.Body);
+            channel.BasicPublish(subscriberName, String.Empty, true, properties, message.Body);
         }
 
         public void Initialize(IModel channel, string mainQueue)
