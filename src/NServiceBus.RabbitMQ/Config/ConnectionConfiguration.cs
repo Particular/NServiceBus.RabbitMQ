@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using System.Reflection;
     using NServiceBus.Settings;
     using NServiceBus.Support;
 
