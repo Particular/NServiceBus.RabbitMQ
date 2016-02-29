@@ -12,15 +12,18 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using RabbitMQ.Client;
 
-class ConfigureRabbitMQTransport : IConfigureTestExecution
+class ConfigureScenariosForRabbitMQTransport : IConfigureSupportedScenariosForTestExecution
+{
+    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferralAndWithAtomicSendAndReceive) };
+}
+
+class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     string connectionString;
 
-    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferralAndWithAtomicSendAndReceive) };
-
-    public Task Configure(EndpointConfiguration configuration, IDictionary<string, string> settings)
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
     {
-        connectionString = settings["Transport.ConnectionString"];
+        connectionString = settings.Get<string>("Transport.ConnectionString");
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
 
         return Task.FromResult(0);
