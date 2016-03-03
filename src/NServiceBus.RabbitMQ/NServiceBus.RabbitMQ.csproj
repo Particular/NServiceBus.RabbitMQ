@@ -95,7 +95,7 @@
     <Compile Include="PoisonMessageForwarder.cs" />
     <Compile Include="QueuePurger.cs" />
     <Compile Include="RabbitMqConnectionManager.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="RabbitMqMessageSender.cs" />
     <Compile Include="RabbitMqQueueCreator.cs" />
     <Compile Include="RabbitMqSubscriptionManager.cs" />
