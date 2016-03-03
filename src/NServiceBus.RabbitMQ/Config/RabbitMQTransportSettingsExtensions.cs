@@ -9,7 +9,7 @@
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object
     /// </summary>
-    public static partial class RabbitMqSettingsExtensions
+    public static partial class RabbitMQTransportSettingsExtensions
     {
         /// <summary>
         /// Use the direct routing topology with the given conventions

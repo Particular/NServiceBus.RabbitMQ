@@ -4,7 +4,7 @@ namespace NServiceBus
 {
     using System;
 
-    public static partial class RabbitMqSettingsExtensions
+    public static partial class RabbitMQTransportSettingsExtensions
     {
         [ObsoleteEx(Message = "Replaced by NServiceBus.Callbacks package", RemoveInVersion = "5.0", TreatAsErrorFromVersion = "4.0")]
         public static TransportExtensions<RabbitMQTransport> DisableCallbackReceiver(this TransportExtensions<RabbitMQTransport> transportExtensions)
