@@ -96,7 +96,7 @@
     <Compile Include="QueuePurger.cs" />
     <Compile Include="ConnectionManager.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="MessageSender.cs" />
+    <Compile Include="MessageDispatcher.cs" />
     <Compile Include="QueueCreator.cs" />
     <Compile Include="SubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />

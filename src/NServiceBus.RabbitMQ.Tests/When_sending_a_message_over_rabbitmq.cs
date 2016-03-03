@@ -101,7 +101,7 @@
 
             MakeSureQueueAndExchangeExists(queueToReceiveOn);
 
-            await messageSender.Dispatch(operations, new ContextBag());
+            await messageDispatcher.Dispatch(operations, new ContextBag());
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 

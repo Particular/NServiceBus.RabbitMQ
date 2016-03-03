@@ -18,7 +18,7 @@
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
             var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue)));
 
-            await messageSender.Dispatch(transportOperations, new ContextBag());
+            await messageDispatcher.Dispatch(transportOperations, new ContextBag());
 
             var received = WaitForMessage();
 

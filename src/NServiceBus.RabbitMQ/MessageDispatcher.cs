@@ -5,12 +5,12 @@
     using NServiceBus.Extensibility;
     using NServiceBus.Transports.RabbitMQ.Routing;
 
-    class MessageSender : IDispatchMessages
+    class MessageDispatcher : IDispatchMessages
     {
         readonly IChannelProvider channelProvider;
         readonly IRoutingTopology routingTopology;
 
-        public MessageSender(IRoutingTopology routingTopology, IChannelProvider channelProvider)
+        public MessageDispatcher(IRoutingTopology routingTopology, IChannelProvider channelProvider)
         {
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;

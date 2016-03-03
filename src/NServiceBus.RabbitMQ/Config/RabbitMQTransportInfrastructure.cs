@@ -82,7 +82,7 @@
             var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
 
             return new TransportSendInfrastructure(
-                () => new MessageSender(topology, provider),
+                () => new MessageDispatcher(topology, provider),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 

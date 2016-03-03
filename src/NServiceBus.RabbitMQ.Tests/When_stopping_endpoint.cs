@@ -12,7 +12,7 @@
             await messagePump.Stop();
 
             var operations = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build(10000);
-            await messageSender.Dispatch(operations, new Extensibility.ContextBag());
+            await messageDispatcher.Dispatch(operations, new Extensibility.ContextBag());
 
             messagePump.Start(new PushRuntimeSettings(50));
             await Task.Delay(500);
