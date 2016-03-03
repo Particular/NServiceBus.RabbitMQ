@@ -5,13 +5,13 @@
     using NServiceBus.Extensibility;
     using Routing;
 
-    class RabbitMqSubscriptionManager : IManageSubscriptions
+    class SubscriptionManager : IManageSubscriptions
     {
         readonly IManageRabbitMqConnections connectionManager;
         readonly IRoutingTopology routingTopology;
         readonly string localQueue;
 
-        public RabbitMqSubscriptionManager(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, string localQueue)
+        public SubscriptionManager(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, string localQueue)
         {
             this.connectionManager = connectionManager;
             this.routingTopology = routingTopology;

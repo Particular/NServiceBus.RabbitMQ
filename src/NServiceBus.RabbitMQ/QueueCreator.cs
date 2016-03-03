@@ -3,13 +3,13 @@
     using System.Threading.Tasks;
     using Routing;
 
-    class RabbitMqQueueCreator : ICreateQueues
+    class QueueCreator : ICreateQueues
     {
         readonly IManageRabbitMqConnections connections;
         readonly IRoutingTopology topology;
         readonly bool durableMessagesEnabled;
 
-        public RabbitMqQueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, bool durableMessagesEnabled)
+        public QueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, bool durableMessagesEnabled)
         {
             this.connections = connections;
             this.topology = topology;

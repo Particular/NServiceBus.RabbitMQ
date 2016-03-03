@@ -4,9 +4,9 @@
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Connection;
 
-    class RabbitMqConnectionManager : IManageRabbitMqConnections, IDisposable
+    class ConnectionManager : IManageRabbitMqConnections, IDisposable
     {
-        public RabbitMqConnectionManager(RabbitMqConnectionFactory connectionFactory)
+        public ConnectionManager(RabbitMqConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }

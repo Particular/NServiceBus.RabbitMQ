@@ -23,7 +23,7 @@
     {
         readonly SettingsHolder settings;
         readonly ConnectionConfiguration connectionConfiguration;
-        readonly RabbitMqConnectionManager connectionManager;
+        readonly ConnectionManager connectionManager;
         IRoutingTopology topology;
 
         /// <summary>
@@ -36,7 +36,7 @@
             this.settings = settings;
 
             connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
-            connectionManager = new RabbitMqConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration));
+            connectionManager = new ConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration));
 
             CreateTopology();
 
@@ -70,7 +70,7 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new RabbitMqQueueCreator(connectionManager, topology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionManager, topology, settings.DurableMessagesEnabled()),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
@@ -82,7 +82,7 @@
             var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
 
             return new TransportSendInfrastructure(
-                () => new RabbitMqMessageSender(topology, provider),
+                () => new MessageSender(topology, provider),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
@@ -91,7 +91,7 @@
         /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new RabbitMqSubscriptionManager(connectionManager, topology, settings.LocalAddress()));
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionManager, topology, settings.LocalAddress()));
         }
 
         /// <summary>

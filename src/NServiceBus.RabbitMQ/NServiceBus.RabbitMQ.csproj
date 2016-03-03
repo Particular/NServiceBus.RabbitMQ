@@ -94,11 +94,11 @@
     <Compile Include="obsoletes.cs" />
     <Compile Include="PoisonMessageForwarder.cs" />
     <Compile Include="QueuePurger.cs" />
-    <Compile Include="RabbitMqConnectionManager.cs" />
+    <Compile Include="ConnectionManager.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="RabbitMqMessageSender.cs" />
-    <Compile Include="RabbitMqQueueCreator.cs" />
-    <Compile Include="RabbitMqSubscriptionManager.cs" />
+    <Compile Include="MessageSender.cs" />
+    <Compile Include="QueueCreator.cs" />
+    <Compile Include="SubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />
     <Compile Include="RabbitMqTransportMessageExtensions.cs" />
     <Compile Include="MessagePumpConnectionFailedCircuitBreaker.cs" />

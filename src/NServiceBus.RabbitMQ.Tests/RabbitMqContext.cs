@@ -58,10 +58,10 @@
             config.Host = "localhost";
 
             var connectionFactory = new RabbitMqConnectionFactory(config);
-            connectionManager = new RabbitMqConnectionManager(connectionFactory);
+            connectionManager = new ConnectionManager(connectionFactory);
             var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms, config.MaxWaitTimeForConfirms);
 
-            messageSender = new RabbitMqMessageSender(routingTopology, channelProvider);
+            messageSender = new MessageSender(routingTopology, channelProvider);
 
             var purger = new QueuePurger(connectionManager);
             var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
@@ -70,7 +70,7 @@
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
-            subscriptionManager = new RabbitMqSubscriptionManager(connectionManager, routingTopology, ReceiverQueue);
+            subscriptionManager = new SubscriptionManager(connectionManager, routingTopology, ReceiverQueue);
 
             messagePump.Init(pushContext =>
             {
@@ -108,12 +108,12 @@
         }
 
         protected const string ReceiverQueue = "testreceiver";
-        protected RabbitMqMessageSender messageSender;
-        protected RabbitMqConnectionManager connectionManager;
+        protected MessageSender messageSender;
+        protected ConnectionManager connectionManager;
         protected MessagePump messagePump;
         BlockingCollection<IncomingMessage> receivedMessages;
 
         protected ConventionalRoutingTopology routingTopology;
-        protected RabbitMqSubscriptionManager subscriptionManager;
+        protected SubscriptionManager subscriptionManager;
     }
 }
