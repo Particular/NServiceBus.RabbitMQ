@@ -39,7 +39,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
+            properties.Fill(message, transportOperation.DeliveryConstraints);
 
             routingTopology.Send(channel, transportOperation.Destination, message, properties);
         }
@@ -49,7 +49,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            RabbitMqTransportMessageExtensions.FillRabbitMqProperties(message, transportOperation.DeliveryConstraints, properties);
+            properties.Fill(message, transportOperation.DeliveryConstraints);
 
             routingTopology.Publish(channel, transportOperation.MessageType, message, properties);
         }

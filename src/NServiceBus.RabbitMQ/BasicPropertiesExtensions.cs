@@ -10,16 +10,9 @@
 
     using Headers = NServiceBus.Headers;
 
-    static class RabbitMqTransportMessageExtensions
+    static class BasicPropertiesExtensions
     {
-        static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
-        {
-            constraint = list.OfType<T>().FirstOrDefault();
-
-            return constraint != null;
-        }
-
-        public static void FillRabbitMqProperties(OutgoingMessage message, IEnumerable<DeliveryConstraint> deliveryConstraints, IBasicProperties properties)
+        public static void Fill(this IBasicProperties properties, OutgoingMessage message, IEnumerable<DeliveryConstraint> deliveryConstraints)
         {
             properties.MessageId = message.MessageId;
 
@@ -60,6 +53,13 @@
             {
                 properties.ReplyTo = message.Headers[Headers.ReplyToAddress];
             }
+        }
+
+        static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
+        {
+            constraint = list.OfType<T>().FirstOrDefault();
+
+            return constraint != null;
         }
     }
 }

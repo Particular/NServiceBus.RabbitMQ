@@ -98,7 +98,7 @@
     <Compile Include="QueueCreator.cs" />
     <Compile Include="SubscriptionManager.cs" />
     <Compile Include="MessageConverter.cs" />
-    <Compile Include="RabbitMqTransportMessageExtensions.cs" />
+    <Compile Include="BasicPropertiesExtensions.cs" />
     <Compile Include="MessagePumpConnectionFailedCircuitBreaker.cs" />
     <Compile Include="Routing\DirectRoutingTopology.cs" />
     <Compile Include="Routing\IRoutingTopology.cs" />
