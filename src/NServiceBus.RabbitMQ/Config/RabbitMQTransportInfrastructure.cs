@@ -19,7 +19,7 @@
     /// Transport infrastructure definitions.
     /// </summary>
     [SkipWeaving]
-    public class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
+    class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         readonly SettingsHolder settings;
         readonly ConnectionConfiguration connectionConfiguration;
