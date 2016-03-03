@@ -70,17 +70,17 @@
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
             connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
 
-            var model = connection.CreateModel();
-            model.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
+            var channel = connection.CreateModel();
+            channel.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
 
-            consumer = new EventingBasicConsumer(model);
+            consumer = new EventingBasicConsumer(channel);
 
             consumer.Registered += Consumer_Registered;
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             consumer.Received += Consumer_Received;
 
-            model.BasicConsume(settings.InputQueue, false, consumerTag, consumer);
+            channel.BasicConsume(settings.InputQueue, false, consumerTag, consumer);
         }
 
         public async Task Stop()

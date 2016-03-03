@@ -38,13 +38,13 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         var queues = await GetQueues(connectionFactory);
 
         using (var connection = connectionFactory.CreateConnection())
-        using (var model = connection.CreateModel())
+        using (var channel = connection.CreateModel())
         {
             foreach (var queue in queues)
             {
                 try
                 {
-                    model.QueuePurge(queue.Name);
+                    channel.QueuePurge(queue.Name);
                 }
                 catch (Exception ex)
                 {
