@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests.ScenarioDescriptors;
+using NServiceBus.RabbitMQ.AcceptanceTests;
 using RabbitMQ.Client;
 
 class ConfigureScenariosForRabbitMQTransport : IConfigureSupportedScenariosForTestExecution
@@ -26,7 +27,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         connectionString = settings.Get<string>("Transport.ConnectionString");
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
 
-        return Task.FromResult(0);
+        return TaskEx.CompletedTask;
     }
 
     public Task Cleanup() => PurgeQueues();
