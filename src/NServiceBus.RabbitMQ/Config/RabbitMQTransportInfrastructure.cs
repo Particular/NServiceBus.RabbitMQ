@@ -91,7 +91,7 @@
         /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new RabbitMqSubscriptionManager(connectionManager, topology, settings.EndpointName().ToString()));
+            return new TransportSubscriptionInfrastructure(() => new RabbitMqSubscriptionManager(connectionManager, topology, settings.LocalAddress()));
         }
 
         /// <summary>
