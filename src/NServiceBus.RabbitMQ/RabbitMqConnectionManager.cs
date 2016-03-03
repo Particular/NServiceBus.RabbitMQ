@@ -4,7 +4,7 @@
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Connection;
 
-    class RabbitMqConnectionManager : IDisposable, IManageRabbitMqConnections
+    class RabbitMqConnectionManager : IManageRabbitMqConnections, IDisposable
     {
         public RabbitMqConnectionManager(RabbitMqConnectionFactory connectionFactory)
         {
@@ -40,13 +40,7 @@
 
         public void Dispose()
         {
-            //Injected at compile time
-        }
-
-        public void DisposeManaged()
-        {
-            connectionConsume?.Dispose();
-            connectionPublish?.Dispose();
+            //Injected
         }
 
         readonly RabbitMqConnectionFactory connectionFactory;
