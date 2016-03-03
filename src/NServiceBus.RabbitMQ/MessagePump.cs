@@ -179,8 +179,10 @@
                     await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
+
                 await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
             }
         }
