@@ -15,9 +15,6 @@
     using NServiceBus.Transports.RabbitMQ.Routing;
     using RabbitMQ.Client.Events;
 
-    /// <summary>
-    /// Transport infrastructure definitions.
-    /// </summary>
     [SkipWeaving]
     class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
@@ -26,11 +23,6 @@
         readonly ConnectionManager connectionManager;
         IRoutingTopology topology;
 
-        /// <summary>
-        /// Creates an instance of the transport infrastructure.
-        /// </summary>
-        /// <param name="settings">An instance of the current settings.</param>
-        /// <param name="connectionString">The connection string.</param>
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
             this.settings = settings;
@@ -43,29 +35,14 @@
             RequireOutboxConsent = false;
         }
 
-        /// <summary>
-        /// Returns the list of supported delivery constraints for this transport.
-        /// </summary>
         public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery) };
 
-        /// <summary>
-        /// Returns the outbound routing policy selected for the transport.
-        /// </summary>
         public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
-        /// <summary>
-        /// Gets the highest supported transaction mode for the transport.
-        /// </summary>
         public override TransportTransactionMode TransactionMode => TransportTransactionMode.ReceiveOnly;
 
-        /// <summary>
-        /// Returns the discriminator for this endpoint instance.
-        /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance) => instance;
 
-        /// <summary>
-        /// Gets the factories to receive messages.
-        /// </summary>
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
             return new TransportReceiveInfrastructure(
@@ -74,9 +51,6 @@
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
-        /// <summary>
-        /// Gets the factories to send messages.
-        /// </summary>
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
@@ -86,19 +60,11 @@
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
-        /// <summary>
-        /// Gets the factory to manage subscriptions.
-        /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionManager, topology, settings.LocalAddress()));
         }
 
-        /// <summary>
-        /// Converts a given logical address to the transport address.
-        /// </summary>
-        /// <param name="logicalAddress">The logical address.</param>
-        /// <returns>The transport address.</returns>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint.ToString());
@@ -116,9 +82,6 @@
             return queue.ToString();
         }
 
-        /// <summary>
-        /// Disposes the connections managed by the infrastructure.
-        /// </summary>
         public void Dispose()
         {
             connectionManager.Dispose();
