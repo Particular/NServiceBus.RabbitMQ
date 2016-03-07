@@ -72,5 +72,23 @@
         {
             Assert.AreEqual(defaults.RetryDelay, TimeSpan.FromSeconds(10));
         }
+
+        [Test]
+        public void Should_set_default_use_tls()
+        {
+            Assert.AreEqual(defaults.UseTls, false);
+        }
+
+        [Test]
+        public void Should_set_default_cert_path()
+        {
+            Assert.AreEqual(defaults.CertPath, "");
+        }
+
+        [Test]
+        public void Should_set_default_retry_cert_passphrase()
+        {
+            Assert.AreEqual(defaults.CertPassphrase, null);
+        }
     }
 }

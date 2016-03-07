@@ -27,6 +27,12 @@
 
         public TimeSpan RetryDelay { get; set; }
 
+        public bool UseTls { get; set; }
+
+        public string CertPath { get; set; }
+
+        public string CertPassphrase { get; set; }
+
         public IDictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
 
         public ConnectionConfiguration(ReadOnlySettings settings)
@@ -40,6 +46,9 @@
             UsePublisherConfirms = true;
             MaxWaitTimeForConfirms = TimeSpan.FromSeconds(30);
             RetryDelay = TimeSpan.FromSeconds(10);
+            UseTls = false;
+            CertPath = "";
+            CertPassphrase = null;
 
             SetDefaultClientProperties(settings);
         }

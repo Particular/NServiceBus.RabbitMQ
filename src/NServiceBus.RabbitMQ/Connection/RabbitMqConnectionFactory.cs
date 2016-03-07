@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
+    using System.Security.Authentication;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
@@ -32,6 +33,12 @@
                 AutomaticRecoveryEnabled = true,
                 NetworkRecoveryInterval = connectionConfiguration.RetryDelay
             };
+
+            connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
+            connectionFactory.Ssl.CertPath = connectionConfiguration.CertPath;
+            connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
+            connectionFactory.Ssl.Version = SslProtocols.Tls12;
+            connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
 
             connectionFactory.ClientProperties.Clear();
 
