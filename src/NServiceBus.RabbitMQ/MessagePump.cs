@@ -130,7 +130,7 @@
                 task = ProcessMessage(eventArgs, consumer.Model);
                 inFlightMessages.TryAdd(task.Id, task);
 
-                await task.ConfigureAwait(false);
+                await task.ConfigureAwait(true);
             }
             finally
             {
@@ -165,25 +165,25 @@
                 if (pushMessage)
                 {
                     tokenSource = new CancellationTokenSource();
-                    await PushMessageToPipe(messageId, headers, tokenSource, new MemoryStream(message.Body ?? new byte[0])).ConfigureAwait(false);
+                    await PushMessageToPipe(messageId, headers, tokenSource, new MemoryStream(message.Body ?? new byte[0])).ConfigureAwait(true);
                 }
 
                 var cancellationRequested = tokenSource?.IsCancellationRequested ?? false;
 
                 if (cancellationRequested)
                 {
-                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
                 }
                 else
                 {
-                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
 
-                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
             }
         }
 
@@ -212,7 +212,7 @@
                 });
 
                 task.Start(taskScheduler.ExclusiveScheduler);
-                await task.ConfigureAwait(false);
+                await task.ConfigureAwait(true);
             }
             catch (AlreadyClosedException ex)
             {
@@ -237,7 +237,7 @@
                 });
 
                 task.Start(taskScheduler.ExclusiveScheduler);
-                await task.ConfigureAwait(false);
+                await task.ConfigureAwait(true);
 
             }
             catch (AlreadyClosedException ex)
