@@ -36,7 +36,7 @@
                                //for now until we can patch the serializer to infer the type based on the root node
                                properties.Headers = new Dictionary<string, object> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } };
 
-                               channel.BasicPublish(string.Empty, unicastBus.Configure.LocalAddress.Queue, true, false, properties, stream.ToArray());
+                               channel.BasicPublish(string.Empty, unicastBus.Configure.LocalAddress.Queue, true, properties, stream.ToArray());
                            }
 
                        }

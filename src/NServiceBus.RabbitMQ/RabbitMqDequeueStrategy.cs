@@ -12,7 +12,7 @@
 
 
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
-    {   
+    {
         public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, ReceiveOptions receiveOptions)
         {
             this.connectionManager = connectionManager;
@@ -26,7 +26,7 @@
             this.endProcessMessage = endProcessMessage;
             workQueue = address.Queue;
 
-            noAck = !transactionSettings.IsTransactional;
+            shouldAckBeforeProcessingMessage = !transactionSettings.IsTransactional;
 
             if (receiveOptions.PurgeOnStartup)
             {
@@ -46,7 +46,7 @@
             {
                 actualPrefetchCount = Convert.ToUInt16(maximumConcurrencyLevel);
 
-                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);                
+                Logger.InfoFormat("No prefetch count configured, defaulting to {0} (the configured concurrency level)", actualPrefetchCount);
             }
 
 
@@ -71,7 +71,7 @@
                     StartConsumer(secondaryReceiveSettings.ReceiveQueue);
                 }
 
-                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.ReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);                
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", secondaryReceiveSettings.ReceiveQueue, secondaryReceiveSettings.MaximumConcurrencyLevel);
             }
         }
 
@@ -85,7 +85,7 @@
             {
                 return;
             }
-            
+
             isStopping = true;
 
             if (tokenSource == null)
@@ -126,7 +126,7 @@
                 {
                     t.Exception.Handle(ex =>
                     {
-                        Logger.Error("Failed to receive messages from " + queue,t.Exception);
+                        Logger.Error("Failed to receive messages from " + queue, t.Exception);
                         circuitBreaker.Failure(ex);
                         return true;
                     });
@@ -156,7 +156,7 @@
 
                     var consumer = new QueueingBasicConsumer(channel);
 
-                    channel.BasicConsume(parameters.Queue, noAck,receiveOptions.ConsumerTag, consumer);
+                    channel.BasicConsume(parameters.Queue, false, receiveOptions.ConsumerTag, consumer);
 
                     circuitBreaker.Success();
 
@@ -168,6 +168,11 @@
                         if (message == null)
                         {
                             continue;
+                        }
+
+                        if (shouldAckBeforeProcessingMessage)
+                        {
+                            channel.BasicAck(message.DeliveryTag, false);
                         }
 
                         TransportMessage transportMessage = null;
@@ -193,7 +198,7 @@
                                 messageProcessedOk = tryProcessMessage(transportMessage);
                             }
 
-                            if (!noAck)
+                            if (!shouldAckBeforeProcessingMessage)
                             {
                                 if (messageProcessedOk)
                                 {
@@ -209,7 +214,7 @@
                         {
                             exception = ex;
 
-                            if (!noAck)
+                            if (!shouldAckBeforeProcessingMessage)
                             {
                                 channel.BasicReject(message.DeliveryTag, true);
                             }
@@ -277,7 +282,7 @@
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
 
-        bool noAck;
+        bool shouldAckBeforeProcessingMessage;
         SemaphoreSlim tracksRunningThreads;
         Action<TransportMessage, Exception> endProcessMessage;
         CancellationTokenSource tokenSource;

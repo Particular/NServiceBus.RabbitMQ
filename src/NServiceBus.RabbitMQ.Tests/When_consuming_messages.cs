@@ -22,7 +22,7 @@
 
             var message = new TransportMessage();
 
-            sender.Send(message,new SendOptions(address));
+            sender.Send(message, new SendOptions(address));
 
 
             var received = WaitForMessage();
@@ -46,7 +46,7 @@
 
                 properties.MessageId = message.Id;
 
-                channel.BasicPublish(string.Empty, address.Queue, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, address.Queue, true, properties, message.Body);
             }
 
             var received = WaitForMessage();
@@ -69,13 +69,13 @@
 
                 properties.MessageId = message.Id;
 
-                channel.BasicPublish(string.Empty, address.Queue, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, address.Queue, true, properties, message.Body);
             }
 
             var received = WaitForMessage();
 
 
-            Assert.NotNull(received.Id,"The message id should be defaulted to a new guid if not set");
+            Assert.NotNull(received.Id, "The message id should be defaulted to a new guid if not set");
         }
 
 
@@ -92,10 +92,10 @@
             {
                 var properties = channel.CreateBasicProperties();
 
-                properties.MessageId = message.Id; 
+                properties.MessageId = message.Id;
                 properties.Type = typeName;
 
-                channel.BasicPublish(string.Empty, address.Queue, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, address.Queue, true, properties, message.Body);
             }
 
             var received = WaitForMessage();
@@ -117,7 +117,7 @@
 
                 properties.MessageId = message.Id;
 
-                channel.BasicPublish(string.Empty, address.Queue+"."+RuntimeEnvironment.MachineName, true, false, properties, message.Body);
+                channel.BasicPublish(string.Empty, address.Queue + "." + RuntimeEnvironment.MachineName, true, properties, message.Body);
             }
 
 

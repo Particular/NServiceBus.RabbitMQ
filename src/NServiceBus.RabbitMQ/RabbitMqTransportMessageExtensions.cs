@@ -21,21 +21,21 @@
                 properties.Expiration = message.TimeToBeReceived.TotalMilliseconds.ToString();
             }
 
-            properties.SetPersistent(message.Recoverable);
+            properties.Persistent = message.Recoverable;
 
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
-            if (message.Headers.ContainsKey(Headers.EnclosedMessageTypes))
+            if (message.Headers.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
             {
-                properties.Type = message.Headers[Headers.EnclosedMessageTypes].Split(new[]
+                properties.Type = message.Headers[NServiceBus.Headers.EnclosedMessageTypes].Split(new[]
                 {
                     ','
                 }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             }
 
-            if (message.Headers.ContainsKey(Headers.ContentType))
+            if (message.Headers.ContainsKey(NServiceBus.Headers.ContentType))
             {
-                properties.ContentType = message.Headers[Headers.ContentType];
+                properties.ContentType = message.Headers[NServiceBus.Headers.ContentType];
             }
             else
             {

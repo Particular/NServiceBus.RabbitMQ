@@ -2,7 +2,6 @@ namespace NServiceBus.Transports.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
-    using System.Net;
     using System.Threading;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -291,8 +290,6 @@ namespace NServiceBus.Transports.RabbitMQ
         readonly string purpose;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof (RabbitMqConnectionManager));
-        public EndPoint LocalEndPoint { get { return connection.LocalEndPoint; }}
-        public EndPoint RemoteEndPoint { get { return connection.RemoteEndPoint; } }
         public int LocalPort { get { return connection.LocalPort; } }
         public int RemotePort { get { return connection.RemotePort; } }
     }

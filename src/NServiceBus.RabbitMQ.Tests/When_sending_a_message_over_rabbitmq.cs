@@ -24,7 +24,7 @@
         [Test]
         public void Should_set_the_content_type()
         {
-            VerifyRabbit(new TransportMessageBuilder().WithHeader(Headers.ContentType, "application/json"),
+            VerifyRabbit(new TransportMessageBuilder().WithHeader(NServiceBus.Headers.ContentType, "application/json"),
                 received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
 
         }
@@ -45,7 +45,7 @@
         {
             var messageType = typeof (MyMessage);
 
-            VerifyRabbit(new TransportMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
+            VerifyRabbit(new TransportMessageBuilder().WithHeader(NServiceBus.Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName),
                 received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
 
         }
