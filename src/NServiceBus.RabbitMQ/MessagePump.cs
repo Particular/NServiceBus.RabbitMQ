@@ -25,9 +25,9 @@
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
 
-        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         Func<PushContext, Task> pipe;
         PushSettings settings;
+        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
         ConcurrentDictionary<int, Task> inFlightMessages;
         ConcurrentExclusiveSchedulerPair taskScheduler;
