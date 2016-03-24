@@ -57,7 +57,7 @@
             var config = new ConnectionConfiguration(settings);
             config.Host = "localhost";
 
-            var connectionFactory = new RabbitMqConnectionFactory(config);
+            connectionFactory = new RabbitMqConnectionFactory(config);
             connectionManager = new ConnectionManager(connectionFactory);
             var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms, config.MaxWaitTimeForConfirms);
 
@@ -109,6 +109,7 @@
 
         protected const string ReceiverQueue = "testreceiver";
         protected MessageDispatcher messageDispatcher;
+        protected RabbitMqConnectionFactory connectionFactory;
         protected ConnectionManager connectionManager;
         protected MessagePump messagePump;
         BlockingCollection<IncomingMessage> receivedMessages;
