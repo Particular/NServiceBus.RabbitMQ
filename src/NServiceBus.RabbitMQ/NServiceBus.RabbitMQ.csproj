@@ -58,8 +58,8 @@
       <HintPath>..\packages\NServiceBus.6.0.0-unstable1616\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Obsolete, Version=4.0.4.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obsolete.Fody.4.0.4\lib\dotnet\Obsolete.dll</HintPath>
+    <Reference Include="Obsolete, Version=4.0.5.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obsolete.Fody.4.0.5\lib\dotnet\Obsolete.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RabbitMQ.Client, Version=3.6.1.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
