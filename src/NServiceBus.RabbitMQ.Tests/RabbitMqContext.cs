@@ -54,8 +54,20 @@
             var settings = new SettingsHolder();
             settings.Set<NServiceBus.Routing.EndpointName>(new NServiceBus.Routing.EndpointName(ReceiverQueue));
 
-            var config = new ConnectionConfiguration(settings);
-            config.Host = "localhost";
+            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
+
+            ConnectionConfiguration config;
+
+            if (connectionString != null)
+            {
+                var parser = new ConnectionStringParser(settings);
+                config = parser.Parse(connectionString);
+            }
+            else
+            {
+                config = new ConnectionConfiguration(settings);
+                config.Host = "localhost";
+            }
 
             connectionFactory = new RabbitMqConnectionFactory(config);
             connectionManager = new ConnectionManager(connectionFactory);
