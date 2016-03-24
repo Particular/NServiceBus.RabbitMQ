@@ -122,23 +122,13 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            Task task = null;
+            var task = ProcessMessage(eventArgs, consumer.Model);
 
-            try
-            {
-                var consumer = (EventingBasicConsumer)sender;
-                task = ProcessMessage(eventArgs, consumer.Model);
-                inFlightMessages.TryAdd(task.Id, task);
+            inFlightMessages.TryAdd(task.Id, task);
 
-                await task.ConfigureAwait(true);
-            }
-            finally
-            {
-                if (task != null)
-                {
-                    inFlightMessages.TryRemove(task.Id, out task);
-                }
-            }
+            await task.ConfigureAwait(true);
+
+            inFlightMessages.TryRemove(task.Id, out task);
         }
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
