@@ -13,7 +13,7 @@
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {
-            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
@@ -28,7 +28,7 @@
 
         void DeleteExchange(string exchangeName)
         {
-            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 try

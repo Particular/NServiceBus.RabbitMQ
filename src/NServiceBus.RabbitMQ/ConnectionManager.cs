@@ -13,25 +13,14 @@
 
         public IConnection GetPublishConnection()
         {
-            //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
                 return connectionPublish ?? (connectionPublish = connectionFactory.CreateConnection("Publish"));
             }
         }
 
-        public IConnection GetConsumeConnection()
+        public IConnection CreateAdministrationConnection()
         {
-            //note: The purpose is there so that we/users can add more advanced connection managers in the future
-            lock (connectionFactory)
-            {
-                return connectionConsume ?? (connectionConsume = connectionFactory.CreateConnection("Consume"));
-            }
-        }
-
-        public IConnection GetAdministrationConnection()
-        {
-            //note: The purpose is there so that we/users can add more advanced connection managers in the future
             lock (connectionFactory)
             {
                 return connectionFactory.CreateConnection("Administration");
@@ -44,7 +33,6 @@
         }
 
         readonly RabbitMqConnectionFactory connectionFactory;
-        IConnection connectionConsume;
         IConnection connectionPublish;
     }
 }

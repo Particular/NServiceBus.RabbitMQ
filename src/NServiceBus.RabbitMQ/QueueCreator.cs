@@ -33,7 +33,7 @@
 
         void CreateQueueIfNecessary(string receivingAddress)
         {
-            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);

@@ -11,7 +11,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
         public void Purge(string queue)
         {
-            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var connection = connectionManager.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueuePurge(queue);
