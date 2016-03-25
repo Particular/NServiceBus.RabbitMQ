@@ -4,7 +4,7 @@ namespace NServiceBus.Transports.RabbitMQ
 
     class ChannelProvider : IChannelProvider
     {
-        public ChannelProvider(IManageRabbitMqConnections connectionManager, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
+        public ChannelProvider(ConnectionManager connectionManager, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
         {
             this.connectionManager = connectionManager;
             this.usePublisherConfirms = usePublisherConfirms;
@@ -16,7 +16,7 @@ namespace NServiceBus.Transports.RabbitMQ
             return new ConfirmsAwareChannel(connectionManager.GetPublishConnection(), usePublisherConfirms, maxWaitTimeForConfirms);
         }
 
-        IManageRabbitMqConnections connectionManager;
+        ConnectionManager connectionManager;
         bool usePublisherConfirms;
         TimeSpan maxWaitTimeForConfirms;
     }

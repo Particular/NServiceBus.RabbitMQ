@@ -7,11 +7,11 @@
 
     class SubscriptionManager : IManageSubscriptions
     {
-        readonly IManageRabbitMqConnections connectionManager;
+        readonly ConnectionManager connectionManager;
         readonly IRoutingTopology routingTopology;
         readonly string localQueue;
 
-        public SubscriptionManager(IManageRabbitMqConnections connectionManager, IRoutingTopology routingTopology, string localQueue)
+        public SubscriptionManager(ConnectionManager connectionManager, IRoutingTopology routingTopology, string localQueue)
         {
             this.connectionManager = connectionManager;
             this.routingTopology = routingTopology;

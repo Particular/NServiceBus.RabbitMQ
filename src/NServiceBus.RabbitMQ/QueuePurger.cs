@@ -2,9 +2,9 @@ namespace NServiceBus.Transports.RabbitMQ
 {
     class QueuePurger
     {
-        readonly IManageRabbitMqConnections connectionManager;
+        readonly ConnectionManager connectionManager;
 
-        public QueuePurger(IManageRabbitMqConnections connectionManager)
+        public QueuePurger(ConnectionManager connectionManager)
         {
             this.connectionManager = connectionManager;
         }

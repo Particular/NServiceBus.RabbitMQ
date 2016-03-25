@@ -44,15 +44,6 @@
         }
 
         /// <summary>
-        /// Registers a custom connection manager to be used.
-        /// </summary>
-        public static TransportExtensions<RabbitMQTransport> UseConnectionManager<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IManageRabbitMqConnections
-        {
-            transportExtensions.GetSettings().Set("IManageRabbitMqConnections", typeof(T));
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Allows the user to control how the message id is determined. Mostly useful when doing native integration with non NSB endpoints.
         /// </summary>
         /// <param name="transportExtensions"></param>

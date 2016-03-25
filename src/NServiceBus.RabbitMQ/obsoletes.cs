@@ -17,6 +17,21 @@ namespace NServiceBus
         {
             throw new NotImplementedException();
         }
+
+        [ObsoleteEx(RemoveInVersion = "5.0", TreatAsErrorFromVersion = "4.0")]
+        public static TransportExtensions<RabbitMQTransport> UseConnectionManager<T>(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+namespace NServiceBus.Transports.RabbitMQ
+{
+    [ObsoleteEx(RemoveInVersion = "5.0", TreatAsErrorFromVersion = "4.0")]
+    public interface IManageRabbitMqConnections
+    {
+
     }
 }
 

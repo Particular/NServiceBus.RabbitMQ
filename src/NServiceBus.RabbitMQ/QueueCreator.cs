@@ -5,13 +5,13 @@
 
     class QueueCreator : ICreateQueues
     {
-        readonly IManageRabbitMqConnections connections;
+        readonly ConnectionManager connectionManager;
         readonly IRoutingTopology topology;
         readonly bool durableMessagesEnabled;
 
-        public QueueCreator(IManageRabbitMqConnections connections, IRoutingTopology topology, bool durableMessagesEnabled)
+        public QueueCreator(ConnectionManager connectionManager, IRoutingTopology topology, bool durableMessagesEnabled)
         {
-            this.connections = connections;
+            this.connectionManager = connectionManager;
             this.topology = topology;
             this.durableMessagesEnabled = durableMessagesEnabled;
         }
@@ -33,7 +33,7 @@
 
         void CreateQueueIfNecessary(string receivingAddress)
         {
-            using (var connection = connections.GetAdministrationConnection())
+            using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);

@@ -87,7 +87,6 @@
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="LegacyCallbacks\LegacyCallbacksFeature.cs" />
     <Compile Include="MessagePump.cs" />
-    <Compile Include="IManageRabbitMqConnections.cs" />
     <Compile Include="LegacyCallbacks\OverrideOutgoingReplyAddressIfLegacyCallbackAddressExistsBehavior.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="PoisonMessageForwarder.cs" />
