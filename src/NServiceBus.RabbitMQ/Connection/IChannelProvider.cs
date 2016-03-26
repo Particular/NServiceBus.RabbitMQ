@@ -2,6 +2,8 @@
 {
     interface IChannelProvider
     {
-        ConfirmsAwareChannel GetNewPublishChannel();
+        ConfirmsAwareChannel GetPublishChannel();
+
+        void ReturnPublishChannel(ConfirmsAwareChannel channel);
     }
 }

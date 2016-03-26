@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client.Events;
     using NServiceBus.Logging;
 
@@ -17,22 +18,25 @@
             this.routingTopology = routingTopology;
         }
 
-        public void ForwardPoisonMessageToErrorQueue(BasicDeliverEventArgs message, Exception ex, string errorQueue)
+        public Task ForwardPoisonMessageToErrorQueue(BasicDeliverEventArgs message, Exception ex, string errorQueue)
         {
             var error = $"Poison message detected with deliveryTag '{message.DeliveryTag}'. Message will be moved to '{errorQueue}'.";
             Logger.Error(error, ex);
 
+            var channel = channelProvider.GetPublishChannel();
+
             try
             {
-                using (var errorChannel = channelProvider.GetNewPublishChannel())
-                {
-                    routingTopology.RawSendInCaseOfFailure(errorChannel.Channel, errorQueue, message.Body, message.BasicProperties);
-                }
+                return channel.RawSendInCaseOfFailure(routingTopology.RawSendInCaseOfFailure, errorQueue, message.Body, message.BasicProperties);
             }
             catch (Exception ex2)
             {
                 Logger.Error($"Poison message failed to be moved to '{errorQueue}'.", ex2);
                 throw;
+            }
+            finally
+            {
+                channelProvider.ReturnPublishChannel(channel);
             }
         }
     }

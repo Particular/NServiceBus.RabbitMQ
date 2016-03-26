@@ -146,7 +146,7 @@
                 }
                 catch (Exception ex)
                 {
-                    poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue);
+                    await poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue).ConfigureAwait(true);
                 }
 
                 CancellationTokenSource tokenSource = null;
