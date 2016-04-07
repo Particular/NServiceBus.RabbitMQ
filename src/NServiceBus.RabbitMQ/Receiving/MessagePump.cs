@@ -116,7 +116,7 @@
             }
             else
             {
-                circuitBreaker.Failure(new Exception());
+                circuitBreaker.Failure(new Exception(e.ToString()));
             }
         }
 
