@@ -7,6 +7,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Extensibility;
+    using NServiceBus.Features;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Routing;
     using NServiceBus.Settings;
@@ -34,44 +35,59 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultServer>(e =>
+                {
+                    e.EnableFeature<ConnectionKillerFeature>();
+                });
             }
 
-            class ConnectionKiller : IWantToRunWhenBusStartsAndStops
+            class ConnectionKillerFeature : Feature
             {
-                readonly IDispatchMessages sender;
-                readonly ReadOnlySettings settings;
-                readonly MyContext myContext;
-
-                public ConnectionKiller(IDispatchMessages sender, ReadOnlySettings settings, MyContext myContext)
+                protected override void Setup(FeatureConfigurationContext context)
                 {
-                    this.sender = sender;
-                    this.settings = settings;
-                    this.myContext = myContext;
+                    context.Container.ConfigureComponent<ConnectionKiller>(DependencyLifecycle.InstancePerCall);
+                    context.RegisterStartupTask(b => b.Build<ConnectionKiller>());
                 }
 
-                public async Task Start(IMessageSession context)
+                class ConnectionKiller : FeatureStartupTask
                 {
-                    await BreakConnectionBySendingInvalidMessage();
-
-                    await context.SendLocal(new MyRequest { MessageId = myContext.MessageId });
-                }
-
-                async Task BreakConnectionBySendingInvalidMessage()
-                {
-                    try
+                    public ConnectionKiller(IDispatchMessages sender, ReadOnlySettings settings, MyContext context)
                     {
-                        var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
-                        var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new[] { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
-                        await sender.Dispatch(new TransportOperations(operation), new ContextBag());
+                        this.context = context;
+                        this.sender = sender;
+                        this.settings = settings;
                     }
-                    catch (Exception)
-                    {
-                        // Don't care
-                    }
-                }
 
-                public Task Stop(IMessageSession context) => TaskEx.CompletedTask;
+                    protected override async Task OnStart(IMessageSession session)
+                    {
+                        await BreakConnectionBySendingInvalidMessage();
+
+                        await session.SendLocal(new MyRequest { MessageId = context.MessageId });
+                    }
+
+                    protected override Task OnStop(IMessageSession session)
+                    {
+                        return TaskEx.CompletedTask;
+                    }
+
+                    async Task BreakConnectionBySendingInvalidMessage()
+                    {
+                        try
+                        {
+                            var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
+                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new[] { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
+                            await sender.Dispatch(new TransportOperations(operation), new ContextBag());
+                        }
+                        catch (Exception)
+                        {
+                            // Don't care
+                        }
+                    }
+
+                    readonly MyContext context;
+                    readonly IDispatchMessages sender;
+                    readonly ReadOnlySettings settings;
+                }
             }
 
             class MyHandler : IHandleMessages<MyRequest>
