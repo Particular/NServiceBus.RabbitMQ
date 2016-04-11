@@ -15,6 +15,7 @@
     using System.IO;
     using System.Runtime.Serialization.Formatters.Binary;
     using System.Threading.Tasks;
+    using NServiceBus.Features;
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
@@ -29,13 +30,13 @@
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
 
-
         public class Receiver : EndpointConfigurationBuilder
         {
             public Receiver()
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
+                    c.EnableFeature<StarterFeature>();
                     c.UseSerialization<MyCustomSerializerDefinition>();
                     c.UseTransport<RabbitMQTransport>()
                         //just returning a guid here, not suitable for production use
@@ -43,35 +44,47 @@
                 });
             }
 
-            class Starter : IWantToRunWhenBusStartsAndStops
+            class StarterFeature : Feature
             {
-                readonly IDispatchMessages dispatchMessages;
-                readonly ReadOnlySettings settings;
-
-                public Starter(IDispatchMessages dispatchMessages, ReadOnlySettings settings)
+                protected override void Setup(FeatureConfigurationContext context)
                 {
-                    this.dispatchMessages = dispatchMessages;
-                    this.settings = settings;
+                    context.Container.ConfigureComponent<Starter>(DependencyLifecycle.InstancePerCall);
+                    context.RegisterStartupTask(b => b.Build<Starter>());
                 }
 
-                public async Task Start(IMessageSession context)
+                class Starter : FeatureStartupTask
                 {
-                    using (var stream = new MemoryStream())
+                    public Starter(IDispatchMessages dispatchMessages, ReadOnlySettings settings)
                     {
-                        var serializer = new MyCustomSerializer();
-                        serializer.Serialize(new MyRequest(), stream);
-
-                        var message = new OutgoingMessage(
-                            string.Empty,
-                            new Dictionary<string, string> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } },
-                            stream.ToArray());
-
-                        var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName().ToString()));
-                        await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new ContextBag());
+                        this.dispatchMessages = dispatchMessages;
+                        this.settings = settings;
                     }
-                }
 
-                public Task Stop(IMessageSession context) => TaskEx.CompletedTask;
+                    protected override async Task OnStart(IMessageSession session)
+                    {
+                        using (var stream = new MemoryStream())
+                        {
+                            var serializer = new MyCustomSerializer();
+                            serializer.Serialize(new MyRequest(), stream);
+
+                            var message = new OutgoingMessage(
+                                string.Empty,
+                                new Dictionary<string, string>
+                                {
+                                    { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName }
+                                },
+                                stream.ToArray());
+
+                            var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName().ToString()));
+                            await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new ContextBag());
+                        }
+                    }
+
+                    protected override Task OnStop(IMessageSession session) => TaskEx.CompletedTask;
+
+                    readonly IDispatchMessages dispatchMessages;
+                    readonly ReadOnlySettings settings;
+                }
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>
