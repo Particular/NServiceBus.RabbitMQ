@@ -71,7 +71,7 @@
                                 string.Empty,
                                 new Dictionary<string, string>
                                 {
-                                    {Headers.EnclosedMessageTypes, typeof(MyRequest).FullName}
+                                    { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName }
                                 },
                                 stream.ToArray());
 

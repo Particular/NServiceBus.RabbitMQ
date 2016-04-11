@@ -30,7 +30,6 @@
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
 
-
         public class Receiver : EndpointConfigurationBuilder
         {
             public Receiver()
@@ -65,10 +64,7 @@
                         await session.SendLocal(new MyRequest { MessageId = context.MessageId });
                     }
 
-                    protected override Task OnStop(IMessageSession session)
-                    {
-                        return TaskEx.CompletedTask;
-                    }
+                    protected override Task OnStop(IMessageSession session) => TaskEx.CompletedTask;
 
                     async Task BreakConnectionBySendingInvalidMessage()
                     {
