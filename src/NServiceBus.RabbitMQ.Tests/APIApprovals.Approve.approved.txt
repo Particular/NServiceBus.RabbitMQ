@@ -1,0 +1,43 @@
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Transports.RabbitMQ.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
+[assembly: System.Runtime.Versioning.TargetFrameworkAttribute(".NETFramework,Version=v4.5.2", FrameworkDisplayName=".NET Framework 4.5.2")]
+namespace NServiceBus
+{
+    public class RabbitMQTransport : NServiceBus.Transports.TransportDefinition
+    {
+        public RabbitMQTransport() { }
+        public override string ExampleConnectionStringForErrorMessage { get; }
+        protected override NServiceBus.Transports.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
+    }
+    public class static RabbitMQTransportSettingsExtensions
+    {
+        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. Will be removed in version 5.0.0.", true)]
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CallbackReceiverMaxConcurrency(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int maxConcurrency) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
+        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. Will be removed in version 5.0.0.", true)]
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
+        [System.ObsoleteAttribute("Will be removed in version 5.0.0.", true)]
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConnectionManager<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string, System.Type, string> exchangeNameConvention = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions)
+            where T : NServiceBus.Transports.RabbitMQ.Routing.IRoutingTopology { }
+    }
+}
+namespace NServiceBus.Transports.RabbitMQ
+{
+    [System.ObsoleteAttribute("Will be removed in version 5.0.0.", true)]
+    public interface IManageRabbitMqConnections { }
+}
+namespace NServiceBus.Transports.RabbitMQ.Routing
+{
+    public interface IRoutingTopology
+    {
+        void Initialize(RabbitMQ.Client.IModel channel, string main);
+        void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transports.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
+        void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, byte[] body, RabbitMQ.Client.IBasicProperties properties);
+        void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transports.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
+        void SetupSubscription(RabbitMQ.Client.IModel channel, System.Type type, string subscriberName);
+        void TeardownSubscription(RabbitMQ.Client.IModel channel, System.Type type, string subscriberName);
+    }
+}
