@@ -29,7 +29,8 @@
         PushSettings settings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
-        ConcurrentDictionary<int, Task> inFlightMessages;
+        int maxConcurrency;
+        SemaphoreSlim semaphore;
         ConcurrentExclusiveSchedulerPair taskScheduler;
         IConnection connection;
         EventingBasicConsumer consumer;
@@ -64,7 +65,8 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
-            inFlightMessages = new ConcurrentDictionary<int, Task>(limitations.MaxConcurrency, limitations.MaxConcurrency);
+            maxConcurrency = limitations.MaxConcurrency;
+            semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
 
             taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
@@ -87,7 +89,10 @@
         {
             consumer.Received -= Consumer_Received;
 
-            await Task.WhenAll(inFlightMessages.Values).ConfigureAwait(false);
+            while (semaphore.CurrentCount != maxConcurrency)
+            {
+                await Task.Delay(50).ConfigureAwait(false);
+            }
 
             connectionShutdownCompleted = new TaskCompletionSource<bool>();
 
@@ -122,17 +127,13 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            var task = ProcessMessage(eventArgs, consumer.Model);
-
-            inFlightMessages.TryAdd(task.Id, task);
-
-            await task.ConfigureAwait(true);
-
-            inFlightMessages.TryRemove(task.Id, out task);
+            await ProcessMessage(eventArgs, consumer.Model).ConfigureAwait(true);
         }
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
+            await semaphore.WaitAsync().ConfigureAwait(true);
+
             Dictionary<string, string> headers = null;
             string messageId = null;
             var pushMessage = false;
@@ -174,6 +175,10 @@
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
 
                 await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
+            }
+            finally
+            {
+                semaphore.Release();
             }
         }
 
