@@ -62,12 +62,6 @@
         }
 
         [Test]
-        public void Should_set_default_max_wait_time_for_confirms()
-        {
-            Assert.AreEqual(defaults.MaxWaitTimeForConfirms, TimeSpan.FromSeconds(30));
-        }
-
-        [Test]
         public void Should_set_default_retry_delay()
         {
             Assert.AreEqual(defaults.RetryDelay, TimeSpan.FromSeconds(10));

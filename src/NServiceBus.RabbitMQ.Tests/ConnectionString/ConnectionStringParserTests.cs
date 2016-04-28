@@ -10,7 +10,7 @@
     {
         const string connectionString =
             "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
+            "usePublisherConfirms=true;retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
 
         SettingsHolder settings;
 
@@ -34,7 +34,6 @@
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
             Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
             Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
-            Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
             Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
             Assert.AreEqual(connectionConfiguration.UseTls, true);
             Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
@@ -171,16 +170,6 @@
         }
 
         [Test]
-        public void Should_throw_if_given_badly_formatted_max_wait_time_for_confirms()
-        {
-            var parser = new ConnectionStringParser(settings);
-            var formatException = Assert.Throws<FormatException>(
-                () => parser.Parse("host=localhost;maxWaitTimeForConfirms=00:0d0:10"));
-
-            Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
-        }
-
-        [Test]
         public void Should_throw_if_given_badly_formatted_retry_delay()
         {
             var parser = new ConnectionStringParser(settings);
@@ -235,6 +224,25 @@
 
             Assert.IsNotNull(exception);
             Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' connection string option has been removed"));
+        }
+
+        [Test]
+        public void Should_inform_that_max_wait_time_for_confirmss_has_been_removed()
+        {
+            var parser = new ConnectionStringParser(settings);
+            Exception exception = null;
+
+            try
+            {
+                parser.Parse("host=localhost;maxWaitTimeForConfirms=02:03:39");
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception);
+            Assert.That(exception.Message, Is.StringContaining("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
         }
 
         [Test]

@@ -1,9 +1,10 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Transports;
+    using Extensibility;
+    using Transports;
 
     class MessageDispatcher : IDispatchMessages
     {
@@ -18,40 +19,48 @@
 
         public Task Dispatch(TransportOperations operations, ContextBag context)
         {
-            using (var confirmsAwareChannel = channelProvider.GetNewPublishChannel())
+            var channel = channelProvider.GetPublishChannel();
+
+            try
             {
-                foreach (var unicastTransportOperation in operations.UnicastTransportOperations)
+                var tasks = new List<Task>(operations.UnicastTransportOperations.Count() + operations.MulticastTransportOperations.Count());
+
+                foreach (var operation in operations.UnicastTransportOperations)
                 {
-                    SendMessage(unicastTransportOperation, confirmsAwareChannel.Channel);
+                    tasks.Add(SendMessage(operation, channel));
                 }
 
-                foreach (var multicastTransportOperation in operations.MulticastTransportOperations)
+                foreach (var operation in operations.MulticastTransportOperations)
                 {
-                    PublishMessage(multicastTransportOperation, confirmsAwareChannel.Channel);
+                    tasks.Add(PublishMessage(operation, channel));
                 }
+
+                return tasks.Count == 1 ? tasks[0] : Task.WhenAll(tasks);
             }
-
-            return TaskEx.CompletedTask;
+            finally
+            {
+                channelProvider.ReturnPublishChannel(channel);
+            }
         }
 
-        void SendMessage(UnicastTransportOperation transportOperation, IModel channel)
+        Task SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel)
         {
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.DeliveryConstraints);
 
-            routingTopology.Send(channel, transportOperation.Destination, message, properties);
+            return channel.SendMessage(routingTopology.Send, transportOperation.Destination, message, properties);
         }
 
-        void PublishMessage(MulticastTransportOperation transportOperation, IModel channel)
+        Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel)
         {
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.DeliveryConstraints);
 
-            routingTopology.Publish(channel, transportOperation.MessageType, message, properties);
+            return channel.PublishMessage(routingTopology.Publish, transportOperation.MessageType, message, properties);
         }
     }
 }

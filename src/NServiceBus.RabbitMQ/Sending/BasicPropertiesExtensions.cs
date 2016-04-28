@@ -4,10 +4,12 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
+    using System.Text;
     using global::RabbitMQ.Client;
-    using NServiceBus.DeliveryConstraints;
-    using NServiceBus.Performance.TimeToBeReceived;
+    using DeliveryConstraints;
+    using Performance.TimeToBeReceived;
     using NServiceBus.Transports;
+
     using Headers = NServiceBus.Headers;
 
     static class BasicPropertiesExtensions
@@ -55,11 +57,33 @@
             }
         }
 
+        public static void SetConfirmationId(this IBasicProperties properties, ulong confirmationId)
+        {
+            properties.Headers[confirmationIdHeader] = confirmationId.ToString();
+        }
+
+        public static bool TryGetConfirmationId(this IBasicProperties properties, out ulong confirmationId)
+        {
+            confirmationId = 0;
+
+            if (properties.Headers.ContainsKey(confirmationIdHeader))
+            {
+                var headerBytes = properties.Headers[confirmationIdHeader] as byte[];
+                var headerString = Encoding.UTF8.GetString(headerBytes ?? new byte[0]);
+
+                return UInt64.TryParse(headerString, out confirmationId);
+            }
+
+            return false;
+        }
+
         static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
         {
             constraint = list.OfType<T>().FirstOrDefault();
 
             return constraint != null;
         }
+
+        const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
     }
 }

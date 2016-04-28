@@ -17,6 +17,7 @@
         readonly SettingsHolder settings;
         readonly ConnectionConfiguration connectionConfiguration;
         readonly ConnectionManager connectionManager;
+        readonly ChannelProvider channelProvider;
         IRoutingTopology topology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
@@ -25,6 +26,7 @@
 
             connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
             connectionManager = new ConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration));
+            channelProvider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms);
 
             CreateTopology();
 
@@ -49,10 +51,8 @@
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
-            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
-
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(topology, provider),
+                () => new MessageDispatcher(topology, channelProvider),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
@@ -127,8 +127,7 @@
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
-            var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
+            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, topology);
 
             var queuePurger = new QueuePurger(connectionManager);
 
