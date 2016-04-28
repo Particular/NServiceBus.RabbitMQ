@@ -29,6 +29,7 @@
 
         int maxConcurrency;
         SemaphoreSlim semaphore;
+        CancellationTokenSource messageProcessing;
         ConcurrentExclusiveSchedulerPair taskScheduler;
         IConnection connection;
         EventingBasicConsumer consumer;
@@ -65,6 +66,7 @@
         {
             maxConcurrency = limitations.MaxConcurrency;
             semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
+            messageProcessing = new CancellationTokenSource();
 
             taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
             var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
@@ -86,6 +88,7 @@
         public async Task Stop()
         {
             consumer.Received -= Consumer_Received;
+            messageProcessing.Cancel();
 
             while (semaphore.CurrentCount != maxConcurrency)
             {
@@ -130,7 +133,14 @@
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
-            await semaphore.WaitAsync().ConfigureAwait(true);
+            try
+            {
+                await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
 
             Dictionary<string, string> headers = null;
             string messageId = null;
