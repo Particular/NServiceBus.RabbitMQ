@@ -1,9 +1,10 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Routing
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
     using System.Linq;
     using global::RabbitMQ.Client;
+    using NServiceBus.Transports;
 
     /// <summary>
     /// Implements the RabbitMQ routing topology as described at http://codebetter.com/drusellers/2011/05/08/brain-dump-conventional-routing-in-rabbitmq/

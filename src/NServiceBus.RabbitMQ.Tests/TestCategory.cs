@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     public static class TestCategory
     {

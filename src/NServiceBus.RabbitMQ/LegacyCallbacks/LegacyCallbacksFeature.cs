@@ -1,4 +1,4 @@
-namespace NServiceBus
+namespace NServiceBus.Transport.RabbitMQ
 {
     using NServiceBus.Features;
 

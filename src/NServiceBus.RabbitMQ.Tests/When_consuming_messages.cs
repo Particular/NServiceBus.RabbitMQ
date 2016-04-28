@@ -1,10 +1,11 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
+    using NServiceBus.Transports;
     using NUnit.Framework;
 
     using Headers = NServiceBus.Headers;

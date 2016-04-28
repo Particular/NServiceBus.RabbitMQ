@@ -2,6 +2,7 @@
 {
     using NServiceBus.Settings;
     using NServiceBus.Transports;
+    using NServiceBus.Transport.RabbitMQ;
 
     /// <summary>
     /// Transport definition for RabbitMQ.

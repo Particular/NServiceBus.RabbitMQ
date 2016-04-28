@@ -1,9 +1,9 @@
-﻿namespace NServiceBus.Transports.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
-    using Routing;
+    using NServiceBus.Transports;
 
     class SubscriptionManager : IManageSubscriptions
     {

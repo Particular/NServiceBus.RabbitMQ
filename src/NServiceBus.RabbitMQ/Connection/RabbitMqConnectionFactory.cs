@@ -1,10 +1,9 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Connection
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Security.Authentication;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
-    using NServiceBus.Transports.RabbitMQ.Config;
 
     class RabbitMqConnectionFactory
     {

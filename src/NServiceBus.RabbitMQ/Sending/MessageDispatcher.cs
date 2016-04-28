@@ -1,9 +1,9 @@
-﻿namespace NServiceBus.Transports.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Extensibility;
-    using NServiceBus.Transports.RabbitMQ.Routing;
+    using NServiceBus.Transports;
 
     class MessageDispatcher : IDispatchMessages
     {

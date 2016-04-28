@@ -1,4 +1,4 @@
-﻿namespace NServiceBus
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -9,11 +9,7 @@
     using NServiceBus.Routing;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
-    using NServiceBus.Transports.RabbitMQ;
-    using NServiceBus.Transports.RabbitMQ.Config;
-    using NServiceBus.Transports.RabbitMQ.Connection;
-    using NServiceBus.Transports.RabbitMQ.Routing;
-    using RabbitMQ.Client.Events;
+    using global::RabbitMQ.Client.Events;
 
     [SkipWeaving]
     class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable

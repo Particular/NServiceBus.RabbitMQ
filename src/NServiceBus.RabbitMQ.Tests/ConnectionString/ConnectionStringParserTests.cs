@@ -1,7 +1,7 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Tests.ConnectionString
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
-    using Config;
+    using NServiceBus.Transport.RabbitMQ;
     using NUnit.Framework;
     using Settings;
 
@@ -18,7 +18,7 @@
         public void Setup()
         {
             settings = new SettingsHolder();
-            settings.Set<NServiceBus.Routing.EndpointName>(new NServiceBus.Routing.EndpointName("endpoint"));
+            settings.Set<Routing.EndpointName>(new Routing.EndpointName("endpoint"));
         }
 
         [Test]

@@ -1,12 +1,11 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
     using NServiceBus.Settings;
-    using NServiceBus.Transports.RabbitMQ.Config;
-    using NServiceBus.Transports.RabbitMQ.Connection;
-    using NServiceBus.Transports.RabbitMQ.Routing;
+    using NServiceBus.Transports;
+    using NServiceBus.Transport.RabbitMQ;
     using NUnit.Framework;
 
     class RabbitMqContext
@@ -52,7 +51,7 @@
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
             var settings = new SettingsHolder();
-            settings.Set<NServiceBus.Routing.EndpointName>(new NServiceBus.Routing.EndpointName(ReceiverQueue));
+            settings.Set<Routing.EndpointName>(new Routing.EndpointName(ReceiverQueue));
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
