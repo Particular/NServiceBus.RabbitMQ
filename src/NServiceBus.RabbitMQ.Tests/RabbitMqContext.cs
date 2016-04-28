@@ -70,7 +70,7 @@
 
             connectionFactory = new RabbitMqConnectionFactory(config);
             connectionManager = new ConnectionManager(connectionFactory);
-            var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms, config.MaxWaitTimeForConfirms);
+            var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms);
 
             messageDispatcher = new MessageDispatcher(routingTopology, channelProvider);
 

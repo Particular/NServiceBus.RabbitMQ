@@ -49,7 +49,7 @@
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
-            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
+            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms);
 
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(topology, provider),
@@ -127,7 +127,7 @@
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms, connectionConfiguration.MaxWaitTimeForConfirms);
+            var provider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms);
             var poisonMessageForwarder = new PoisonMessageForwarder(provider, topology);
 
             var queuePurger = new QueuePurger(connectionManager);

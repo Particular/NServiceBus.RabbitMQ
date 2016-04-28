@@ -10,12 +10,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, bool usePublisherConfirms, TimeSpan maxWaitTimeForConfirms)
+        public ConfirmsAwareChannel(IConnection connection, bool usePublisherConfirms)
         {
             channel = connection.CreateModel();
 
             this.usePublisherConfirms = usePublisherConfirms;
-            this.maxWaitTimeForConfirms = maxWaitTimeForConfirms;
 
             if (usePublisherConfirms)
             {
@@ -103,20 +102,8 @@ namespace NServiceBus.Transport.RabbitMQ
                 throw new Exception($"Failed to add {channel.NextPublishSeqNo}");
             }
 
-            //Task.Run(() => CheckForConfirmationTimeout(channel.NextPublishSeqNo));
-
             return tcs.Task;
         }
-
-        //async Task CheckForConfirmationTimeout(ulong deliveryTag)
-        //{
-        //    await Task.Delay(maxWaitTimeForConfirms).ConfigureAwait(false);
-
-        //    TaskCompletionSource<bool> tcs;
-        //    messages.TryRemove(deliveryTag, out tcs);
-
-        //    tcs?.SetException(new Exception("Operation has timed out while waiting for confirmation from broker."));
-        //}
 
         void Channel_BasicAcks(object sender, BasicAckEventArgs e)
         {
@@ -218,7 +205,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
         IModel channel;
         readonly bool usePublisherConfirms;
-        readonly TimeSpan maxWaitTimeForConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConfirmsAwareChannel));
