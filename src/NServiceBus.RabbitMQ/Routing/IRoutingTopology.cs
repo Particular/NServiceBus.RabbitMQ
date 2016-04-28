@@ -1,7 +1,8 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Routing
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using global::RabbitMQ.Client;
+    using NServiceBus.Transports;
 
     /// <summary>
     /// Topology for routing messages on the transport.

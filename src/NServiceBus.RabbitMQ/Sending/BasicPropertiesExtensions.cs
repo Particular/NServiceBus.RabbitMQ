@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +7,7 @@
     using global::RabbitMQ.Client;
     using NServiceBus.DeliveryConstraints;
     using NServiceBus.Performance.TimeToBeReceived;
-
+    using NServiceBus.Transports;
     using Headers = NServiceBus.Headers;
 
     static class BasicPropertiesExtensions

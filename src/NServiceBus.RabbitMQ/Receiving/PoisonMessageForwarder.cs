@@ -1,9 +1,8 @@
-﻿namespace NServiceBus.Transports.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using global::RabbitMQ.Client.Events;
     using NServiceBus.Logging;
-    using NServiceBus.Transports.RabbitMQ.Routing;
 
     class PoisonMessageForwarder
     {

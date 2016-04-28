@@ -1,8 +1,7 @@
-﻿namespace NServiceBus.Transports.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using global::RabbitMQ.Client;
-    using NServiceBus.Transports.RabbitMQ.Connection;
 
     class ConnectionManager : IDisposable
     {

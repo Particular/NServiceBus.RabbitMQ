@@ -1,4 +1,4 @@
-namespace NServiceBus.Transports.RabbitMQ
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Threading.Tasks;
 

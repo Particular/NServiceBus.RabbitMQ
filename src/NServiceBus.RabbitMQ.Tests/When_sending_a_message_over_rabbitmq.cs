@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.IO;
@@ -8,6 +8,7 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NServiceBus.Extensibility;
+    using NServiceBus.Transports;
     using NUnit.Framework;
 
     using Headers = NServiceBus.Headers;

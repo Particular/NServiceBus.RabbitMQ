@@ -31,7 +31,14 @@ namespace NServiceBus.Transports.RabbitMQ
     [ObsoleteEx(RemoveInVersion = "5.0", TreatAsErrorFromVersion = "4.0")]
     public interface IManageRabbitMqConnections
     {
+    }
+}
 
+namespace NServiceBus.Transports.RabbitMQ.Routing
+{
+    [ObsoleteEx(ReplacementTypeOrMember = "NServiceBus.Transport.RabbitMQ.IRoutingTopology", RemoveInVersion = "5.0", TreatAsErrorFromVersion = "4.0")]
+    public interface IRoutingTopology
+    {
     }
 }
 

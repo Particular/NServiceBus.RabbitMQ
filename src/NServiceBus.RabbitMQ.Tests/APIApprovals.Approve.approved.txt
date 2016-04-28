@@ -11,25 +11,23 @@ namespace NServiceBus
     }
     public class static RabbitMQTransportSettingsExtensions
     {
-        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. Will be removed in version 5.0.0.", true)]
+        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
+            "mentedException. Will be removed in version 5.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CallbackReceiverMaxConcurrency(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int maxConcurrency) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
-        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. Will be removed in version 5.0.0.", true)]
+        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
+            "mentedException. Will be removed in version 5.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
-        [System.ObsoleteAttribute("Will be removed in version 5.0.0.", true)]
+        [System.ObsoleteAttribute("The member currently throws a NotImplementedException. Will be removed in version" +
+            " 5.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConnectionManager<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string, System.Type, string> exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions)
-            where T : NServiceBus.Transports.RabbitMQ.Routing.IRoutingTopology { }
+            where T : NServiceBus.Transport.RabbitMQ.IRoutingTopology { }
     }
 }
-namespace NServiceBus.Transports.RabbitMQ
-{
-    [System.ObsoleteAttribute("Will be removed in version 5.0.0.", true)]
-    public interface IManageRabbitMqConnections { }
-}
-namespace NServiceBus.Transports.RabbitMQ.Routing
+namespace NServiceBus.Transport.RabbitMQ
 {
     public interface IRoutingTopology
     {
@@ -40,4 +38,15 @@ namespace NServiceBus.Transports.RabbitMQ.Routing
         void SetupSubscription(RabbitMQ.Client.IModel channel, System.Type type, string subscriberName);
         void TeardownSubscription(RabbitMQ.Client.IModel channel, System.Type type, string subscriberName);
     }
+}
+namespace NServiceBus.Transports.RabbitMQ
+{
+    [System.ObsoleteAttribute("Will be removed in version 5.0.0.", true)]
+    public interface IManageRabbitMqConnections { }
+}
+namespace NServiceBus.Transports.RabbitMQ.Routing
+{
+    [System.ObsoleteAttribute("Use `NServiceBus.Transport.RabbitMQ.IRoutingTopology` instead. Will be removed in" +
+        " version 5.0.0.", true)]
+    public interface IRoutingTopology { }
 }

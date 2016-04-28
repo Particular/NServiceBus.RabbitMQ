@@ -1,7 +1,8 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Config
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Configuration;
     using NServiceBus.Logging;
+    using NServiceBus.Transports;
 
     static class ObsoleteAppSettings
     {
