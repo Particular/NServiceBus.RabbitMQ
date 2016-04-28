@@ -55,6 +55,15 @@
                 throw new NotSupportedException(message);
             }
 
+            if (ContainsKey("maxwaittimeforconfirms"))
+            {
+                var message = "The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
             if (ContainsKey("prefetchcount"))
             {
                 var message = "The 'PrefetchCount' connection string option has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";

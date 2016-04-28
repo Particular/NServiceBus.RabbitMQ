@@ -23,8 +23,6 @@
 
         public bool UsePublisherConfirms { get; set; }
 
-        public TimeSpan MaxWaitTimeForConfirms { get; set; }
-
         public TimeSpan RetryDelay { get; set; }
 
         public bool UseTls { get; set; }
@@ -44,7 +42,6 @@
             Password = "guest";
             RequestedHeartbeat = 5;
             UsePublisherConfirms = true;
-            MaxWaitTimeForConfirms = TimeSpan.FromSeconds(30);
             RetryDelay = TimeSpan.FromSeconds(10);
             UseTls = false;
             CertPath = "";
