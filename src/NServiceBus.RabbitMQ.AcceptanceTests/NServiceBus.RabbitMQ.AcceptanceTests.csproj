@@ -7,7 +7,7 @@
     <ProjectGuid>{485F7A18-430D-4FF4-8FB4-41757951B871}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NServiceBus.RabbitMQ.AcceptanceTests</RootNamespace>
+    <RootNamespace>NServiceBus.Transport.RabbitMQ.AcceptanceTests</RootNamespace>
     <AssemblyName>NServiceBus.RabbitMQ.AcceptanceTests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
