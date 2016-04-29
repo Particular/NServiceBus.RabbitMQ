@@ -8,7 +8,7 @@
     <ProjectGuid>{BA731749-22C7-4025-8A4D-465AE8E02E61}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NServiceBus.Transports.RabbitMQ</RootNamespace>
+    <RootNamespace>NServiceBus.Transport.RabbitMQ</RootNamespace>
     <AssemblyName>NServiceBus.Transports.RabbitMQ</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
