@@ -85,9 +85,7 @@
     <Compile Include="Connection\RabbitMqConnectionFactory.cs" />
     <Compile Include="Connection\IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="LegacyCallbacks\LegacyCallbacksFeature.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
-    <Compile Include="LegacyCallbacks\OverrideOutgoingReplyAddressIfLegacyCallbackAddressExistsBehavior.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Receiving\PoisonMessageForwarder.cs" />
     <Compile Include="Receiving\QueuePurger.cs" />
