@@ -66,6 +66,11 @@
                 headers[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
             }
 
+            if (headers.ContainsKey("NServiceBus.RabbitMQ.CallbackQueue"))
+            {
+                headers[Headers.ReplyToAddress] = headers["NServiceBus.RabbitMQ.CallbackQueue"];
+            }
+
             return headers;
         }
 
