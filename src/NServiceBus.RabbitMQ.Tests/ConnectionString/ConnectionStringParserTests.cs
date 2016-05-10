@@ -10,7 +10,7 @@
     {
         const string connectionString =
             "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03";
+            "prefetchcount=2;maxRetries=4;usePublisherConfirms=true;maxWaitTimeForConfirms=02:03:39;retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
 
         [Test]
         public void Should_correctly_parse_full_connection_string()
@@ -29,6 +29,9 @@
             Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
             Assert.AreEqual(connectionConfiguration.MaxWaitTimeForConfirms, new TimeSpan(2, 3, 39)); //02:03:39
             Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
+            Assert.AreEqual(connectionConfiguration.UseTls, true);
+            Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
+            Assert.AreEqual(connectionConfiguration.CertPassphrase, "abc123");
         }
 
         [Test]
@@ -144,6 +147,34 @@
             var parser = new ConnectionStringParser(new SettingsHolder());
             var connectionConfiguration = parser.Parse("host=localhost;virtualHost=myVirtualHost");
             Assert.AreEqual("myVirtualHost", connectionConfiguration.VirtualHost);
+        }
+
+        [Test]
+        public void Should_parse_use_tls()
+        {
+            var parser = new ConnectionStringParser(new SettingsHolder());
+            var connectionConfiguration = parser.Parse("host=localhost;useTls=true");
+
+            Assert.AreEqual(true, connectionConfiguration.UseTls);
+            Assert.AreEqual(5671, connectionConfiguration.Port);
+        }
+
+        [Test]
+        public void Should_parse_the_cert_path()
+        {
+            var parser = new ConnectionStringParser(new SettingsHolder());
+            var connectionConfiguration = parser.Parse("host=localhost;certPath=/path/keyfile.p12");
+
+            Assert.AreEqual("/path/keyfile.p12", connectionConfiguration.CertPath);
+        }
+
+        [Test]
+        public void Should_parse_the_cert_passphrase()
+        {
+            var parser = new ConnectionStringParser(new SettingsHolder());
+            var connectionConfiguration = parser.Parse("host=localhost;certPassphrase=abc123");
+
+            Assert.AreEqual("abc123", connectionConfiguration.CertPassphrase);
         }
 
         [Test]
