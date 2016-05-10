@@ -44,6 +44,12 @@
             private set { clientProperties = value; }
         }
 
+        public bool UseTls { get; set; }
+
+        public string CertPath { get; set; }
+
+        public string CertPassphrase { get; set; }
+
         public HostConfiguration HostConfiguration { get; private set; }
 
         public ConnectionConfiguration()
@@ -68,6 +74,9 @@
             var applicationName = Path.GetFileName(applicationNameAndPath);
             var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
             var hostname = RuntimeEnvironment.MachineName;
+            UseTls = false;
+            CertPath = String.Empty;
+            CertPassphrase = null;
 
             clientProperties.Add("client_api", "NServiceBus");
             clientProperties.Add("nservicebus_version", version);

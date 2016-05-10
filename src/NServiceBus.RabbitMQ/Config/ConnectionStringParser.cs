@@ -33,6 +33,11 @@
                         }))
                 pair.Property.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(pair.Property.PropertyType).ConvertFromString(pair.Value), null);
 
+            if (connectionConfiguration.UseTls && !ContainsKey("port"))
+            {
+                connectionConfiguration.Port = 5671;
+            }
+
             if (ContainsKey("host"))
             {
                 connectionConfiguration.ParseHosts(this["host"] as string);

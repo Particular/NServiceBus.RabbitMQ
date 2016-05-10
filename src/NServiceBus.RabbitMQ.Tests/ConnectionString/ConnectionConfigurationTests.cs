@@ -94,5 +94,23 @@
             Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
         }
+
+        [Test]
+        public void Should_set_default_use_tls()
+        {
+            Assert.AreEqual(defaults.UseTls, false);
+        }
+
+        [Test]
+        public void Should_set_default_cert_path()
+        {
+            Assert.AreEqual(defaults.CertPath, "");
+        }
+
+        [Test]
+        public void Should_set_default_retry_cert_passphrase()
+        {
+            Assert.AreEqual(defaults.CertPassphrase, null);
+        }
     }
 }

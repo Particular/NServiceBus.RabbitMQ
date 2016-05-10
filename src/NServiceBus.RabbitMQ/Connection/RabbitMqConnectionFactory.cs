@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.RabbitMQ.Connection
 {
     using System;
+    using System.Security.Authentication;
     using global::RabbitMQ.Client;
     using NServiceBus.Transports.RabbitMQ.Config;
 
@@ -31,7 +32,15 @@
                 UserName = Configuration.UserName,
                 Password = Configuration.Password,
                 RequestedHeartbeat = Configuration.RequestedHeartbeat,
-                ClientProperties = Configuration.ClientProperties
+                ClientProperties = Configuration.ClientProperties,
+                Ssl =
+                {
+                    ServerName = connectionConfiguration.HostConfiguration.Host,
+                    CertPath = connectionConfiguration.CertPath,
+                    CertPassphrase = connectionConfiguration.CertPassphrase,
+                    Version = SslProtocols.Tls12,
+                    Enabled = connectionConfiguration.UseTls
+                }
             };
         }
 
