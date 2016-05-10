@@ -43,6 +43,7 @@
             get { return clientProperties; }
             private set { clientProperties = value; }
         }
+
         public bool UseTls { get; set; }
 
         public string CertPath { get; set; }
