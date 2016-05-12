@@ -87,7 +87,7 @@
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
     <Compile Include="obsoletes.cs" />
-    <Compile Include="Receiving\PoisonMessageForwarder.cs" />
+    <Compile Include="Sending\PoisonMessageForwarder.cs" />
     <Compile Include="Receiving\QueuePurger.cs" />
     <Compile Include="Connection\ConnectionManager.cs" />
     <Compile Include="AssemblyInfo.cs" />
