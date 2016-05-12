@@ -26,11 +26,11 @@
         Func<PushContext, Task> pipe;
         PushSettings settings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
+        TaskScheduler exclusiveScheduler;
 
         int maxConcurrency;
         SemaphoreSlim semaphore;
         CancellationTokenSource messageProcessing;
-        ConcurrentExclusiveSchedulerPair taskScheduler;
         IConnection connection;
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -54,6 +54,8 @@
                 timeToWaitBeforeTriggeringCircuitBreaker,
                 ex => criticalError.Raise($"{settings.InputQueue} MessagePump's connection to the broker has failed.", ex));
 
+            exclusiveScheduler = new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
+
             if (settings.PurgeOnStartup)
             {
                 queuePurger.Purge(settings.InputQueue);
@@ -68,8 +70,7 @@
             semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
             messageProcessing = new CancellationTokenSource();
 
-            taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
-            var factory = new ConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
+            var factory = new ConnectionFactory(connectionConfiguration);
             connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();
@@ -128,14 +129,14 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            await ProcessMessage(eventArgs, consumer.Model).ConfigureAwait(true);
+            await ProcessMessage(eventArgs, consumer.Model).ConfigureAwait(false);
         }
 
         async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
         {
             try
             {
-                await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(true);
+                await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -156,7 +157,7 @@
                 }
                 catch (Exception ex)
                 {
-                    await poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue).ConfigureAwait(true);
+                    await poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue).ConfigureAwait(false);
                 }
 
                 CancellationTokenSource tokenSource = null;
@@ -164,38 +165,32 @@
                 if (pushMessage)
                 {
                     tokenSource = new CancellationTokenSource();
-                    await PushMessageToPipe(messageId, headers, tokenSource, new MemoryStream(message.Body ?? new byte[0])).ConfigureAwait(true);
+                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+
+                    await pipe(pushContext).ConfigureAwait(false);
                 }
 
                 var cancellationRequested = tokenSource?.IsCancellationRequested ?? false;
 
                 if (cancellationRequested)
                 {
-                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
+                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
                 else
                 {
-                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
+                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
 
-                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(true);
+                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
             }
             finally
             {
                 semaphore.Release();
             }
-        }
-
-        Task PushMessageToPipe(string messageId, Dictionary<string, string> headers, CancellationTokenSource tokenSource, Stream stream)
-        {
-            var contextBag = new ContextBag();
-            var pushContext = new PushContext(messageId, headers, stream, new TransportTransaction(), tokenSource, contextBag);
-
-            return Task.Run(() => pipe(pushContext));
         }
 
         async Task AcknowledgeMessage(IModel channel, ulong deliveryTag, string messageId)
@@ -214,8 +209,8 @@
                     }
                 });
 
-                task.Start(taskScheduler.ExclusiveScheduler);
-                await task.ConfigureAwait(true);
+                task.Start(exclusiveScheduler);
+                await task.ConfigureAwait(false);
             }
             catch (AlreadyClosedException ex)
             {
@@ -239,8 +234,8 @@
                     }
                 });
 
-                task.Start(taskScheduler.ExclusiveScheduler);
-                await task.ConfigureAwait(true);
+                task.Start(exclusiveScheduler);
+                await task.ConfigureAwait(false);
 
             }
             catch (AlreadyClosedException ex)

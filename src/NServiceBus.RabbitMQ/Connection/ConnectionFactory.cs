@@ -9,7 +9,7 @@
     {
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
 
-        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
+        public ConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
             if (connectionConfiguration == null)
             {
@@ -44,11 +44,6 @@
             foreach (var item in connectionConfiguration.ClientProperties)
             {
                 connectionFactory.ClientProperties.Add(item.Key, item.Value);
-            }
-
-            if (scheduler != null)
-            {
-                connectionFactory.TaskScheduler = scheduler;
             }
         }
 
