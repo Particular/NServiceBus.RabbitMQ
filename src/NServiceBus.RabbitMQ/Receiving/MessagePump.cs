@@ -69,7 +69,7 @@
             messageProcessing = new CancellationTokenSource();
 
             taskScheduler = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, limitations.MaxConcurrency);
-            var factory = new RabbitMqConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
+            var factory = new ConnectionFactory(connectionConfiguration, taskScheduler.ConcurrentScheduler);
             connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();

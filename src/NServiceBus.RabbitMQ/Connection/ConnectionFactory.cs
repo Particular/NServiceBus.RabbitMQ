@@ -5,11 +5,11 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    class RabbitMqConnectionFactory
+    class ConnectionFactory
     {
-        readonly ConnectionFactory connectionFactory;
+        readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
 
-        public RabbitMqConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
+        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, TaskScheduler scheduler = null)
         {
             if (connectionConfiguration == null)
             {
@@ -21,7 +21,7 @@
                 throw new ArgumentException("The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
             }
 
-            connectionFactory = new ConnectionFactory
+            connectionFactory = new global::RabbitMQ.Client.ConnectionFactory
             {
                 HostName = connectionConfiguration.Host,
                 Port = connectionConfiguration.Port,

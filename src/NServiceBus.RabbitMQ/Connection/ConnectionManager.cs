@@ -5,7 +5,7 @@
 
     class ConnectionManager : IDisposable
     {
-        public ConnectionManager(RabbitMqConnectionFactory connectionFactory)
+        public ConnectionManager(ConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
@@ -31,7 +31,7 @@
             //Injected
         }
 
-        readonly RabbitMqConnectionFactory connectionFactory;
+        readonly ConnectionFactory connectionFactory;
         IConnection connectionPublish;
     }
 }

@@ -25,7 +25,7 @@
             this.settings = settings;
 
             connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
-            connectionManager = new ConnectionManager(new RabbitMqConnectionFactory(connectionConfiguration));
+            connectionManager = new ConnectionManager(new ConnectionFactory(connectionConfiguration));
             channelProvider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms);
 
             CreateTopology();
