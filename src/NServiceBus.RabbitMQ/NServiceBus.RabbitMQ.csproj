@@ -76,7 +76,7 @@
     <Compile Include="Configuration\ObsoleteAppSettings.cs" />
     <Compile Include="Configuration\ConnectionStringParser.cs" />
     <Compile Include="RabbitMQTransport.cs" />
-    <Compile Include="RabbitMQTransportSettingsExtensions.cs" />
+    <Compile Include="Configuration\RabbitMQTransportSettingsExtensions.cs" />
     <Compile Include="RabbitMQTransportInfrastructure.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Connection\ConfirmsAwareChannel.cs" />
