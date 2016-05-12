@@ -1,16 +1,16 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
-    using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Events;
-    using global::RabbitMQ.Client.Exceptions;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Logging;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transports;
+    using Extensibility;
+    using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
+    using global::RabbitMQ.Client.Exceptions;
+    using Logging;
+    using Transports;
 
     class MessagePump : IPushMessages, IDisposable
     {

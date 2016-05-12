@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.Threading.Tasks;
-    using NServiceBus.Transports;
     using NUnit.Framework;
+    using Transports;
 
     [TestFixture]
     class When_stopping_endpoint : RabbitMqContext

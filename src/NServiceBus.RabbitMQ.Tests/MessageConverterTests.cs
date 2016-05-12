@@ -4,9 +4,9 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Text;
+    using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Framing;
     using NUnit.Framework;
-    using global::RabbitMQ.Client.Events;
 
     [TestFixture]
     class MessageConverterTests

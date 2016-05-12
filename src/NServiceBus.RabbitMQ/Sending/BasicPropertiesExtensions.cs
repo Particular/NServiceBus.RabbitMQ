@@ -8,9 +8,7 @@
     using global::RabbitMQ.Client;
     using DeliveryConstraints;
     using Performance.TimeToBeReceived;
-    using NServiceBus.Transports;
-
-    using Headers = NServiceBus.Headers;
+    using Transports;
 
     static class BasicPropertiesExtensions
     {
@@ -18,9 +16,9 @@
         {
             properties.MessageId = message.MessageId;
 
-            if (message.Headers.ContainsKey(Headers.CorrelationId))
+            if (message.Headers.ContainsKey(NServiceBus.Headers.CorrelationId))
             {
-                properties.CorrelationId = message.Headers[Headers.CorrelationId];
+                properties.CorrelationId = message.Headers[NServiceBus.Headers.CorrelationId];
             }
 
             DiscardIfNotReceivedBefore timeToBeReceived;
@@ -34,26 +32,26 @@
 
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
-            if (message.Headers.ContainsKey(Headers.EnclosedMessageTypes))
+            if (message.Headers.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
             {
-                properties.Type = message.Headers[Headers.EnclosedMessageTypes].Split(new[]
+                properties.Type = message.Headers[NServiceBus.Headers.EnclosedMessageTypes].Split(new[]
                 {
                     ','
                 }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             }
 
-            if (message.Headers.ContainsKey(Headers.ContentType))
+            if (message.Headers.ContainsKey(NServiceBus.Headers.ContentType))
             {
-                properties.ContentType = message.Headers[Headers.ContentType];
+                properties.ContentType = message.Headers[NServiceBus.Headers.ContentType];
             }
             else
             {
                 properties.ContentType = "application/octet-stream";
             }
 
-            if (message.Headers.ContainsKey(Headers.ReplyToAddress))
+            if (message.Headers.ContainsKey(NServiceBus.Headers.ReplyToAddress))
             {
-                properties.ReplyTo = message.Headers[Headers.ReplyToAddress];
+                properties.ReplyTo = message.Headers[NServiceBus.Headers.ReplyToAddress];
             }
         }
 

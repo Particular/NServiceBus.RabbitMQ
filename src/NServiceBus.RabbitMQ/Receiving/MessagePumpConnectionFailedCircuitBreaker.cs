@@ -2,7 +2,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Threading;
-    using NServiceBus.Logging;
+    using Logging;
 
     class MessagePumpConnectionFailedCircuitBreaker : IDisposable
     {

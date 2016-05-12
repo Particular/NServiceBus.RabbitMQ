@@ -1,21 +1,21 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
-    using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Extensibility;
-    using NServiceBus.MessageInterfaces;
-    using NServiceBus.Routing;
-    using NServiceBus.Serialization;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
-    using NUnit.Framework;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Runtime.Serialization.Formatters.Binary;
     using System.Threading.Tasks;
-    using NServiceBus.Features;
+    using AcceptanceTesting;
+    using Extensibility;
+    using Features;
+    using MessageInterfaces;
+    using NServiceBus.AcceptanceTests;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NUnit.Framework;
+    using Routing;
+    using Serialization;
+    using Settings;
+    using Transports;
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {

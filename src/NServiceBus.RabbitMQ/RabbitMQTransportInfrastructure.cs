@@ -4,12 +4,12 @@
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
-    using Janitor;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
     using global::RabbitMQ.Client.Events;
+    using Janitor;
+    using Performance.TimeToBeReceived;
+    using Routing;
+    using Settings;
+    using Transports;
 
     [SkipWeaving]
     class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable

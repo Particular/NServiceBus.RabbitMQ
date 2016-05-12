@@ -3,10 +3,9 @@
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
-    using NServiceBus.Transport.RabbitMQ;
     using NUnit.Framework;
+    using Settings;
+    using Transports;
 
     class RabbitMqContext
     {

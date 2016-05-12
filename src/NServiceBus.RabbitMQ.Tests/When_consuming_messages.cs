@@ -3,12 +3,10 @@
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Routing;
-    using NServiceBus.Transports;
+    using Extensibility;
     using NUnit.Framework;
-
-    using Headers = NServiceBus.Headers;
+    using Routing;
+    using Transports;
 
     [TestFixture]
     class When_consuming_messages : RabbitMqContext

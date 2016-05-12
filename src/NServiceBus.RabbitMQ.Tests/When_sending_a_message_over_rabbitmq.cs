@@ -5,13 +5,11 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Transports;
     using NUnit.Framework;
-
-    using Headers = NServiceBus.Headers;
+    using Transports;
 
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
@@ -27,7 +25,7 @@
         [Test]
         public async Task Should_set_the_content_type()
         {
-            await Verify(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"), received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
+            await Verify(new OutgoingMessageBuilder().WithHeader(NServiceBus.Headers.ContentType, "application/json"), received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
         }
 
         [Test]
@@ -41,7 +39,7 @@
         {
             var messageType = typeof(MyMessage);
 
-            await Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
+            await Verify(new OutgoingMessageBuilder().WithHeader(NServiceBus.Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
         }
 
         [Test]
@@ -60,7 +58,7 @@
             await Verify(new OutgoingMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
-                    Assert.AreEqual(address, t.Headers[Headers.ReplyToAddress]);
+                    Assert.AreEqual(address, t.Headers[NServiceBus.Headers.ReplyToAddress]);
                     Assert.AreEqual(address, r.BasicProperties.ReplyTo);
                 });
         }
@@ -70,19 +68,19 @@
         {
             var correlationId = Guid.NewGuid().ToString();
 
-            await Verify(new OutgoingMessageBuilder().CorrelationId(correlationId), result => Assert.AreEqual(correlationId, result.Headers[Headers.CorrelationId]));
+            await Verify(new OutgoingMessageBuilder().CorrelationId(correlationId), result => Assert.AreEqual(correlationId, result.Headers[NServiceBus.Headers.CorrelationId]));
         }
 
         [Test]
         public async Task Should_preserve_the_recoverable_setting_if_set_to_durable()
         {
-            await Verify(new OutgoingMessageBuilder(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == "False"));
+            await Verify(new OutgoingMessageBuilder(), result => Assert.True(result.Headers[NServiceBus.Headers.NonDurableMessage] == "False"));
         }
 
         [Test]
         public async Task Should_preserve_the_recoverable_setting_if_set_to_non_durable()
         {
-            await Verify(new OutgoingMessageBuilder().NonDurable(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == "True"));
+            await Verify(new OutgoingMessageBuilder().NonDurable(), result => Assert.True(result.Headers[NServiceBus.Headers.NonDurableMessage] == "True"));
         }
 
         [Test]

@@ -2,13 +2,13 @@
 {
     using System;
     using System.Threading;
-    using NServiceBus.AcceptanceTesting;
+    using System.Threading.Tasks;
+    using AcceptanceTesting;
+    using Configuration.AdvanceExtensibility;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using System.Threading.Tasks;
-    using NServiceBus.Configuration.AdvanceExtensibility;
-    using NServiceBus.Settings;
+    using Settings;
 
     public class When_scaling_out_senders_that_uses_callbacks : NServiceBusAcceptanceTest
     {

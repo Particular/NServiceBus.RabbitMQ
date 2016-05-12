@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus
 {
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
-    using NServiceBus.Transport.RabbitMQ;
+    using Settings;
+    using Transport.RabbitMQ;
+    using Transports;
 
     /// <summary>
     /// Transport definition for RabbitMQ.

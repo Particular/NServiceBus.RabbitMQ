@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
-    using NServiceBus.Transport.RabbitMQ;
     using NUnit.Framework;
+    using RabbitMQ;
     using Settings;
 
     [TestFixture]

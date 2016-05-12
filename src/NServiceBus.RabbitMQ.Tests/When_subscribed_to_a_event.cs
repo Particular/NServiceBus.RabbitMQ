@@ -1,9 +1,9 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Transports;
+    using Extensibility;
     using NUnit.Framework;
+    using Transports;
 
     [TestFixture]
     class When_subscribed_to_a_event : RabbitMqContext
