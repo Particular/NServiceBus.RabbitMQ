@@ -153,6 +153,7 @@
                 {
                     messageId = messageConverter.RetrieveMessageId(message);
                     headers = messageConverter.RetrieveHeaders(message);
+
                     pushMessage = true;
                 }
                 catch (Exception ex)
@@ -160,19 +161,21 @@
                     await poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue).ConfigureAwait(false);
                 }
 
-                CancellationTokenSource tokenSource = null;
+                var rejectMessage = false;
 
                 if (pushMessage)
                 {
-                    tokenSource = new CancellationTokenSource();
-                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+                    using (var tokenSource = new CancellationTokenSource())
+                    {
+                        var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
 
-                    await pipe(pushContext).ConfigureAwait(false);
+                        await pipe(pushContext).ConfigureAwait(false);
+
+                        rejectMessage = tokenSource.IsCancellationRequested;
+                    }
                 }
 
-                var cancellationRequested = tokenSource?.IsCancellationRequested ?? false;
-
-                if (cancellationRequested)
+                if (rejectMessage)
                 {
                     await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
