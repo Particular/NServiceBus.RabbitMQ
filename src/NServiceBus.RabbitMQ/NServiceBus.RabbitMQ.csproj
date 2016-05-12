@@ -88,12 +88,12 @@
     <Compile Include="Receiving\MessagePump.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Sending\PoisonMessageForwarder.cs" />
-    <Compile Include="Receiving\QueuePurger.cs" />
+    <Compile Include="Administration\QueuePurger.cs" />
     <Compile Include="Connection\ConnectionManager.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
-    <Compile Include="Receiving\QueueCreator.cs" />
-    <Compile Include="Receiving\SubscriptionManager.cs" />
+    <Compile Include="Administration\QueueCreator.cs" />
+    <Compile Include="Administration\SubscriptionManager.cs" />
     <Compile Include="Receiving\MessageConverter.cs" />
     <Compile Include="Sending\BasicPropertiesExtensions.cs" />
     <Compile Include="Receiving\MessagePumpConnectionFailedCircuitBreaker.cs" />
