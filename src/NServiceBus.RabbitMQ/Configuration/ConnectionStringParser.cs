@@ -48,7 +48,7 @@
 
             if (ContainsKey("dequeuetimeout"))
             {
-                var message = "The 'DequeueTimeout' connection string option has been removed. Please consult the documentation for further information.";
+                var message = "The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.";
 
                 Logger.Error(message);
 
@@ -66,7 +66,7 @@
 
             if (ContainsKey("prefetchcount"))
             {
-                var message = "The 'PrefetchCount' connection string option has been removed. Please use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
 
                 Logger.Error(message);
 

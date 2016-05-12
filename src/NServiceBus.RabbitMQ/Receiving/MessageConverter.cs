@@ -40,7 +40,7 @@
                 {
                     if (replyToAddressNSBHeaders != nativeReplyToAddress)
                     {
-                        Logger.WarnFormat("Missmatching replyto address properties found, the address specified by the NServiceBus headers '{1}' will override the native one '{0}'", nativeReplyToAddress, replyToAddressNSBHeaders);
+                        Logger.WarnFormat("Mismatching 'ReplyTo' properties found. The address specified by the NServiceBus header, '{0}', will override the native one, '{1}'", replyToAddressNSBHeaders, nativeReplyToAddress);
                     }
                 }
                 else
@@ -80,7 +80,7 @@
 
             if (!properties.IsMessageIdPresent() || string.IsNullOrWhiteSpace(properties.MessageId))
             {
-                throw new InvalidOperationException("A non empty message_id property is required when running NServiceBus on top of RabbitMq. If this is a interop message please make sure to set the message_id property before publishing the message");
+                throw new InvalidOperationException("A non-empty 'message-id' property is required when running NServiceBus on top of RabbitMQ. If this is an interop message, make sure to set the 'message-id' property before publishing the message");
             }
 
             return properties.MessageId;
