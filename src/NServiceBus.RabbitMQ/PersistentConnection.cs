@@ -16,11 +16,11 @@ namespace NServiceBus.Transports.RabbitMQ
     [SkipWeaving]
     class PersistentConnection : IConnection
     {
-        public PersistentConnection(RabbitMqConnectionFactory connectionFactory, TimeSpan retryDelay, string purpose)
+        public PersistentConnection(RabbitMqConnectionFactory connectionFactory, TimeSpan retryDelay, string connectionName)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
-            this.purpose = purpose;
+            this.connectionName = connectionName;
 
             TryToConnect(null);
         }
@@ -70,7 +70,7 @@ namespace NServiceBus.Transports.RabbitMQ
             var success = false;
             try
             {
-                connection = connectionFactory.CreateConnection(purpose);
+                connection = connectionFactory.CreateConnection(connectionName);
                 success = true;
             }
             catch (System.Net.Sockets.SocketException socketException)
@@ -292,7 +292,7 @@ namespace NServiceBus.Transports.RabbitMQ
         IConnection connection;
         readonly RabbitMqConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
-        readonly string purpose;
+        readonly string connectionName;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(RabbitMqConnectionManager));
         public int LocalPort { get { return connection.LocalPort; } }
