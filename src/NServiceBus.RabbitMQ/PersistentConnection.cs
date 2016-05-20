@@ -14,9 +14,9 @@ namespace NServiceBus.Transports.RabbitMQ
     /// A connection that attempts to reconnect if the inner connection is closed.
     /// </summary>
     [SkipWeaving]
-    class PersistentConnection: IConnection
+    class PersistentConnection : IConnection
     {
-        public PersistentConnection(RabbitMqConnectionFactory connectionFactory, TimeSpan retryDelay,string purpose)
+        public PersistentConnection(RabbitMqConnectionFactory connectionFactory, TimeSpan retryDelay, string purpose)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
@@ -34,7 +34,7 @@ namespace NServiceBus.Transports.RabbitMQ
             return connection.CreateModel();
         }
 
-       
+
         public void Close()
         {
             connection.ConnectionShutdown -= OnConnectionShutdown;
@@ -58,7 +58,7 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             if (timer != null)
             {
-                ((Timer) timer).Dispose();
+                ((Timer)timer).Dispose();
             }
 
             Logger.Debug("Trying to connect");
@@ -118,7 +118,7 @@ namespace NServiceBus.Transports.RabbitMQ
             {
                 return;
             }
-        
+
             Logger.InfoFormat("Disconnected from RabbitMQ Broker, reason: {0} , going to reconnect", reason);
 
             TryToConnect(null);
@@ -142,6 +142,11 @@ namespace NServiceBus.Transports.RabbitMQ
         public void Abort(ushort reasonCode, string reasonText, int timeout)
         {
             connection.Abort(reasonCode, reasonText, timeout);
+        }
+
+        public string ClientProvidedName
+        {
+            get { return connection.ClientProvidedName; }
         }
 
         public AmqpTcpEndpoint Endpoint
@@ -246,7 +251,7 @@ namespace NServiceBus.Transports.RabbitMQ
         {
             connection.HandleConnectionBlocked(reason);
         }
-        
+
         public void HandleConnectionUnblocked()
         {
             connection.HandleConnectionUnblocked();
@@ -289,7 +294,7 @@ namespace NServiceBus.Transports.RabbitMQ
         readonly TimeSpan retryDelay;
         readonly string purpose;
 
-        static readonly ILog Logger = LogManager.GetLogger(typeof (RabbitMqConnectionManager));
+        static readonly ILog Logger = LogManager.GetLogger(typeof(RabbitMqConnectionManager));
         public int LocalPort { get { return connection.LocalPort; } }
         public int RemotePort { get { return connection.RemotePort; } }
     }
