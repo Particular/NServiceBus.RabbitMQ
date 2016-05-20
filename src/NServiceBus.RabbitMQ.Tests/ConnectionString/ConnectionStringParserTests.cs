@@ -41,11 +41,11 @@
         }
 
         [Test]
-        [ExpectedException(typeof(Exception))]
         public void Should_fail_if_host_is_not_present()
         {
             var parser = new ConnectionStringParser(settings);
-            parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3");
+
+            Assert.Throws<Exception>(() => parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3"));
         }
 
         [Test]
@@ -180,11 +180,11 @@
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentException))]
         public void Should_throw_on_malformed_string()
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
-            parser.Parse("not a well formed name value pair;");
+
+            Assert.Throws<ArgumentException>(() => parser.Parse("not a well formed name value pair;"));
         }
 
         [Test]
@@ -203,8 +203,8 @@
             }
 
             Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
-            Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
+            Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
+            Assert.That(exception.Message, Does.Contain("consider using a load balancer"));
         }
 
         [Test]
@@ -223,7 +223,7 @@
             }
 
             Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'DequeueTimeout' connection string option has been removed"));
         }
 
         [Test]
@@ -242,7 +242,7 @@
             }
 
             Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
         }
 
         [Test]
@@ -261,7 +261,7 @@
             }
 
             Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The 'PrefetchCount' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
         }
     }
 }
