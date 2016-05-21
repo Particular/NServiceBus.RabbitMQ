@@ -46,12 +46,11 @@
             }
         }
 
-        public IConnection CreateConnection(string purpose)
+        public IConnection CreateConnection(string connectionName)
         {
-            connectionFactory.ClientProperties["purpose"] = purpose;
             connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
-            return connectionFactory.CreateConnection();
+            return connectionFactory.CreateConnection(connectionName);
         }
     }
 }
