@@ -129,27 +129,21 @@
             using (var connection = connectionFactory.CreateConnection("Consume"))
             using (var channel = connection.CreateModel())
             {
-                var consumer = new QueueingBasicConsumer(channel);
+                var message = channel.BasicGet(queueToReceiveOn, false);
 
-                channel.BasicConsume(queueToReceiveOn, false, consumer);
-
-                BasicDeliverEventArgs message;
-
-                if (!consumer.Queue.Dequeue(1000, out message))
+                if (message == null)
                 {
                     throw new InvalidOperationException("No message found in queue");
                 }
 
-                var e = message;
-
-                if (e.BasicProperties.MessageId != id)
+                if (message.BasicProperties.MessageId != id)
                 {
                     throw new InvalidOperationException("Unexpected message found in queue");
                 }
 
-                channel.BasicAck(e.DeliveryTag, false);
+                channel.BasicAck(message.DeliveryTag, false);
 
-                return e;
+                return new BasicDeliverEventArgs("", message.DeliveryTag, message.Redelivered, message.Exchange, message.RoutingKey, message.BasicProperties, message.Body);
             }
         }
 
