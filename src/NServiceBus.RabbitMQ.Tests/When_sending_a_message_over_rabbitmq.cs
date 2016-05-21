@@ -6,7 +6,6 @@
     using System.Text;
     using System.Threading.Tasks;
     using Extensibility;
-    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
     using Transports;
