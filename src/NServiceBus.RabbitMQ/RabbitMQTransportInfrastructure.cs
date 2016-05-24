@@ -15,7 +15,6 @@
     class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         readonly SettingsHolder settings;
-        readonly ConnectionConfiguration connectionConfiguration;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
         IRoutingTopology topology;
@@ -24,7 +23,7 @@
         {
             this.settings = settings;
 
-            connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
+            var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
             connectionFactory = new ConnectionFactory(connectionConfiguration);
             channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.UsePublisherConfirms);
 
@@ -137,7 +136,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionConfiguration, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
         }
     }
 }

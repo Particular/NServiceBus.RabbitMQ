@@ -75,7 +75,7 @@
             var purger = new QueuePurger(connectionFactory);
             var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
 
-            messagePump = new MessagePump(config, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
