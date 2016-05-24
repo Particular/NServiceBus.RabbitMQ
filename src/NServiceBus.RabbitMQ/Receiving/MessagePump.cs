@@ -16,7 +16,7 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
 
-        readonly ConnectionConfiguration connectionConfiguration;
+        readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly PoisonMessageForwarder poisonMessageForwarder;
@@ -35,9 +35,9 @@
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionConfiguration connectionConfiguration, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
         {
-            this.connectionConfiguration = connectionConfiguration;
+            this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.poisonMessageForwarder = poisonMessageForwarder;
@@ -70,8 +70,7 @@
             semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
             messageProcessing = new CancellationTokenSource();
 
-            var factory = new ConnectionFactory(connectionConfiguration);
-            connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
+            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();
             channel.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);

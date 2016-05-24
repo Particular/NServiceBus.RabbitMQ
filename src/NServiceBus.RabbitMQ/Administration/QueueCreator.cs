@@ -5,13 +5,13 @@
 
     class QueueCreator : ICreateQueues
     {
-        readonly ConnectionManager connectionManager;
+        readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology topology;
         readonly bool durableMessagesEnabled;
 
-        public QueueCreator(ConnectionManager connectionManager, IRoutingTopology topology, bool durableMessagesEnabled)
+        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology topology, bool durableMessagesEnabled)
         {
-            this.connectionManager = connectionManager;
+            this.connectionFactory = connectionFactory;
             this.topology = topology;
             this.durableMessagesEnabled = durableMessagesEnabled;
         }
@@ -33,7 +33,7 @@
 
         void CreateQueueIfNecessary(string receivingAddress)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
