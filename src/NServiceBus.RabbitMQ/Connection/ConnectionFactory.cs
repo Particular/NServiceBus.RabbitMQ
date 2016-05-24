@@ -7,6 +7,7 @@
     class ConnectionFactory
     {
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
+        object lockObject = new object();
 
         public ConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
@@ -46,12 +47,19 @@
             }
         }
 
+        public IConnection CreatePublishConnection() => CreateConnection("Publish");
+
+        public IConnection CreateAdministrationConnection() => CreateConnection("Administration");
+
         public IConnection CreateConnection(string connectionName)
         {
-            connectionFactory.ClientProperties["purpose"] = connectionName;
-            connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
+            lock (lockObject)
+            {
+                connectionFactory.ClientProperties["purpose"] = connectionName;
+                connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
-            return connectionFactory.CreateConnection(connectionName);
+                return connectionFactory.CreateConnection(connectionName);
+            }
         }
     }
 }

@@ -16,7 +16,7 @@
     {
         readonly SettingsHolder settings;
         readonly ConnectionConfiguration connectionConfiguration;
-        readonly ConnectionManager connectionManager;
+        readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
         IRoutingTopology topology;
 
@@ -25,8 +25,8 @@
             this.settings = settings;
 
             connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
-            connectionManager = new ConnectionManager(new ConnectionFactory(connectionConfiguration));
-            channelProvider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms);
+            connectionFactory = new ConnectionFactory(connectionConfiguration);
+            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.UsePublisherConfirms);
 
             CreateTopology();
 
@@ -45,7 +45,7 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionManager, topology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, topology, settings.DurableMessagesEnabled()),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
@@ -58,7 +58,7 @@
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionManager, topology, settings.LocalAddress()));
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, topology, settings.LocalAddress()));
         }
 
         public override string ToTransportAddress(LogicalAddress logicalAddress)
@@ -80,7 +80,7 @@
 
         public void Dispose()
         {
-            connectionManager.Dispose();
+            channelProvider.Dispose();
         }
 
         void CreateTopology()
@@ -129,7 +129,7 @@
 
             var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, topology);
 
-            var queuePurger = new QueuePurger(connectionManager);
+            var queuePurger = new QueuePurger(connectionFactory);
 
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
             if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggeringCircuitBreaker))

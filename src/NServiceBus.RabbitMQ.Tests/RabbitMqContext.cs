@@ -11,7 +11,7 @@
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
@@ -26,7 +26,7 @@
 
         void DeleteExchange(string exchangeName)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 try
@@ -68,19 +68,18 @@
             }
 
             connectionFactory = new ConnectionFactory(config);
-            connectionManager = new ConnectionManager(connectionFactory);
-            var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, config.UsePublisherConfirms);
 
             messageDispatcher = new MessageDispatcher(routingTopology, channelProvider);
 
-            var purger = new QueuePurger(connectionManager);
+            var purger = new QueuePurger(connectionFactory);
             var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
 
             messagePump = new MessagePump(config, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
-            subscriptionManager = new SubscriptionManager(connectionManager, routingTopology, ReceiverQueue);
+            subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
 
             messagePump.Init(pushContext =>
             {
@@ -99,7 +98,7 @@
         {
             messagePump?.Stop().GetAwaiter().GetResult();
 
-            connectionManager?.Dispose();
+            channelProvider?.Dispose();
         }
 
         protected IncomingMessage WaitForMessage()
@@ -120,7 +119,7 @@
         protected const string ReceiverQueue = "testreceiver";
         protected MessageDispatcher messageDispatcher;
         protected ConnectionFactory connectionFactory;
-        protected ConnectionManager connectionManager;
+        private ChannelProvider channelProvider;
         protected MessagePump messagePump;
         BlockingCollection<IncomingMessage> receivedMessages;
 
