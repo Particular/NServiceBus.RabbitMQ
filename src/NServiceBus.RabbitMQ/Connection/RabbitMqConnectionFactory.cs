@@ -44,10 +44,9 @@
             };
         }
 
-        public virtual IConnection CreateConnection(string purpose)
+        public virtual IConnection CreateConnection(string connectionName)
         {
-            connectionFactory.ClientProperties["purpose"] = purpose;
-            return connectionFactory.CreateConnection();
+            return connectionFactory.CreateConnection(connectionName);
         }
 
         readonly ConnectionFactory connectionFactory;
