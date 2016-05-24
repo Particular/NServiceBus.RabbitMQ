@@ -8,8 +8,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public ChannelProvider(ConnectionFactory connectionFactory, bool usePublisherConfirms)
         {
-            //this.connectionFactory = connectionFactory;
-            connection = connectionFactory.CreatePublishConnection();
+            this.connectionFactory = connectionFactory;
             this.usePublisherConfirms = usePublisherConfirms;
 
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
@@ -22,6 +21,11 @@ namespace NServiceBus.Transport.RabbitMQ
             if (!channels.TryDequeue(out channel) || channel.IsClosed)
             {
                 channel?.Dispose();
+
+                if (connection == null)
+                {
+                    CreateConnection();
+                }
 
                 channel = new ConfirmsAwareChannel(connection, usePublisherConfirms);
             }
@@ -41,12 +45,20 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
+        void CreateConnection()
+        {
+            lock (connectionFactory)
+            {
+                connection = connection ?? connectionFactory.CreatePublishConnection();
+            }
+        }
+
         public void Dispose()
         {
             //injected
         }
 
-        //readonly ConnectionFactory connectionFactory;
+        readonly ConnectionFactory connectionFactory;
         IConnection connection;
         readonly bool usePublisherConfirms;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
