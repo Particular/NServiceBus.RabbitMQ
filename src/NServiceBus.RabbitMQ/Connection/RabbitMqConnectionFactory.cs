@@ -46,6 +46,7 @@
 
         public virtual IConnection CreateConnection(string connectionName)
         {
+            connectionFactory.ClientProperties["purpose"] = connectionName;
             return connectionFactory.CreateConnection(connectionName);
         }
 
