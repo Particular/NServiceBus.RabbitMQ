@@ -10,10 +10,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, bool usePublisherConfirms)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             channel = connection.CreateModel();
 
+            this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
 
             if (usePublisherConfirms)
@@ -35,7 +36,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public Task SendMessage(Action<IModel, string, OutgoingMessage, IBasicProperties> send, string address, OutgoingMessage message, IBasicProperties properties)
+        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
         {
             Task task;
 
@@ -49,12 +50,12 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            send(channel, address, message, properties);
+            routingTopology.Send(channel, address, message, properties);
 
             return task;
         }
 
-        public Task PublishMessage(Action<IModel, Type, OutgoingMessage, IBasicProperties> publish, Type type, OutgoingMessage message, IBasicProperties properties)
+        public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties)
         {
             Task task;
 
@@ -68,12 +69,12 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            publish(channel, type, message, properties);
+            routingTopology.Publish(channel, type, message, properties);
 
             return task;
         }
 
-        public Task RawSendInCaseOfFailure(Action<IModel, string, byte[], IBasicProperties> rawSend, string address, byte[] body, IBasicProperties properties)
+        public Task RawSendInCaseOfFailure(string address, byte[] body, IBasicProperties properties)
         {
             Task task;
 
@@ -87,7 +88,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            rawSend(channel, address, body, properties);
+            routingTopology.RawSendInCaseOfFailure(channel, address, body, properties);
 
             return task;
         }
@@ -204,6 +205,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         IModel channel;
+        readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 

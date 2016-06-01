@@ -9,11 +9,9 @@
     class MessageDispatcher : IDispatchMessages
     {
         readonly IChannelProvider channelProvider;
-        readonly IRoutingTopology routingTopology;
 
-        public MessageDispatcher(IRoutingTopology routingTopology, IChannelProvider channelProvider)
+        public MessageDispatcher(IChannelProvider channelProvider)
         {
-            this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
         }
 
@@ -50,7 +48,7 @@
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.DeliveryConstraints);
 
-            return channel.SendMessage(routingTopology.Send, transportOperation.Destination, message, properties);
+            return channel.SendMessage(transportOperation.Destination, message, properties);
         }
 
         Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel)
@@ -60,7 +58,7 @@
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.DeliveryConstraints);
 
-            return channel.PublishMessage(routingTopology.Publish, transportOperation.MessageType, message, properties);
+            return channel.PublishMessage(transportOperation.MessageType, message, properties);
         }
     }
 }

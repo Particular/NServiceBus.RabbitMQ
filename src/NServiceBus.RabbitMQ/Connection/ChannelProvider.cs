@@ -6,10 +6,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ChannelProvider : IChannelProvider, IDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, bool usePublisherConfirms)
+        public ChannelProvider(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             connection = new Lazy<IConnection>(() => connectionFactory.CreatePublishConnection());
 
+            this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
 
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
@@ -23,7 +24,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 channel?.Dispose();
 
-                channel = new ConfirmsAwareChannel(connection.Value, usePublisherConfirms);
+                channel = new ConfirmsAwareChannel(connection.Value, routingTopology, usePublisherConfirms);
             }
 
             return channel;
@@ -55,6 +56,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         readonly Lazy<IConnection> connection;
+        readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
     }

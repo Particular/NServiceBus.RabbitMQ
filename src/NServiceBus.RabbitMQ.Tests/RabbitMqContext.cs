@@ -68,12 +68,12 @@
             }
 
             connectionFactory = new ConnectionFactory(config);
-            channelProvider = new ChannelProvider(connectionFactory, config.UsePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, config.UsePublisherConfirms);
 
-            messageDispatcher = new MessageDispatcher(routingTopology, channelProvider);
+            messageDispatcher = new MessageDispatcher(channelProvider);
 
             var purger = new QueuePurger(connectionFactory);
-            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
+            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider);
 
             messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
 
