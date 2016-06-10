@@ -80,7 +80,7 @@
 
             if (!properties.IsMessageIdPresent() || string.IsNullOrWhiteSpace(properties.MessageId))
             {
-                throw new InvalidOperationException("A non empty message_id property is required when running NServiceBus on top of RabbitMq. If this is a interop message please make sure to set the message_id property before publishing the message");
+                throw new InvalidOperationException("A non empty message_id property is required when running NServiceBus on top of RabbitMq. If this is a interop message then set the message_id property before publishing the message");
             }
 
             return properties.MessageId;
