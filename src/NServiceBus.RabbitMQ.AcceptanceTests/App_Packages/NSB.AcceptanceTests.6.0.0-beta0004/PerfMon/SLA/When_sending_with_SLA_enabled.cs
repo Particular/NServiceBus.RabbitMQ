@@ -9,13 +9,13 @@
     using NUnit.Framework;
     using ScenarioDescriptors;
 
-    public class When_sending_slow_with_SLA_enabled : NServiceBusAcceptanceTest
+    public class When_sending_with_SLA_enabled : NServiceBusAcceptanceTest
     {
         [Test]
         [Explicit("Since perf counters need to be enabled with powershell")]
         public async Task Should_have_perf_counter_set()
         {
-            using (var counter = new PerformanceCounter("NServiceBus", "SLA violation countdown", "PerformanceMonitoring.Endpoint.WhenSendingSlowWithSLAEnabled." + Transports.Default.Key, true))
+            using (var counter = new PerformanceCounter("NServiceBus", "SLA violation countdown", "SendingWithSLAEnabled.Endpoint", false))
             {
                 using (new Timer(state => CheckPerfCounter(counter), null, 0, 100))
                 {
@@ -27,7 +27,7 @@
                         .Run();
                 }
             }
-            Assert.Greater(counterValue, 2);
+            Assert.Greater(counterValue, 0);
         }
 
         void CheckPerfCounter(PerformanceCounter counter)
@@ -50,7 +50,7 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(builder => builder.EnableSLAPerformanceCounter(new TimeSpan(0, 0, 0, 0, 1)));
+                EndpointSetup<DefaultServer>(builder => builder.EnableSLAPerformanceCounter(TimeSpan.FromMinutes(10)));
             }
         }
 
@@ -62,10 +62,10 @@
         {
             public Context Context { get; set; }
 
-            public async Task Handle(MyMessage message, IMessageHandlerContext context)
+            public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
-                await Task.Delay(1000);
                 Context.WasCalled = true;
+                return Task.FromResult(0);
             }
         }
     }

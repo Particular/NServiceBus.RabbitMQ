@@ -2,6 +2,7 @@ namespace NServiceBus.AcceptanceTests.Routing.AutomaticSubscriptions
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using EndpointTemplates;
@@ -9,18 +10,17 @@ namespace NServiceBus.AcceptanceTests.Routing.AutomaticSubscriptions
     using NUnit.Framework;
 
     [TestFixture]
-    public class When_starting_an_endpoint_with_a_saga : NServiceBusAcceptanceTest
+    public class When_starting_an_endpoint_with_a_saga_autosubscribe_disabled : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Should_autoSubscribe_the_saga_messageHandler_by_default()
+        public async Task Should_not_autoSubscribe_messages_handled_by_sagas_if_asked_to()
         {
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<Subscriber>()
-                .Done(c => c.EventsSubscribedTo.Count >= 2)
+                .WithEndpoint<Subscriber>(g => g.CustomConfig(c => c.AutoSubscribe().DoNotAutoSubscribeSagas()))
+                .Done(c => c.EndpointsStarted)
                 .Run();
 
-            Assert.True(context.EventsSubscribedTo.Contains(typeof(MyEvent)), "Events only handled by sagas should be auto subscribed");
-            Assert.True(context.EventsSubscribedTo.Contains(typeof(MyEventBase)), "Sagas should be auto subscribed even when handling a base class event");
+            Assert.False(context.EventsSubscribedTo.Any(), "Events only handled by sagas should not be auto subscribed");
         }
 
         class Context : ScenarioContext
@@ -59,23 +59,25 @@ namespace NServiceBus.AcceptanceTests.Routing.AutomaticSubscriptions
                 Context testContext;
             }
 
-            public class AutoSubscriptionSaga : Saga<AutoSubscriptionSaga.AutoSubscriptionSagaData>, IAmStartedByMessages<MyEvent>
+            public class NotAutoSubscribedSaga : Saga<NotAutoSubscribedSaga.NotAutoSubscribedSagaSagaData>, IAmStartedByMessages<MyEvent>
             {
                 public Task Handle(MyEvent message, IMessageHandlerContext context)
                 {
                     return Task.FromResult(0);
                 }
 
-                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<AutoSubscriptionSagaData> mapper)
+                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<NotAutoSubscribedSagaSagaData> mapper)
                 {
+                    mapper.ConfigureMapping<MyEvent>(msg => msg.SomeId).ToSaga(saga => saga.SomeId);
                 }
 
-                public class AutoSubscriptionSagaData : ContainSagaData
+                public class NotAutoSubscribedSagaSagaData : ContainSagaData
                 {
+                    public virtual string SomeId { get; set; }
                 }
             }
 
-            public class MySagaThatReactsOnASuperClassEvent : Saga<MySagaThatReactsOnASuperClassEvent.SuperClassEventSagaData>,
+            public class NotAutoSubsubscribedSagaThatReactsOnASuperClassEvent : Saga<NotAutoSubsubscribedSagaThatReactsOnASuperClassEvent.NotAutosubscribeSuperClassEventSagaData>,
                 IAmStartedByMessages<MyEventBase>
             {
                 public Task Handle(MyEventBase message, IMessageHandlerContext context)
@@ -83,18 +85,21 @@ namespace NServiceBus.AcceptanceTests.Routing.AutomaticSubscriptions
                     return Task.FromResult(0);
                 }
 
-                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<SuperClassEventSagaData> mapper)
+                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<NotAutosubscribeSuperClassEventSagaData> mapper)
                 {
+                    mapper.ConfigureMapping<MyEventBase>(saga => saga.SomeId).ToSaga(saga => saga.SomeId);
                 }
 
-                public class SuperClassEventSagaData : ContainSagaData
+                public class NotAutosubscribeSuperClassEventSagaData : ContainSagaData
                 {
+                    public virtual string SomeId { get; set; }
                 }
             }
         }
 
         public class MyEventBase : IEvent
         {
+            public string SomeId { get; set; }
         }
 
         public class MyEventWithParent : MyEventBase
@@ -107,6 +112,7 @@ namespace NServiceBus.AcceptanceTests.Routing.AutomaticSubscriptions
 
         public class MyEvent : IEvent
         {
+            public string SomeId { get; set; }
         }
     }
 }
