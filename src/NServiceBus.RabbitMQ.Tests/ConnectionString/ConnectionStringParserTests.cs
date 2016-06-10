@@ -191,18 +191,9 @@
         public void Should_inform_that_multiple_hosts_are_not_supported()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
 
-            try
-            {
-                parser.Parse("host=localhost,host=localhost2");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost,host=localhost2"));
 
-            Assert.IsNotNull(exception);
             Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Does.Contain("consider using a load balancer"));
         }
@@ -211,18 +202,9 @@
         public void Should_inform_that_dequeuetimeout_has_been_removed()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
 
-            try
-            {
-                parser.Parse("host=localhost;dequeuetimeout=1");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;dequeuetimeout=1"));
 
-            Assert.IsNotNull(exception);
             Assert.That(exception.Message, Does.Contain("The 'DequeueTimeout' connection string option has been removed"));
         }
 
@@ -230,18 +212,9 @@
         public void Should_inform_that_max_wait_time_for_confirmss_has_been_removed()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
 
-            try
-            {
-                parser.Parse("host=localhost;maxWaitTimeForConfirms=02:03:39");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;maxWaitTimeForConfirms=02:03:39"));
 
-            Assert.IsNotNull(exception);
             Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
         }
 
@@ -249,18 +222,9 @@
         public void Should_inform_that_prefetchcount_has_been_removed()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
 
-            try
-            {
-                parser.Parse("host=localhost;prefetchcount=100");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;prefetchcount=100"));
 
-            Assert.IsNotNull(exception);
             Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
         }
     }

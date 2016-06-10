@@ -82,10 +82,7 @@
 
             if (hostsAndPorts.Length > 1)
             {
-                var message =
-                    "Multiple hosts are no longer supported. " +
-                    "If you are using RabbitMQ in a cluster, " +
-                        "consider using a load balancer to represent the nodes as a single host.";
+                var message = "Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.";
 
                 Logger.Error(message);
 
