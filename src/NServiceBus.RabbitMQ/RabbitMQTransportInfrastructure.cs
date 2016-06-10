@@ -5,10 +5,10 @@
     using System.Text;
     using System.Threading.Tasks;
     using Janitor;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
+    using Performance.TimeToBeReceived;
+    using Routing;
+    using Settings;
+    using Transports;
     using global::RabbitMQ.Client.Events;
 
     [SkipWeaving]

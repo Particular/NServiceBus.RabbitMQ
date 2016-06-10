@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
-    using NServiceBus.Transport.RabbitMQ;
+    using RabbitMQ;
     using NUnit.Framework;
     using Settings;
 

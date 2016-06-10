@@ -7,27 +7,27 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Transports;
+    using Extensibility;
+    using Transports;
     using NUnit.Framework;
 
-    using Headers = NServiceBus.Headers;
+    using Headers = Headers;
 
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
         [Test]
-        public async Task Should_populate_the_body()
+        public Task Should_populate_the_body()
         {
             var body = Encoding.UTF8.GetBytes("<TestMessage/>");
 
-            await Verify(new OutgoingMessageBuilder().WithBody(body), (IncomingMessage received) => Assert.AreEqual(body, received.Body));
+            return Verify(new OutgoingMessageBuilder().WithBody(body), (IncomingMessage received) => Assert.AreEqual(body, received.Body));
         }
 
         [Test]
-        public async Task Should_set_the_content_type()
+        public Task Should_set_the_content_type()
         {
-            await Verify(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"), received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
+            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"), received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
         }
 
         [Test]

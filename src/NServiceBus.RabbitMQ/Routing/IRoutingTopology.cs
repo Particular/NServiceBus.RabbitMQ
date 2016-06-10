@@ -2,7 +2,7 @@
 {
     using System;
     using global::RabbitMQ.Client;
-    using NServiceBus.Transports;
+    using Transports;
 
     /// <summary>
     /// Topology for routing messages on the transport.

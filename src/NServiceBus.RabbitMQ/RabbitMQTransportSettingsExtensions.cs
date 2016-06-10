@@ -3,7 +3,7 @@
     using System;
     using Configuration.AdvanceExtensibility;
     using RabbitMQ.Client.Events;
-    using NServiceBus.Transport.RabbitMQ;
+    using Transport.RabbitMQ;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.

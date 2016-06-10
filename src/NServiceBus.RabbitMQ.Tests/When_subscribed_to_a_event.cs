@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Transports;
+    using Extensibility;
+    using Transports;
     using NUnit.Framework;
 
     [TestFixture]

@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Threading.Tasks;
-    using NServiceBus.Transports;
+    using Transports;
 
     class QueueCreator : ICreateQueues
     {

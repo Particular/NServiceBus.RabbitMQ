@@ -5,8 +5,8 @@
     using System.Data.Common;
     using System.Linq;
     using System.Reflection;
-    using NServiceBus.Logging;
-    using NServiceBus.Settings;
+    using Logging;
+    using Settings;
 
     class ConnectionStringParser : DbConnectionStringBuilder
     {

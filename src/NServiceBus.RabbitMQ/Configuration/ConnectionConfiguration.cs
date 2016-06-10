@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using NServiceBus.Settings;
-    using NServiceBus.Support;
+    using Settings;
+    using Support;
 
     class ConnectionConfiguration
     {
