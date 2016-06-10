@@ -3,15 +3,15 @@
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Features;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
+    using Extensibility;
+    using Features;
+    using Performance.TimeToBeReceived;
+    using Routing;
+    using Settings;
+    using Transports;
     using NUnit.Framework;
 
     public class When_the_broker_connection_is_lost : NServiceBusAcceptanceTest

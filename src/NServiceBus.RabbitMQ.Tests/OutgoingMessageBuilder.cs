@@ -2,10 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
-    using NServiceBus.DeliveryConstraints;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
-    using NServiceBus.Transports;
+    using DeliveryConstraints;
+    using Performance.TimeToBeReceived;
+    using Routing;
+    using Transports;
 
     public class OutgoingMessageBuilder
     {

@@ -8,9 +8,8 @@
     using global::RabbitMQ.Client;
     using DeliveryConstraints;
     using Performance.TimeToBeReceived;
-    using NServiceBus.Transports;
-
-    using Headers = NServiceBus.Headers;
+    using Transports;
+    using Headers = Headers;
 
     static class BasicPropertiesExtensions
     {

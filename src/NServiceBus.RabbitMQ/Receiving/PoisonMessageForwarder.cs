@@ -3,7 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.Logging;
+    using Logging;
 
     class PoisonMessageForwarder
     {

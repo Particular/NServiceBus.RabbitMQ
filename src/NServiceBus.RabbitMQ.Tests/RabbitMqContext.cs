@@ -3,9 +3,9 @@
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
-    using NServiceBus.Transport.RabbitMQ;
+    using Settings;
+    using Transports;
+    using RabbitMQ;
     using NUnit.Framework;
 
     class RabbitMqContext
@@ -64,8 +64,10 @@
             }
             else
             {
-                config = new ConnectionConfiguration(settings);
-                config.Host = "localhost";
+                config = new ConnectionConfiguration(settings)
+                {
+                    Host = "localhost"
+                };
             }
 
             connectionFactory = new RabbitMqConnectionFactory(config);

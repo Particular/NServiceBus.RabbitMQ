@@ -1,0 +1,1 @@
+﻿Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.

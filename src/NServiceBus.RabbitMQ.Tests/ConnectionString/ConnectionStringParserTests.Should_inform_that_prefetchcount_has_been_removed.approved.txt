@@ -1,0 +1,1 @@
+﻿The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.

@@ -2,13 +2,13 @@
 {
     using System;
     using System.Threading;
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using System.Threading.Tasks;
-    using NServiceBus.Configuration.AdvanceExtensibility;
-    using NServiceBus.Settings;
+    using Configuration.AdvanceExtensibility;
+    using Settings;
 
     public class When_scaling_out_senders_that_uses_callbacks : NServiceBusAcceptanceTest
     {
@@ -32,10 +32,11 @@
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.RouteReplyToThisInstance();
-                            await bus.Send(new MyRequest()
+                            var myRequest = new MyRequest
                             {
                                 Client = "A"
-                            }, sendOptions);
+                            };
+                            await bus.Send(myRequest, sendOptions);
                         }
                     });
                 })
@@ -52,10 +53,11 @@
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.RouteReplyToThisInstance();
-                            await bus.Send(new MyRequest()
+                            var myRequest = new MyRequest
                             {
                                 Client = "B"
-                            }, sendOptions);
+                            };
+                            await bus.Send(myRequest, sendOptions);
                         }
                     });
                 })
@@ -73,13 +75,13 @@
                     .AddMapping<MyRequest>(typeof(ServerThatRespondsToCallbacks));
             }
 
-            class MyResponseHandler : IHandleMessages<MyReposnse>
+            class MyResponseHandler : IHandleMessages<MyResponse>
             {
                 public ReadOnlySettings Settings { get; set; }
 
                 public Context Context { get; set; }
 
-                public Task Handle(MyReposnse message, IMessageHandlerContext context)
+                public Task Handle(MyResponse message, IMessageHandlerContext context)
                 {
                     if (Settings.Get<string>("Client") != message.Client)
                     {
@@ -102,10 +104,11 @@
             {
                 public async Task Handle(MyRequest message, IMessageHandlerContext context)
                 {
-                    await context.Reply(new MyReposnse()
+                    var myResponse = new MyResponse
                     {
                         Client = message.Client
-                    });
+                    };
+                    await context.Reply(myResponse);
                 }
             }
         }
@@ -115,7 +118,7 @@
             public string Client { get; set; }
         }
 
-        class MyReposnse : IMessage
+        class MyResponse : IMessage
         {
             public string Client { get; set; }
         }
@@ -124,10 +127,7 @@
         {
             int repliesReceived;
 
-            public int RepliesReceived
-            {
-                get { return repliesReceived; }
-            }
+            public int RepliesReceived => repliesReceived;
 
             public void ReplyReceived()
             {
