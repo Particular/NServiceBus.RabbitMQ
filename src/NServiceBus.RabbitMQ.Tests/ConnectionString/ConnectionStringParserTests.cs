@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
+    using ApprovalTests;
     using RabbitMQ;
     using NUnit.Framework;
     using Settings;
@@ -41,11 +42,11 @@
         }
 
         [Test]
-        [ExpectedException(typeof(Exception))]
         public void Should_fail_if_host_is_not_present()
         {
             var parser = new ConnectionStringParser(settings);
-            parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3");
+            var exception = Assert.Throws<Exception>(() => parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3"));
+            Approvals.Verify(exception.Message);
         }
 
         [Test]
@@ -180,88 +181,43 @@
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentException))]
         public void Should_throw_on_malformed_string()
         {
             var parser = new ConnectionStringParser(new SettingsHolder());
-            parser.Parse("not a well formed name value pair;");
+            var exception = Assert.Throws<ArgumentException>(() => parser.Parse("not a well formed name value pair;"));
+            Approvals.Verify(exception.Message);
         }
 
         [Test]
         public void Should_inform_that_multiple_hosts_are_not_supported()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
-
-            try
-            {
-                parser.Parse("host=localhost,host=localhost2");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-
-            Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("Multiple hosts are no longer supported"));
-            Assert.That(exception.Message, Is.StringContaining("consider using a load balancer"));
+            var exception = Assert.Throws<NotSupportedException> (() => parser.Parse("host=localhost,host=localhost2"));
+            Approvals.Verify(exception.Message);
         }
 
         [Test]
         public void Should_inform_that_dequeuetimeout_has_been_removed()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
-
-            try
-            {
-                parser.Parse("host=localhost;dequeuetimeout=1");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-
-            Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The 'DequeueTimeout' connection string option has been removed"));
+            var exception = Assert.Throws<NotSupportedException> (() => parser.Parse("host=localhost;dequeuetimeout=1"));
+            Approvals.Verify(exception.Message);
         }
 
         [Test]
         public void Should_inform_that_max_wait_time_for_confirmss_has_been_removed()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
-
-            try
-            {
-                parser.Parse("host=localhost;maxWaitTimeForConfirms=02:03:39");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-
-            Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;maxWaitTimeForConfirms=02:03:39"));
+            Approvals.Verify(exception.Message);
         }
 
         [Test]
         public void Should_inform_that_prefetchcount_has_been_removed()
         {
             var parser = new ConnectionStringParser(settings);
-            Exception exception = null;
-
-            try
-            {
-                parser.Parse("host=localhost;prefetchcount=100");
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-
-            Assert.IsNotNull(exception);
-            Assert.That(exception.Message, Is.StringContaining("The 'PrefetchCount' connection string option has been removed"));
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;prefetchcount=100"));
+            Approvals.Verify(exception.Message);
         }
     }
 }

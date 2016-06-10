@@ -1,0 +1,1 @@
+﻿The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.

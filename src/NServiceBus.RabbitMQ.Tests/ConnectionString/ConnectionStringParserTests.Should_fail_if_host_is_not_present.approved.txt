@@ -1,0 +1,1 @@
+﻿Invalid connection string. 'host' value must be supplied. e.g: "host=myServer"
