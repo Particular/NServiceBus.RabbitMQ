@@ -48,6 +48,7 @@
 
         public IConnection CreateConnection(string connectionName)
         {
+            connectionFactory.ClientProperties["purpose"] = connectionName;
             connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
             return connectionFactory.CreateConnection(connectionName);

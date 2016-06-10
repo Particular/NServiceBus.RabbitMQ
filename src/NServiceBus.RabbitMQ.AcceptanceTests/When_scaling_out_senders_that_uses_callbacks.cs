@@ -32,10 +32,10 @@
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.RouteReplyToThisInstance();
-                            await bus.Send(new MyRequest()
-                            {
-                                Client = "A"
-                            }, sendOptions);
+
+                            var myRequest = new MyRequest { Client = "A" };
+
+                            await bus.Send(myRequest, sendOptions);
                         }
                     });
                 })
@@ -52,10 +52,10 @@
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.RouteReplyToThisInstance();
-                            await bus.Send(new MyRequest()
-                            {
-                                Client = "B"
-                            }, sendOptions);
+
+                            var myRequest = new MyRequest { Client = "B" };
+
+                            await bus.Send(myRequest, sendOptions);
                         }
                     });
                 })
@@ -73,13 +73,13 @@
                     .AddMapping<MyRequest>(typeof(ServerThatRespondsToCallbacks));
             }
 
-            class MyResponseHandler : IHandleMessages<MyReposnse>
+            class MyResponseHandler : IHandleMessages<MyResponse>
             {
                 public ReadOnlySettings Settings { get; set; }
 
                 public Context Context { get; set; }
 
-                public Task Handle(MyReposnse message, IMessageHandlerContext context)
+                public Task Handle(MyResponse message, IMessageHandlerContext context)
                 {
                     if (Settings.Get<string>("Client") != message.Client)
                     {
@@ -100,12 +100,11 @@
 
             class MyRequestHandler : IHandleMessages<MyRequest>
             {
-                public async Task Handle(MyRequest message, IMessageHandlerContext context)
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
                 {
-                    await context.Reply(new MyReposnse()
-                    {
-                        Client = message.Client
-                    });
+                    var myResponse = new MyResponse { Client = message.Client };
+
+                    return context.Reply(myResponse);
                 }
             }
         }
@@ -115,7 +114,7 @@
             public string Client { get; set; }
         }
 
-        class MyReposnse : IMessage
+        class MyResponse : IMessage
         {
             public string Client { get; set; }
         }
@@ -124,10 +123,7 @@
         {
             int repliesReceived;
 
-            public int RepliesReceived
-            {
-                get { return repliesReceived; }
-            }
+            public int RepliesReceived => repliesReceived;
 
             public void ReplyReceived()
             {
