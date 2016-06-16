@@ -36,9 +36,9 @@
         /// <summary>
         /// Registers a custom routing topology.
         /// </summary>
-        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology
+        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology, new()
         {
-            transportExtensions.GetSettings().Set<IRoutingTopology>(Activator.CreateInstance<T>());
+            transportExtensions.GetSettings().Set<IRoutingTopology>(new T());
             return transportExtensions;
         }
 
