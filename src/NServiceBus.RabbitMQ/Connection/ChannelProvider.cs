@@ -8,7 +8,8 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public ChannelProvider(ConnectionFactory connectionFactory, bool usePublisherConfirms)
         {
-            this.connectionFactory = connectionFactory;
+            connection = new Lazy<IConnection>(() => connectionFactory.CreatePublishConnection());
+
             this.usePublisherConfirms = usePublisherConfirms;
 
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
@@ -22,12 +23,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 channel?.Dispose();
 
-                if (connection == null)
-                {
-                    CreateConnection();
-                }
-
-                channel = new ConfirmsAwareChannel(connection, usePublisherConfirms);
+                channel = new ConfirmsAwareChannel(connection.Value, usePublisherConfirms);
             }
 
             return channel;
@@ -45,21 +41,20 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        void CreateConnection()
-        {
-            lock (connectionFactory)
-            {
-                connection = connection ?? connectionFactory.CreatePublishConnection();
-            }
-        }
-
         public void Dispose()
         {
             //injected
         }
 
-        readonly ConnectionFactory connectionFactory;
-        IConnection connection;
+        void DisposeManaged()
+        {
+            if (connection.IsValueCreated)
+            {
+                connection.Value.Dispose();
+            }
+        }
+
+        Lazy<IConnection> connection;
         readonly bool usePublisherConfirms;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
     }
