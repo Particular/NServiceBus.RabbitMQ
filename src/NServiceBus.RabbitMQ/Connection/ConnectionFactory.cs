@@ -7,7 +7,7 @@
     class ConnectionFactory
     {
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
-        object lockObject = new object();
+        readonly object lockObject = new object();
 
         public ConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
