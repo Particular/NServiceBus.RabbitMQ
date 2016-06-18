@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -106,58 +107,71 @@ namespace NServiceBus.Transport.RabbitMQ
             return tcs.Task;
         }
 
+        class EventState
+        {
+            public ConcurrentDictionary<ulong, TaskCompletionSource<bool>> Messages { get; set; }
+
+            public bool Multiple { get; set; }
+
+            public ulong DeliveryTag { get; set; }
+        }
+
         void Channel_BasicAcks(object sender, BasicAckEventArgs e)
         {
-            Task.Run(() =>
+            Task.Factory.StartNew(eventState =>
             {
-                if (!e.Multiple)
+                var s = (EventState)eventState;
+
+                if (!s.Multiple)
                 {
                     TaskCompletionSource<bool> tcs;
-                    messages.TryRemove(e.DeliveryTag, out tcs);
+                    s.Messages.TryRemove(s.DeliveryTag, out tcs);
 
                     tcs?.SetResult(true);
                 }
                 else
                 {
-                    foreach (var message in messages)
+                    foreach (var message in s.Messages)
                     {
-                        if (message.Key <= e.DeliveryTag)
+                        if (message.Key <= s.DeliveryTag)
                         {
                             TaskCompletionSource<bool> tcs;
-                            messages.TryRemove(message.Key, out tcs);
+                            s.Messages.TryRemove(message.Key, out tcs);
 
                             tcs?.SetResult(true);
                         }
                     }
                 }
-            });
+            }, new EventState { Messages = messages, DeliveryTag = e.DeliveryTag, Multiple = e.Multiple }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
         void Channel_BasicNacks(object sender, BasicNackEventArgs e)
         {
-            Task.Run(() =>
+            Task.Factory.StartNew(eventState =>
             {
-                if (!e.Multiple)
+                var s = (EventState)eventState;
+
+                if (!s.Multiple)
                 {
                     TaskCompletionSource<bool> tcs;
-                    messages.TryRemove(e.DeliveryTag, out tcs);
+                    s.Messages.TryRemove(s.DeliveryTag, out tcs);
 
                     tcs?.SetException(new Exception("Message rejected by broker."));
                 }
                 else
                 {
-                    foreach (var message in messages)
+                    foreach (var message in s.Messages)
                     {
-                        if (message.Key <= e.DeliveryTag)
+                        if (message.Key <= s.DeliveryTag)
                         {
                             TaskCompletionSource<bool> tcs;
-                            messages.TryRemove(message.Key, out tcs);
+                            s.Messages.TryRemove(message.Key, out tcs);
 
                             tcs?.SetException(new Exception("Message rejected by broker."));
                         }
                     }
                 }
-            });
+            }, new EventState { Messages = messages, DeliveryTag = e.DeliveryTag, Multiple = e.Multiple }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
         void Channel_BasicReturn(object sender, BasicReturnEventArgs e)
