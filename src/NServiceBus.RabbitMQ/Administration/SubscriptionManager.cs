@@ -7,20 +7,20 @@
 
     class SubscriptionManager : IManageSubscriptions
     {
-        readonly ConnectionManager connectionManager;
+        readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
         readonly string localQueue;
 
-        public SubscriptionManager(ConnectionManager connectionManager, IRoutingTopology routingTopology, string localQueue)
+        public SubscriptionManager(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, string localQueue)
         {
-            this.connectionManager = connectionManager;
+            this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.localQueue = localQueue;
         }
 
         public Task Subscribe(Type eventType, ContextBag context)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 routingTopology.SetupSubscription(channel, eventType, localQueue);
@@ -31,7 +31,7 @@
 
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 routingTopology.TeardownSubscription(channel, eventType, localQueue);
