@@ -128,7 +128,7 @@
             if (list1 != null)
             {
                 var list = list1;
-                return String.Join(";", list.Cast<object>().Select(ValueToString));
+                return String.Join(";", list.Cast<object>().Select(o => ValueToString(o)));
             }
 
             return null;
