@@ -50,9 +50,7 @@
             this.pipe = pipe;
             this.settings = settings;
 
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'",
-                timeToWaitBeforeTriggeringCircuitBreaker,
-                ex => criticalError.Raise($"{settings.InputQueue} MessagePump's connection to the broker has failed.", ex));
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
             exclusiveScheduler = new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
 
