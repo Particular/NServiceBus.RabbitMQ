@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
     using Extensibility;
     using Transports;
@@ -21,14 +20,20 @@
 
             try
             {
-                var tasks = new List<Task>(operations.UnicastTransportOperations.Count() + operations.MulticastTransportOperations.Count());
+                var unicastTransportOperations = operations.UnicastTransportOperations as List<UnicastTransportOperation>
+                    ?? new List<UnicastTransportOperation>(operations.UnicastTransportOperations);
 
-                foreach (var operation in operations.UnicastTransportOperations)
+                var multicastTransportOperations = operations.MulticastTransportOperations as List<MulticastTransportOperation>
+                    ?? new List<MulticastTransportOperation>(operations.MulticastTransportOperations);
+
+                var tasks = new List<Task>(unicastTransportOperations.Count + multicastTransportOperations.Count);
+
+                foreach (var operation in unicastTransportOperations)
                 {
                     tasks.Add(SendMessage(operation, channel));
                 }
 
-                foreach (var operation in operations.MulticastTransportOperations)
+                foreach (var operation in multicastTransportOperations)
                 {
                     tasks.Add(PublishMessage(operation, channel));
                 }
