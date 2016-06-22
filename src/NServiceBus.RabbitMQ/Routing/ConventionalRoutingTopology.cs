@@ -37,10 +37,10 @@
                 // Make handlers for IEvent handle all events whether they extend IEvent or not
                 type = typeof(object);
             }
+
             SetupTypeSubscriptions(channel, type);
             channel.ExchangeBind(subscriberName, ExchangeName(type), string.Empty);
         }
-
 
         public void TeardownSubscription(IModel channel, Type type, string subscriberName)
         {
@@ -74,16 +74,11 @@
 
         public void Initialize(IModel channel, string mainQueue)
         {
-
             CreateExchange(channel, mainQueue);
             channel.QueueBind(mainQueue, mainQueue, string.Empty);
-
         }
 
-        static string ExchangeName(Type type)
-        {
-            return type.Namespace + ":" + type.Name;
-        }
+        static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
 
         void SetupTypeSubscriptions(IModel channel, Type type)
         {
@@ -91,25 +86,25 @@
             {
                 return;
             }
+
+            var typeToProcess = type;
+            CreateExchange(channel, ExchangeName(typeToProcess));
+            var baseType = typeToProcess.BaseType;
+
+            while (baseType != null)
             {
-                var typeToProcess = type;
-                CreateExchange(channel, ExchangeName(typeToProcess));
-                var baseType = typeToProcess.BaseType;
-                while (baseType != null)
-                {
-                    CreateExchange(channel, ExchangeName(baseType));
-                    channel.ExchangeBind(ExchangeName(baseType), ExchangeName(typeToProcess), string.Empty);
-                    typeToProcess = baseType;
-                    baseType = typeToProcess.BaseType;
-                }
+                CreateExchange(channel, ExchangeName(baseType));
+                channel.ExchangeBind(ExchangeName(baseType), ExchangeName(typeToProcess), string.Empty);
+                typeToProcess = baseType;
+                baseType = typeToProcess.BaseType;
             }
 
             foreach (var exchangeName in type.GetInterfaces().Select(ExchangeName))
             {
                 CreateExchange(channel, exchangeName);
                 channel.ExchangeBind(exchangeName, ExchangeName(type), string.Empty);
-
             }
+
             MarkTypeConfigured(type);
         }
 
@@ -118,10 +113,7 @@
             typeTopologyConfiguredSet[eventType] = null;
         }
 
-        bool IsTypeTopologyKnownConfigured(Type eventType)
-        {
-            return typeTopologyConfiguredSet.ContainsKey(eventType);
-        }
+        bool IsTypeTopologyKnownConfigured(Type eventType) => typeTopologyConfiguredSet.ContainsKey(eventType);
 
         void CreateExchange(IModel channel, string exchangeName)
         {

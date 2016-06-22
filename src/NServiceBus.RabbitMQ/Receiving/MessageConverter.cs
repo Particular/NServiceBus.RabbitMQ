@@ -20,10 +20,7 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public string RetrieveMessageId(BasicDeliverEventArgs message)
-        {
-            return messageIdStrategy(message);
-        }
+        public string RetrieveMessageId(BasicDeliverEventArgs message) => messageIdStrategy(message);
 
         public Dictionary<string, string> RetrieveHeaders(BasicDeliverEventArgs message)
         {
@@ -135,7 +132,6 @@
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
-
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
     }
