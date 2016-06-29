@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Linq;
     using global::RabbitMQ.Client;
     using Transports;
 
@@ -99,8 +98,10 @@
                 baseType = typeToProcess.BaseType;
             }
 
-            foreach (var exchangeName in type.GetInterfaces().Select(ExchangeName))
+            foreach (var interfaceType in type.GetInterfaces())
             {
+                var exchangeName = ExchangeName(interfaceType);
+
                 CreateExchange(channel, exchangeName);
                 channel.ExchangeBind(exchangeName, ExchangeName(type), string.Empty);
             }
