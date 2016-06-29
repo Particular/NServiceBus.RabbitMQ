@@ -114,17 +114,15 @@
                 return Encoding.UTF8.GetString(bytes);
             }
 
-            var objects = value as IDictionary<string, object>;
-            if (objects != null)
+            var dictionary = value as IDictionary<string, object>;
+            if (dictionary != null)
             {
-                var dict = objects;
-                return String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
+                return String.Join(",", dictionary.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
             }
 
-            var list1 = value as IList;
-            if (list1 != null)
+            var list = value as IList;
+            if (list != null)
             {
-                var list = list1;
                 return String.Join(";", list.Cast<object>().Select(o => ValueToString(o)));
             }
 
