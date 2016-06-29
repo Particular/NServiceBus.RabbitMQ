@@ -26,7 +26,7 @@
         {
             var properties = message.BasicProperties;
 
-            var headers = DeserializeHeaders(message);
+            var headers = DeserializeHeaders(properties.Headers);
 
             if (properties.IsReplyToPresent())
             {
@@ -83,21 +83,22 @@
             return properties.MessageId;
         }
 
-        static Dictionary<string, string> DeserializeHeaders(BasicDeliverEventArgs message)
+        static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers)
         {
-            if (message.BasicProperties.Headers == null)
+            var deserializedHeaders = new Dictionary<string, string>();
+
+            if (headers != null)
             {
-                return new Dictionary<string, string>();
+                var messageHeaders = headers as Dictionary<string, object>
+                    ?? new Dictionary<string, object>(headers);
+
+                foreach (var header in messageHeaders)
+                {
+                    deserializedHeaders.Add(header.Key, header.Value == null ? null : ValueToString(header.Value));
+                }
             }
 
-            return message.BasicProperties.Headers
-                .ToDictionary(
-                    dictionaryEntry => dictionaryEntry.Key,
-                    dictionaryEntry =>
-                    {
-                        var value = dictionaryEntry.Value;
-                        return dictionaryEntry.Value == null ? null : ValueToString(value);
-                    });
+            return deserializedHeaders;
         }
 
         static string ValueToString(object value)
