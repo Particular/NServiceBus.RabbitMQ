@@ -214,26 +214,33 @@
             }
         }
 
+        class MessageState
+        {
+            public IModel Channel { get; set; }
+
+            public ulong DeliveryTag { get; set; }
+        }
+
         Task AcknowledgeMessage(IModel channel, ulong deliveryTag)
         {
-            var task = new Task(() =>
+            return Task.Factory.StartNew(state =>
             {
-                channel.BasicAck(deliveryTag, false);
-            });
+                var messageState = (MessageState)state;
 
-            task.Start(exclusiveScheduler);
-            return task;
+                messageState.Channel.BasicAck(messageState.DeliveryTag, false);
+
+            }, new MessageState { Channel = channel, DeliveryTag = deliveryTag }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, exclusiveScheduler);
         }
 
         Task RejectMessage(IModel channel, ulong deliveryTag)
         {
-            var task = new Task(() =>
+            return Task.Factory.StartNew(state =>
             {
-                channel.BasicReject(deliveryTag, true);
-            });
+                var messageState = (MessageState)state;
 
-            task.Start(exclusiveScheduler);
-            return task;
+                messageState.Channel.BasicReject(messageState.DeliveryTag, true);
+
+            }, new MessageState { Channel = channel, DeliveryTag = deliveryTag }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, exclusiveScheduler);
         }
 
         public void Dispose()
