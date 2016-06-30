@@ -6,13 +6,13 @@
     class QueueCreator : ICreateQueues
     {
         readonly ConnectionFactory connectionFactory;
-        readonly IRoutingTopology topology;
+        readonly IRoutingTopology routingTopology;
         readonly bool durableMessagesEnabled;
 
-        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology topology, bool durableMessagesEnabled)
+        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool durableMessagesEnabled)
         {
             this.connectionFactory = connectionFactory;
-            this.topology = topology;
+            this.routingTopology = routingTopology;
             this.durableMessagesEnabled = durableMessagesEnabled;
         }
 
@@ -38,7 +38,7 @@
             {
                 channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
 
-                topology.Initialize(channel, receivingAddress);
+                routingTopology.Initialize(channel, receivingAddress);
             }
         }
     }

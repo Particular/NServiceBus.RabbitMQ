@@ -17,7 +17,7 @@
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
-        IRoutingTopology topology;
+        IRoutingTopology routingTopology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
@@ -25,9 +25,10 @@
 
             var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
             connectionFactory = new ConnectionFactory(connectionConfiguration);
-            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.UsePublisherConfirms);
 
             CreateTopology();
+
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, connectionConfiguration.UsePublisherConfirms);
 
             RequireOutboxConsent = false;
         }
@@ -44,20 +45,20 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionFactory, topology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled()),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(topology, channelProvider),
+                () => new MessageDispatcher(channelProvider),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, topology, settings.LocalAddress()));
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, routingTopology, settings.LocalAddress()));
         }
 
         public override string ToTransportAddress(LogicalAddress logicalAddress)
@@ -86,7 +87,7 @@
         {
             if (settings.HasSetting<IRoutingTopology>())
             {
-                topology = settings.Get<IRoutingTopology>();
+                routingTopology = settings.Get<IRoutingTopology>();
             }
             else
             {
@@ -96,11 +97,11 @@
 
                 if (settings.TryGet(out conventions))
                 {
-                    topology = new DirectRoutingTopology(conventions, durable);
+                    routingTopology = new DirectRoutingTopology(conventions, durable);
                 }
                 else
                 {
-                    topology = new ConventionalRoutingTopology(durable);
+                    routingTopology = new ConventionalRoutingTopology(durable);
                 }
             }
         }
@@ -126,7 +127,7 @@
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, topology);
+            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider);
 
             var queuePurger = new QueuePurger(connectionFactory);
 

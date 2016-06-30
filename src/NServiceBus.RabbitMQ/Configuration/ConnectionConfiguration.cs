@@ -31,7 +31,7 @@
 
         public string CertPassphrase { get; set; }
 
-        public IDictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
 
         public ConnectionConfiguration(ReadOnlySettings settings)
         {

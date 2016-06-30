@@ -10,12 +10,10 @@
         static readonly ILog Logger = LogManager.GetLogger(typeof(PoisonMessageForwarder));
 
         readonly IChannelProvider channelProvider;
-        readonly IRoutingTopology routingTopology;
 
-        public PoisonMessageForwarder(IChannelProvider channelProvider, IRoutingTopology routingTopology)
+        public PoisonMessageForwarder(IChannelProvider channelProvider)
         {
             this.channelProvider = channelProvider;
-            this.routingTopology = routingTopology;
         }
 
         public Task ForwardPoisonMessageToErrorQueue(BasicDeliverEventArgs message, Exception ex, string errorQueue)
@@ -27,7 +25,7 @@
 
             try
             {
-                return channel.RawSendInCaseOfFailure(routingTopology.RawSendInCaseOfFailure, errorQueue, message.Body, message.BasicProperties);
+                return channel.RawSendInCaseOfFailure(errorQueue, message.Body, message.BasicProperties);
             }
             catch (Exception ex2)
             {

@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -10,10 +11,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, bool usePublisherConfirms)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             channel = connection.CreateModel();
 
+            this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
 
             if (usePublisherConfirms)
@@ -35,7 +37,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public Task SendMessage(Action<IModel, string, OutgoingMessage, IBasicProperties> send, string address, OutgoingMessage message, IBasicProperties properties)
+        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
         {
             Task task;
 
@@ -49,12 +51,12 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            send(channel, address, message, properties);
+            routingTopology.Send(channel, address, message, properties);
 
             return task;
         }
 
-        public Task PublishMessage(Action<IModel, Type, OutgoingMessage, IBasicProperties> publish, Type type, OutgoingMessage message, IBasicProperties properties)
+        public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties)
         {
             Task task;
 
@@ -68,12 +70,12 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            publish(channel, type, message, properties);
+            routingTopology.Publish(channel, type, message, properties);
 
             return task;
         }
 
-        public Task RawSendInCaseOfFailure(Action<IModel, string, byte[], IBasicProperties> rawSend, string address, byte[] body, IBasicProperties properties)
+        public Task RawSendInCaseOfFailure(string address, byte[] body, IBasicProperties properties)
         {
             Task task;
 
@@ -87,7 +89,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            rawSend(channel, address, body, properties);
+            routingTopology.RawSendInCaseOfFailure(channel, address, body, properties);
 
             return task;
         }
@@ -105,58 +107,71 @@ namespace NServiceBus.Transport.RabbitMQ
             return tcs.Task;
         }
 
+        class EventState
+        {
+            public ConcurrentDictionary<ulong, TaskCompletionSource<bool>> Messages { get; set; }
+
+            public bool Multiple { get; set; }
+
+            public ulong DeliveryTag { get; set; }
+        }
+
         void Channel_BasicAcks(object sender, BasicAckEventArgs e)
         {
-            Task.Run(() =>
+            Task.Factory.StartNew(eventState =>
             {
-                if (!e.Multiple)
+                var s = (EventState)eventState;
+
+                if (!s.Multiple)
                 {
                     TaskCompletionSource<bool> tcs;
-                    messages.TryRemove(e.DeliveryTag, out tcs);
+                    s.Messages.TryRemove(s.DeliveryTag, out tcs);
 
                     tcs?.SetResult(true);
                 }
                 else
                 {
-                    foreach (var message in messages)
+                    foreach (var message in s.Messages)
                     {
-                        if (message.Key <= e.DeliveryTag)
+                        if (message.Key <= s.DeliveryTag)
                         {
                             TaskCompletionSource<bool> tcs;
-                            messages.TryRemove(message.Key, out tcs);
+                            s.Messages.TryRemove(message.Key, out tcs);
 
                             tcs?.SetResult(true);
                         }
                     }
                 }
-            });
+            }, new EventState { Messages = messages, DeliveryTag = e.DeliveryTag, Multiple = e.Multiple }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
         void Channel_BasicNacks(object sender, BasicNackEventArgs e)
         {
-            Task.Run(() =>
+            Task.Factory.StartNew(eventState =>
             {
-                if (!e.Multiple)
+                var s = (EventState)eventState;
+
+                if (!s.Multiple)
                 {
                     TaskCompletionSource<bool> tcs;
-                    messages.TryRemove(e.DeliveryTag, out tcs);
+                    s.Messages.TryRemove(s.DeliveryTag, out tcs);
 
                     tcs?.SetException(new Exception("Message rejected by broker."));
                 }
                 else
                 {
-                    foreach (var message in messages)
+                    foreach (var message in s.Messages)
                     {
-                        if (message.Key <= e.DeliveryTag)
+                        if (message.Key <= s.DeliveryTag)
                         {
                             TaskCompletionSource<bool> tcs;
-                            messages.TryRemove(message.Key, out tcs);
+                            s.Messages.TryRemove(message.Key, out tcs);
 
                             tcs?.SetException(new Exception("Message rejected by broker."));
                         }
                     }
                 }
-            });
+            }, new EventState { Messages = messages, DeliveryTag = e.DeliveryTag, Multiple = e.Multiple }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
         void Channel_BasicReturn(object sender, BasicReturnEventArgs e)
@@ -204,6 +219,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         IModel channel;
+        readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 

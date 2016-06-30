@@ -32,12 +32,19 @@
 
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
 
-            if (message.Headers.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
+            string messageTypesHeader;
+            if (message.Headers.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out messageTypesHeader))
             {
-                properties.Type = message.Headers[NServiceBus.Headers.EnclosedMessageTypes].Split(new[]
+                var index = messageTypesHeader.IndexOf(',');
+
+                if (index > -1)
                 {
-                    ','
-                }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                    properties.Type = messageTypesHeader.Substring(0, index);
+                }
+                else
+                {
+                    properties.Type = messageTypesHeader;
+                }
             }
 
             if (message.Headers.ContainsKey(NServiceBus.Headers.ContentType))
