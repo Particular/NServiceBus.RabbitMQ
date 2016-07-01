@@ -223,24 +223,24 @@
 
         Task AcknowledgeMessage(IModel channel, ulong deliveryTag)
         {
-            return Task.Factory.StartNew(state =>
+            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
             {
                 var messageState = (MessageState)state;
 
                 messageState.Channel.BasicAck(messageState.DeliveryTag, false);
 
-            }, new MessageState { Channel = channel, DeliveryTag = deliveryTag }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, exclusiveScheduler);
+            }, exclusiveScheduler);
         }
 
         Task RejectMessage(IModel channel, ulong deliveryTag)
         {
-            return Task.Factory.StartNew(state =>
+            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
             {
                 var messageState = (MessageState)state;
 
                 messageState.Channel.BasicReject(messageState.DeliveryTag, true);
 
-            }, new MessageState { Channel = channel, DeliveryTag = deliveryTag }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, exclusiveScheduler);
+            }, exclusiveScheduler);
         }
 
         public void Dispose()
