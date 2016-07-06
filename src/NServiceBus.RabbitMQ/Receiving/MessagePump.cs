@@ -174,18 +174,39 @@
 
                 if (rejectMessage)
                 {
-                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                    try
+                    {
+                        await RejectMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                    }
+                    catch (AlreadyClosedException ex)
+                    {
+                        Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+                    }
                 }
                 else
                 {
-                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                    try
+                    {
+                        await AcknowledgeMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                    }
+                    catch (AlreadyClosedException ex)
+                    {
+                        Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
 
-                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                try
+                {
+                    await RejectMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                }
+                catch (AlreadyClosedException ex2)
+                {
+                    Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex2);
+                }
             }
             finally
             {
@@ -193,55 +214,33 @@
             }
         }
 
-        async Task AcknowledgeMessage(IModel channel, ulong deliveryTag, string messageId)
+        class MessageState
         {
-            try
-            {
-                var task = new Task(() =>
-                {
-                    if (channel.IsOpen)
-                    {
-                        channel.BasicAck(deliveryTag, false);
-                    }
-                    else
-                    {
-                        Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.");
-                    }
-                });
+            public IModel Channel { get; set; }
 
-                task.Start(exclusiveScheduler);
-                await task.ConfigureAwait(false);
-            }
-            catch (AlreadyClosedException ex)
-            {
-                Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
-            }
+            public ulong DeliveryTag { get; set; }
         }
 
-        async Task RejectMessage(IModel channel, ulong deliveryTag, string messageId)
+        Task AcknowledgeMessage(IModel channel, ulong deliveryTag)
         {
-            try
+            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
             {
-                var task = new Task(() =>
-                {
-                    if (channel.IsOpen)
-                    {
-                        channel.BasicReject(deliveryTag, true);
-                    }
-                    else
-                    {
-                        Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.");
-                    }
-                });
+                var messageState = (MessageState)state;
 
-                task.Start(exclusiveScheduler);
-                await task.ConfigureAwait(false);
+                messageState.Channel.BasicAck(messageState.DeliveryTag, false);
 
-            }
-            catch (AlreadyClosedException ex)
+            }, exclusiveScheduler);
+        }
+
+        Task RejectMessage(IModel channel, ulong deliveryTag)
+        {
+            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
             {
-                Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
-            }
+                var messageState = (MessageState)state;
+
+                messageState.Channel.BasicReject(messageState.DeliveryTag, true);
+
+            }, exclusiveScheduler);
         }
 
         public void Dispose()
