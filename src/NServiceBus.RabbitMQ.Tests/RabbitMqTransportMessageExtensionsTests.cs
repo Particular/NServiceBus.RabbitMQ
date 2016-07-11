@@ -38,7 +38,7 @@
         }
 
         [Test]
-        public void Should_set_replyto_header_if_present_in_native_message_and_not_already_set()
+        public void Should_set_replyto_header_if_native_replyto_is_present()
         {
             var basicDeliverEventArgs = new BasicDeliverEventArgs
             {
@@ -54,7 +54,7 @@
         }
 
         [Test]
-        public void Should_not_override_replyto_header_if_native_replyto_is_present()
+        public void Should_override_replyto_header_if_native_replyto_is_present()
         {
             var basicDeliverEventArgs = new BasicDeliverEventArgs
             {
@@ -70,7 +70,7 @@
             };
             var transportMessage = converter.ToTransportMessage(basicDeliverEventArgs);
             Assert.NotNull(transportMessage);
-            Assert.AreEqual("nsb set address", transportMessage.Headers[Headers.ReplyToAddress]);
+            Assert.AreEqual("myaddress", transportMessage.Headers[Headers.ReplyToAddress]);
         }
 
 
