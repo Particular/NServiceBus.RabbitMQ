@@ -29,7 +29,7 @@
 
         }
 
-        
+
         [Test]
         public void Should_default_the_content_type_to_octet_stream_when_no_content_type_is_specified()
         {
@@ -38,7 +38,7 @@
 
         }
 
-        
+
 
         [Test]
         public void Should_set_the_message_type_based_on_the_encoded_message_types_header()
@@ -66,7 +66,7 @@
         {
             var address = Address.Parse("myAddress");
 
-            Verify(new TransportMessageBuilder().ReplyToAddress(address), 
+            Verify(new TransportMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
                     Assert.AreEqual(address, t.ReplyToAddress);
@@ -82,7 +82,7 @@
                 (t, r) => Assert.IsFalse(t.Headers.ContainsKey(RabbitMqMessageSender.CallbackHeaderKey)));
 
         }
-       
+
         [Test]
         public void Should_set_correlation_id_if_present()
         {
@@ -155,7 +155,7 @@
 
             if (message.MessageIntent == MessageIntentEnum.Reply)
             {
-                
+
             }
             sender.Send(message, options);
         }
@@ -169,7 +169,9 @@
 
             using (var channel = connectionManager.GetConsumeConnection().CreateModel())
             {
+#pragma warning disable CS0618
                 var consumer = new QueueingBasicConsumer(channel);
+#pragma warning restore CS0618
 
                 channel.BasicConsume(queueToReceiveOn, false, consumer);
 
@@ -193,7 +195,7 @@
 
         class MyMessage
         {
-            
+
         }
 
     }
