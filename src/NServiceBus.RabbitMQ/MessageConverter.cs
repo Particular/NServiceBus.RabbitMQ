@@ -10,7 +10,7 @@
 
     class MessageConverter
     {
-      
+
         public MessageConverter()
         {
             messageIdStrategy = DefaultMessageIdStrategy;
@@ -38,21 +38,7 @@
 
             if (properties.IsReplyToPresent())
             {
-                string replyToAddressNSBHeaders;
-                var nativeReplyToAddress = properties.ReplyTo;
-
-                if (headers.TryGetValue(Headers.ReplyToAddress, out replyToAddressNSBHeaders))
-                {
-                    if (replyToAddressNSBHeaders != nativeReplyToAddress)
-                    {
-                        Logger.WarnFormat("Missmatching replyto address properties found, the address specified by the NServiceBus headers '{1}' will override the native one '{0}'", nativeReplyToAddress, replyToAddressNSBHeaders);         
-                    }
-                }
-                else
-                {
-                    //promote the native address
-                    headers[Headers.ReplyToAddress] = nativeReplyToAddress;             
-                }
+                headers[Headers.ReplyToAddress] = properties.ReplyTo;
             }
 
             if (properties.IsCorrelationIdPresent())

@@ -154,7 +154,9 @@
                 {
                     channel.BasicQos(0, actualPrefetchCount, false);
 
+#pragma warning disable CS0618
                     var consumer = new QueueingBasicConsumer(channel);
+#pragma warning restore CS0618
 
                     channel.BasicConsume(parameters.Queue, false, receiveOptions.ConsumerTag, consumer);
 
@@ -253,6 +255,7 @@
             }
         }
 
+#pragma warning disable CS0618
         static BasicDeliverEventArgs DequeueMessage(QueueingBasicConsumer consumer, int dequeueTimeout)
         {
             BasicDeliverEventArgs rawMessage;
@@ -266,6 +269,7 @@
 
             return rawMessage;
         }
+#pragma warning disable CS0618
 
         void Purge()
         {

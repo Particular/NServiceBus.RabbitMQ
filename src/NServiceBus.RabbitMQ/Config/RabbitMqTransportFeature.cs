@@ -36,6 +36,8 @@
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
+            Address.IgnoreMachineName();
+
             var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
             var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiver);
             var queueName = GetLocalAddress(context.Settings);
@@ -175,7 +177,7 @@
             }
 
             return new RepeatedFailuresOverTimeCircuitBreaker("RabbitMqConnectivity",
-                timeToWaitBeforeTriggering, 
+                timeToWaitBeforeTriggering,
                 ex => criticalError.Raise("Repeated failures when communicating with the broker",
                     ex), delayAfterFailure);
         }
