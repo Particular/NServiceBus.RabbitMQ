@@ -30,21 +30,7 @@
 
             if (properties.IsReplyToPresent())
             {
-                string replyToAddressNSBHeaders;
-                var nativeReplyToAddress = properties.ReplyTo;
-
-                if (headers.TryGetValue(Headers.ReplyToAddress, out replyToAddressNSBHeaders))
-                {
-                    if (replyToAddressNSBHeaders != nativeReplyToAddress)
-                    {
-                        Logger.WarnFormat("Mismatching 'ReplyTo' properties found. The address specified by the NServiceBus header, '{0}', will override the native one, '{1}'", replyToAddressNSBHeaders, nativeReplyToAddress);
-                    }
-                }
-                else
-                {
-                    //promote the native address
-                    headers[Headers.ReplyToAddress] = nativeReplyToAddress;
-                }
+                headers[Headers.ReplyToAddress] = properties.ReplyTo;
             }
 
             if (properties.IsCorrelationIdPresent())
