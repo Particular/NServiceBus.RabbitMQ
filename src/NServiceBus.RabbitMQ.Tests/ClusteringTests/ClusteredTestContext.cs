@@ -138,7 +138,7 @@
 
             publishChannel.Close();
             publishChannel.Dispose();
-            
+
             connectionManager.Dispose();
 
             var erlangProcessesToKill = GetExistingErlangProcesses().Select(p => p.Id).Except(erlangProcessesRunningBeforeTheTest).ToList();
@@ -224,7 +224,8 @@
 
         void EnsureRabbitQueueExists(string queueName)
         {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
                 channel.QueuePurge(queueName);

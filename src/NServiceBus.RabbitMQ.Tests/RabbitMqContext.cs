@@ -20,7 +20,8 @@
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 //create main q
                 channel.QueueDeclare(queueName, true, false, false, null);
@@ -39,7 +40,7 @@
 
         void DeleteExchange(string exchangeName)
         {
-            var connection = connectionManager.GetAdministrationConnection();
+            using (var connection = connectionManager.GetAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 try
@@ -58,7 +59,7 @@
         {
             get { return 1; }
         }
-       
+
         [SetUp]
         public void SetUp()
         {
@@ -79,7 +80,7 @@
 
             dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, new RepeatedFailuresOverTimeCircuitBreaker("UnitTest",TimeSpan.FromMinutes(2),e=>{}),
                 new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"));
-            
+
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
@@ -178,22 +179,22 @@
 
         public void Configure(Type component, DependencyLifecycle dependencyLifecycle)
         {
-            
+
         }
 
         public void Configure<T>(Func<T> component, DependencyLifecycle dependencyLifecycle)
         {
-            
+
         }
 
         public void ConfigureProperty(Type component, string property, object value)
         {
-            
+
         }
 
         public void RegisterSingleton(Type lookupType, object instance)
         {
-            
+
         }
 
         public bool HasComponent(Type componentType)
@@ -203,7 +204,7 @@
 
         public void Release(object instance)
         {
-            
+
         }
     }
 
