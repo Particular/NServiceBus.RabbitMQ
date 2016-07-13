@@ -40,7 +40,8 @@
                     CertPassphrase = connectionConfiguration.CertPassphrase,
                     Version = SslProtocols.Tls12,
                     Enabled = connectionConfiguration.UseTls
-                }
+                },
+                UseBackgroundThreadsForIO = true
             };
         }
 
