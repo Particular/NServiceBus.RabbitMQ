@@ -30,7 +30,8 @@
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
                 AutomaticRecoveryEnabled = true,
-                NetworkRecoveryInterval = connectionConfiguration.RetryDelay
+                NetworkRecoveryInterval = connectionConfiguration.RetryDelay,
+                UseBackgroundThreadsForIO = true
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
@@ -55,7 +56,6 @@
         {
             lock (lockObject)
             {
-                connectionFactory.ClientProperties["purpose"] = connectionName;
                 connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
                 return connectionFactory.CreateConnection(connectionName);
