@@ -40,15 +40,12 @@
                     CertPassphrase = connectionConfiguration.CertPassphrase,
                     Version = SslProtocols.Tls12,
                     Enabled = connectionConfiguration.UseTls
-                }
+                },
+                UseBackgroundThreadsForIO = true
             };
         }
 
-        public virtual IConnection CreateConnection(string connectionName)
-        {
-            connectionFactory.ClientProperties["purpose"] = connectionName;
-            return connectionFactory.CreateConnection(connectionName);
-        }
+        public virtual IConnection CreateConnection(string connectionName) => connectionFactory.CreateConnection(connectionName);
 
         readonly ConnectionFactory connectionFactory;
     }
