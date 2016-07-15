@@ -14,7 +14,7 @@
         public void Setup()
         {
             var settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName("endpoint"));
+            settings.Set<Routing.EndpointInstance>(new Routing.EndpointInstance("endpoint"));
 
             defaults = new ConnectionConfiguration(settings);
         }

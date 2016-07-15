@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
+    using System.Threading.Tasks;
     using NUnit.Framework;
     using Settings;
     using Transports;
@@ -50,7 +51,7 @@
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
             var settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName(ReceiverQueue));
+            settings.Set<Routing.EndpointInstance>(new Routing.EndpointInstance(ReceiverQueue));
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
@@ -86,6 +87,7 @@
                 receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
                 return TaskEx.CompletedTask;
             },
+                ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
                 new CriticalError(_ => TaskEx.CompletedTask),
                 new PushSettings(ReceiverQueue, "error", true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
