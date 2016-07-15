@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
+    using System.Threading.Tasks;
     using NUnit.Framework;
     using Settings;
     using Transports;
@@ -11,7 +12,7 @@
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
@@ -26,7 +27,7 @@
 
         void DeleteExchange(string exchangeName)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 try
@@ -50,7 +51,7 @@
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
             var settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName(ReceiverQueue));
+            settings.Set<Routing.EndpointInstance>(new Routing.EndpointInstance(ReceiverQueue));
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
@@ -68,25 +69,25 @@
             }
 
             connectionFactory = new ConnectionFactory(config);
-            connectionManager = new ConnectionManager(connectionFactory);
-            var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, config.UsePublisherConfirms);
 
-            messageDispatcher = new MessageDispatcher(routingTopology, channelProvider);
+            messageDispatcher = new MessageDispatcher(channelProvider);
 
-            var purger = new QueuePurger(connectionManager);
-            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
+            var purger = new QueuePurger(connectionFactory);
+            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider);
 
-            messagePump = new MessagePump(config, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
-            subscriptionManager = new SubscriptionManager(connectionManager, routingTopology, ReceiverQueue);
+            subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
 
             messagePump.Init(pushContext =>
             {
                 receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
                 return TaskEx.CompletedTask;
             },
+                ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
                 new CriticalError(_ => TaskEx.CompletedTask),
                 new PushSettings(ReceiverQueue, "error", true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
@@ -99,7 +100,7 @@
         {
             messagePump?.Stop().GetAwaiter().GetResult();
 
-            connectionManager?.Dispose();
+            channelProvider?.Dispose();
         }
 
         protected IncomingMessage WaitForMessage()
@@ -120,7 +121,7 @@
         protected const string ReceiverQueue = "testreceiver";
         protected MessageDispatcher messageDispatcher;
         protected ConnectionFactory connectionFactory;
-        protected ConnectionManager connectionManager;
+        private ChannelProvider channelProvider;
         protected MessagePump messagePump;
         BlockingCollection<IncomingMessage> receivedMessages;
 

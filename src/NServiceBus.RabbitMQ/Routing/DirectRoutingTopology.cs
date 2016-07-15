@@ -46,15 +46,15 @@
             //nothing needs to be done for direct routing
         }
 
-        string ExchangeName()
-        {
-            return conventions.ExchangeName(null, null);
-        }
+        string ExchangeName() => conventions.ExchangeName(null, null);
 
         void CreateExchange(IModel channel, string exchangeName)
         {
             if (exchangeName == AmqpTopicExchange)
+            {
                 return;
+            }
+
             try
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
@@ -67,16 +67,14 @@
             }
         }
 
-        string GetRoutingKeyForPublish(Type eventType)
-        {
-            return conventions.RoutingKey(eventType);
-        }
+        string GetRoutingKeyForPublish(Type eventType) => conventions.RoutingKey(eventType);
 
         string GetRoutingKeyForBinding(Type eventType)
         {
             if (eventType == typeof(IEvent) || eventType == typeof(object))
+            {
                 return "#";
-
+            }
 
             return conventions.RoutingKey(eventType) + ".#";
         }

@@ -16,14 +16,14 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
 
-        readonly ConnectionConfiguration connectionConfiguration;
+        readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
 
-        Func<PushContext, Task> pipe;
+        Func<MessageContext, Task> pipe;
         PushSettings settings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
@@ -35,9 +35,9 @@
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionConfiguration connectionConfiguration, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
         {
-            this.connectionConfiguration = connectionConfiguration;
+            this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.poisonMessageForwarder = poisonMessageForwarder;
@@ -45,14 +45,12 @@
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
         }
 
-        public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
+        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
         {
-            this.pipe = pipe;
+            this.pipe = onMessage;
             this.settings = settings;
 
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'",
-                timeToWaitBeforeTriggeringCircuitBreaker,
-                ex => criticalError.Raise($"{settings.InputQueue} MessagePump's connection to the broker has failed.", ex));
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
             exclusiveScheduler = new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
 
@@ -70,8 +68,7 @@
             semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
             messageProcessing = new CancellationTokenSource();
 
-            var factory = new ConnectionFactory(connectionConfiguration);
-            connection = factory.CreateConnection($"{settings.InputQueue} MessagePump");
+            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();
             channel.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
@@ -167,7 +164,7 @@
                 {
                     using (var tokenSource = new CancellationTokenSource())
                     {
-                        var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+                        var pushContext = new MessageContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
 
                         await pipe(pushContext).ConfigureAwait(false);
 
@@ -177,18 +174,39 @@
 
                 if (rejectMessage)
                 {
-                    await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                    try
+                    {
+                        await RejectMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                    }
+                    catch (AlreadyClosedException ex)
+                    {
+                        Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+                    }
                 }
                 else
                 {
-                    await AcknowledgeMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                    try
+                    {
+                        await AcknowledgeMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                    }
+                    catch (AlreadyClosedException ex)
+                    {
+                        Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
 
-                await RejectMessage(channel, message.DeliveryTag, messageId).ConfigureAwait(false);
+                try
+                {
+                    await RejectMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                }
+                catch (AlreadyClosedException ex2)
+                {
+                    Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex2);
+                }
             }
             finally
             {
@@ -196,55 +214,33 @@
             }
         }
 
-        async Task AcknowledgeMessage(IModel channel, ulong deliveryTag, string messageId)
+        class MessageState
         {
-            try
-            {
-                var task = new Task(() =>
-                {
-                    if (channel.IsOpen)
-                    {
-                        channel.BasicAck(deliveryTag, false);
-                    }
-                    else
-                    {
-                        Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.");
-                    }
-                });
+            public IModel Channel { get; set; }
 
-                task.Start(exclusiveScheduler);
-                await task.ConfigureAwait(false);
-            }
-            catch (AlreadyClosedException ex)
-            {
-                Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
-            }
+            public ulong DeliveryTag { get; set; }
         }
 
-        async Task RejectMessage(IModel channel, ulong deliveryTag, string messageId)
+        Task AcknowledgeMessage(IModel channel, ulong deliveryTag)
         {
-            try
+            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
             {
-                var task = new Task(() =>
-                {
-                    if (channel.IsOpen)
-                    {
-                        channel.BasicReject(deliveryTag, true);
-                    }
-                    else
-                    {
-                        Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.");
-                    }
-                });
+                var messageState = (MessageState)state;
 
-                task.Start(exclusiveScheduler);
-                await task.ConfigureAwait(false);
+                messageState.Channel.BasicAck(messageState.DeliveryTag, false);
 
-            }
-            catch (AlreadyClosedException ex)
+            }, exclusiveScheduler);
+        }
+
+        Task RejectMessage(IModel channel, ulong deliveryTag)
+        {
+            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
             {
-                Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
-            }
+                var messageState = (MessageState)state;
+
+                messageState.Channel.BasicReject(messageState.DeliveryTag, true);
+
+            }, exclusiveScheduler);
         }
 
         public void Dispose()

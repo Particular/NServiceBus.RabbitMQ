@@ -2,16 +2,16 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     class QueuePurger
     {
-        readonly ConnectionManager connectionManager;
+        readonly ConnectionFactory connectionFactory;
 
-        public QueuePurger(ConnectionManager connectionManager)
+        public QueuePurger(ConnectionFactory connectionFactory)
         {
-            this.connectionManager = connectionManager;
+            this.connectionFactory = connectionFactory;
         }
 
         public void Purge(string queue)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueuePurge(queue);

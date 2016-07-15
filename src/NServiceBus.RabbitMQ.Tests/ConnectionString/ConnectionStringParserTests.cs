@@ -18,7 +18,7 @@
         public void Setup()
         {
             settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName("endpoint"));
+            settings.Set<Routing.EndpointInstance>(new Routing.EndpointInstance("endpoint"));
         }
 
         [Test]

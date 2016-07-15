@@ -15,20 +15,20 @@
     class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         readonly SettingsHolder settings;
-        readonly ConnectionConfiguration connectionConfiguration;
-        readonly ConnectionManager connectionManager;
+        readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
-        IRoutingTopology topology;
+        IRoutingTopology routingTopology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
             this.settings = settings;
 
-            connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
-            connectionManager = new ConnectionManager(new ConnectionFactory(connectionConfiguration));
-            channelProvider = new ChannelProvider(connectionManager, connectionConfiguration.UsePublisherConfirms);
+            var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
+            connectionFactory = new ConnectionFactory(connectionConfiguration);
 
             CreateTopology();
+
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, connectionConfiguration.UsePublisherConfirms);
 
             RequireOutboxConsent = false;
         }
@@ -45,20 +45,20 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionManager, topology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled()),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(topology, channelProvider),
+                () => new MessageDispatcher(channelProvider),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionManager, topology, settings.LocalAddress()));
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, routingTopology, settings.LocalAddress()));
         }
 
         public override string ToTransportAddress(LogicalAddress logicalAddress)
@@ -80,14 +80,14 @@
 
         public void Dispose()
         {
-            connectionManager.Dispose();
+            channelProvider.Dispose();
         }
 
         void CreateTopology()
         {
             if (settings.HasSetting<IRoutingTopology>())
             {
-                topology = settings.Get<IRoutingTopology>();
+                routingTopology = settings.Get<IRoutingTopology>();
             }
             else
             {
@@ -97,11 +97,11 @@
 
                 if (settings.TryGet(out conventions))
                 {
-                    topology = new DirectRoutingTopology(conventions, durable);
+                    routingTopology = new DirectRoutingTopology(conventions, durable);
                 }
                 else
                 {
-                    topology = new ConventionalRoutingTopology(durable);
+                    routingTopology = new ConventionalRoutingTopology(durable);
                 }
             }
         }
@@ -127,9 +127,9 @@
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, topology);
+            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider);
 
-            var queuePurger = new QueuePurger(connectionManager);
+            var queuePurger = new QueuePurger(connectionFactory);
 
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
             if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggeringCircuitBreaker))
@@ -137,7 +137,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionConfiguration, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
         }
     }
 }
