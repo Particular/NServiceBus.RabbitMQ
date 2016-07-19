@@ -176,7 +176,7 @@
                 {
                     try
                     {
-                        await RejectMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                        await channel.RejectMessage(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                     }
                     catch (AlreadyClosedException ex)
                     {
@@ -187,7 +187,7 @@
                 {
                     try
                     {
-                        await AcknowledgeMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                        await channel.AcknowledgeMessage(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                     }
                     catch (AlreadyClosedException ex)
                     {
@@ -201,7 +201,7 @@
 
                 try
                 {
-                    await RejectMessage(channel, message.DeliveryTag).ConfigureAwait(false);
+                    await channel.RejectMessage(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                 }
                 catch (AlreadyClosedException ex2)
                 {
@@ -212,35 +212,6 @@
             {
                 semaphore.Release();
             }
-        }
-
-        class MessageState
-        {
-            public IModel Channel { get; set; }
-
-            public ulong DeliveryTag { get; set; }
-        }
-
-        Task AcknowledgeMessage(IModel channel, ulong deliveryTag)
-        {
-            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
-            {
-                var messageState = (MessageState)state;
-
-                messageState.Channel.BasicAck(messageState.DeliveryTag, false);
-
-            }, exclusiveScheduler);
-        }
-
-        Task RejectMessage(IModel channel, ulong deliveryTag)
-        {
-            return TaskEx.StartNew(new MessageState { Channel = channel, DeliveryTag = deliveryTag }, state =>
-            {
-                var messageState = (MessageState)state;
-
-                messageState.Channel.BasicReject(messageState.DeliveryTag, true);
-
-            }, exclusiveScheduler);
         }
 
         public void Dispose()
