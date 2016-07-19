@@ -176,7 +176,7 @@
                 {
                     try
                     {
-                        await channel.RejectMessage(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                        await channel.BasicRejectAndRequeue(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                     }
                     catch (AlreadyClosedException ex)
                     {
@@ -187,7 +187,7 @@
                 {
                     try
                     {
-                        await channel.AcknowledgeMessage(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                        await channel.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                     }
                     catch (AlreadyClosedException ex)
                     {
@@ -201,7 +201,7 @@
 
                 try
                 {
-                    await channel.RejectMessage(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                    await channel.BasicRejectAndRequeue(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                 }
                 catch (AlreadyClosedException ex2)
                 {

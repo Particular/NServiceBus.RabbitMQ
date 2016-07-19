@@ -12,9 +12,8 @@
             public ulong DeliveryTag { get; set; }
         }
 
-        public static Task AcknowledgeMessage(this IModel channel, ulong deliveryTag, TaskScheduler scheduler)
-        {
-            return TaskEx.StartNew(
+        public static Task BasicAckSingle(this IModel channel, ulong deliveryTag, TaskScheduler scheduler) =>
+            TaskEx.StartNew(
                 new MessageState { Channel = channel, DeliveryTag = deliveryTag },
                 state =>
                 {
@@ -22,11 +21,9 @@
                     messageState.Channel.BasicAck(messageState.DeliveryTag, false);
                 },
                 scheduler);
-        }
 
-        public static Task RejectMessage(this IModel channel, ulong deliveryTag, TaskScheduler scheduler)
-        {
-            return TaskEx.StartNew(
+        public static Task BasicRejectAndRequeue(this IModel channel, ulong deliveryTag, TaskScheduler scheduler) =>
+            TaskEx.StartNew(
                 new MessageState { Channel = channel, DeliveryTag = deliveryTag },
                 state =>
                 {
@@ -34,6 +31,5 @@
                     messageState.Channel.BasicReject(messageState.DeliveryTag, true);
                 },
                 scheduler);
-        }
     }
 }
