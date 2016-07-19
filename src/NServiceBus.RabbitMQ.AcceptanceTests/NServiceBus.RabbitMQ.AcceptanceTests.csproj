@@ -297,6 +297,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\UnicastPubSubExtensions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\ConfigureTransportInfrastructure.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\IConfigureTransportInfrastructure.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\NServiceBusTransportTest.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\TransportConfigurationResult.cs" />

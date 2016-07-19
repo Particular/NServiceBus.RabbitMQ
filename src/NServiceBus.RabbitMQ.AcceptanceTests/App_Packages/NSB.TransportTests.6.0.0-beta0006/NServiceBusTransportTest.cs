@@ -15,41 +15,13 @@
 
     public abstract class NServiceBusTransportTest
     {
-        public static string SpecificTransport
-        {
-            get
-            {
-                var specificTransport = EnvironmentHelper.GetEnvironmentVariable("Transport.UseSpecific");
-
-                return !string.IsNullOrEmpty(specificTransport) ? specificTransport : MsmqDescriptorKey;
-            }
-        }
-
         [SetUp]
         public void SetUp()
         {
             testId = Guid.NewGuid().ToString();
         }
 
-        static IConfigureTransportInfrastructure CreateConfigurer()
-        {
-            var typeName = "Configure" + SpecificTransport + "Infrastructure";
-
-            var configurerType = Type.GetType(typeName, false);
-
-            if (configurerType == null)
-            {
-                throw new InvalidOperationException($"Transport Test project must include a non-namespaced class named '{typeName}' implementing {typeof(IConfigureTransportInfrastructure).Name}.");
-            }
-
-            var configurer = Activator.CreateInstance(configurerType) as IConfigureTransportInfrastructure;
-
-            if (configurer == null)
-            {
-                throw new InvalidOperationException($"{typeName} does not implement {typeof(IConfigureTransportInfrastructure).Name}.");
-            }
-            return configurer;
-        }
+        static IConfigureTransportInfrastructure CreateConfigurer() => new ConfigureTransportInfrastructure();
 
         [TearDown]
         public void TearDown()
