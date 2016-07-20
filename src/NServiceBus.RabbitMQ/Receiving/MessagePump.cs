@@ -130,11 +130,6 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            await ProcessMessage(eventArgs, consumer.Model).ConfigureAwait(false);
-        }
-
-        async Task ProcessMessage(BasicDeliverEventArgs message, IModel channel)
-        {
             try
             {
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
@@ -144,17 +139,28 @@
                 return;
             }
 
-            Dictionary<string, string> headers = null;
+            try
+            {
+                await ProcessMessage(eventArgs).ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        async Task ProcessMessage(BasicDeliverEventArgs message)
+        {
             string messageId = null;
-            var pushMessage = false;
 
             try
             {
+                Dictionary<string, string> headers = null;
+                var pushMessage = false;
                 try
                 {
                     messageId = messageConverter.RetrieveMessageId(message);
                     headers = messageConverter.RetrieveHeaders(message);
-
                     pushMessage = true;
                 }
                 catch (Exception ex)
@@ -163,58 +169,53 @@
                 }
 
                 var rejectMessage = false;
-
                 if (pushMessage)
                 {
                     using (var tokenSource = new CancellationTokenSource())
                     {
                         var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
-
                         await pipe(pushContext).ConfigureAwait(false);
-
                         rejectMessage = tokenSource.IsCancellationRequested;
                     }
                 }
 
                 if (rejectMessage)
                 {
-                    try
-                    {
-                        await channel.BasicRejectAndRequeue(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
-                    }
-                    catch (AlreadyClosedException ex)
-                    {
-                        Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
-                    }
+                    await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
                 else
                 {
-                    try
-                    {
-                        await channel.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
-                    }
-                    catch (AlreadyClosedException ex)
-                    {
-                        Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
-                    }
+                    await Acknowledge(message.DeliveryTag, messageId).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
-
-                try
-                {
-                    await channel.BasicRejectAndRequeue(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
-                }
-                catch (AlreadyClosedException ex2)
-                {
-                    Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex2);
-                }
+                await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
             }
-            finally
+        }
+
+        async Task Acknowledge(ulong deliveryTag, string messageId)
+        {
+            try
             {
-                semaphore.Release();
+                await consumer.Model.BasicAckSingle(deliveryTag, exclusiveScheduler).ConfigureAwait(false);
+            }
+            catch (AlreadyClosedException ex)
+            {
+                Logger.Warn($"Attempt to acknowledge message {messageId} failed because the channel was closed. The message will be requeued.", ex);
+            }
+        }
+
+        async Task Requeue(ulong deliveryTag, string messageId)
+        {
+            try
+            {
+                await consumer.Model.BasicRejectAndRequeue(deliveryTag, exclusiveScheduler).ConfigureAwait(false);
+            }
+            catch (AlreadyClosedException ex)
+            {
+                Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
             }
         }
 
