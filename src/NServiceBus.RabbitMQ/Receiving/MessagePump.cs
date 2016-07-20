@@ -155,37 +155,34 @@
 
             try
             {
-                Dictionary<string, string> headers = null;
-                var pushMessage = false;
+                Dictionary<string, string> headers;
+
                 try
                 {
                     messageId = messageConverter.RetrieveMessageId(message);
                     headers = messageConverter.RetrieveHeaders(message);
-                    pushMessage = true;
                 }
                 catch (Exception ex)
                 {
                     await poisonMessageForwarder.ForwardPoisonMessageToErrorQueue(message, ex, settings.ErrorQueue).ConfigureAwait(false);
-                }
-
-                var rejectMessage = false;
-                if (pushMessage)
-                {
-                    using (var tokenSource = new CancellationTokenSource())
-                    {
-                        var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
-                        await pipe(pushContext).ConfigureAwait(false);
-                        rejectMessage = tokenSource.IsCancellationRequested;
-                    }
-                }
-
-                if (rejectMessage)
-                {
-                    await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
-                }
-                else
-                {
                     await Acknowledge(message.DeliveryTag, messageId).ConfigureAwait(false);
+
+                    return;
+                }
+
+                using (var tokenSource = new CancellationTokenSource())
+                {
+                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+                    await pipe(pushContext).ConfigureAwait(false);
+
+                    if (tokenSource.IsCancellationRequested)
+                    {
+                        await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await Acknowledge(message.DeliveryTag, messageId).ConfigureAwait(false);
+                    }
                 }
             }
             catch (Exception ex)
