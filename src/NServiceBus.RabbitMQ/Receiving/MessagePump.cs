@@ -21,6 +21,7 @@
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
+        readonly FailureInfoStorage failureInfoStorage;
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -39,7 +40,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, FailureInfoStorage failureInfoStorage)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -47,6 +48,7 @@
             this.poisonMessageForwarder = poisonMessageForwarder;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
+            this.failureInfoStorage = failureInfoStorage;
         }
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
@@ -173,8 +175,30 @@
 
                 using (var tokenSource = new CancellationTokenSource())
                 {
-                    var messageContext = new MessageContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
-                    await onMessage(messageContext).ConfigureAwait(false);
+                    try
+                    {
+                        var messageContext = new MessageContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+                        await onMessage(messageContext).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        failureInfoStorage.RecordFailureInfoForMessage(messageId, ex);
+                        FailureInfoStorage.ProcessingFailureInfo info;
+                        failureInfoStorage.TryGetFailureInfoForMessage(messageId, out info);
+                        var errorContext = new ErrorContext(ex, headers, messageId, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), info.NumberOfProcessingAttempts);
+
+                        if (await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled)
+                        {
+                            failureInfoStorage.ClearFailureInfoForMessage(messageId);
+                            await Acknowledge(message.DeliveryTag, messageId).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
+                        }
+
+                        return;
+                    }
 
                     if (tokenSource.IsCancellationRequested)
                     {

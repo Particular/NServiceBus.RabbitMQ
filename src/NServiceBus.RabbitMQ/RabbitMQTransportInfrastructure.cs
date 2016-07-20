@@ -137,7 +137,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, new FailureInfoStorage(1000));
         }
     }
 }
