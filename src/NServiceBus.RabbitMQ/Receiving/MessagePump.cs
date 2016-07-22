@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -164,7 +163,7 @@
                 {
                     using (var tokenSource = new CancellationTokenSource())
                     {
-                        var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+                        var pushContext = new PushContext(messageId, headers, message.Body ?? new byte[0], new TransportTransaction(), tokenSource, new ContextBag());
 
                         await pipe(pushContext).ConfigureAwait(false);
 
