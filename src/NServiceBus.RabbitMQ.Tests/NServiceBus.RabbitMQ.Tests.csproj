@@ -103,6 +103,7 @@
     <Compile Include="App_Packages\ApiApprover.3.0.1\PublicApiGenerator.cs" />
     <Compile Include="ConnectionString\ConnectionConfigurationTests.cs" />
     <Compile Include="ConnectionString\ConnectionStringParserTests.cs" />
+    <Compile Include="HeaderConverterTests.cs" />
     <Compile Include="MessageConverterTests.cs" />
     <Compile Include="RabbitMqContext.cs" />
     <Compile Include="TestCategory.cs" />

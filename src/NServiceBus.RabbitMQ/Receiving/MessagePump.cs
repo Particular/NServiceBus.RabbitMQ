@@ -17,7 +17,7 @@
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
 
         readonly ConnectionFactory connectionFactory;
-        readonly MessageConverter messageConverter;
+        readonly Func<BasicDeliverEventArgs, string> messageIdRetriever;
         readonly string consumerTag;
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
@@ -35,10 +35,10 @@
         EventingBasicConsumer consumer;
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
+        public MessagePump(ConnectionFactory connectionFactory, Func<BasicDeliverEventArgs, string> messageIdRetriever, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
         {
             this.connectionFactory = connectionFactory;
-            this.messageConverter = messageConverter;
+            this.messageIdRetriever = messageIdRetriever;
             this.consumerTag = consumerTag;
             this.poisonMessageForwarder = poisonMessageForwarder;
             this.queuePurger = queuePurger;
@@ -148,8 +148,8 @@
             {
                 try
                 {
-                    messageId = messageConverter.RetrieveMessageId(message);
-                    headers = messageConverter.RetrieveHeaders(message);
+                    messageId = messageIdRetriever(message);
+                    headers = HeaderConverter.RetrieveHeaders(message);
 
                     pushMessage = true;
                 }

@@ -108,15 +108,15 @@
 
         IPushMessages CreateMessagePump()
         {
-            MessageConverter messageConverter;
-
+            Func<BasicDeliverEventArgs, string> messageIdRetriever;
             if (settings.HasSetting(SettingsKeys.CustomMessageIdStrategy))
             {
-                messageConverter = new MessageConverter(settings.Get<Func<BasicDeliverEventArgs, string>>(SettingsKeys.CustomMessageIdStrategy));
+                messageIdRetriever = settings.Get<Func<BasicDeliverEventArgs, string>>(SettingsKeys.CustomMessageIdStrategy);
             }
             else
             {
-                messageConverter = new MessageConverter();
+                // ReSharper disable once ConvertClosureToMethodGroup
+                messageIdRetriever = args => MessageConverter.DefaultMessageIdStrategy(args);
             }
 
             string hostDisplayName;
@@ -137,7 +137,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
+            return new MessagePump(connectionFactory, messageIdRetriever, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
         }
     }
 }

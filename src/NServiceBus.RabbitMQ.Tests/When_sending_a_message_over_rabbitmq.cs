@@ -105,13 +105,11 @@
 
             var result = Consume(messageId, queueToReceiveOn);
 
-            var converter = new MessageConverter();
-
             using (var body = new MemoryStream(result.Body))
             {
                 var incomingMessage = new IncomingMessage(
-                    converter.RetrieveMessageId(result),
-                    converter.RetrieveHeaders(result),
+                    MessageConverter.DefaultMessageIdStrategy(result),
+                    HeaderConverter.RetrieveHeaders(result),
                     body
                 );
 
