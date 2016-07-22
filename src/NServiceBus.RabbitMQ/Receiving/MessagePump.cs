@@ -187,7 +187,7 @@
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Error while attempting to process message {messageId}. The message will be rejected.", ex);
+                Logger.Warn($"Error while attempting to process message {messageId}. The message will be requeued.", ex);
                 await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
             }
         }
@@ -210,9 +210,8 @@
             {
                 await consumer.Model.BasicRejectAndRequeue(deliveryTag, exclusiveScheduler).ConfigureAwait(false);
             }
-            catch (AlreadyClosedException ex)
+            catch (AlreadyClosedException)
             {
-                Logger.Warn($"Attempt to reject message {messageId} failed because the channel was closed. The message will be requeued.", ex);
             }
         }
 
