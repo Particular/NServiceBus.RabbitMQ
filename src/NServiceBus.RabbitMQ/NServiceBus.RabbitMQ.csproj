@@ -81,6 +81,7 @@
     <Compile Include="RabbitMQTransportInfrastructure.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Connection\ConfirmsAwareChannel.cs" />
+    <Compile Include="Receiving\ModelExtensions.cs" />
     <Compile Include="Routing\DefaultRoutingKeyConvention.cs" />
     <Compile Include="Configuration\ConnectionConfiguration.cs" />
     <Compile Include="Connection\ConnectionFactory.cs" />
