@@ -177,7 +177,7 @@
 
                     if (tokenSource.IsCancellationRequested)
                     {
-                        await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
+                        await Requeue(message.DeliveryTag).ConfigureAwait(false);
                     }
                     else
                     {
@@ -188,7 +188,7 @@
             catch (Exception ex)
             {
                 Logger.Warn($"Error while attempting to process message {messageId}. The message will be requeued.", ex);
-                await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
+                await Requeue(message.DeliveryTag).ConfigureAwait(false);
             }
         }
 
@@ -204,7 +204,7 @@
             }
         }
 
-        async Task Requeue(ulong deliveryTag, string messageId)
+        async Task Requeue(ulong deliveryTag)
         {
             try
             {
