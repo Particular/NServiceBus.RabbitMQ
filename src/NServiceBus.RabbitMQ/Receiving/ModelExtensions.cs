@@ -2,6 +2,7 @@
 {
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Exceptions;
 
     static class ModelExtensions
     {
@@ -22,13 +23,23 @@
                 },
                 scheduler);
 
-        public static Task BasicRejectAndRequeue(this IModel channel, ulong deliveryTag, TaskScheduler scheduler) =>
+        public static Task BasicRejectAndRequeueIfOpen(this IModel channel, ulong deliveryTag, TaskScheduler scheduler) =>
             TaskEx.StartNew(
                 new MessageState { Channel = channel, DeliveryTag = deliveryTag },
                 state =>
                 {
                     var messageState = (MessageState)state;
-                    messageState.Channel.BasicReject(messageState.DeliveryTag, true);
+
+                    if (messageState.Channel.IsOpen)
+                    {
+                        try
+                        {
+                            messageState.Channel.BasicReject(messageState.DeliveryTag, true);
+                        }
+                        catch (AlreadyClosedException)
+                        {
+                        }
+                    }
                 },
                 scheduler);
     }

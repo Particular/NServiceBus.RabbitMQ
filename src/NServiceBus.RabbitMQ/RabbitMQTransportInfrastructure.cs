@@ -127,8 +127,6 @@
 
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
-            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider);
-
             var queuePurger = new QueuePurger(connectionFactory);
 
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
@@ -137,7 +135,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
         }
     }
 }
