@@ -3,15 +3,16 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
     using EndpointTemplates;
     using Extensibility;
     using Features;
-    using NServiceBus.Persistence;
+    using NServiceBus;
     using NServiceBus.Pipeline;
     using NUnit.Framework;
+    using Persistence;
     using ScenarioDescriptors;
     using Timeout.Core;
+    using Conventions = AcceptanceTesting.Customization.Conventions;
 
     public class When_timeout_dispatch_fails : NServiceBusAcceptanceTest
     {
@@ -40,9 +41,7 @@
                 .Run();
         }
 
-        const string ErrorQueueForTimeoutErrors = "timeout_dispatch_errors";
         static readonly TimeSpan VeryLongTimeSpan = TimeSpan.FromMinutes(10);
-
         public class Context : ScenarioContext
         {
             public bool FailedTimeoutMovedToError { get; set; }

@@ -9,7 +9,6 @@
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
-    using Transports;
 
     [SkipWeaving]
     class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
@@ -63,7 +62,7 @@
 
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint.ToString());
+            var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint);
 
             if (logicalAddress.EndpointInstance.Discriminator != null)
             {
@@ -137,7 +136,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, new FailureInfoStorage(1000));
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, poisonMessageForwarder, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
         }
     }
 }

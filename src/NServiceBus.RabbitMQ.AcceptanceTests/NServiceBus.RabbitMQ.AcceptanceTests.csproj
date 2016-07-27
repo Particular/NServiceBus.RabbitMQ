@@ -78,6 +78,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="App_Packages\ConfigureRabbitMQTransportInfrastructure.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\ApiExtension\When_extending_sendoptions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\ApiExtension\When_extending_the_publish_api.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Audit\When_auditing.cs" />
@@ -165,7 +166,6 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\PerfMon\CriticalTime\When_slow_with_CriticalTime_enabled.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\PerfMon\SLA\When_sending_slow_with_SLA_enabled.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\PerfMon\SLA\When_sending_with_SLA_enabled.cs" />
-    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Performance\MessageDurability\When_sending_a_non_durable_message.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Performance\TimeToBeReceived\When_TimeToBeReceived_has_expired.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Performance\TimeToBeReceived\When_TimeToBeReceived_has_expired_convention.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Performance\TimeToBeReceived\When_TimeToBeReceived_has_not_expired.cs" />
@@ -173,6 +173,10 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Performance\When_message_is_faulted.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Pipeline\When_replacing_behavior.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Pipeline\When_using_per_uow_component_in_the_pipeline.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_custom_policy_always_moves_to_error.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_custom_policy_does_single_delayed_retry_before_move_to_error.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_custom_policy_executed.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_custom_policy_provided.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_doing_flr_with_default_settings.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_doing_flr_with_dtc_on.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_doing_flr_with_native_transactions.cs" />
@@ -181,23 +185,21 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_message_fails_retries.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_message_is_deferred_by_slr_using_dtc.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_and_counting.cs" />
-    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_with_custom_policy.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_with_flr_disabled.cs" />
-    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_with_min_policy.cs" />
-    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_with_non_min_policy.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_with_regular_exception.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_performing_slr_with_serialization_exception.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\Retries\When_Subscribing_to_errors.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\When_custom_policy_moves_to_overridden_error_queue.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\When_error_is_overridden_in_code.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\When_message_is_moved_to_error_queue.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\When_message_is_moved_to_error_queue_using_dtc.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\When_message_is_moved_to_error_queue_with_header_customizations.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Recoverability\When_message_with_TimeToBeReceived_fails.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_a_duplicate_message_arrives.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_a_message_is_audited.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_blowing_up_just_after_dispatch.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_clearing_saga_timeouts.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_dispatching_forwarded_messages.cs" />
-    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_dispatching_transport_operations.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_receiving_a_message.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Reliability\Outbox\When_sending_from_a_non_dtc_endpoint.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\AutomaticSubscriptions\When_starting_an_endpoint_with_autoSubscribe.cs" />
@@ -223,6 +225,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\when_replying_to_a_message_sent_to_specific_instance.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\When_replying_to_message.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\When_subscribing_to_a_polymorphic_event.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\When_subscribing_to_scaled_out_publisher_on_unicast_transport.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\When_using_assembly_level_message_mapping_for_pub_sub.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\When_using_instance_ids.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Routing\When_using_legacy_routing_configuration_combined_with_message_driven_pub_sub.cs" />
@@ -276,6 +279,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_configuring_custom_xml_namespace.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_registering_additional_deserializers.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_registering_custom_serializer.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_registering_deserializers_with_settings.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_sanitizing_xml_messages.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_skip_wrapping_xml.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Serialization\When_wrapping_is_not_skipped.cs" />
@@ -294,7 +298,6 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\UnicastPubSubExtensions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-beta0006\Volatile\When_sending_to_non_durable_endpoint.cs" />
-    <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\ConfigureTransportInfrastructure.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\IConfigureTransportInfrastructure.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\NServiceBusTransportTest.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0-beta0006\When_failure_happens_after_send.cs" />

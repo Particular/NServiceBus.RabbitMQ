@@ -25,27 +25,27 @@
                 {
                     throw new Exception("Simulated exception");
                 },
-                context =>
+                async context =>
                 {
                     numberOfOnErrorInvocations += 1;
 
                     if (numberOfOnErrorInvocations == 1)
                     {
-                        SendMessage(InputQueueName, context.Message.Headers, context.TransportTransaction);
+                        await SendMessage(InputQueueName, context.Message.Headers, context.TransportTransaction);
                     }
                     else
                     {
                         onErrorInvoked.SetResult(context);
                     }
 
-                    return Task.FromResult(ErrorHandleResult.Handled);
+                    return ErrorHandleResult.Handled;
                 }, transactionMode);
 
             await SendMessage(InputQueueName, new Dictionary<string, string> { { "MyHeader", "MyValue" } });
 
             var errorContext = await onErrorInvoked.Task;
 
-            Assert.AreEqual(1, errorContext.NumberOfDeliveryAttempts, "Should track delivery attempts between immediate retries");
+            Assert.AreEqual(1, errorContext.ImmediateProcessingFailures, "Should track delivery attempts between immediate retries");
         }
     }
 }

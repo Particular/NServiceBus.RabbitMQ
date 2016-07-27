@@ -8,7 +8,7 @@ using NServiceBus.Settings;
 using NServiceBus.Transport;
 using NServiceBus.TransportTests;
 
-class ConfigureTransportInfrastructure : IConfigureTransportInfrastructure
+class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
 {
     public TransportInfrastructure Configure(SettingsHolder settings)
     {

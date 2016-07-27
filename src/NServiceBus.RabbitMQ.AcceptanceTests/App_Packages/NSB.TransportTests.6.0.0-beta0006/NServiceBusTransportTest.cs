@@ -15,6 +15,16 @@
 
     public abstract class NServiceBusTransportTest
     {
+        public static string SpecificTransport
+        {
+            get
+            {
+                var specificTransport = EnvironmentHelper.GetEnvironmentVariable("Transport.UseSpecific");
+
+                return !string.IsNullOrEmpty(specificTransport) ? specificTransport : MsmqDescriptorKey;
+            }
+        }
+
         [SetUp]
         public void Setup()
         {
@@ -29,12 +39,31 @@
             lazyDispatcher = new Lazy<IDispatchMessages>(() => SendInfrastructure.DispatcherFactory());
         }
 
-        static IConfigureTransportInfrastructure CreateConfigurer() => new ConfigureTransportInfrastructure();
+        static IConfigureTransportInfrastructure CreateConfigurer()
+        {
+            var typeName = "Configure" + SpecificTransport + "Infrastructure";
+
+            var configurerType = Type.GetType(typeName, false);
+
+            if (configurerType == null)
+            {
+                throw new InvalidOperationException($"Transport Test project must include a non-namespaced class named '{typeName}' implementing {typeof(IConfigureTransportInfrastructure).Name}. See {typeof(ConfigureRabbitMQTransportInfrastructure).FullName} for an example.");
+            }
+
+            var configurer = Activator.CreateInstance(configurerType) as IConfigureTransportInfrastructure;
+
+            if (configurer == null)
+            {
+                throw new InvalidOperationException($"{typeName} does not implement {typeof(IConfigureTransportInfrastructure).Name}.");
+            }
+            return configurer;
+        }
 
         [TearDown]
         public void TearDown()
         {
             testCancellationTokenSource?.Dispose();
+            MessagePump?.Stop().GetAwaiter().GetResult();
             Configurer?.Cleanup().GetAwaiter().GetResult();
         }
 

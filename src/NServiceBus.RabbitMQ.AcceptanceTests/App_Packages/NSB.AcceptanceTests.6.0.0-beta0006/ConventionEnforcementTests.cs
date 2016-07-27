@@ -9,7 +9,6 @@
     public class ConventionEnforcementTests : NServiceBusAcceptanceTest
     {
         [Test]
-        [Ignore("WTF")]
         public void Ensure_all_tests_derive_from_a_common_base_class()
         {
             var testTypes = Assembly.GetExecutingAssembly().GetTypes()

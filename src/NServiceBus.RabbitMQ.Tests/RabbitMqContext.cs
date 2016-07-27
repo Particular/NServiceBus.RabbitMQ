@@ -6,7 +6,6 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Settings;
-    using Transports;
 
     class RabbitMqContext
     {
@@ -76,7 +75,7 @@
             var purger = new QueuePurger(connectionFactory);
             var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2), new FailureInfoStorage(1000));
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 

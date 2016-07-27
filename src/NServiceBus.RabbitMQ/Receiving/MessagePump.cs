@@ -21,7 +21,6 @@
         readonly PoisonMessageForwarder poisonMessageForwarder;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
-        readonly FailureInfoStorage failureInfoStorage;
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -40,7 +39,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, FailureInfoStorage failureInfoStorage)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, PoisonMessageForwarder poisonMessageForwarder, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -48,7 +47,6 @@
             this.poisonMessageForwarder = poisonMessageForwarder;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
-            this.failureInfoStorage = failureInfoStorage;
         }
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
@@ -175,32 +173,31 @@
 
                 using (var tokenSource = new CancellationTokenSource())
                 {
-                    try
+                    var processingAttempt = 0;
+                    ErrorHandleResult? errorHandleResult;
+
+                    do
                     {
-                        var messageContext = new MessageContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
-                        await onMessage(messageContext).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        failureInfoStorage.RecordFailureInfoForMessage(messageId, ex);
-                        FailureInfoStorage.ProcessingFailureInfo info;
-                        failureInfoStorage.TryGetFailureInfoForMessage(messageId, out info);
-                        var errorContext = new ErrorContext(ex, headers, messageId, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), info.NumberOfProcessingAttempts);
-
-                        if (await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled)
+                        try
                         {
-                            failureInfoStorage.ClearFailureInfoForMessage(messageId);
-                            await Acknowledge(message.DeliveryTag, messageId).ConfigureAwait(false);
+                            var messageContext = new MessageContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
+
+                            await onMessage(messageContext).ConfigureAwait(false);
+
+                            errorHandleResult = null;
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
+                            processingAttempt++;
+
+                            var errorContext = new ErrorContext(ex, headers, messageId, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), processingAttempt);
+
+                            errorHandleResult = await onError(errorContext).ConfigureAwait(false);
                         }
-
-                        return;
                     }
+                    while (errorHandleResult == ErrorHandleResult.RetryRequired);
 
-                    if (tokenSource.IsCancellationRequested)
+                    if (errorHandleResult == null && tokenSource.IsCancellationRequested)
                     {
                         await Requeue(message.DeliveryTag, messageId).ConfigureAwait(false);
                     }
