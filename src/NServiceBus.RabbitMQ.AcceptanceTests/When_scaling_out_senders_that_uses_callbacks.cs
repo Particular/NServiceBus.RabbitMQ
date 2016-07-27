@@ -23,7 +23,7 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.ScaleOut().InstanceDiscriminator("A");
+                        c.MakeInstanceUniquelyAddressable("A");
                         c.GetSettings().Set("Client", "A");
                     });
                     b.When(async (bus, c) =>
@@ -43,7 +43,7 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.ScaleOut().InstanceDiscriminator("B");
+                        c.MakeInstanceUniquelyAddressable("B");
                         c.GetSettings().Set("Client", "B");
                     });
                     b.When(async (bus, c) =>

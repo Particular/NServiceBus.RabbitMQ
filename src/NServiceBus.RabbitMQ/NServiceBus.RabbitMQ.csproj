@@ -55,8 +55,8 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-beta0004\lib\net452\NServiceBus.Core.dll</HintPath>
+    <Reference Include="NServiceBus.Core">
+      <HintPath>..\packages\NServiceBus.6.0.0-beta0006\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obsolete, Version=4.1.0.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
@@ -82,6 +82,7 @@
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Connection\ConfirmsAwareChannel.cs" />
     <Compile Include="Receiving\ModelExtensions.cs" />
+    <Compile Include="Receiving\FailureInfoStorage.cs" />
     <Compile Include="Routing\DefaultRoutingKeyConvention.cs" />
     <Compile Include="Configuration\ConnectionConfiguration.cs" />
     <Compile Include="Connection\ConnectionFactory.cs" />

@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using DeliveryConstraints;
     using Extensibility;
     using Features;
     using NServiceBus.AcceptanceTests;
@@ -71,7 +72,7 @@
                         try
                         {
                             var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
-                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new[] { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
+                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new List<DeliveryConstraint> { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
                             await sender.Dispatch(new TransportOperations(operation), new ContextBag());
                         }
                         catch (Exception)
