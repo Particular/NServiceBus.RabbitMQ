@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -10,7 +9,6 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
-    using Transports;
 
     class MessagePump : IPushMessages, IDisposable
     {
@@ -24,7 +22,8 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
 
         // Init
-        Func<PushContext, Task> pipe;
+        Func<MessageContext, Task> onMessage;
+        Func<ErrorContext, Task<ErrorHandleResult>> onError;
         PushSettings settings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
@@ -49,9 +48,10 @@
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
         }
 
-        public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
+        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
         {
-            this.pipe = pipe;
+            this.onMessage = onMessage;
+            this.onError = onError;
             this.settings = settings;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
@@ -188,8 +188,8 @@
             {
                 try
                 {
-                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
-                    await pipe(pushContext).ConfigureAwait(false);
+                    var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], new TransportTransaction(), tokenSource, new ContextBag());
+                    await onMessage(messageContext).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

@@ -1,14 +1,12 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
-    using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
     using Extensibility;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
-    using Transports;
 
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
@@ -99,7 +97,7 @@
 
             MakeSureQueueAndExchangeExists(queueToReceiveOn);
 
-            await messageDispatcher.Dispatch(operations, new ContextBag());
+            await messageDispatcher.Dispatch(operations, new TransportTransaction(), new ContextBag());
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
@@ -107,16 +105,13 @@
 
             var converter = new MessageConverter();
 
-            using (var body = new MemoryStream(result.Body))
-            {
-                var incomingMessage = new IncomingMessage(
-                    converter.RetrieveMessageId(result),
-                    converter.RetrieveHeaders(result),
-                    body
-                );
+            var incomingMessage = new IncomingMessage(
+                converter.RetrieveMessageId(result),
+                converter.RetrieveHeaders(result),
+                result.Body
+            );
 
-                assertion(incomingMessage, result);
-            }
+            assertion(incomingMessage, result);
         }
 
         Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage> assertion, string queueToReceiveOn = "testEndPoint") => Verify(builder, (t, r) => assertion(t), queueToReceiveOn);

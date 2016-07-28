@@ -8,11 +8,10 @@
     using global::RabbitMQ.Client;
     using DeliveryConstraints;
     using Performance.TimeToBeReceived;
-    using Transports;
 
     static class BasicPropertiesExtensions
     {
-        public static void Fill(this IBasicProperties properties, OutgoingMessage message, IEnumerable<DeliveryConstraint> deliveryConstraints)
+        public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints)
         {
             properties.MessageId = message.MessageId;
 
@@ -82,7 +81,7 @@
             return false;
         }
 
-        static bool TryGet<T>(IEnumerable<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
+        static bool TryGet<T>(List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
         {
             constraint = list.OfType<T>().FirstOrDefault();
 

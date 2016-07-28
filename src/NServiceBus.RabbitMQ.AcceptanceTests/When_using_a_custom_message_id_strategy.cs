@@ -15,7 +15,6 @@
     using Routing;
     using Serialization;
     using Settings;
-    using Transports;
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
@@ -75,8 +74,8 @@
                                 },
                                 stream.ToArray());
 
-                            var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName().ToString()));
-                            await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new ContextBag());
+                            var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
+                            await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
                         }
                     }
 
