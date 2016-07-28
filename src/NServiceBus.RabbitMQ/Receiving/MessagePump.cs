@@ -186,20 +186,27 @@
 
             using (var tokenSource = new CancellationTokenSource())
             {
-                try
-                {
-                    var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], new TransportTransaction(), tokenSource, new ContextBag());
-                    await onMessage(messageContext).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn($"Failed to process message '{messageId}'. Returning message to queue...", ex);
-                    await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                var processed = false;
+                var errorHandled = false;
+                var numberOfDeliveryAttempts = 0;
 
-                    return;
+                while (!processed && !errorHandled)
+                {
+                    try
+                    {
+                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], new TransportTransaction(), tokenSource, new ContextBag());
+                        await onMessage(messageContext).ConfigureAwait(false);
+                        processed = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        ++numberOfDeliveryAttempts;
+                        var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], new TransportTransaction(), numberOfDeliveryAttempts);
+                        errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                    }
                 }
 
-                if (tokenSource.IsCancellationRequested)
+                if (processed && tokenSource.IsCancellationRequested)
                 {
                     await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                 }
