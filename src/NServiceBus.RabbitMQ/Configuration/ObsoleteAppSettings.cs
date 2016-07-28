@@ -2,7 +2,6 @@
 {
     using System.Configuration;
     using Logging;
-    using Transports;
 
     static class ObsoleteAppSettings
     {

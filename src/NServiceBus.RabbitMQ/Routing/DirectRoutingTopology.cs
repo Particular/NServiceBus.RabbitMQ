@@ -2,7 +2,6 @@
 {
     using System;
     using global::RabbitMQ.Client;
-    using Transports;
 
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys.

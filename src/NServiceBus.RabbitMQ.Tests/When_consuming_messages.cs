@@ -6,7 +6,6 @@
     using Extensibility;
     using NUnit.Framework;
     using Routing;
-    using Transports;
 
     [TestFixture]
     class When_consuming_messages : RabbitMqContext
@@ -17,7 +16,7 @@
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
             var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue)));
 
-            await messageDispatcher.Dispatch(transportOperations, new ContextBag());
+            await messageDispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
 
             var received = WaitForMessage();
 

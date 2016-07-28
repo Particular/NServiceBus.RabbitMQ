@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using DeliveryConstraints;
     using Extensibility;
     using Features;
     using NServiceBus.AcceptanceTests;
@@ -12,7 +13,6 @@
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
-    using Transports;
 
     public class When_the_broker_connection_is_lost : NServiceBusAcceptanceTest
     {
@@ -71,8 +71,8 @@
                         try
                         {
                             var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
-                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName().ToString()), deliveryConstraints: new[] { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
-                            await sender.Dispatch(new TransportOperations(operation), new ContextBag());
+                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), deliveryConstraints: new List<DeliveryConstraint> { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
+                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), new ContextBag());
                         }
                         catch (Exception)
                         {
