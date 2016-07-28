@@ -8,7 +8,6 @@
     using global::RabbitMQ.Client;
     using DeliveryConstraints;
     using Performance.TimeToBeReceived;
-    using Transports;
 
     static class BasicPropertiesExtensions
     {

@@ -73,7 +73,7 @@
             ClientProperties.Add("application_location", applicationPath);
             ClientProperties.Add("machine_name", hostname);
             ClientProperties.Add("user", UserName);
-            ClientProperties.Add("endpoint_name", settings.EndpointName().ToString());
+            ClientProperties.Add("endpoint_name", settings.EndpointName());
         }
     }
 }

@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Extensibility;
-    using Transports;
 
     class MessageDispatcher : IDispatchMessages
     {
@@ -14,16 +13,16 @@
             this.channelProvider = channelProvider;
         }
 
-        public Task Dispatch(TransportOperations operations, ContextBag context)
+        public Task Dispatch(TransportOperations operations, TransportTransaction transaction, ContextBag context)
         {
             var channel = channelProvider.GetPublishChannel();
 
             try
             {
-                var unicastTransportOperations = operations.UnicastTransportOperations as List<UnicastTransportOperation>
+                var unicastTransportOperations = operations.UnicastTransportOperations
                     ?? new List<UnicastTransportOperation>(operations.UnicastTransportOperations);
 
-                var multicastTransportOperations = operations.MulticastTransportOperations as List<MulticastTransportOperation>
+                var multicastTransportOperations = operations.MulticastTransportOperations
                     ?? new List<MulticastTransportOperation>(operations.MulticastTransportOperations);
 
                 var tasks = new List<Task>(unicastTransportOperations.Count + multicastTransportOperations.Count);

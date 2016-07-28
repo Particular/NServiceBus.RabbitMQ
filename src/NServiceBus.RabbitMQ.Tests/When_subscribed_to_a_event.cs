@@ -3,7 +3,6 @@
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
-    using Transports;
 
     [TestFixture]
     class When_subscribed_to_a_event : RabbitMqContext
@@ -142,7 +141,7 @@
             var type = typeof(T);
             var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build();
 
-            return messageDispatcher.Dispatch(message, new ContextBag());
+            return messageDispatcher.Dispatch(message, new TransportTransaction(), new ContextBag());
         }
 
         void AssertReceived<T>()

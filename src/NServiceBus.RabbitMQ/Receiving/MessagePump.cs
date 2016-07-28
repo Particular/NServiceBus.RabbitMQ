@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -10,7 +9,6 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
-    using Transports;
 
     class MessagePump : IPushMessages, IDisposable
     {
@@ -24,7 +22,8 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
 
         // Init
-        Func<PushContext, Task> pipe;
+        Func<MessageContext, Task> onMessage;
+        Func<ErrorContext, Task<ErrorHandleResult>> onError;
         PushSettings settings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
@@ -49,9 +48,10 @@
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
         }
 
-        public Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
+        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
         {
-            this.pipe = pipe;
+            this.onMessage = onMessage;
+            this.onError = onError;
             this.settings = settings;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
@@ -186,20 +186,27 @@
 
             using (var tokenSource = new CancellationTokenSource())
             {
-                try
-                {
-                    var pushContext = new PushContext(messageId, headers, new MemoryStream(message.Body ?? new byte[0]), new TransportTransaction(), tokenSource, new ContextBag());
-                    await pipe(pushContext).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn($"Failed to process message '{messageId}'. Returning message to queue...", ex);
-                    await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                var processed = false;
+                var errorHandled = false;
+                var numberOfDeliveryAttempts = 0;
 
-                    return;
+                while (!processed && !errorHandled)
+                {
+                    try
+                    {
+                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], new TransportTransaction(), tokenSource, new ContextBag());
+                        await onMessage(messageContext).ConfigureAwait(false);
+                        processed = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        ++numberOfDeliveryAttempts;
+                        var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], new TransportTransaction(), numberOfDeliveryAttempts);
+                        errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                    }
                 }
 
-                if (tokenSource.IsCancellationRequested)
+                if (processed && tokenSource.IsCancellationRequested)
                 {
                     await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                 }

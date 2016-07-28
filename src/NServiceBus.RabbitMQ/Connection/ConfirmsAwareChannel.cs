@@ -6,7 +6,6 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using Logging;
-    using Transports;
 
     class ConfirmsAwareChannel : IDisposable
     {
