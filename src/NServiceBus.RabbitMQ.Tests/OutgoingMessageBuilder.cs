@@ -5,7 +5,6 @@
     using DeliveryConstraints;
     using Performance.TimeToBeReceived;
     using Routing;
-    using Transports;
 
     public class OutgoingMessageBuilder
     {
@@ -87,7 +86,7 @@
         string messageId = Guid.NewGuid().ToString();
         byte[] body;
         Dictionary<string, string> headers = new Dictionary<string, string>();
-        IList<DeliveryConstraint> constraints = new List<DeliveryConstraint>();
+        List<DeliveryConstraint> constraints = new List<DeliveryConstraint>();
         DispatchConsistency dispatchConsistency = DispatchConsistency.Default;
     }
 }
