@@ -15,7 +15,7 @@
     <copyright>$copyright$</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
-      <dependency id="NServiceBus" version="[6.0.0-beta0006, 7.0.0)" />
+      <dependency id="NServiceBus" version="[6.0.0-beta0007, 7.0.0)" />
       <dependency id="RabbitMQ.Client" version="[3.6.3, 3.7.0)" />
     </dependencies>
   </metadata>
