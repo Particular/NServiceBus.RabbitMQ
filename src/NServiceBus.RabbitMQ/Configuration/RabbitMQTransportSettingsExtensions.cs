@@ -64,5 +64,17 @@
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, waitTime);
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Overrides the default usePublisherCofirms or value set in connection string.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="publisherConfirms">Controls if publisher confirms should be used.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> SetPublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool publisherConfirms)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.UsePublisherConfirms, publisherConfirms);
+            return transportExtensions;
+        }
     }
 }

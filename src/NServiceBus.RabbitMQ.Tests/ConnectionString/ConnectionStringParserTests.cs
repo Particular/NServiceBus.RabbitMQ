@@ -227,5 +227,16 @@
 
             Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
         }
+
+        [Test]
+        public void Should_override_usePublisherConfirms_when_present_in_settings()
+        {
+            settings.Set(SettingsKeys.UsePublisherConfirms, false);
+            var parser = new ConnectionStringParser(settings);
+
+            var connectionConfiguration = parser.Parse(connectionString);
+
+            Assert.False(connectionConfiguration.UsePublisherConfirms);
+        }
     }
 }
