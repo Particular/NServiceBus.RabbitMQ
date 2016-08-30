@@ -12,6 +12,7 @@ namespace NServiceBus.Transport.RabbitMQ
         public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             channel = connection.CreateModel();
+            channel.BasicReturn += Channel_BasicReturn;
 
             this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
@@ -22,7 +23,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
                 channel.BasicAcks += Channel_BasicAcks;
                 channel.BasicNacks += Channel_BasicNacks;
-                channel.BasicReturn += Channel_BasicReturn;
                 channel.ModelShutdown += Channel_ModelShutdown;
 
                 messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
