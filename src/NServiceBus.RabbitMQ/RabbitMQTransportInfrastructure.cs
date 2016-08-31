@@ -62,11 +62,11 @@
 
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint);
+            var queue = new StringBuilder(logicalAddress.QueueName);
 
-            if (logicalAddress.EndpointInstance.Discriminator != null)
+            if (logicalAddress.Discriminator != null)
             {
-                queue.Append("-" + logicalAddress.EndpointInstance.Discriminator);
+                queue.Append("-" + logicalAddress.Discriminator);
             }
 
             if (logicalAddress.Qualifier != null)
