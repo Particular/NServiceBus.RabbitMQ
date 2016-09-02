@@ -10,7 +10,7 @@
     {
         const string connectionString =
             "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "usePublisherConfirms=true;retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
+            "retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
 
         SettingsHolder settings;
 
@@ -33,7 +33,6 @@
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
             Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
-            Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
             Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
             Assert.AreEqual(connectionConfiguration.UseTls, true);
             Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
@@ -229,14 +228,13 @@
         }
 
         [Test]
-        public void Should_override_usePublisherConfirms_when_present_in_settings()
+        public void Should_inform_that_usepublisherconfirms_has_been_removed()
         {
-            settings.Set(SettingsKeys.UsePublisherConfirms, false);
             var parser = new ConnectionStringParser(settings);
 
-            var connectionConfiguration = parser.Parse(connectionString);
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;usePublisherConfirms=true"));
 
-            Assert.False(connectionConfiguration.UsePublisherConfirms);
+            Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
         }
     }
 }

@@ -46,19 +46,6 @@
                 throw new Exception("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
 
-            if (settings.HasSetting(SettingsKeys.UsePublisherConfirms))
-            {
-                var publisherCofirms = settings.Get<bool>(SettingsKeys.UsePublisherConfirms);
-                if (this.ContainsKey("UsePublisherConfirms"))
-                {
-                    var message = string.Concat("The 'UsePublisherConfirms' connection string option was overriden by code api setting. Value set is ", publisherCofirms);
-
-                    Logger.Info(message);
-                }
-
-                connectionConfiguration.UsePublisherConfirms = publisherCofirms;
-            }
-
             if (ContainsKey("dequeuetimeout"))
             {
                 var message = "The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.";
@@ -80,6 +67,15 @@
             if (ContainsKey("prefetchcount"))
             {
                 var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
+            if (ContainsKey("UsePublisherConfirms"))
+            {
+                var message = "The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UsePublisherConfirms' instead.";
 
                 Logger.Error(message);
 
