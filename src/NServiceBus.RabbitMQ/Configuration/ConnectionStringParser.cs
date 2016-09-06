@@ -73,6 +73,15 @@
                 throw new NotSupportedException(message);
             }
 
+            if (ContainsKey("UsePublisherConfirms"))
+            {
+                var message = "The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UsePublisherConfirms' instead.";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
             return connectionConfiguration;
         }
 

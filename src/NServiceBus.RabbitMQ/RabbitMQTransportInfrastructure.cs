@@ -25,11 +25,22 @@
             var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
             connectionFactory = new ConnectionFactory(connectionConfiguration);
 
+            SetUsePublisherConfirmsIfPresent(settings, connectionConfiguration);
+
             CreateTopology();
 
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, connectionConfiguration.UsePublisherConfirms);
 
             RequireOutboxConsent = false;
+        }
+
+        static void SetUsePublisherConfirmsIfPresent(SettingsHolder settings, ConnectionConfiguration connectionConfiguration)
+        {
+            if (settings.HasSetting(SettingsKeys.UsePublisherConfirms))
+            {
+                var publisherCofirms = settings.Get<bool>(SettingsKeys.UsePublisherConfirms);
+                connectionConfiguration.UsePublisherConfirms = publisherCofirms;
+            }
         }
 
         public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery) };

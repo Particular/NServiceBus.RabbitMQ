@@ -23,6 +23,7 @@ namespace NServiceBus
             " 5.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConnectionManager<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string, System.Type, string> exchangeNameConvention = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UsePublisherConfirms(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool publisherConfirms) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions)
             where T : NServiceBus.Transport.RabbitMQ.IRoutingTopology, new () { }
     }
