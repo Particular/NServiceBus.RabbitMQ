@@ -309,7 +309,11 @@
     <Compile Include="ConfigureEndpointRabbitMQTransport.cs" />
     <Compile Include="TaskEx.cs" />
     <Compile Include="When_receiving_a_reply_that_contains_a_legacy_callback_header.cs" />
+    <Compile Include="When_sending_to_non_existing_queue_using_conventional_without_publisher_confirms.cs" />
+    <Compile Include="When_sending_to_non_existing_queue_using_conventional_routing_and_publisher_confirms.cs" />
+    <Compile Include="When_sending_to_non_existing_queue_using_direct_routing_without_publisher_confirms.cs" />
     <Compile Include="When_the_message_contains_a_legacy_callback_header.cs" />
+    <Compile Include="When_sending_to_non_existing_queue_using_direct_routing_and_publisher_confirms.cs" />
     <Compile Include="When_using_direct_routing.cs" />
     <Compile Include="When_the_broker_connection_is_lost.cs" />
     <Compile Include="When_using_a_custom_message_id_strategy.cs" />
