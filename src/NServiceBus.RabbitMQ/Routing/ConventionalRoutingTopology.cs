@@ -62,6 +62,7 @@
 
         public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
+            SetupSendExchange(channel, address);
             channel.BasicPublish(address, String.Empty, true, properties, message.Body);
         }
 
@@ -77,6 +78,18 @@
         }
 
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
+
+        void SetupSendExchange(IModel channel, string address)
+        {
+            if(IsExchangeConfigured(address))
+            {
+                return;
+            }
+
+            CreateExchange(channel, address);
+
+            MarkExchangeConfigured(address);
+        }
 
         void SetupTypeSubscriptions(IModel channel, Type type)
         {
@@ -113,7 +126,14 @@
             typeTopologyConfiguredSet[eventType] = null;
         }
 
+        void MarkExchangeConfigured(string address)
+        {
+            exchangeConfiguredSet[address] = null;
+        }
+
         bool IsTypeTopologyKnownConfigured(Type eventType) => typeTopologyConfiguredSet.ContainsKey(eventType);
+
+        bool IsExchangeConfigured(string address) => exchangeConfiguredSet.ContainsKey(address);
 
         void CreateExchange(IModel channel, string exchangeName)
         {
@@ -130,5 +150,6 @@
         }
 
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
+        readonly ConcurrentDictionary<string, string> exchangeConfiguredSet = new ConcurrentDictionary<string, string>();
     }
 }

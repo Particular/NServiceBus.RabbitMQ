@@ -11,7 +11,7 @@
     public class When_sending_to_non_existing_queue_using_conventional_without_publisher_confirms : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Is_Losing_Messag()
+        public async Task Should_log_entry()
         {
             var context = await Scenario.Define<ScenarioContext>()
                 .WithEndpoint<Sender>(b => b.When((bus, c) =>
@@ -22,7 +22,7 @@
                 }))
                 .Run(TimeSpan.FromSeconds(20));
             
-            Assert.IsFalse(context.Logs.Any(x => x.Message.StartsWith("Message could not be routed to")));
+            Assert.IsTrue(context.Logs.Any(x => x.Message.StartsWith("Message could not be routed to")));
         }
 
         public class Sender : EndpointConfigurationBuilder
