@@ -68,7 +68,7 @@
             }
 
             connectionFactory = new ConnectionFactory(config);
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, config.UsePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
 
             messageDispatcher = new MessageDispatcher(channelProvider);
 

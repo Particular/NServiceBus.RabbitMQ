@@ -21,8 +21,6 @@
 
         public ushort RequestedHeartbeat { get; set; }
 
-        public bool UsePublisherConfirms { get; set; }
-
         public TimeSpan RetryDelay { get; set; }
 
         public bool UseTls { get; set; }
@@ -41,7 +39,6 @@
             UserName = "guest";
             Password = "guest";
             RequestedHeartbeat = 5;
-            UsePublisherConfirms = true;
             RetryDelay = TimeSpan.FromSeconds(10);
             UseTls = false;
             CertPath = "";
