@@ -66,14 +66,14 @@
         }
 
         /// <summary>
-        /// Overrides the default usePublisherConfirms or value set in connection string.
+        /// Specifies whether publisher confirms should be used when sending messages.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="publisherConfirms">Controls if publisher confirms should be used.</param>
+        /// <param name="usePublisherConfirms">Specifies whether publisher confirms should be used when sending messages.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool publisherConfirms)
+        public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool usePublisherConfirms)
         {
-            transportExtensions.GetSettings().Set(SettingsKeys.UsePublisherConfirms, publisherConfirms);
+            transportExtensions.GetSettings().Set(SettingsKeys.UsePublisherConfirms, usePublisherConfirms);
             return transportExtensions;
         }
     }
