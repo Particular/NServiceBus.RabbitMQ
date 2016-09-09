@@ -56,12 +56,6 @@
         }
 
         [Test]
-        public void Should_set_default_use_publisher_confirms()
-        {
-            Assert.AreEqual(defaults.UsePublisherConfirms, true);
-        }
-
-        [Test]
         public void Should_set_default_retry_delay()
         {
             Assert.AreEqual(defaults.RetryDelay, TimeSpan.FromSeconds(10));
