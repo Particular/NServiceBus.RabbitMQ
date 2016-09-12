@@ -28,6 +28,8 @@ _NCrunch_NServiceBus/*
 logs
 run-git.cmd
 src/Chocolatey/Build/*
+.dude/
+.nuget/
 
 installer/[F|f]iles
 installer/[C|c]ustom[A|a]ctions
