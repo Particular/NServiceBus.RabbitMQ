@@ -13,6 +13,8 @@
     class MessagePump : IPushMessages, IDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
+        static readonly TransportTransaction transportTranaction = new TransportTransaction();
+        static readonly ContextBag contextBag = new ContextBag();
 
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
@@ -194,14 +196,14 @@
                 {
                     try
                     {
-                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], new TransportTransaction(), tokenSource, new ContextBag());
+                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTranaction, tokenSource, contextBag);
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
                     catch (Exception ex)
                     {
                         ++numberOfDeliveryAttempts;
-                        var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], new TransportTransaction(), numberOfDeliveryAttempts);
+                        var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], transportTranaction, numberOfDeliveryAttempts);
                         errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
                     }
                 }
