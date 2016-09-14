@@ -3,7 +3,6 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Text;
     using global::RabbitMQ.Client.Events;
     using Logging;
@@ -104,13 +103,28 @@
             var dictionary = value as IDictionary<string, object>;
             if (dictionary != null)
             {
-                return String.Join(",", dictionary.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
+                var valuesToJoin = new List<string>();
+
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (var kvp in dictionary)
+                {
+                    valuesToJoin.Add(string.Concat(kvp.Key, "=", ValueToString(kvp.Value)));
+                }
+
+                return string.Join(",", valuesToJoin);
             }
 
             var list = value as IList;
             if (list != null)
             {
-                return String.Join(";", list.Cast<object>().Select(o => ValueToString(o)));
+                var valuesToJoin = new List<string>();
+
+                foreach (var entry in list)
+                {
+                    valuesToJoin.Add(ValueToString(entry));
+                }
+
+                return string.Join(";", valuesToJoin);
             }
 
             return null;
