@@ -78,13 +78,13 @@
         }
 
         /// <summary>
-        /// Specifies the prefetch count per message processor.
+        /// Overrides the default prefetch count calculation with the specified value.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="prefetchCountPerMessageProcessor">The prefetch count per message processor.</param>
-        public static TransportExtensions<RabbitMQTransport> PrefetchCountPerMessageProcessor(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCountPerMessageProcessor)
+        /// <param name="prefetchCount">The prefetch count to use.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
         {
-            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCountPerMessageProcessor, prefetchCountPerMessageProcessor);
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCount, prefetchCount);
             return transportExtensions;
         }
     }
