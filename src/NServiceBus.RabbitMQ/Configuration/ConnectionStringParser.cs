@@ -75,7 +75,7 @@
 
             if (ContainsKey("usepublisherconfirms"))
             {
-                var message = "The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UsePublisherConfirms' instead.";
+                var message = "The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.";
 
                 Logger.Error(message);
 
