@@ -22,6 +22,7 @@
         readonly IChannelProvider channelProvider;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
+        readonly ushort prefetchCountPerMessageProcessor;
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -40,7 +41,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, ushort prefetchCountPerMessageProcessor)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -48,6 +49,7 @@
             this.channelProvider = channelProvider;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
+            this.prefetchCountPerMessageProcessor = prefetchCountPerMessageProcessor;
         }
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
@@ -77,7 +79,7 @@
             connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();
-            channel.BasicQos(0, Convert.ToUInt16(limitations.MaxConcurrency), false);
+            channel.BasicQos(0, (ushort)Math.Min(ushort.MaxValue, Convert.ToUInt16(limitations.MaxConcurrency) * prefetchCountPerMessageProcessor), false);
 
             consumer = new EventingBasicConsumer(channel);
 

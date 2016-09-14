@@ -76,5 +76,16 @@
             transportExtensions.GetSettings().Set(SettingsKeys.UsePublisherConfirms, usePublisherConfirms);
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Specifies the prefetch count per message processor.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="prefetchCountPerMessageProcessor">The prefetch count per message processor.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchCountPerMessageProcessor(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCountPerMessageProcessor)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCountPerMessageProcessor, prefetchCountPerMessageProcessor);
+            return transportExtensions;
+        }
     }
 }

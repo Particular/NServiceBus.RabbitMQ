@@ -140,7 +140,13 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker);
+            ushort prefetchCountPerMessageProcessor;
+            if (!settings.TryGet(SettingsKeys.PrefetchCountPerMessageProcessor, out prefetchCountPerMessageProcessor))
+            {
+                prefetchCountPerMessageProcessor = 3;
+            }
+
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountPerMessageProcessor);
         }
     }
 }

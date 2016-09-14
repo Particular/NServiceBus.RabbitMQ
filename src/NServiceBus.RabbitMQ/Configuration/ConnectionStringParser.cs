@@ -66,7 +66,7 @@
 
             if (ContainsKey("prefetchcount"))
             {
-                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' and 'EndpointConfiguration.PrefetchCountPerMessageProcessor' instead.";
 
                 Logger.Error(message);
 
