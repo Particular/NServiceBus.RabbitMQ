@@ -78,6 +78,22 @@
         }
 
         /// <summary>
+        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
+        {
+            if (prefetchMultiplier <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(prefetchMultiplier), "The prefetch multiplier must be greater than zero.");
+            }
+
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchMultiplier, prefetchMultiplier);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Overrides the default prefetch count calculation with the specified value.
         /// </summary>
         /// <param name="transportExtensions"></param>

@@ -22,6 +22,7 @@
         readonly IChannelProvider channelProvider;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
+        readonly int prefetchMultiplier;
         readonly ushort overriddenPrefetchCount;
 
         // Init
@@ -41,7 +42,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -49,6 +50,7 @@
             this.channelProvider = channelProvider;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
+            this.prefetchMultiplier = prefetchMultiplier;
             this.overriddenPrefetchCount = overriddenPrefetchCount;
         }
 
@@ -80,7 +82,6 @@
 
             var channel = connection.CreateModel();
 
-            int prefetchMultiplier = 3;
             long prefetchCount;
 
             if (overriddenPrefetchCount > 0)
