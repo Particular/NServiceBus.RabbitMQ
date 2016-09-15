@@ -13,7 +13,7 @@
 
             if (timeToWaitBeforeTriggering != null)
             {
-                var message = "The 'TimeToWaitBeforeTriggering' configuration setting has been removed. Use 'EndpointConfiguration.TimeToWaitBeforeTriggeringCircuitBreaker' instead.";
+                var message = "The 'TimeToWaitBeforeTriggering' configuration setting has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().TimeToWaitBeforeTriggeringCircuitBreaker' instead.";
 
                 Logger.Error(message);
 
