@@ -74,7 +74,7 @@
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 

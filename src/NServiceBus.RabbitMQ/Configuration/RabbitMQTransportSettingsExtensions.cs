@@ -78,13 +78,29 @@
         }
 
         /// <summary>
-        /// Specifies the prefetch count per message processor.
+        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="prefetchCountPerMessageProcessor">The prefetch count per message processor.</param>
-        public static TransportExtensions<RabbitMQTransport> PrefetchCountPerMessageProcessor(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCountPerMessageProcessor)
+        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
         {
-            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCountPerMessageProcessor, prefetchCountPerMessageProcessor);
+            if (prefetchMultiplier <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(prefetchMultiplier), "The prefetch multiplier must be greater than zero.");
+            }
+
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchMultiplier, prefetchMultiplier);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default prefetch count calculation with the specified value.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="prefetchCount">The prefetch count to use.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCount, prefetchCount);
             return transportExtensions;
         }
     }

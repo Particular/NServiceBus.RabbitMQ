@@ -66,7 +66,7 @@
 
             if (ContainsKey("prefetchcount"))
             {
-                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' and 'EndpointConfiguration.PrefetchCountPerMessageProcessor' instead.";
+                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.";
 
                 Logger.Error(message);
 

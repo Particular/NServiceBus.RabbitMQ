@@ -140,13 +140,19 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            ushort prefetchCountPerMessageProcessor;
-            if (!settings.TryGet(SettingsKeys.PrefetchCountPerMessageProcessor, out prefetchCountPerMessageProcessor))
+            int prefetchMultiplier;
+            if (!settings.TryGet(SettingsKeys.PrefetchMultiplier, out prefetchMultiplier))
             {
-                prefetchCountPerMessageProcessor = 3;
+                prefetchMultiplier = 3;
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountPerMessageProcessor);
+            ushort prefetchCount;
+            if (!settings.TryGet(SettingsKeys.PrefetchCount, out prefetchCount))
+            {
+                prefetchCount = 0;
+            }
+
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
         }
     }
 }

@@ -22,7 +22,8 @@
         readonly IChannelProvider channelProvider;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
-        readonly ushort prefetchCountPerMessageProcessor;
+        readonly int prefetchMultiplier;
+        readonly ushort overriddenPrefetchCount;
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -41,7 +42,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, ushort prefetchCountPerMessageProcessor)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -49,7 +50,8 @@
             this.channelProvider = channelProvider;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
-            this.prefetchCountPerMessageProcessor = prefetchCountPerMessageProcessor;
+            this.prefetchMultiplier = prefetchMultiplier;
+            this.overriddenPrefetchCount = overriddenPrefetchCount;
         }
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
@@ -79,7 +81,25 @@
             connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();
-            channel.BasicQos(0, (ushort)Math.Min(ushort.MaxValue, Convert.ToUInt16(limitations.MaxConcurrency) * prefetchCountPerMessageProcessor), false);
+
+            long prefetchCount;
+
+            if (overriddenPrefetchCount > 0)
+            {
+                prefetchCount = overriddenPrefetchCount;
+
+                if (prefetchCount < maxConcurrency)
+                {
+                    Logger.Warn($"The specified prefetch count '{prefetchCount}' is smaller than the specified maximum concurrency '{maxConcurrency}'. The maximum concurrency value will be used as the prefetch count instead.");
+                    prefetchCount = maxConcurrency;
+                }
+            }
+            else
+            {
+                prefetchCount = (long)maxConcurrency * prefetchMultiplier;
+            }
+
+            channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
 
             consumer = new EventingBasicConsumer(channel);
 
