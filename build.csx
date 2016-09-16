@@ -1,6 +1,9 @@
 #r "System.IO.Compression.FileSystem.dll"
 
+using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.IO.Compression;
 using System.Net;
 
