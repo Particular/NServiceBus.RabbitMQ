@@ -46,19 +46,17 @@ targets.Add(
     "get-resharper-zip",
     new Target
     {
+        Outputs = new[] { resharperZipPath },
         Action = () =>
         {
-            if (!File.Exists(resharperZipPath))
+            var directory = Path.GetDirectoryName(resharperZipPath);
+            if (!Directory.Exists(directory))
             {
-                var directory = Path.GetDirectoryName(resharperZipPath);
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                Console.WriteLine($"Downloading from {resharperZipUrl} to {resharperZipPath}...");
-                new WebClient().DownloadFile(resharperZipUrl, resharperZipPath);
+                Directory.CreateDirectory(directory);
             }
+
+            Console.WriteLine($"Downloading {resharperZipUrl} to {resharperZipPath}...");
+            new WebClient().DownloadFile(resharperZipUrl, resharperZipPath);
         },
     });
 
@@ -66,22 +64,17 @@ targets.Add(
     "unzip-resharper",
     new Target
     {
-        Dependencies = new[] { "get-resharper-zip" },
-        Action = () =>
-        {
-            if (!File.Exists(inspectCodePath))
-            {
-                Console.WriteLine($"Unzipping '{resharperZipPath}' to '{resharperDirectory}'...");
-                ZipFile.ExtractToDirectory(resharperZipPath, resharperDirectory);
-            }
-        },
+        Inputs = new[] { resharperZipPath },
+        Outputs = new[] { inspectCodePath },
+        Action = () => ZipFile.ExtractToDirectory(resharperZipPath, resharperDirectory),
     });
 
 targets.Add(
     "inspect",
     new Target
     {
-        Dependencies = new[] { "build", "unzip-resharper" },
+        Dependencies = new[] { "build" },
+        Inputs = new[] { inspectCodePath },
         Action = () => Cmd(inspectCodePath, $"--profile={dotSettings} {solution}"),
     });
 
@@ -91,14 +84,18 @@ targets.Add("acceptance-test", new Target { Dependencies = new[] { "build" }, Ac
 
 targets.Add("transport-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunitConsole, transportTests), });
 
-RunTargets(Args.Any() ? Args : new[] { "default" }, targets, new HashSet<string>());
-
 
 
 // boiler plate
+RunTargets(Args.Any() ? Args : new[] { "default" }, targets, new HashSet<string>());
+
 public class Target
 {
     public string[] Dependencies { get; set; }
+
+    public string[] Inputs { get; set; }
+
+    public string[] Outputs { get; set; }
 
     public Action Action { get; set; }
 }
@@ -122,12 +119,25 @@ public static void RunTarget(string name, Dictionary<string, Target> targets, Ha
 
     targetsAlreadyRun.Add(name);
 
-    if (target.Dependencies?.Any() ?? false)
+    var outputs = target.Outputs ?? Enumerable.Empty<string>();
+    if (outputs.Any() && !outputs.Any(output => !File.Exists(output)))
+    {
+        Console.WriteLine($"Skipping target '{name}' since all outputs are present.");
+        return;
+    }
+
+    var dependencies = (target.Dependencies ?? Enumerable.Empty<string>())
+        .Concat(
+            targets
+                .Where(t => (t.Value.Outputs ?? Enumerable.Empty<string>()).Intersect((target.Inputs ?? Enumerable.Empty<string>())).Any())
+                .Select(t => t.Key));
+
+    if (dependencies.Any())
     {
         Console.WriteLine($"Running dependencies for target '{name}'...");
-        foreach (var targetDependencyName in target.Dependencies.Except(targetsAlreadyRun))
+        foreach (var dependencyName in dependencies.Except(targetsAlreadyRun))
         {
-            RunTarget(targetDependencyName, targets, targetsAlreadyRun);
+            RunTarget(dependencyName, targets, targetsAlreadyRun);
         }
     }
 
