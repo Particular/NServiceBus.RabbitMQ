@@ -1,23 +1,35 @@
 #r "System.IO.Compression.FileSystem.dll"
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 
-// external tools
+var cacheDirectory = Environment.GetEnvironmentVariable("LocalAppData");
+
 var nugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe";
 var nugetDirectory = ".nuget";
 var nugetFile = "NuGet.exe";
+var nugetPath = Path.Combine(nugetDirectory, nugetFile);
+var nugetCachePath = Path.Combine(cacheDirectory, nugetPath);
+
 
 var resharperZipUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
-var resharperZipDirectory = ".resharper";
+var resharperZipDirectory = ".resharper-zip";
 var resharperZipFile = "JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
-var inspectCodeFile = "inspectcode.exe";
+var resharperZipPath = Path.Combine(cacheDirectory, resharperZipDirectory, resharperZipFile);
 
-// paths
+var resharperDirectory = ".resharper";
+var resharperPath = Path.Combine(cacheDirectory, resharperDirectory);
+var inspectCodeFile = "inspectcode.exe";
+var inspectCodePath = Path.Combine(resharperDirectory, inspectCodeFile);
+var inspectCodeCachePath = Path.Combine(cacheDirectory, inspectCodePath);
+
+
 var msBuild = Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%\\MSBuild\\14.0\\Bin\\msbuild.exe");
 var solution = ".\\src\\NServiceBus.RabbitMq.sln";
 var dotSettings = ".\\src\\NServiceBus.RabbitMQ.sln.DotSettings";
@@ -26,89 +38,134 @@ var unitTests = ".\\src\\NServiceBus.RabbitMQ.Tests\\bin\\Release\\NServiceBus.T
 var acceptanceTests = ".\\src\\NServiceBus.RabbitMQ.AcceptanceTests\\bin\\Release\\NServiceBus.RabbitMQ.AcceptanceTests.dll";
 var transportTests = ".\\src\\NServiceBus.Transport.RabbitMQ.TransportTests\\bin\\Release\\NServiceBus.Transport.RabbitMQ.TransportTests.dll";
 
-// tasks
-Console.WriteLine("Ensuring NuGet is present...");
-EnsureFileCopiedFromCache(nugetUrl, nugetDirectory, nugetFile);
+// targets
+var targets = new Dictionary<string, Target>();
 
-Console.WriteLine("Restoring NuGet packages...");
-Cmd(Path.Combine(nugetDirectory, nugetFile), $"restore {solution}");
+targets.Add(
+    "default",
+    new Target { DependsOn = new[] { "build", "inspect", "unit-test", "acceptance-test", "transport-test" } });
 
-Console.WriteLine("Building solution...");
-Cmd(msBuild, $"{solution} /property:Configuration=Release /nologo /maxcpucount /verbosity:minimal /nodeReuse:false");
+targets.Add(
+    "get-nuget",
+    new Target { Action = () => EnsureDownload(nugetUrl, nugetCachePath), });
 
-Console.WriteLine("Ensuring Resharper command line tools zip is present...");
-var resharperZipPath = EnsureFileCached(resharperZipUrl, resharperZipDirectory, resharperZipFile);
+targets.Add(
+    "copy-nuget",
+    new Target { DependsOn = new[] { "get-nuget" }, Action = () => EnsureCopy(nugetCachePath, nugetPath), });
 
-Console.WriteLine("Ensuring Resharper command line tools are unzipped...");
-if (!File.Exists(Path.Combine(resharperZipDirectory, inspectCodeFile)))
+targets.Add(
+    "restore",
+    new Target { DependsOn = new[] { "copy-nuget" }, Action = () => Cmd(nugetPath, $"restore {solution}"), });
+
+targets.Add(
+    "build",
+    new Target
+    {
+        DependsOn = new[] { "restore" },
+        Action = () => Cmd(msBuild, $"{solution} /property:Configuration=Release /nologo /maxcpucount /verbosity:minimal /nodeReuse:false"),
+    });
+
+targets.Add(
+    "get-resharper-zip",
+    new Target { Action = () => EnsureDownload(resharperZipUrl, resharperZipPath), });
+
+targets.Add(
+    "unzip-resharper",
+    new Target
+    {
+        DependsOn = new[] { "get-resharper-zip" },
+        Action = () =>
+        {
+            if (!File.Exists(inspectCodeCachePath))
+            {
+                Console.WriteLine($"Unzipping \"{resharperZipPath}\" to \"{resharperPath}\"...");
+                ZipFile.ExtractToDirectory(resharperZipPath, resharperPath);
+            }
+        },
+    });
+
+targets.Add(
+    "copy-resharper",
+    new Target { DependsOn = new[] { "unzip-resharper" }, Action = () => EnsureCopy(inspectCodeCachePath, inspectCodePath), });
+
+targets.Add(
+    "inspect",
+    new Target
+    {
+        DependsOn = new[] { "build", "copy-resharper" },
+        Action = () => Cmd(inspectCodePath, $"--profile={dotSettings} {solution}"),
+    });
+
+targets.Add(
+    "unit-test",
+    new Target
+    {
+        DependsOn = new[] { "restore", "build" },
+        Action = () => Cmd(nunitConsole, unitTests),
+    });
+
+targets.Add(
+    "acceptance-test",
+    new Target
+    {
+        DependsOn = new[] { "restore", "build" },
+        Action = () => Cmd(nunitConsole, acceptanceTests),
+    });
+
+targets.Add(
+    "transport-test",
+    new Target
+    {
+        DependsOn = new[] { "restore", "build" },
+        Action = () => Cmd(nunitConsole, transportTests),
+    });
+
+RunTargets(Args.Any() ? Args : new[] { "default" }, targets, new HashSet<string>());
+
+public static void RunTargets(IEnumerable<string> name, Dictionary<string, Target> targets, HashSet<string> targetsRan)
 {
-    Console.WriteLine("Unzipping Resharper command line tools...");
-    ZipFile.ExtractToDirectory(resharperZipPath, resharperZipDirectory);
+    foreach (var key in name)
+    {
+        RunTarget(key, targets, targetsRan);
+    }
 }
 
-Console.WriteLine("Inspecting solution...");
-Cmd(Path.Combine(resharperZipDirectory, inspectCodeFile), $"--profile={dotSettings} {solution}");
-
-Console.WriteLine("Running unit tests...");
-Cmd(nunitConsole, unitTests);
-
-Console.WriteLine("Running acceptance tests...");
-Cmd(nunitConsole, acceptanceTests);
-
-Console.WriteLine("Running transport tests...");
-Cmd(nunitConsole, transportTests);
-
-// dependencies
-//
-// build X
-//  nuget restore X
-//      download nuget X
-// inspect X
-//  unzip inspections X
-//      download inspections X
-//          build X
-// unit test
-//  nuget restore X
-//  build X
-// acceptance test
-//  nuget restore X
-//  build X
-// transport test
-//  nuget restore X
-//  build X
-
-public static void EnsureFileCopiedFromCache(string url, string directoryName, string fileName)
+public static void RunTarget(string name, Dictionary<string, Target> targets, HashSet<string> targetsRan)
 {
-    var path = Path.Combine(directoryName, fileName);
-    if (File.Exists(path))
+    var target = targets[name];
+    targetsRan.Add(name);
+    foreach (var targetDependencyName in (target?.DependsOn ?? Enumerable.Empty<string>()).Except(targetsRan))
     {
-        return;
+        RunTarget(targetDependencyName, targets, targetsRan);
     }
 
-    var cachePath = EnsureFileCached(url, directoryName, fileName);
+    Console.WriteLine($"Running target \"{name}\"...");
+    target.Action?.Invoke();
+}
 
+public static void EnsureDownload(string url, string path)
+{
+    if (!File.Exists(path))
+    {
+        Console.WriteLine($"Downloading from {url} to {path}...");
+        new WebClient().DownloadFile(url, PreparePath(path));
+    }
+}
+
+public static void EnsureCopy(string from, string to)
+{
+    if (!File.Exists(to))
+    {
+        File.Copy(from, PreparePath(to));
+    }
+}
+
+public static string PreparePath(string path)
+{
     var directory = Path.GetDirectoryName(path);
     if (!Directory.Exists(directory))
     {
         Directory.CreateDirectory(directory);
-    }
-
-    File.Copy(cachePath, path);
-}
-
-public static string EnsureFileCached(string url, string directoryName, string fileName)
-{
-    var path = Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), directoryName, fileName);
-    if (!File.Exists(path))
-    {
-        var directory = Path.GetDirectoryName(path);
-        if (!Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        Console.WriteLine($"Downloading from {url}...");
-        new WebClient().DownloadFile(url, path);
     }
 
     return path;
@@ -122,6 +179,8 @@ public static void Cmd(string fileName, string args)
         Arguments = args,
         UseShellExecute = false,
     };
+
+    Console.WriteLine($"Running {info.FileName} {info.Arguments}");
 
     using (var process = new Process())
     {
@@ -138,4 +197,11 @@ public static void Cmd(string fileName, string args)
             throw new InvalidOperationException(message);
         }
     }
+}
+
+public class Target
+{
+    public string[] DependsOn { get; set; }
+
+    public Action Action { get; set; }
 }

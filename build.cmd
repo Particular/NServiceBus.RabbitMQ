@@ -29,5 +29,5 @@ if not exist .dude\dude.exe (
 )
 
 :: run script
-.dude\dude.exe build.csx
+.dude\dude.exe build.csx %*
 if %errorlevel% neq 0 exit /b %errorlevel%
