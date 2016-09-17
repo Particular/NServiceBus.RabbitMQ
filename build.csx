@@ -82,12 +82,15 @@ public class Target
     public Action Action { get; set; }
 }
 
+var names = Args.Any() ? Args : new[] { "default" };
 var targetsAlreadyRun = new HashSet<string>();
 
-foreach (var name in Args.Any() ? Args : new[] { "default" })
+foreach (var name in names)
 {
     RunTarget(name, targets, targetsAlreadyRun);
 }
+
+Console.WriteLine($"Target(s) {string.Join(", ", names.Select(name => $"'{name}'"))} succeeded.");
 
 public static void RunTarget(string name, Dictionary<string, Target> targets, HashSet<string> targetsAlreadyRun)
 {
