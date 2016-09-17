@@ -6,28 +6,24 @@ cd %~dp0
 setlocal
 
 :: determine cache dir
-set DUDE_CACHE_DIR=%LocalAppData%\dude
+set NUGET_CACHE_DIR=%LocalAppData%\NuGet
 
-
-
-
-
-:: download dude to cache dir
-set DUDE_URL="https://bintray.com/adamralph/apps/download_file?file_path=dude.exe"
-if not exist %DUDE_CACHE_DIR%\dude.exe (
-  if not exist %DUDE_CACHE_DIR% md %DUDE_CACHE_DIR%
-  echo Downloading latest version of dude.exe...
-  @powershell -NoProfile -ExecutionPolicy unrestricted -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest '%DUDE_URL%' -OutFile '%DUDE_CACHE_DIR%\dude.exe'"
-  if %errorlevel% neq 0 exit /b %errorlevel%
+:: download nuget to cache dir
+set NUGET_URL="https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+if not exist %NUGET_CACHE_DIR%\NuGet.exe (
+  if not exist %NUGET_CACHE_DIR% md %NUGET_CACHE_DIR%
+  echo Downloading latest version of NuGet.exe...
+  @powershell -NoProfile -ExecutionPolicy unrestricted -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest '%NUGET_URL%' -OutFile '%NUGET_CACHE_DIR%\NuGet.exe'"
 )
 
-:: copy dude locally
-if not exist .dude\dude.exe (
-  if not exist .dude md .dude
-  copy %DUDE_CACHE_DIR%\dude.exe .dude\dude.exe > nul
-  if %errorlevel% neq 0 exit /b %errorlevel%
+:: copy nuget locally
+if not exist .nuget\NuGet.exe (
+  if not exist .nuget md .nuget
+  copy %NUGET_CACHE_DIR%\NuGet.exe .nuget\NuGet.exe > nul
 )
+
+:: restore packages
+.nuget\NuGet.exe restore .\src\NServiceBus.RabbitMQ.sln
 
 :: run script
-.dude\dude.exe build.csx %*
-if %errorlevel% neq 0 exit /b %errorlevel%
+"%ProgramFiles(x86)%\MSBuild\14.0\Bin\csi.exe" build.csx %*
