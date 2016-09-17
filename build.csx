@@ -13,52 +13,36 @@ using System.Net;
 
 // vars
 var resharperZipUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
-var resharperZipDirectory = ".resharper-zip";
-var resharperZipFile = "JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
-var resharperZipPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), resharperZipDirectory, resharperZipFile);
-var resharperDirectory = ".resharper";
-var inspectCodeFile = "inspectcode.exe";
-var inspectCodePath = Path.Combine(resharperDirectory, inspectCodeFile);
-
-var msBuild = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "MSBuild\\14.0\\Bin\\msbuild.exe");
-var solution = ".\\src\\NServiceBus.RabbitMq.sln";
-var dotSettings = ".\\src\\NServiceBus.RabbitMQ.sln.DotSettings";
-var nunitConsole = ".\\src\\packages\\NUnit.ConsoleRunner.3.4.1\\tools\\nunit3-console.exe";
-var unitTests = ".\\src\\NServiceBus.RabbitMQ.Tests\\bin\\Release\\NServiceBus.Transports.RabbitMQ.Tests.dll";
-var acceptanceTests = ".\\src\\NServiceBus.RabbitMQ.AcceptanceTests\\bin\\Release\\NServiceBus.RabbitMQ.AcceptanceTests.dll";
-var transportTests = ".\\src\\NServiceBus.Transport.RabbitMQ.TransportTests\\bin\\Release\\NServiceBus.Transport.RabbitMQ.TransportTests.dll";
+var resharperZipPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
+var inspectCodePath = ".resharper/inspectcode.exe";
+var msBuild = $"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}/MSBuild/14.0/Bin/msbuild.exe";
+var solution = "./src/NServiceBus.RabbitMq.sln";
+var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
+var nunitConsole = "./src/packages/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe";
+var unitTests = "./src/NServiceBus.RabbitMQ.Tests/bin/Release/NServiceBus.Transports.RabbitMQ.Tests.dll";
+var acceptanceTests = "./src/NServiceBus.RabbitMQ.AcceptanceTests/bin/Release/NServiceBus.RabbitMQ.AcceptanceTests.dll";
+var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
 
 
 
 // targets
 var targets = new Dictionary<string, Target>();
 
-targets.Add("default", new Target { Dependencies = new[] { "build", "inspect", "unit-test", "acceptance-test", "transport-test" } });
+targets.Add(
+    "default",
+    new Target { Dependencies = new[] { "build", "inspect", "unit-test", "acceptance-test", "transport-test" } });
 
 targets.Add(
     "build",
     new Target
     {
-        Action = () => Cmd(msBuild, $"{solution} /property:Configuration=Release /nologo /maxcpucount /verbosity:minimal /nodeReuse:false"),
+        Action = () => Cmd(
+            msBuild, $"{solution} /property:Configuration=Release /nologo /maxcpucount /verbosity:minimal /nodeReuse:false"),
     });
 
 targets.Add(
-    "get-resharper-zip",
-    new Target
-    {
-        Outputs = new[] { resharperZipPath },
-        Action = () =>
-        {
-            var directory = Path.GetDirectoryName(resharperZipPath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            Console.WriteLine($"Downloading {resharperZipUrl} to {resharperZipPath}...");
-            new WebClient().DownloadFile(resharperZipUrl, resharperZipPath);
-        },
-    });
+    "download-resharper-zip",
+    new Target { Outputs = new[] { resharperZipPath }, Action = () => Download(resharperZipUrl, resharperZipPath), });
 
 targets.Add(
     "unzip-resharper",
@@ -66,7 +50,7 @@ targets.Add(
     {
         Inputs = new[] { resharperZipPath },
         Outputs = new[] { inspectCodePath },
-        Action = () => ZipFile.ExtractToDirectory(resharperZipPath, resharperDirectory),
+        Action = () => ZipFile.ExtractToDirectory(resharperZipPath, Path.GetDirectoryName(inspectCodePath)),
     });
 
 targets.Add(
@@ -87,8 +71,6 @@ targets.Add("transport-test", new Target { Dependencies = new[] { "build" }, Act
 
 
 // boiler plate
-RunTargets(Args.Any() ? Args : new[] { "default" }, targets, new HashSet<string>());
-
 public class Target
 {
     public string[] Dependencies { get; set; }
@@ -100,13 +82,11 @@ public class Target
     public Action Action { get; set; }
 }
 
+var targetsAlreadyRun = new HashSet<string>();
 
-public static void RunTargets(IEnumerable<string> names, Dictionary<string, Target> targets, HashSet<string> targetsAlreadyRun)
+foreach (var name in Args.Any() ? Args : new[] { "default" })
 {
-    foreach (var name in names)
-    {
-        RunTarget(name, targets, targetsAlreadyRun);
-    }
+    RunTarget(name, targets, targetsAlreadyRun);
 }
 
 public static void RunTarget(string name, Dictionary<string, Target> targets, HashSet<string> targetsAlreadyRun)
@@ -126,10 +106,11 @@ public static void RunTarget(string name, Dictionary<string, Target> targets, Ha
         return;
     }
 
+    var inputs = target.Inputs ?? Enumerable.Empty<string>();
     var dependencies = (target.Dependencies ?? Enumerable.Empty<string>())
         .Concat(
             targets
-                .Where(t => (t.Value.Outputs ?? Enumerable.Empty<string>()).Intersect((target.Inputs ?? Enumerable.Empty<string>())).Any())
+                .Where(t => (t.Value.Outputs ?? Enumerable.Empty<string>()).Intersect(inputs).Any())
                 .Select(t => t.Key));
 
     if (dependencies.Any())
@@ -174,4 +155,15 @@ public static void Cmd(string fileName, string args)
             throw new InvalidOperationException(message);
         }
     }
+}
+
+public static void Download(string url, string path)
+{
+    var directory = Path.GetDirectoryName(path);
+    if (!Directory.Exists(directory))
+    {
+        Directory.CreateDirectory(directory);
+    }
+
+    new WebClient().DownloadFile(url, path);
 }
