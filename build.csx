@@ -9,8 +9,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 
-
-
 // locations
 var resharperCltUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
 var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
@@ -22,8 +20,6 @@ var nunit = "./src/packages/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe";
 var unitTests = "./src/NServiceBus.RabbitMQ.Tests/bin/Release/NServiceBus.Transports.RabbitMQ.Tests.dll";
 var acceptanceTests = "./src/NServiceBus.RabbitMQ.AcceptanceTests/bin/Release/NServiceBus.RabbitMQ.AcceptanceTests.dll";
 var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
-
-
 
 // targets
 var targets = new Dictionary<string, Target>();
@@ -59,8 +55,6 @@ targets.Add("unit-test", new Target { DependOn = new[] { "build" }, Do = () => C
 targets.Add("acceptance-test", new Target { DependOn = new[] { "build" }, Do = () => Cmd(nunit, acceptanceTests), });
 
 targets.Add("transport-test", new Target { DependOn = new[] { "build" }, Do = () => Cmd(nunit, transportTests), });
-
-
 
 // target running boiler plate
 Run(Args, targets);
@@ -160,8 +154,6 @@ public static void RunTarget(string name, IDictionary<string, Target> targets, I
     }
 }
 
-
-
 // target writing boiler plate
 public static void Cmd(string fileName, string args)
 {
@@ -172,7 +164,7 @@ public static void Cmd(string fileName, string args)
         UseShellExecute = false,
     };
 
-    Console.WriteLine($"Running {info.FileName} {info.Arguments}");
+    Console.WriteLine($"Running '{info.FileName} {info.Arguments}'...");
 
     using (var process = new Process())
     {
