@@ -12,13 +12,13 @@ using System.Net;
 
 
 // locations
-var resharperZipUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
-var resharperZipPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
+var resharperCltUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
+var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
 var inspectCodePath = "./.resharper/inspectcode.exe";
 var msBuild = $"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}/MSBuild/14.0/Bin/msbuild.exe";
 var solution = "./src/NServiceBus.RabbitMq.sln";
 var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
-var nunitConsole = "./src/packages/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe";
+var nunit = "./src/packages/NUnit.ConsoleRunner.3.4.1/tools/nunit3-console.exe";
 var unitTests = "./src/NServiceBus.RabbitMQ.Tests/bin/Release/NServiceBus.Transports.RabbitMQ.Tests.dll";
 var acceptanceTests = "./src/NServiceBus.RabbitMQ.AcceptanceTests/bin/Release/NServiceBus.RabbitMQ.AcceptanceTests.dll";
 var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
@@ -41,16 +41,16 @@ targets.Add(
     });
 
 targets.Add(
-    "download-resharper-zip",
-    new Target { Outputs = new[] { resharperZipPath }, Action = () => Download(resharperZipUrl, resharperZipPath), });
+    "download-resharper-clt",
+    new Target { Outputs = new[] { resharperCltPath }, Action = () => Download(resharperCltUrl, resharperCltPath), });
 
 targets.Add(
-    "unzip-resharper",
+    "unzip-resharper-clt",
     new Target
     {
-        Inputs = new[] { resharperZipPath },
+        Inputs = new[] { resharperCltPath },
         Outputs = new[] { inspectCodePath },
-        Action = () => ZipFile.ExtractToDirectory(resharperZipPath, Path.GetDirectoryName(inspectCodePath)),
+        Action = () => ZipFile.ExtractToDirectory(resharperCltPath, Path.GetDirectoryName(inspectCodePath)),
     });
 
 targets.Add(
@@ -62,11 +62,11 @@ targets.Add(
         Action = () => Cmd(inspectCodePath, $"--profile={dotSettings} {solution}"),
     });
 
-targets.Add("unit-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunitConsole, unitTests), });
+targets.Add("unit-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunit, unitTests), });
 
-targets.Add("acceptance-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunitConsole, acceptanceTests), });
+targets.Add("acceptance-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunit, acceptanceTests), });
 
-targets.Add("transport-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunitConsole, transportTests), });
+targets.Add("transport-test", new Target { Dependencies = new[] { "build" }, Action = () => Cmd(nunit, transportTests), });
 
 
 
@@ -82,15 +82,50 @@ public class Target
     public Action Action { get; set; }
 }
 
-var names = Args.Any() ? Args : new[] { "default" };
-var targetsAlreadyRun = new HashSet<string>();
+var args = (List<string>)Args; // for intellisense in VS - see https://github.com/dotnet/roslyn/issues/13886
+var argsOptions = args.Where(arg => arg.StartsWith("-", StringComparison.Ordinal)).ToList();
+var argsTargets = args.Except(argsOptions).ToList();
 
-foreach (var name in names)
+foreach (var option in argsOptions)
 {
-    RunTarget(name, targets, targetsAlreadyRun);
+    switch (option)
+    {
+        case "-H":
+        case "-h":
+        case "-?":
+            Console.WriteLine("Usage: <script-runner> build.csx [<options>] [<targets>]");
+            Console.WriteLine();
+            Console.WriteLine("script-runner: A C# script runner. E.g. csi.exe.");
+            Console.WriteLine();
+            Console.WriteLine("options:");
+            Console.WriteLine(" -T      Display the targets, then exit");
+            Console.WriteLine();
+            Console.WriteLine("targets: A list of targets to run. If not specified, the 'default' target will be run.");
+            Console.WriteLine();
+            Console.WriteLine("Examples:");
+            Console.WriteLine("  csi.exe build.csx");
+            Console.WriteLine("  csi.exe build.csx -T");
+            Console.WriteLine("  csi.exe build.csx test package");
+            return;
+        case "-T":
+            foreach (var target in targets)
+            {
+                Console.WriteLine(target.Key);
+            }
+
+            return;
+        default:
+            Console.WriteLine($"Unknown option '{option}'.");
+            return;
+    }
 }
 
-Console.WriteLine($"Target(s) {string.Join(", ", names.Select(name => $"'{name}'"))} succeeded.");
+var targetNames = argsTargets.Any() ? argsTargets : new List<string> { "default" };
+var targetsAlreadyRun = new HashSet<string>();
+
+targetNames.ForEach(name => RunTarget(name, targets, targetsAlreadyRun));
+
+Console.WriteLine($"Target(s) {string.Join(", ", targetNames.Select(name => $"'{name}'"))} succeeded.");
 
 public static void RunTarget(string name, Dictionary<string, Target> targets, HashSet<string> targetsAlreadyRun)
 {
@@ -182,17 +217,11 @@ public static void Download(string url, string path)
             {
                 lastUpdate = now;
                 lastPercentage = (int)Math.Round(e.ProgressPercentage / 10d, 0) * 10;
-                Console.WriteLine($"\rDownloading '{url}'... ({lastPercentage}%)");
+                Console.WriteLine($"\rDownloading '{url}' ({lastPercentage}%)...");
             }
         };
 
-        client.DownloadFileCompleted += (sender, e) =>
-        {
-            if (lastPercentage < 100)
-            {
-                Console.WriteLine($"\rDownloading '{url}'... (100%)");
-            }
-        };
+        client.DownloadFileCompleted += (sender, e) => Console.WriteLine($"\rDownloaded '{url}'.");
 
         client.DownloadFileTaskAsync(url, path).GetAwaiter().GetResult();
     }

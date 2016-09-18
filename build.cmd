@@ -23,7 +23,7 @@ if not exist .nuget\NuGet.exe (
 )
 
 :: restore packages
-.nuget\NuGet.exe restore .\src\NServiceBus.RabbitMQ.sln
+.nuget\NuGet.exe restore .\src\NServiceBus.RabbitMQ.sln -MSBuildVersion 14
 
 :: run script
 "%ProgramFiles(x86)%\MSBuild\14.0\Bin\csi.exe" build.csx %*
