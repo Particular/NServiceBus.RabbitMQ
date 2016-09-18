@@ -11,10 +11,10 @@ using System.Net;
 
 
 
-// vars
+// locations
 var resharperZipUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
 var resharperZipPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160912.114811.zip";
-var inspectCodePath = ".resharper/inspectcode.exe";
+var inspectCodePath = "./.resharper/inspectcode.exe";
 var msBuild = $"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}/MSBuild/14.0/Bin/msbuild.exe";
 var solution = "./src/NServiceBus.RabbitMq.sln";
 var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
@@ -70,7 +70,7 @@ targets.Add("transport-test", new Target { Dependencies = new[] { "build" }, Act
 
 
 
-// boiler plate
+// target running boiler plate
 public class Target
 {
     public string[] Dependencies { get; set; }
@@ -132,6 +132,9 @@ public static void RunTarget(string name, Dictionary<string, Target> targets, Ha
     }
 }
 
+
+
+// target writing boiler plate
 public static void Cmd(string fileName, string args)
 {
     var info = new ProcessStartInfo
@@ -168,5 +171,29 @@ public static void Download(string url, string path)
         Directory.CreateDirectory(directory);
     }
 
-    new WebClient().DownloadFile(url, path);
+    var lastUpdate = DateTime.Now;
+    var lastPercentage = 0;
+    using (var client = new WebClient())
+    {
+        client.DownloadProgressChanged += (sender, e) =>
+        {
+            var now = DateTime.Now;
+            if (now - lastUpdate >= TimeSpan.FromSeconds(1) && e.ProgressPercentage >= lastPercentage + 10)
+            {
+                lastUpdate = now;
+                lastPercentage = (int)Math.Round(e.ProgressPercentage / 10d, 0) * 10;
+                Console.WriteLine($"\rDownloading '{url}'... ({lastPercentage}%)");
+            }
+        };
+
+        client.DownloadFileCompleted += (sender, e) =>
+        {
+            if (lastPercentage < 100)
+            {
+                Console.WriteLine($"\rDownloading '{url}'... (100%)");
+            }
+        };
+
+        client.DownloadFileTaskAsync(url, path).GetAwaiter().GetResult();
+    }
 }
