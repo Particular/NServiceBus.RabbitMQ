@@ -66,7 +66,16 @@
 
             if (ContainsKey("prefetchcount"))
             {
-                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.LimitMessageProcessingConcurrencyTo' instead.";
+                var message = "The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.";
+
+                Logger.Error(message);
+
+                throw new NotSupportedException(message);
+            }
+
+            if (ContainsKey("usepublisherconfirms"))
+            {
+                var message = "The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.";
 
                 Logger.Error(message);
 

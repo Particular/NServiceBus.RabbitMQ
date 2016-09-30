@@ -3,7 +3,6 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Text;
     using global::RabbitMQ.Client.Events;
     using Logging;
@@ -20,34 +19,17 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public string RetrieveMessageId(BasicDeliverEventArgs message)
-        {
-            return messageIdStrategy(message);
-        }
+        public string RetrieveMessageId(BasicDeliverEventArgs message) => messageIdStrategy(message);
 
         public Dictionary<string, string> RetrieveHeaders(BasicDeliverEventArgs message)
         {
             var properties = message.BasicProperties;
 
-            var headers = DeserializeHeaders(message);
+            var headers = DeserializeHeaders(properties.Headers);
 
             if (properties.IsReplyToPresent())
             {
-                string replyToAddressNSBHeaders;
-                var nativeReplyToAddress = properties.ReplyTo;
-
-                if (headers.TryGetValue(Headers.ReplyToAddress, out replyToAddressNSBHeaders))
-                {
-                    if (replyToAddressNSBHeaders != nativeReplyToAddress)
-                    {
-                        Logger.WarnFormat("Mismatching 'ReplyTo' properties found. The address specified by the NServiceBus header, '{0}', will override the native one, '{1}'", replyToAddressNSBHeaders, nativeReplyToAddress);
-                    }
-                }
-                else
-                {
-                    //promote the native address
-                    headers[Headers.ReplyToAddress] = nativeReplyToAddress;
-                }
+                headers[Headers.ReplyToAddress] = properties.ReplyTo;
             }
 
             if (properties.IsCorrelationIdPresent())
@@ -86,21 +68,22 @@
             return properties.MessageId;
         }
 
-        static Dictionary<string, string> DeserializeHeaders(BasicDeliverEventArgs message)
+        static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers)
         {
-            if (message.BasicProperties.Headers == null)
+            var deserializedHeaders = new Dictionary<string, string>();
+
+            if (headers != null)
             {
-                return new Dictionary<string, string>();
+                var messageHeaders = headers as Dictionary<string, object>
+                    ?? new Dictionary<string, object>(headers);
+
+                foreach (var header in messageHeaders)
+                {
+                    deserializedHeaders.Add(header.Key, header.Value == null ? null : ValueToString(header.Value));
+                }
             }
 
-            return message.BasicProperties.Headers
-                .ToDictionary(
-                    dictionaryEntry => dictionaryEntry.Key,
-                    dictionaryEntry =>
-                    {
-                        var value = dictionaryEntry.Value;
-                        return dictionaryEntry.Value == null ? null : ValueToString(value);
-                    });
+            return deserializedHeaders;
         }
 
         static string ValueToString(object value)
@@ -117,25 +100,37 @@
                 return Encoding.UTF8.GetString(bytes);
             }
 
-            var objects = value as IDictionary<string, object>;
-            if (objects != null)
+            var dictionary = value as IDictionary<string, object>;
+            if (dictionary != null)
             {
-                var dict = objects;
-                return String.Join(",", dict.Select(kvp => kvp.Key + "=" + ValueToString(kvp.Value)));
+                var valuesToJoin = new List<string>();
+
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (var kvp in dictionary)
+                {
+                    valuesToJoin.Add(string.Concat(kvp.Key, "=", ValueToString(kvp.Value)));
+                }
+
+                return string.Join(",", valuesToJoin);
             }
 
-            var list1 = value as IList;
-            if (list1 != null)
+            var list = value as IList;
+            if (list != null)
             {
-                var list = list1;
-                return String.Join(";", list.Cast<object>().Select(ValueToString));
+                var valuesToJoin = new List<string>();
+
+                foreach (var entry in list)
+                {
+                    valuesToJoin.Add(ValueToString(entry));
+                }
+
+                return string.Join(";", valuesToJoin);
             }
 
             return null;
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
-
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
     }

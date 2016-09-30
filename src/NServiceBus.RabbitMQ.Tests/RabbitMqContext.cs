@@ -3,15 +3,15 @@
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
+    using System.Threading.Tasks;
     using NUnit.Framework;
     using Settings;
-    using Transports;
 
     class RabbitMqContext
     {
         protected void MakeSureQueueAndExchangeExists(string queueName)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
@@ -26,12 +26,12 @@
 
         void DeleteExchange(string exchangeName)
         {
-            using (var connection = connectionManager.CreateAdministrationConnection())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
                 try
                 {
-                    channel.ExchangeDelete(exchangeName);
+                    channel.ExchangeDelete(exchangeName, false);
                 }
                 // ReSharper disable EmptyGeneralCatchClause
                 catch (Exception)
@@ -50,7 +50,7 @@
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
             var settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName(ReceiverQueue));
+            settings.Set("NServiceBus.Routing.EndpointName", "endpoint");
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
@@ -68,25 +68,24 @@
             }
 
             connectionFactory = new ConnectionFactory(config);
-            connectionManager = new ConnectionManager(connectionFactory);
-            var channelProvider = new ChannelProvider(connectionManager, config.UsePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
 
-            messageDispatcher = new MessageDispatcher(routingTopology, channelProvider);
+            messageDispatcher = new MessageDispatcher(channelProvider);
 
-            var purger = new QueuePurger(connectionManager);
-            var poisonMessageForwarder = new PoisonMessageForwarder(channelProvider, routingTopology);
+            var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(config, new MessageConverter(), "Unit test", poisonMessageForwarder, purger, TimeSpan.FromMinutes(2));
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
 
-            subscriptionManager = new SubscriptionManager(connectionManager, routingTopology, ReceiverQueue);
+            subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
 
-            messagePump.Init(pushContext =>
+            messagePump.Init(messageContext =>
             {
-                receivedMessages.Add(new IncomingMessage(pushContext.MessageId, pushContext.Headers, pushContext.BodyStream));
+                receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers, messageContext.Body));
                 return TaskEx.CompletedTask;
             },
+                ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
                 new CriticalError(_ => TaskEx.CompletedTask),
                 new PushSettings(ReceiverQueue, "error", true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
@@ -99,7 +98,7 @@
         {
             messagePump?.Stop().GetAwaiter().GetResult();
 
-            connectionManager?.Dispose();
+            channelProvider?.Dispose();
         }
 
         protected IncomingMessage WaitForMessage()
@@ -120,7 +119,7 @@
         protected const string ReceiverQueue = "testreceiver";
         protected MessageDispatcher messageDispatcher;
         protected ConnectionFactory connectionFactory;
-        protected ConnectionManager connectionManager;
+        private ChannelProvider channelProvider;
         protected MessagePump messagePump;
         BlockingCollection<IncomingMessage> receivedMessages;
 

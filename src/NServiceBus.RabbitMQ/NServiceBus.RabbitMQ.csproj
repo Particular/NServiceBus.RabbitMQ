@@ -56,15 +56,15 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-beta0004\lib\net452\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-rc0002\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obsolete, Version=4.1.0.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
       <HintPath>..\packages\Obsolete.Fody.4.1.0\lib\dotnet\Obsolete.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="RabbitMQ.Client, Version=3.6.2.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
-      <HintPath>..\packages\RabbitMQ.Client.3.6.2\lib\net45\RabbitMQ.Client.dll</HintPath>
+    <Reference Include="RabbitMQ.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+      <HintPath>..\packages\RabbitMQ.Client.4.1.0\lib\net451\RabbitMQ.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -81,6 +81,7 @@
     <Compile Include="RabbitMQTransportInfrastructure.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Connection\ConfirmsAwareChannel.cs" />
+    <Compile Include="Receiving\ModelExtensions.cs" />
     <Compile Include="Routing\DefaultRoutingKeyConvention.cs" />
     <Compile Include="Configuration\ConnectionConfiguration.cs" />
     <Compile Include="Connection\ConnectionFactory.cs" />
@@ -88,9 +89,7 @@
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
     <Compile Include="obsoletes.cs" />
-    <Compile Include="Sending\PoisonMessageForwarder.cs" />
     <Compile Include="Administration\QueuePurger.cs" />
-    <Compile Include="Connection\ConnectionManager.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="Administration\QueueCreator.cs" />
@@ -122,9 +121,9 @@
     <Error Condition="!Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props'))" />
     <Error Condition="!Exists('..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets'))" />
-    <Error Condition="!Exists('..\packages\GitVersionTask.3.5.4\build\dotnet\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.3.5.4\build\dotnet\GitVersionTask.targets'))" />
+    <Error Condition="!Exists('..\packages\GitVersionTask.3.6.3\build\dotnet\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.3.6.3\build\dotnet\GitVersionTask.targets'))" />
   </Target>
   <Import Project="..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
   <Import Project="..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets')" />
-  <Import Project="..\packages\GitVersionTask.3.5.4\build\dotnet\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.3.5.4\build\dotnet\GitVersionTask.targets')" />
+  <Import Project="..\packages\GitVersionTask.3.6.3\build\dotnet\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.3.6.3\build\dotnet\GitVersionTask.targets')" />
 </Project>

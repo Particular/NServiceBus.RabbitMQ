@@ -10,7 +10,7 @@
     {
         const string connectionString =
             "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "usePublisherConfirms=true;retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
+            "retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
 
         SettingsHolder settings;
 
@@ -18,7 +18,7 @@
         public void Setup()
         {
             settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName("endpoint"));
+            settings.Set("NServiceBus.Routing.EndpointName", "endpoint");
         }
 
         [Test]
@@ -33,7 +33,6 @@
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
             Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
-            Assert.AreEqual(connectionConfiguration.UsePublisherConfirms, true);
             Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
             Assert.AreEqual(connectionConfiguration.UseTls, true);
             Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
@@ -226,6 +225,16 @@
             var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;prefetchcount=100"));
 
             Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
+        }
+
+        [Test]
+        public void Should_inform_that_usepublisherconfirms_has_been_removed()
+        {
+            var parser = new ConnectionStringParser(settings);
+
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;usePublisherConfirms=true"));
+
+            Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
         }
     }
 }

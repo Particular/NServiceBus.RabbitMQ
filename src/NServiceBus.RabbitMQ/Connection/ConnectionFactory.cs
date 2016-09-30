@@ -7,6 +7,7 @@
     class ConnectionFactory
     {
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
+        readonly object lockObject = new object();
 
         public ConnectionFactory(ConnectionConfiguration connectionConfiguration)
         {
@@ -29,7 +30,8 @@
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
                 AutomaticRecoveryEnabled = true,
-                NetworkRecoveryInterval = connectionConfiguration.RetryDelay
+                NetworkRecoveryInterval = connectionConfiguration.RetryDelay,
+                UseBackgroundThreadsForIO = true
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
@@ -46,12 +48,18 @@
             }
         }
 
+        public IConnection CreatePublishConnection() => CreateConnection("Publish");
+
+        public IConnection CreateAdministrationConnection() => CreateConnection("Administration");
+
         public IConnection CreateConnection(string connectionName)
         {
-            connectionFactory.ClientProperties["purpose"] = connectionName;
-            connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
+            lock (lockObject)
+            {
+                connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
-            return connectionFactory.CreateConnection(connectionName);
+                return connectionFactory.CreateConnection(connectionName);
+            }
         }
     }
 }

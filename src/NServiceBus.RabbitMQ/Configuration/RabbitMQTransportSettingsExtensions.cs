@@ -36,9 +36,9 @@
         /// <summary>
         /// Registers a custom routing topology.
         /// </summary>
-        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology
+        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology, new()
         {
-            transportExtensions.GetSettings().Set<IRoutingTopology>(Activator.CreateInstance<T>());
+            transportExtensions.GetSettings().Set<IRoutingTopology>(new T());
             return transportExtensions;
         }
 
@@ -62,6 +62,45 @@
         public static TransportExtensions<RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan waitTime)
         {
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, waitTime);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies whether publisher confirms should be used when sending messages.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="usePublisherConfirms">Specifies whether publisher confirms should be used when sending messages.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool usePublisherConfirms)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.UsePublisherConfirms, usePublisherConfirms);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
+        {
+            if (prefetchMultiplier <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(prefetchMultiplier), "The prefetch multiplier must be greater than zero.");
+            }
+
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchMultiplier, prefetchMultiplier);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default prefetch count calculation with the specified value.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="prefetchCount">The prefetch count to use.</param>
+        public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCount, prefetchCount);
             return transportExtensions;
         }
     }

@@ -21,8 +21,6 @@
 
         public ushort RequestedHeartbeat { get; set; }
 
-        public bool UsePublisherConfirms { get; set; }
-
         public TimeSpan RetryDelay { get; set; }
 
         public bool UseTls { get; set; }
@@ -31,7 +29,7 @@
 
         public string CertPassphrase { get; set; }
 
-        public IDictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
 
         public ConnectionConfiguration(ReadOnlySettings settings)
         {
@@ -41,7 +39,6 @@
             UserName = "guest";
             Password = "guest";
             RequestedHeartbeat = 5;
-            UsePublisherConfirms = true;
             RetryDelay = TimeSpan.FromSeconds(10);
             UseTls = false;
             CertPath = "";
@@ -73,7 +70,7 @@
             ClientProperties.Add("application_location", applicationPath);
             ClientProperties.Add("machine_name", hostname);
             ClientProperties.Add("user", UserName);
-            ClientProperties.Add("endpoint_name", settings.EndpointName().ToString());
+            ClientProperties.Add("endpoint_name", settings.EndpointName());
         }
     }
 }

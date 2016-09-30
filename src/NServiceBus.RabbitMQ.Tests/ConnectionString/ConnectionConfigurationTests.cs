@@ -14,7 +14,7 @@
         public void Setup()
         {
             var settings = new SettingsHolder();
-            settings.Set<Routing.EndpointName>(new Routing.EndpointName("endpoint"));
+            settings.Set("NServiceBus.Routing.EndpointName", "endpoint");
 
             defaults = new ConnectionConfiguration(settings);
         }
@@ -53,12 +53,6 @@
         public void Should_set_default_requested_heartbeat()
         {
             Assert.AreEqual(defaults.RequestedHeartbeat, 5);
-        }
-
-        [Test]
-        public void Should_set_default_use_publisher_confirms()
-        {
-            Assert.AreEqual(defaults.UsePublisherConfirms, true);
         }
 
         [Test]
