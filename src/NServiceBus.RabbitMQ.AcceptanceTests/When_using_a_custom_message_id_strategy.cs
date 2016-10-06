@@ -1,81 +1,149 @@
-﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
+﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using NServiceBus.AcceptanceTesting;
+    using System.Runtime.Serialization.Formatters.Binary;
+    using System.Threading.Tasks;
+    using AcceptanceTesting;
+    using Extensibility;
+    using Features;
+    using MessageInterfaces;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Serialization;
-    using NServiceBus.Transports.RabbitMQ;
-    using NServiceBus.Unicast;
     using NUnit.Framework;
+    using Routing;
+    using Serialization;
+    using Settings;
 
-    public class When_using_a_custom_message_id_strategy
+    public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_be_able_to_receive_messages_with_no_id()
+        public async Task Should_be_able_to_receive_messages_with_no_id()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.Given((bus, c) =>
-                   {
-                       var unicastBus = (UnicastBus)bus;
-                       var connectionManager = unicastBus.Builder.Build<IManageRabbitMqConnections>();
-
-                       var serializer = unicastBus.Builder.Build<IMessageSerializer>();
-
-                       using (var stream = new MemoryStream())
-                       {
-                           serializer.Serialize(new MyRequest(), stream);
-
-                           using (var channel = connectionManager.GetPublishConnection().CreateModel())
-                           {
-                               var properties = channel.CreateBasicProperties();
-
-                               //for now until we can patch the serializer to infer the type based on the root node
-                               properties.Headers = new Dictionary<string, object> { { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName } };
-
-                               channel.BasicPublish(string.Empty, unicastBus.Configure.LocalAddress.Queue, true, properties, stream.ToArray());
-                           }
-
-                       }
-
-                   }))
-                   .Done(c => context.GotTheMessage)
+            var context = await Scenario.Define<MyContext>()
+                   .WithEndpoint<Receiver>()
+                   .Done(c => c.GotTheMessage)
                    .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
 
-
         public class Receiver : EndpointConfigurationBuilder
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
-                    //just returning a guid here, not suitable for production use
-                    .CustomMessageIdStrategy(m => Guid.NewGuid().ToString()));
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    c.EnableFeature<StarterFeature>();
+                    c.UseSerialization<MyCustomSerializerDefinition>();
+                    c.UseTransport<RabbitMQTransport>()
+                        //just returning a guid here, not suitable for production use
+                        .CustomMessageIdStrategy(m => Guid.NewGuid().ToString());
+                });
+            }
+
+            class StarterFeature : Feature
+            {
+                protected override void Setup(FeatureConfigurationContext context)
+                {
+                    context.Container.ConfigureComponent<Starter>(DependencyLifecycle.InstancePerCall);
+                    context.RegisterStartupTask(b => b.Build<Starter>());
+                }
+
+                class Starter : FeatureStartupTask
+                {
+                    public Starter(IDispatchMessages dispatchMessages, ReadOnlySettings settings)
+                    {
+                        this.dispatchMessages = dispatchMessages;
+                        this.settings = settings;
+                    }
+
+                    protected override async Task OnStart(IMessageSession session)
+                    {
+                        using (var stream = new MemoryStream())
+                        {
+                            var serializer = new MyCustomSerializer();
+                            serializer.Serialize(new MyRequest(), stream);
+
+                            var message = new OutgoingMessage(
+                                string.Empty,
+                                new Dictionary<string, string>
+                                {
+                                    { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName }
+                                },
+                                stream.ToArray());
+
+                            var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
+                            await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
+                        }
+                    }
+
+                    protected override Task OnStop(IMessageSession session) => TaskEx.CompletedTask;
+
+                    readonly IDispatchMessages dispatchMessages;
+                    readonly ReadOnlySettings settings;
+                }
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>
             {
-                public Context Context { get; set; }
+                readonly MyContext myContext;
 
-                public void Handle(MyRequest message)
+                public MyEventHandler(MyContext myContext)
                 {
-                    Context.GotTheMessage = true;
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                {
+                    myContext.GotTheMessage = true;
+
+                    return TaskEx.CompletedTask;
                 }
             }
         }
 
+        [Serializable]
         class MyRequest : IMessage
         {
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
+        }
+
+        class MyCustomSerializerDefinition : SerializationDefinition
+        {
+            public override Func<IMessageMapper, IMessageSerializer> Configure(ReadOnlySettings settings)
+            {
+                return mapper => new MyCustomSerializer();
+            }
+        }
+
+        class MyCustomSerializer : IMessageSerializer
+        {
+            public void Serialize(object message, Stream stream)
+            {
+                var serializer = new BinaryFormatter();
+                serializer.Serialize(stream, message);
+            }
+
+            public object[] Deserialize(Stream stream, IList<Type> messageTypes = null)
+            {
+                var serializer = new BinaryFormatter();
+
+                stream.Position = 0;
+                var msg = serializer.Deserialize(stream);
+
+                return new[]
+                {
+                    msg
+                };
+            }
+
+            public string ContentType => "MyCustomSerializer";
         }
     }
 }

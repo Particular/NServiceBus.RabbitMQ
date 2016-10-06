@@ -4,22 +4,22 @@
     <id>NServiceBus.RabbitMQ</id>
     <title>NServiceBus RabbitMQ</title>
     <version>$version$</version>
-    <authors>NServiceBus Ltd</authors>
-    <owners>Udi Dahan, Andreas Ohlund, John Simons</owners>
-    <licenseUrl>http://particular.net/LicenseAgreement</licenseUrl>
-    <projectUrl>http://particular.net/</projectUrl>
-    <iconUrl>http://s3.amazonaws.com/nuget.images/NServiceBus_32.png</iconUrl>
-    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <authors>$authors$</authors>
+    <owners>$owners$</owners>
+    <licenseUrl>$licenseUrl$</licenseUrl>
+    <projectUrl>$projectUrl$</projectUrl>
+    <iconUrl>$iconUrl$</iconUrl>
+    <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
     <description>RabbitMQ support for NServicebus</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright 2010-2015 NServiceBus. All rights reserved</copyright>
+    <copyright>$copyright$</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
-      <dependency id="NServiceBus" version="[5.0.0, 6.0.0)" />
+      <dependency id="NServiceBus" version="[6.0.0, 7.0.0)" />
       <dependency id="RabbitMQ.Client" version="[4.1.0, 4.2.0)" />
     </dependencies>
   </metadata>
   <files>
-    <file src="..\..\binaries\NServiceBus.Transports.RabbitMQ.???" target="lib\net451" />
+    <file src="..\..\binaries\NServiceBus.Transports.RabbitMQ.???" target="lib\net452" />
   </files>
 </package>

@@ -1,10 +1,10 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Routing
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using global::RabbitMQ.Client;
 
     /// <summary>
-    /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys
+    /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys.
     /// </summary>
     class DirectRoutingTopology : IRoutingTopology
     {
@@ -25,14 +25,19 @@
             channel.QueueUnbind(subscriberName, ExchangeName(), GetRoutingKeyForBinding(type), null);
         }
 
-        public void Publish(IModel channel, Type type, TransportMessage message, IBasicProperties properties)
+        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(ExchangeName(), GetRoutingKeyForPublish(type), true, properties, message.Body);
+            channel.BasicPublish(ExchangeName(), GetRoutingKeyForPublish(type), false, properties, message.Body);
         }
 
-        public void Send(IModel channel, Address address, TransportMessage message, IBasicProperties properties)
+        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(string.Empty, address.Queue, true, properties, message.Body);
+            channel.BasicPublish(string.Empty, address, true, properties, message.Body);
+        }
+
+        public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
+        {
+            channel.BasicPublish(string.Empty, address, true, properties, body);
         }
 
         public void Initialize(IModel channel, string main)
@@ -40,15 +45,15 @@
             //nothing needs to be done for direct routing
         }
 
-        string ExchangeName()
-        {
-            return conventions.ExchangeName(null, null);
-        }
+        string ExchangeName() => conventions.ExchangeName(null, null);
 
         void CreateExchange(IModel channel, string exchangeName)
         {
             if (exchangeName == AmqpTopicExchange)
+            {
                 return;
+            }
+
             try
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
@@ -61,16 +66,14 @@
             }
         }
 
-        string GetRoutingKeyForPublish(Type eventType)
-        {
-            return conventions.RoutingKey(eventType);
-        }
+        string GetRoutingKeyForPublish(Type eventType) => conventions.RoutingKey(eventType);
 
         string GetRoutingKeyForBinding(Type eventType)
         {
             if (eventType == typeof(IEvent) || eventType == typeof(object))
+            {
                 return "#";
-
+            }
 
             return conventions.RoutingKey(eventType) + ".#";
         }
@@ -82,13 +85,13 @@
 
         public class Conventions
         {
-            public Conventions(Func<Address, Type, string> exchangeName, Func<Type, string> routingKey)
+            public Conventions(Func<string, Type, string> exchangeName, Func<Type, string> routingKey)
             {
                 ExchangeName = exchangeName;
                 RoutingKey = routingKey;
             }
 
-            public Func<Address, Type, string> ExchangeName { get; }
+            public Func<string, Type, string> ExchangeName { get; }
 
             public Func<Type, string> RoutingKey { get; }
         }

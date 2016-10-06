@@ -1,33 +1,22 @@
-﻿namespace NServiceBus.Transports.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
-    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Unicast;
 
     [TestFixture]
     class When_stopping_endpoint : RabbitMqContext
     {
-        [SetUp]
-        public new void SetUp()
-        {
-            MakeSureQueueAndExchangeExists(ReceiverQueue);
-        }
-
         [Test, Explicit]
-        public void Should__gracefully_shutdown()
+        public async Task Should_gracefully_shutdown()
         {
-            dequeueStrategy.Stop();
+            await messagePump.Stop();
 
-            var address = Address.Parse(ReceiverQueue);
+            var operations = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build(10000);
+            await messageDispatcher.Dispatch(operations, new TransportTransaction(), new Extensibility.ContextBag());
 
-            Parallel.For(0, 2000, i =>
-                sender.Send(new TransportMessage{Body = new byte[1]}, new SendOptions(address)));
-
-            dequeueStrategy.Start(50);
-            Thread.Sleep(1000);
-            dequeueStrategy.Stop();
-            connectionManager.Dispose();
+            messagePump.Start(new PushRuntimeSettings(50));
+            await Task.Delay(500);
+            await messagePump.Stop();
         }
     }
 }

@@ -1,40 +1,46 @@
-﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
+﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
-    using NServiceBus.AcceptanceTesting;
+    using System.Threading.Tasks;
+    using AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_using_direct_routing
+    public class When_using_direct_routing : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_receive_the_message()
+        public async Task Should_receive_the_message()
         {
-            var context = new Context();
-
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.Given((bus, c) => bus.SendLocal(new MyRequest())))
-                   .Done(c => context.GotTheMessage)
+            var context = await Scenario.Define<MyContext>()
+                   .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                   .Done(c => c.GotTheMessage)
                    .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
         }
 
-
         public class Receiver : EndpointConfigurationBuilder
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c=> c.UseTransport<RabbitMQTransport>()
+                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
                     .UseDirectRoutingTopology());
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>
             {
-                public Context Context { get; set; }
+                readonly MyContext myContext;
 
-                public void Handle(MyRequest message)
+                public MyEventHandler(MyContext myContext)
                 {
-                    Context.GotTheMessage = true;
+                    this.myContext = myContext;
+                }
+
+                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                {
+                    myContext.GotTheMessage = true;
+
+                    return TaskEx.CompletedTask;
                 }
             }
         }
@@ -43,7 +49,7 @@
         {
         }
 
-        class Context : ScenarioContext
+        class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
         }
