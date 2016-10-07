@@ -57,5 +57,13 @@
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
         /// <param name="main">The name of the queue to perform initialization on.</param>
         void Initialize(IModel channel, string main);
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <param name="delay"></param>
+        string SetupDelay(IModel channel, long delay);
     }
 }
