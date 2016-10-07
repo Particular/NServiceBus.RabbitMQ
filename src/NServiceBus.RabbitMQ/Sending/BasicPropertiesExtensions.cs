@@ -12,7 +12,7 @@
 
     static class BasicPropertiesExtensions
     {
-        public static long Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints)
+        public static long Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints, string destination = null)
         {
             properties.MessageId = message.MessageId;
 
@@ -72,6 +72,11 @@
                 properties.ReplyTo = message.Headers[NServiceBus.Headers.ReplyToAddress];
             }
 
+            if (delay != 0)
+            {
+                properties.Headers[delayedDestinationHeader] = destination;
+            }
+
             return delay;
         }
 
@@ -103,5 +108,6 @@
         }
 
         const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
+        const string delayedDestinationHeader = "NServiceBus.Transport.RabbitMQ.DelayedDestination";
     }
 }

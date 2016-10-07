@@ -47,7 +47,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            var delay = properties.Fill(message, transportOperation.DeliveryConstraints);
+            var delay = properties.Fill(message, transportOperation.DeliveryConstraints, transportOperation.Destination);
 
             return channel.SendMessage(transportOperation.Destination, message, properties, delay);
         }
