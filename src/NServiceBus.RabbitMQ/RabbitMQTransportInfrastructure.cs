@@ -11,12 +11,12 @@
     using Routing;
     using Settings;
 
-    [SkipWeaving]
-    class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
+    class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
+        readonly DelayedReceiver delayedReceiver;
         IRoutingTopology routingTopology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
@@ -37,6 +37,8 @@
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
 
             RequireOutboxConsent = false;
+
+            delayedReceiver = new DelayedReceiver(connectionFactory, channelProvider);
         }
 
         public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DelayedDeliveryConstraint) };
@@ -84,9 +86,19 @@
             return queue.ToString();
         }
 
-        public void Dispose()
+        public override Task Start()
         {
+            delayedReceiver.Start();
+
+            return TaskEx.CompletedTask;
+        }
+
+        public override Task Stop()
+        {
+            delayedReceiver.Stop();
             channelProvider.Dispose();
+
+            return TaskEx.CompletedTask;
         }
 
         void CreateTopology()
