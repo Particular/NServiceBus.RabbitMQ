@@ -1,8 +1,5 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
@@ -29,7 +26,7 @@
         {
             exclusiveScheduler = new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
 
-            connection = connectionFactory.CreateConnection($"DelayedReceiver");
+            connection = connectionFactory.CreateConnection("DelayedReceiver");
 
             var channel = connection.CreateModel();
 
