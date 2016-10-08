@@ -33,6 +33,12 @@
 
             var channel = connection.CreateModel();
 
+            //copying from ConventionalRoutingTopology for now
+            channel.ExchangeDeclare("delay-triggered", "fanout", true);
+            channel.QueueDeclare("delay-triggered", true, false, false, null);
+            channel.QueueBind("delay-triggered", "delay-triggered", "");
+            //will need some other way to do this through the topology
+
             channel.BasicQos(0, 1, false);
 
             consumer = new EventingBasicConsumer(channel);
