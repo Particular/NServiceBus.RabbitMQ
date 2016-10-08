@@ -72,12 +72,12 @@
                 properties.ReplyTo = message.Headers[NServiceBus.Headers.ReplyToAddress];
             }
 
-            if (delay != 0)
+            if (delay > 0)
             {
                 properties.Headers[delayedDestinationHeader] = destination;
             }
 
-            return delay;
+            return Math.Max(delay, 0);
         }
 
         public static void SetConfirmationId(this IBasicProperties properties, ulong confirmationId)
