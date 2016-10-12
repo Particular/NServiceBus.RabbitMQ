@@ -28,11 +28,11 @@
 
             if (TryGet(deliveryConstraints, out delayDeliveryWith))
             {
-                delay = Convert.ToInt64(Math.Ceiling(delayDeliveryWith.Delay.TotalSeconds) * 1000);
+                delay = Convert.ToInt64(Math.Ceiling(delayDeliveryWith.Delay.TotalSeconds));
             }
             else if (TryGet(deliveryConstraints, out doNotDeliverBefore))
             {
-                delay = Convert.ToInt64(Math.Ceiling((doNotDeliverBefore.At - DateTime.UtcNow).TotalSeconds) * 1000);
+                delay = Convert.ToInt64(Math.Ceiling((doNotDeliverBefore.At - DateTime.UtcNow).TotalSeconds));
             }
             else if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {

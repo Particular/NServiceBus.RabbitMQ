@@ -51,7 +51,22 @@ namespace NServiceBus.Transport.RabbitMQ
 
             if (delay != 0)
             {
-                address = routingTopology.SetupDelay(channel, delay);
+                var x = delay;
+                for(var i=0; i <= 9; i++)
+                {
+                    if (x%2 != 0)
+                    {
+                        properties.Headers.Add($"delay-level-{i}", "1");
+                    }
+                    else
+                    {
+                        properties.Headers.Add($"delay-level-{i}", "0");
+                    }
+
+                    x = x/2;
+                }
+
+                address = "delay-exchange-level-9";
             }
 
             routingTopology.Send(channel, address, message, properties);
