@@ -3,12 +3,8 @@ using System.Threading.Tasks;
 
 namespace NServiceBus.RabbitMQ.NativeDelaySample
 {
-    using System.Diagnostics;
-
     class Program
     {
-        static Stopwatch sw;
-
         static void Main(string[] args)
         {
             AsyncMain().GetAwaiter().GetResult();
