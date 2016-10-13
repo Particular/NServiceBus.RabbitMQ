@@ -75,14 +75,16 @@
         {
             CreateExchange(channel, mainQueue);
             channel.QueueBind(mainQueue, mainQueue, string.Empty);
+
+            channel.ExchangeDeclare("delay-triggered", ExchangeType.Headers, useDurableExchanges);
+
+            var arguments = new Dictionary<string, object>();
+            arguments.Add("NServiceBus.Transport.RabbitMQ.DelayedDestination", mainQueue);
+            channel.QueueBind(mainQueue, "delay-triggered", "", arguments);
         }
 
         public string SetupDelay(IModel channel, long delay)
         {
-            channel.ExchangeDeclare("delay-triggered", "fanout", useDurableExchanges);
-            channel.QueueDeclare("delay-triggered", useDurableExchanges, false, false, null);
-            channel.QueueBind("delay-triggered", "delay-triggered", "");
-
             var address = $"delay-{delay}";
 
             channel.ExchangeDeclare(address, "fanout", useDurableExchanges);

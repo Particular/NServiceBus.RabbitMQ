@@ -43,15 +43,15 @@
 
         public void Initialize(IModel channel, string main)
         {
-            //nothing needs to be done for direct routing
+            channel.ExchangeDeclare("delay-triggered", ExchangeType.Headers, useDurableExchanges);
+
+            var arguments = new Dictionary<string, object>();
+            arguments.Add("NServiceBus.Transport.RabbitMQ.DelayedDestination", main);
+            channel.QueueBind(main, "delay-triggered", "", arguments);
         }
 
         public string SetupDelay(IModel channel, long delay)
         {
-            channel.ExchangeDeclare("delay-triggered", "fanout", useDurableExchanges);
-            channel.QueueDeclare("delay-triggered", useDurableExchanges, false, false, null);
-            channel.QueueBind("delay-triggered", "delay-triggered", "");
-
             var address = $"delay-{delay}";
 
             var arguments = new Dictionary<string, object>();
