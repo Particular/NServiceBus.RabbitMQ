@@ -44,20 +44,21 @@
                     argumentsWait.Add("x-dead-letter-exchange", nextLevelExchangeName);
                     channel.QueueDeclare($"delay-exchange-level-{i}-wait", true, false, false, argumentsWait);
 
-                    var argumentsNoWait = new Dictionary<string, object>();
-                    argumentsNoWait.Add("x-message-ttl", 0);
-                    argumentsNoWait.Add("x-dead-letter-exchange", nextLevelExchangeName);
-                    channel.QueueDeclare($"delay-exchange-level-{i}-no-wait", true, false, false, argumentsNoWait);
-
                     var bindArgumentsWait = new Dictionary<string, object>();
                     bindArgumentsWait.Add("x-match", "all");
                     bindArgumentsWait.Add($"delay-level-{i}", "1");
                     channel.QueueBind($"delay-exchange-level-{i}-wait", $"delay-exchange-level-{i}", "", bindArgumentsWait);
+                }
 
-                    var bindArgumentsNoWait = new Dictionary<string, object>();
-                    bindArgumentsNoWait.Add("x-match", "all");
-                    bindArgumentsNoWait.Add($"delay-level-{i}", "0");
-                    channel.QueueBind($"delay-exchange-level-{i}-no-wait", $"delay-exchange-level-{i}", "", bindArgumentsNoWait);
+                for (var i = 0; i <= 9; i++)
+                {
+                    var baseEchangeName = i == 0 ? "delay-triggered" : $"delay-exchange-level-{i-1}";
+
+                    var bindArguments = new Dictionary<string, object>();
+                    bindArguments.Add("x-match", "all");
+                    bindArguments.Add($"delay-level-{i}", "0");
+
+                    channel.ExchangeBind(baseEchangeName, $"delay-exchange-level-{i}", "", bindArguments);
                 }
             }
 
