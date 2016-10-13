@@ -51,19 +51,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
             if (delay != 0)
             {
-                var x = delay;
                 for(var i=0; i <= 9; i++)
                 {
-                    if (x%2 != 0)
-                    {
-                        properties.Headers.Add($"delay-level-{i}", "1");
-                    }
-                    else
-                    {
-                        properties.Headers.Add($"delay-level-{i}", "0");
-                    }
+                    properties.Headers[$"delay-level-{i}"] = delay%2 != 0 ? "1" : "0";
 
-                    x = x/2;
+                    delay = delay/2;
                 }
 
                 address = "delay-exchange-level-9";
