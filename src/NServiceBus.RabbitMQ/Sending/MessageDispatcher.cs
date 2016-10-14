@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Extensibility;
@@ -7,6 +8,8 @@
     class MessageDispatcher : IDispatchMessages
     {
         readonly IChannelProvider channelProvider;
+        static readonly string SendIntent = MessageIntentEnum.Send.ToString();
+        static readonly string PublishIntent = MessageIntentEnum.Publish.ToString();
 
         public MessageDispatcher(IChannelProvider channelProvider)
         {
@@ -23,15 +26,14 @@
                 var multicastTransportOperations = outgoingMessages.MulticastTransportOperations;
 
                 var tasks = new List<Task>(unicastTransportOperations.Count + multicastTransportOperations.Count);
-
                 foreach (var operation in unicastTransportOperations)
                 {
-                    tasks.Add(SendMessage(operation, channel));
+                    SendOrPublish(operation, tasks, channel);
                 }
 
                 foreach (var operation in multicastTransportOperations)
                 {
-                    tasks.Add(PublishMessage(operation, channel));
+                    SendOrPublish(operation, tasks, channel);
                 }
 
                 return tasks.Count == 1 ? tasks[0] : Task.WhenAll(tasks);
@@ -42,24 +44,37 @@
             }
         }
 
-        Task SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel)
+        void SendOrPublish(IOutgoingTransportOperation operation, List<Task> tasks, ConfirmsAwareChannel channel)
         {
-            var message = transportOperation.Message;
-
-            var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints);
-
-            return channel.SendMessage(transportOperation.Destination, message, properties);
+            var intentHeader = operation.Message.Headers[Headers.MessageIntent];
+            if (intentHeader.Equals(SendIntent, StringComparison.Ordinal))
+            {
+                tasks.Add(SendMessage(operation, channel));
+            }
+            else if (intentHeader.Equals(PublishIntent, StringComparison.Ordinal))
+            {
+                tasks.Add(PublishMessage(operation, channel));
+            }
         }
 
-        Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel)
+        static Task SendMessage(IOutgoingTransportOperation transportOperation, ConfirmsAwareChannel channel)
         {
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.DeliveryConstraints);
 
-            return channel.PublishMessage(transportOperation.MessageType, message, properties);
+            return channel.SendMessage(transportOperation, properties);
+        }
+
+        static Task PublishMessage(IOutgoingTransportOperation transportOperation, ConfirmsAwareChannel channel)
+        {
+            var message = transportOperation.Message;
+
+            var properties = channel.CreateBasicProperties();
+            properties.Fill(message, transportOperation.DeliveryConstraints);
+
+            return channel.PublishMessage(transportOperation, properties);
         }
     }
 }

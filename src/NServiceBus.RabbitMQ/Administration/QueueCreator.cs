@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
 
     class QueueCreator : ICreateQueues
     {
@@ -25,6 +26,12 @@
             foreach (var sendingAddress in queueBindings.SendingAddresses)
             {
                 CreateQueueIfNecessary(sendingAddress);
+            }
+
+            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.ExchangeDeclare("Commands", "headers", true);
             }
 
             return TaskEx.CompletedTask;

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ", "NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj", "{BA731749-22C7-4025-8A4D-465AE8E02E61}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.RabbitMQ.Tests", "NServiceBus.RabbitMQ.Tests\NServiceBus.RabbitMQ.Tests.csproj", "{8B773CFD-E0F8-402F-AABC-04580289C76A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transport.RabbitMQ.TransportTests", "NServiceBus.Transport.RabbitMQ.TransportTests\NServiceBus.Transport.RabbitMQ.TransportTests.csproj", "{8FF5D995-D13A-479E-98A2-4915AC1573DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandWireSample", "CommandWireSample\CommandWireSample.csproj", "{73D8FA4D-BB98-49A8-91B6-51D91F281027}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +45,10 @@ Global
 		{8FF5D995-D13A-479E-98A2-4915AC1573DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8FF5D995-D13A-479E-98A2-4915AC1573DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8FF5D995-D13A-479E-98A2-4915AC1573DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73D8FA4D-BB98-49A8-91B6-51D91F281027}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73D8FA4D-BB98-49A8-91B6-51D91F281027}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73D8FA4D-BB98-49A8-91B6-51D91F281027}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73D8FA4D-BB98-49A8-91B6-51D91F281027}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

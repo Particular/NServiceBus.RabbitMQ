@@ -19,15 +19,8 @@
     /// <item><description>we generate an exchange for each queue so that we can do direct sends to the queue. it is bound as a fanout exchange</description></item>
     /// </list>
     /// </summary>
-    class ConventionalRoutingTopology : IRoutingTopology
+    class AutomaticRoutingTopology : IRoutingTopology
     {
-        readonly bool useDurableExchanges;
-
-        public ConventionalRoutingTopology(bool useDurableExchanges)
-        {
-            this.useDurableExchanges = useDurableExchanges;
-        }
-
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {
             if (type == typeof(IEvent))
@@ -56,7 +49,7 @@
 
         public void Publish(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            var op = (MulticastTransportOperation)operation;
+            var op = (MulticastTransportOperation) operation;
 
             SetupTypeSubscriptions(channel, op.MessageType);
             channel.BasicPublish(ExchangeName(op.MessageType), String.Empty, false, properties, op.Message.Body);
@@ -64,9 +57,9 @@
 
         public void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            var op = (UnicastTransportOperation)operation;
-
-            channel.BasicPublish(op.Destination, String.Empty, true, properties, op.Message.Body);
+            var op = (MulticastTransportOperation)operation;
+            properties.Headers["Type"] = op.MessageType.AssemblyQualifiedName;
+            channel.BasicPublish("Commands", String.Empty, true, properties, op.Message.Body);
         }
 
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
@@ -80,7 +73,7 @@
             channel.QueueBind(mainQueue, mainQueue, string.Empty);
         }
 
-        public OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
+        public OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Multicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
 
@@ -125,7 +118,7 @@
         {
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
             }
             // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)

@@ -28,19 +28,17 @@
         /// Publishes a message of the specified type.
         /// </summary>
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="type">The type of the message to be published.</param>
-        /// <param name="message">The message to publish.</param>
+        /// <param name="operation">Transport operation.</param>
         /// <param name="properties">The RabbitMQ properties of the message to publish.</param>
-        void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties);
+        void Publish(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties);
 
         /// <summary>
         /// Sends a message to the specified endpoint.
         /// </summary>
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="address">The address of the destination endpoint.</param>
-        /// <param name="message">The message to send.</param>
+        /// <param name="operation">Transport operation.</param>
         /// <param name="properties">The RabbitMQ properties of the message to send.</param>
-        void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties);
+        void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties);
 
         /// <summary>
         /// Sends a raw message body to the specified endpoint.
@@ -57,5 +55,10 @@
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
         /// <param name="main">The name of the queue to perform initialization on.</param>
         void Initialize(IModel channel, string main);
+
+        /// <summary>
+        /// Gets the outbound routing policy for this topology.
+        /// </summary>
+        OutboundRoutingPolicy OutboundRoutingPolicy { get; }
     }
 }
