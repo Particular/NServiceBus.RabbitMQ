@@ -55,12 +55,12 @@
                 using (var connection = connectionFactory.CreateAdministrationConnection())
                 using (var channel = connection.CreateModel())
                 {
-                    channel.ExchangeDeclare(detourExchangeName, "fanout", true);
+                    channel.ExchangeDeclare(detourExchangeName, "fanout", true, true, null);
                     channel.QueueBind(inputQueue, detourExchangeName, string.Empty);
                     BindMessageTypes(channel, detourExchangeName);
 
                     channel.ExchangeDelete(localFanoutExchange);
-                    channel.ExchangeDeclare(localFanoutExchange, "fanout", true);
+                    channel.ExchangeDeclare(localFanoutExchange, "fanout", true, true, null);
                     channel.QueueBind(inputQueue, localFanoutExchange, string.Empty);
                     BindMessageTypes(channel, localFanoutExchange);
 
@@ -69,17 +69,23 @@
                 return Task.FromResult(0);
             }
 
-            void BindMessageTypes(IModel channel, string localFanoutExchange)
+            void BindMessageTypes(IModel channel, string localExchange)
             {
                 foreach (var type in messagesHandledByThisEndpoint)
                 {
-                    var arguments = new Dictionary<string, object>
+                    var commandExchangeArgs = new Dictionary<string, object>
                     {
-                        ["Type"] = type.AssemblyQualifiedName
+                        ["alternate-exchange"] = $"{inputQueue}-Null"
                     };
-                    channel.ExchangeBind(localFanoutExchange, "Commands", string.Empty, arguments);
+                    var typeExchange = ExchangeName(type);
+
+                    channel.ExchangeDeclare(typeExchange, "direct", true, true, commandExchangeArgs);
+                    channel.ExchangeBind(typeExchange, "Commands", "", null);
+                    channel.ExchangeBind(localExchange, typeExchange, type.FullName, null);
                 }
             }
+
+            static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
 
             protected override Task OnStop(IMessageSession session)
             {

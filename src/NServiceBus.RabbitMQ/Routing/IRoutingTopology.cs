@@ -39,7 +39,7 @@
         /// <param name="operation">Transport operation.</param>
         /// <param name="properties">The RabbitMQ properties of the message to send.</param>
         void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties);
-
+        
         /// <summary>
         /// Sends a raw message body to the specified endpoint.
         /// </summary>

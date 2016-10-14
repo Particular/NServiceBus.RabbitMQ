@@ -68,7 +68,7 @@
 
             channel.BasicPublish(op.Destination, String.Empty, true, properties, op.Message.Body);
         }
-
+        
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
         {
             channel.BasicPublish(address, String.Empty, true, properties, body);

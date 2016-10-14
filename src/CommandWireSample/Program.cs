@@ -25,7 +25,9 @@ namespace CommandWireSample
             Console.WriteLine("Press <enter> to send message");
             Console.ReadLine();
 
-            await endpoint.Send(new Command2());
+            var options = new SendOptions();
+            //options.SetDestination("Dupa");
+            await endpoint.Send(new Command1(), options);
 
             Console.WriteLine("Press <enter> to exit.");
             Console.ReadLine();
@@ -42,11 +44,11 @@ namespace CommandWireSample
     {
     }
 
-    class Command1Handler : IHandleMessages<BaseCommand>
+    class Command1Handler : IHandleMessages<Command1>
     {
-        public Task Handle(BaseCommand message, IMessageHandlerContext context)
+        public Task Handle(Command1 message, IMessageHandlerContext context)
         {
-            Console.WriteLine("Got Command1");
+            Console.WriteLine($"Got {message.GetType().FullName}");
             return Task.FromResult(0);
         }
     }
@@ -55,11 +57,12 @@ namespace CommandWireSample
     {
     }
 
-    //class Command2Handler : IHandleMessages<Command2>
-    //{
-    //    public Task Handle(Command2 message, IMessageHandlerContext context)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-    //}
+    class Command2Handler : IHandleMessages<Command2>
+    {
+        public Task Handle(Command2 message, IMessageHandlerContext context)
+        {
+            Console.WriteLine($"Got {message.GetType().FullName}");
+            return Task.FromResult(0);
+        }
+    }
 }

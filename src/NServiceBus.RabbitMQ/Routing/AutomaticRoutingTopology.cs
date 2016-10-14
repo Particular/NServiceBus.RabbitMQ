@@ -58,8 +58,33 @@
         public void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
             var op = (MulticastTransportOperation)operation;
-            properties.Headers["Type"] = op.MessageType.AssemblyQualifiedName;
-            channel.BasicPublish("Commands", String.Empty, true, properties, op.Message.Body);
+
+            var typeToSend = DetermineTypeToSend(channel, op.MessageType);
+
+            channel.ExchangeDeclarePassive(ExchangeName(op.MessageType));
+
+            channel.BasicPublish("Commands", typeToSend.FullName, true, properties, op.Message.Body);
+        }
+
+        Type DetermineTypeToSend(IModel channel, Type messageType)
+        {
+            return handlerTypeMap.GetOrAdd(messageType, type =>
+            {
+                var current = type;
+                while (current != null)
+                {
+                    try
+                    {
+                        channel.ExchangeDeclarePassive(ExchangeName(current));
+                        return current;
+                    }
+                    catch (Exception)
+                    {
+                        current = current.BaseType;
+                    }
+                }
+                throw new Exception($"Cannot send of type {messageType.AssemblyQualifiedName} becuse there is no endpoint that can handle it.");
+            });
         }
 
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
@@ -71,6 +96,8 @@
         {
             CreateExchange(channel, mainQueue);
             channel.QueueBind(mainQueue, mainQueue, string.Empty);
+            channel.ExchangeDeclare("Commands", "fanout", true);
+            channel.ExchangeDeclare($"{mainQueue}-Null", "fanout", true);
         }
 
         public OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Multicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
@@ -129,5 +156,6 @@
         }
 
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
+        readonly ConcurrentDictionary<Type, Type> handlerTypeMap = new ConcurrentDictionary<Type, Type>();
     }
 }
