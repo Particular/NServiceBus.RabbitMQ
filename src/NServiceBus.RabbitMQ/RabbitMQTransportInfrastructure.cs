@@ -52,7 +52,7 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled(), settings.LocalAddress()),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 

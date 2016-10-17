@@ -25,9 +25,9 @@ namespace CommandWireSample
             Console.WriteLine("Press <enter> to send message");
             Console.ReadLine();
 
-            var options = new SendOptions();
-            //options.SetDestination("Dupa");
-            await endpoint.Send(new Command1(), options);
+            await endpoint.Send(new Command1());
+            await endpoint.Send(new Command2());
+            await endpoint.Publish(new DerivedEvent());
 
             Console.WriteLine("Press <enter> to exit.");
             Console.ReadLine();
@@ -60,6 +60,37 @@ namespace CommandWireSample
     class Command2Handler : IHandleMessages<Command2>
     {
         public Task Handle(Command2 message, IMessageHandlerContext context)
+        {
+            Console.WriteLine($"Got {message.GetType().FullName}");
+            return context.Reply(new Reply());
+        }
+    }
+
+    class BaseEvent : IEvent
+    {
+        
+    }
+
+    class DerivedEvent : BaseEvent
+    {
+    }
+
+    class DerivedEventHandler : IHandleMessages<DerivedEvent>
+    {
+        public Task Handle(DerivedEvent message, IMessageHandlerContext context)
+        {
+            Console.WriteLine($"Got {message.GetType().FullName}");
+            return Task.FromResult(0);
+        }
+    }
+
+    class Reply : IMessage
+    {
+    }
+
+    class ReplyHandler : IHandleMessages<Reply>
+    {
+        public Task Handle(Reply message, IMessageHandlerContext context)
         {
             Console.WriteLine($"Got {message.GetType().FullName}");
             return Task.FromResult(0);

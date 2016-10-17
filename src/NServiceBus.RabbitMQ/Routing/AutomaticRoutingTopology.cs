@@ -2,7 +2,10 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
     using global::RabbitMQ.Client;
+    using Settings;
 
     /// <summary>
     /// Implements the RabbitMQ routing topology as described at http://codebetter.com/drusellers/2011/05/08/brain-dump-conventional-routing-in-rabbitmq/
@@ -21,70 +24,56 @@
     /// </summary>
     class AutomaticRoutingTopology : IRoutingTopology
     {
+        ReadOnlySettings settings;
+
+        public AutomaticRoutingTopology(ReadOnlySettings settings)
+        {
+            this.settings = settings;
+        }
+
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {
-            if (type == typeof(IEvent))
-            {
-                // Make handlers for IEvent handle all events whether they extend IEvent or not
-                type = typeof(object);
-            }
-
-            SetupTypeSubscriptions(channel, type);
-            channel.ExchangeBind(subscriberName, ExchangeName(type), string.Empty);
+            throw new Exception("Manual subscribing is not allowed in automatic routing topology.");
         }
 
         public void TeardownSubscription(IModel channel, Type type, string subscriberName)
         {
-            try
-            {
-                channel.ExchangeUnbind(subscriberName, ExchangeName(type), string.Empty, null);
-            }
-            // ReSharper disable EmptyGeneralCatchClause
-            catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
-            {
-                // TODO: Any better way to make this idempotent?
-            }
+            throw new Exception("Manual unsubscribing is not allowed in automatic routing topology.");
         }
 
         public void Publish(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            var op = (MulticastTransportOperation) operation;
+            var op = (MulticastTransportOperation)operation;
 
-            SetupTypeSubscriptions(channel, op.MessageType);
-            channel.BasicPublish(ExchangeName(op.MessageType), String.Empty, false, properties, op.Message.Body);
+            EnsureEventExchangeHierarchyIsConfigured(channel, op.MessageType);
+            channel.BasicPublish(PublishExchangeName(op.MessageType), string.Empty, false, properties, op.Message.Body);
         }
 
         public void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            var op = (MulticastTransportOperation)operation;
-
-            var typeToSend = DetermineTypeToSend(channel, op.MessageType);
-
-            channel.ExchangeDeclarePassive(ExchangeName(op.MessageType));
-
-            channel.BasicPublish("Commands", typeToSend.FullName, true, properties, op.Message.Body);
-        }
-
-        Type DetermineTypeToSend(IModel channel, Type messageType)
-        {
-            return handlerTypeMap.GetOrAdd(messageType, type =>
+            var multicastSend = operation as MulticastTransportOperation;
+            if (multicastSend != null)
             {
-                var current = type;
-                while (current != null)
+                channel.BasicPublish("Commands", multicastSend.MessageType.FullName, true, properties, operation.Message.Body);
+            }
+            else
+            {
+                var unicastSend = operation as UnicastTransportOperation;
+                if (unicastSend != null)
                 {
-                    try
+                    if (unicastSend.Destination.StartsWith("#type:"))
                     {
-                        channel.ExchangeDeclarePassive(ExchangeName(current));
-                        return current;
+                        var typeFullName = unicastSend.Destination.Replace("#type:", "");
+                        channel.BasicPublish("Commands", typeFullName, true, properties, operation.Message.Body);
                     }
-                    catch (Exception)
+                    else
                     {
-                        current = current.BaseType;
+                        channel.BasicPublish(string.Empty, unicastSend.Destination, true, properties, operation.Message.Body);
                     }
+                    return;
                 }
-                throw new Exception($"Cannot send of type {messageType.AssemblyQualifiedName} becuse there is no endpoint that can handle it.");
-            });
+                throw new Exception("Not supported send operation: " + operation.GetType());
+            }
         }
 
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
@@ -94,43 +83,99 @@
 
         public void Initialize(IModel channel, string mainQueue)
         {
-            CreateExchange(channel, mainQueue);
-            channel.QueueBind(mainQueue, mainQueue, string.Empty);
             channel.ExchangeDeclare("Commands", "fanout", true);
-            channel.ExchangeDeclare($"{mainQueue}-Null", "fanout", true);
+            channel.ExchangeDeclare($"{mainQueue}-0", "fanout", true);
+
+            var localFanoutExchange = $"Commands-{mainQueue}";
+            channel.ExchangeDeclare(localFanoutExchange, "fanout", true, true, null);
+            channel.QueueBind(mainQueue, localFanoutExchange, string.Empty);
+
+            var handledTypes = settings.GetAvailableTypes().SelectMany(GetHandledTypes).ToArray();
+            foreach (var handledType in handledTypes)
+            {
+                var commandExchangeArgs = new Dictionary<string, object>
+                {
+                    ["alternate-exchange"] = $"{mainQueue}-0"
+                };
+                var typeExchange = SendExchangeName(handledType);
+
+                channel.ExchangeDelete(typeExchange);
+                channel.ExchangeDeclare(typeExchange, "direct", true, true, commandExchangeArgs);
+            }
+
+            BindMessageTypes(channel, localFanoutExchange, handledTypes);
         }
+
+        static IEnumerable<Type> GetHandledTypes(Type candidateHandlerType)
+        {
+            if (candidateHandlerType.IsAbstract || candidateHandlerType.IsGenericTypeDefinition)
+            {
+                return Enumerable.Empty<Type>();
+            }
+
+            var handlerInterfaces = candidateHandlerType.GetInterfaces()
+                .Where(@interface => @interface.IsGenericType && @interface.GetGenericTypeDefinition() == IHandleMessagesType);
+
+            var handledMessages = handlerInterfaces.Select(i => i.GetGenericArguments()[0]);
+            return handledMessages;
+        }
+
+        static Type IHandleMessagesType = typeof(IHandleMessages<>);
 
         public OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Multicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
-        static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
+        static string PublishExchangeName(Type type) => type.Namespace + ":" + type.Name + "_p";
+        static string SendExchangeName(Type type) => type.Namespace + ":" + type.Name + "_s";
 
-        void SetupTypeSubscriptions(IModel channel, Type type)
+        public void BindMessageTypes(IModel channel, string localExchange, IEnumerable<Type> messagesHandledByThisEndpoint)
         {
-            if (type == typeof(Object) || IsTypeTopologyKnownConfigured(type))
+            foreach (var type in messagesHandledByThisEndpoint)
+            {
+                BindForSending(channel, localExchange, type);
+                BindForPublishing(channel, localExchange, type);
+            }
+        }
+
+        static void BindForSending(IModel channel, string localExchange, Type type)
+        {
+            var typeExchange = SendExchangeName(type);
+            channel.ExchangeBind(typeExchange, "Commands", "", null);
+            channel.ExchangeBind(localExchange, typeExchange, type.FullName, null);
+        }
+
+        void BindForPublishing(IModel channel, string localExchange, Type type)
+        {
+            EnsureEventExchangeHierarchyIsConfigured(channel, type);
+
+            channel.ExchangeBind(localExchange, PublishExchangeName(type), string.Empty);
+        }
+
+        void EnsureEventExchangeHierarchyIsConfigured(IModel channel, Type type)
+        {
+            if (IsTypeTopologyKnownConfigured(type))
             {
                 return;
             }
 
             var typeToProcess = type;
-            CreateExchange(channel, ExchangeName(typeToProcess));
+            CreateExchange(channel, PublishExchangeName(typeToProcess));
             var baseType = typeToProcess.BaseType;
 
             while (baseType != null)
             {
-                CreateExchange(channel, ExchangeName(baseType));
-                channel.ExchangeBind(ExchangeName(baseType), ExchangeName(typeToProcess), string.Empty);
+                CreateExchange(channel, PublishExchangeName(baseType));
+                channel.ExchangeBind(PublishExchangeName(baseType), PublishExchangeName(typeToProcess), string.Empty);
                 typeToProcess = baseType;
                 baseType = typeToProcess.BaseType;
             }
 
             foreach (var interfaceType in type.GetInterfaces())
             {
-                var exchangeName = ExchangeName(interfaceType);
+                var exchangeName = PublishExchangeName(interfaceType);
 
                 CreateExchange(channel, exchangeName);
-                channel.ExchangeBind(exchangeName, ExchangeName(type), string.Empty);
+                channel.ExchangeBind(exchangeName, PublishExchangeName(type), string.Empty);
             }
-
             MarkTypeConfigured(type);
         }
 
@@ -156,6 +201,5 @@
         }
 
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
-        readonly ConcurrentDictionary<Type, Type> handlerTypeMap = new ConcurrentDictionary<Type, Type>();
     }
 }

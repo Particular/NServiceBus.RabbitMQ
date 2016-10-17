@@ -40,8 +40,12 @@
         /// <param name="transportExtensions"></param>
         public static TransportExtensions<RabbitMQTransport> UseAutomaticRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
-            transportExtensions.GetSettings().EnableFeatureByDefault<AutomaticRoutingTopologyFeature>();
-            transportExtensions.GetSettings().Set<IRoutingTopology>(new AutomaticRoutingTopology());
+            var settings = transportExtensions.GetSettings();
+
+            settings.EnableFeatureByDefault<AutomaticRoutingTopologyFeature>();
+            settings.Set<IRoutingTopology>(new AutomaticRoutingTopology(settings));
+            //Disable default autosubscribe feature
+            settings.Set(typeof(AutoSubscribe).FullName, FeatureState.Disabled);
             return transportExtensions;
         }
 

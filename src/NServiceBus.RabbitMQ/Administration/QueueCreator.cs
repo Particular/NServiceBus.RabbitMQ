@@ -7,12 +7,14 @@
         readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
         readonly bool durableMessagesEnabled;
+        readonly string mainQueue;
 
-        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool durableMessagesEnabled)
+        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool durableMessagesEnabled, string mainQueue)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.durableMessagesEnabled = durableMessagesEnabled;
+            this.mainQueue = mainQueue;
         }
 
         public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -26,6 +28,13 @@
             {
                 CreateQueueIfNecessary(sendingAddress);
             }
+
+            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using (var channel = connection.CreateModel())
+            {
+                routingTopology.Initialize(channel, mainQueue);
+            }
+
             return TaskEx.CompletedTask;
         }
 
@@ -35,8 +44,6 @@
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
-
-                routingTopology.Initialize(channel, receivingAddress);
             }
         }
     }

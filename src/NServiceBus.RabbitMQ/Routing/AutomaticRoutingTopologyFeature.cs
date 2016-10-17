@@ -15,24 +15,32 @@
     {
         protected override void Setup(FeatureConfigurationContext context)
         {
+            //Make sure autosubscribe is disabled
+            if (context.Settings.IsFeatureEnabled(typeof(AutoSubscribe)))
+            {
+                throw new Exception("Automatic routing topology cannot be used when auto subscribe is enabled. Please disable the auto subscribe feature.");
+            }
+
             var conventions = context.Settings.Get<Conventions>();
+            var topology = (AutomaticRoutingTopology) context.Settings.Get<IRoutingTopology>();
             var transportInfrastructure = (RabbitMQTransportInfrastructure)context.Settings.Get<TransportInfrastructure>();
 
             context.Pipeline.Replace("UnicastSendRouterConnector", new MulticastSendRouterConnector());
-
-            context.RegisterStartupTask(b =>
+            if (!context.Settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
-                var handlerRegistry = b.Build<MessageHandlerRegistry>();
-                var messageTypesHandled = GetMessageTypesHandledByThisEndpoint(handlerRegistry, conventions);
-                return new ApplyBindings(transportInfrastructure.ConnectionFactory, context.Settings.LocalAddress(), messageTypesHandled);
-            });
+                context.RegisterStartupTask(b =>
+                {
+                    var handlerRegistry = b.Build<MessageHandlerRegistry>();
+                    var handledMessageTypes = GetMessageTypesHandledByThisEndpoint(handlerRegistry, conventions);
+                    return new ApplyBindings(transportInfrastructure.ConnectionFactory, context.Settings.LocalAddress(), handledMessageTypes, topology);
+                });
+            }
         }
 
         static List<Type> GetMessageTypesHandledByThisEndpoint(MessageHandlerRegistry handlerRegistry, Conventions conventions)
         {
             var messageTypesHandled = handlerRegistry.GetMessageTypes() //get all potential messages
                 .Where(t => !conventions.IsInSystemConventionList(t)) //never auto-wire system messages
-                .Where(t => !conventions.IsEventType(t)) //events should not be wired this way
                 .ToList();
 
             return messageTypesHandled;
@@ -40,11 +48,12 @@
 
         class ApplyBindings : FeatureStartupTask
         {
-            public ApplyBindings(ConnectionFactory connectionFactory, string inputQueue, IEnumerable<Type> messagesHandledByThisEndpoint)
+            public ApplyBindings(ConnectionFactory connectionFactory, string inputQueue, IEnumerable<Type> messagesHandledByThisEndpoint, AutomaticRoutingTopology topology)
             {
                 this.connectionFactory = connectionFactory;
                 this.inputQueue = inputQueue;
                 this.messagesHandledByThisEndpoint = messagesHandledByThisEndpoint;
+                this.topology = topology;
             }
 
             protected override Task OnStart(IMessageSession session)
@@ -57,35 +66,19 @@
                 {
                     channel.ExchangeDeclare(detourExchangeName, "fanout", true, true, null);
                     channel.QueueBind(inputQueue, detourExchangeName, string.Empty);
-                    BindMessageTypes(channel, detourExchangeName);
+
+                    topology.BindMessageTypes(channel, detourExchangeName, messagesHandledByThisEndpoint);
 
                     channel.ExchangeDelete(localFanoutExchange);
                     channel.ExchangeDeclare(localFanoutExchange, "fanout", true, true, null);
                     channel.QueueBind(inputQueue, localFanoutExchange, string.Empty);
-                    BindMessageTypes(channel, localFanoutExchange);
+
+                    topology.BindMessageTypes(channel, localFanoutExchange, messagesHandledByThisEndpoint);
 
                     channel.ExchangeDelete(detourExchangeName);
                 }
                 return Task.FromResult(0);
             }
-
-            void BindMessageTypes(IModel channel, string localExchange)
-            {
-                foreach (var type in messagesHandledByThisEndpoint)
-                {
-                    var commandExchangeArgs = new Dictionary<string, object>
-                    {
-                        ["alternate-exchange"] = $"{inputQueue}-Null"
-                    };
-                    var typeExchange = ExchangeName(type);
-
-                    channel.ExchangeDeclare(typeExchange, "direct", true, true, commandExchangeArgs);
-                    channel.ExchangeBind(typeExchange, "Commands", "", null);
-                    channel.ExchangeBind(localExchange, typeExchange, type.FullName, null);
-                }
-            }
-
-            static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
 
             protected override Task OnStop(IMessageSession session)
             {
@@ -95,6 +88,7 @@
             ConnectionFactory connectionFactory;
             string inputQueue;
             IEnumerable<Type> messagesHandledByThisEndpoint;
+            readonly AutomaticRoutingTopology topology;
         }
     }
 }

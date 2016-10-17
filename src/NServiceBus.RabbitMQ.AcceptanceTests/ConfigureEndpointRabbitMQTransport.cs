@@ -25,7 +25,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
     {
         connectionString = settings.Get<string>("Transport.ConnectionString");
-        configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
+        configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString).UseAutomaticRoutingTopology();
 
         return TaskEx.CompletedTask;
     }

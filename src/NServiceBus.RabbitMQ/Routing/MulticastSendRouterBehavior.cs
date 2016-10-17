@@ -15,7 +15,8 @@ namespace NServiceBus
                 context.Message,
                 new[]
                 {
-                    new MulticastRoutingStrategy(context.Message.MessageType)
+                    new UnicastRoutingStrategy($"#type:{context.Message.MessageType.FullName}")
+                    //new MulticastRoutingStrategy(context.Message.MessageType) //Hack that allow core TM to work
                 },
                 context);
 

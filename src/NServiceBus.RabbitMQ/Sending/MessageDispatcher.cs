@@ -8,7 +8,6 @@
     class MessageDispatcher : IDispatchMessages
     {
         readonly IChannelProvider channelProvider;
-        static readonly string SendIntent = MessageIntentEnum.Send.ToString();
         static readonly string PublishIntent = MessageIntentEnum.Publish.ToString();
 
         public MessageDispatcher(IChannelProvider channelProvider)
@@ -47,13 +46,13 @@
         void SendOrPublish(IOutgoingTransportOperation operation, List<Task> tasks, ConfirmsAwareChannel channel)
         {
             var intentHeader = operation.Message.Headers[Headers.MessageIntent];
-            if (intentHeader.Equals(SendIntent, StringComparison.Ordinal))
-            {
-                tasks.Add(SendMessage(operation, channel));
-            }
-            else if (intentHeader.Equals(PublishIntent, StringComparison.Ordinal))
+            if (intentHeader.Equals(PublishIntent, StringComparison.Ordinal))
             {
                 tasks.Add(PublishMessage(operation, channel));
+            }
+            else
+            {
+                tasks.Add(SendMessage(operation, channel));
             }
         }
 
