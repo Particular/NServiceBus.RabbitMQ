@@ -25,8 +25,12 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
     {
         connectionString = settings.Get<string>("Transport.ConnectionString");
-        configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString).UseAutomaticRoutingTopology();
+        var transport = configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
 
+        if (!endpointName.Contains("AuditSpyEndpoint"))
+        {
+            transport.UseAutomaticRoutingTopology();
+        }
         return TaskEx.CompletedTask;
     }
 
