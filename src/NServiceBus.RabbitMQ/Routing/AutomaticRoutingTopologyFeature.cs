@@ -25,7 +25,7 @@
             var topology = (AutomaticRoutingTopology) context.Settings.Get<IRoutingTopology>();
             var transportInfrastructure = (RabbitMQTransportInfrastructure)context.Settings.Get<TransportInfrastructure>();
 
-            context.Pipeline.Replace("UnicastSendRouterConnector", new MulticastSendRouterConnector());
+            context.Pipeline.Replace("UnicastSendRouterConnector", new MulticastSendRouterConnector(context.Settings.LocalAddress()));
             if (!context.Settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
                 context.RegisterStartupTask(b =>
