@@ -50,18 +50,6 @@
             channel.QueueBind(main, "delay-triggered", "", arguments);
         }
 
-        public string SetupDelay(IModel channel, long delay)
-        {
-            var address = $"delay-{delay}";
-
-            var arguments = new Dictionary<string, object>();
-            arguments.Add("x-message-ttl", delay);
-            arguments.Add("x-dead-letter-exchange", "delay-triggered");
-            channel.QueueDeclare(address, useDurableExchanges, false, false, arguments);
-
-            return address;
-        }
-
         string ExchangeName() => conventions.ExchangeName(null, null);
 
         void CreateExchange(IModel channel, string exchangeName)

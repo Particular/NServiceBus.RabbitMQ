@@ -83,22 +83,6 @@
             channel.QueueBind(mainQueue, "delay-triggered", "", arguments);
         }
 
-        public string SetupDelay(IModel channel, long delay)
-        {
-            var address = $"delay-{delay}";
-
-            channel.ExchangeDeclare(address, "fanout", useDurableExchanges);
-
-            var arguments = new Dictionary<string, object>();
-            arguments.Add("x-message-ttl", delay);
-            arguments.Add("x-dead-letter-exchange", "delay-triggered");
-            channel.QueueDeclare(address, useDurableExchanges, false, false, arguments);
-
-            channel.QueueBind(address, address, "");
-
-            return address;
-        }
-
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
 
         void SetupTypeSubscriptions(IModel channel, Type type)
