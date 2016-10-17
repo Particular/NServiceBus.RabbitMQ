@@ -33,12 +33,12 @@
 
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
         {
-            throw new Exception("Manual subscribing is not allowed in automatic routing topology.");
+            //throw new Exception("Manual subscribing is not allowed in automatic routing topology.");
         }
 
         public void TeardownSubscription(IModel channel, Type type, string subscriberName)
         {
-            throw new Exception("Manual unsubscribing is not allowed in automatic routing topology.");
+            //throw new Exception("Manual unsubscribing is not allowed in automatic routing topology.");
         }
 
         public void Publish(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
