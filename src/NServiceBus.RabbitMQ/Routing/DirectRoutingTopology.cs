@@ -25,16 +25,20 @@
             channel.QueueUnbind(subscriberName, ExchangeName(), GetRoutingKeyForBinding(type), null);
         }
 
-        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
+        public void Publish(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            channel.BasicPublish(ExchangeName(), GetRoutingKeyForPublish(type), false, properties, message.Body);
+            var op = (MulticastTransportOperation)operation;
+
+            channel.BasicPublish(ExchangeName(), GetRoutingKeyForPublish(op.MessageType), false, properties, op.Message.Body);
         }
 
-        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
+        public void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            channel.BasicPublish(string.Empty, address, true, properties, message.Body);
-        }
+            var op = (UnicastTransportOperation)operation;
 
+            channel.BasicPublish(string.Empty, op.Destination, true, properties, op.Message.Body);
+        }
+        
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
         {
             channel.BasicPublish(string.Empty, address, true, properties, body);
@@ -44,6 +48,8 @@
         {
             //nothing needs to be done for direct routing
         }
+
+        public OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
         string ExchangeName() => conventions.ExchangeName(null, null);
 

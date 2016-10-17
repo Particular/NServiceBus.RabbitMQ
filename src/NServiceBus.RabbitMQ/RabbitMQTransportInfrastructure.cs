@@ -40,9 +40,11 @@
 
         public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery) };
 
-        public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
+        public override OutboundRoutingPolicy OutboundRoutingPolicy => routingTopology.OutboundRoutingPolicy;
 
         public override TransportTransactionMode TransactionMode => TransportTransactionMode.ReceiveOnly;
+
+        public ConnectionFactory ConnectionFactory => connectionFactory;
 
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance) => instance;
 
@@ -50,7 +52,7 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled(), settings.LocalAddress()),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
@@ -65,7 +67,7 @@
         {
             return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, routingTopology, settings.LocalAddress()));
         }
-
+        
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint);

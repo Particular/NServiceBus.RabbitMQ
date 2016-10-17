@@ -35,7 +35,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
+        public Task SendMessage(IOutgoingTransportOperation operation, IBasicProperties properties)
         {
             Task task;
 
@@ -49,12 +49,12 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            routingTopology.Send(channel, address, message, properties);
+            routingTopology.Send(channel, operation, properties);
 
             return task;
         }
 
-        public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties)
+        public Task PublishMessage(IOutgoingTransportOperation operation, IBasicProperties properties)
         {
             Task task;
 
@@ -68,7 +68,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            routingTopology.Publish(channel, type, message, properties);
+            routingTopology.Publish(channel, operation, properties);
 
             return task;
         }

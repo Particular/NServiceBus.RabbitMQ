@@ -14,7 +14,7 @@
         {
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithAuditOff>(b => b.When(session => session.SendLocal(new MessageToBeAudited())))
-                .WithEndpoint<EndpointThatHandlesAuditMessages>()
+                .WithEndpoint<AuditSpyEndpoint>()
                 .Done(c => c.IsMessageHandlingComplete)
                 .Run();
 
@@ -26,7 +26,7 @@
         {
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<EndpointWithAuditOn>(b => b.When(session => session.SendLocal(new MessageToBeAudited())))
-                .WithEndpoint<EndpointThatHandlesAuditMessages>()
+                .WithEndpoint<AuditSpyEndpoint>()
                 .Done(c => c.IsMessageHandlingComplete && c.IsMessageHandledByTheAuditEndpoint)
                 .Run();
 
@@ -47,7 +47,7 @@
                 // even though the user has specified audit config, because auditing is explicitly turned
                 // off, no messages should be audited.
                 EndpointSetup<DefaultServer>(c => c.DisableFeature<Audit>())
-                    .AuditTo<EndpointThatHandlesAuditMessages>();
+                    .AuditTo<AuditSpyEndpoint>();
             }
 
             class MessageToBeAuditedHandler : IHandleMessages<MessageToBeAudited>
@@ -67,7 +67,7 @@
             public EndpointWithAuditOn()
             {
                 EndpointSetup<DefaultServer>()
-                    .AuditTo<EndpointThatHandlesAuditMessages>();
+                    .AuditTo<AuditSpyEndpoint>();
             }
 
             class MessageToBeAuditedHandler : IHandleMessages<MessageToBeAudited>
@@ -82,9 +82,9 @@
             }
         }
 
-        public class EndpointThatHandlesAuditMessages : EndpointConfigurationBuilder
+        public class AuditSpyEndpoint : EndpointConfigurationBuilder
         {
-            public EndpointThatHandlesAuditMessages()
+            public AuditSpyEndpoint()
             {
                 EndpointSetup<DefaultServer>();
             }

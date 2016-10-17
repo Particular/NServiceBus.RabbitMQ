@@ -2,6 +2,7 @@
 {
     using System;
     using Configuration.AdvanceExtensibility;
+    using Features;
     using RabbitMQ.Client.Events;
     using Transport.RabbitMQ;
 
@@ -30,6 +31,21 @@
 
             transportExtensions.GetSettings().Set<DirectRoutingTopology.Conventions>(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention));
 
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Uses the automatic routing topology with the specified conventions.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        public static TransportExtensions<RabbitMQTransport> UseAutomaticRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            var settings = transportExtensions.GetSettings();
+
+            settings.EnableFeatureByDefault<AutomaticRoutingTopologyFeature>();
+            settings.Set<IRoutingTopology>(new AutomaticRoutingTopology(settings));
+            //Disable default autosubscribe feature
+            settings.Set(typeof(AutoSubscribe).FullName, FeatureState.Disabled);
             return transportExtensions;
         }
 

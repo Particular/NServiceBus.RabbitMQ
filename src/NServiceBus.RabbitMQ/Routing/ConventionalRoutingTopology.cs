@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -54,17 +55,21 @@
             }
         }
 
-        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
+        public void Publish(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            SetupTypeSubscriptions(channel, type);
-            channel.BasicPublish(ExchangeName(type), String.Empty, false, properties, message.Body);
+            var op = (MulticastTransportOperation)operation;
+
+            SetupTypeSubscriptions(channel, op.MessageType);
+            channel.BasicPublish(ExchangeName(op.MessageType), String.Empty, false, properties, op.Message.Body);
         }
 
-        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
+        public void Send(IModel channel, IOutgoingTransportOperation operation, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, properties, message.Body);
-        }
+            var op = (UnicastTransportOperation)operation;
 
+            channel.BasicPublish(op.Destination, String.Empty, true, properties, op.Message.Body);
+        }
+        
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
         {
             channel.BasicPublish(address, String.Empty, true, properties, body);
@@ -75,6 +80,8 @@
             CreateExchange(channel, mainQueue);
             channel.QueueBind(mainQueue, mainQueue, string.Empty);
         }
+
+        public OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
 
