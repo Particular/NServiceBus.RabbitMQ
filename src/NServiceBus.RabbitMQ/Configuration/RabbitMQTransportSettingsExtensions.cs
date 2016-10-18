@@ -11,6 +11,17 @@
     public static partial class RabbitMQTransportSettingsExtensions
     {
         /// <summary>
+        /// Registers a custom routing topology.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
+        {
+            transportExtensions.GetSettings().Set<Func<bool, IRoutingTopology>>(topologyFactory);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Uses the direct routing topology with the specified conventions.
         /// </summary>
         /// <param name="transportExtensions"></param>
@@ -28,7 +39,7 @@
                 exchangeNameConvention = (address, eventType) => "amq.topic";
             }
 
-            transportExtensions.GetSettings().Set<DirectRoutingTopology.Conventions>(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention));
+            transportExtensions.UseRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
 
             return transportExtensions;
         }
@@ -36,9 +47,10 @@
         /// <summary>
         /// Registers a custom routing topology.
         /// </summary>
+        [ObsoleteEx(RemoveInVersion = "6.0", TreatAsErrorFromVersion = "5.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.UseRoutingTopology(TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)")]
         public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology, new()
         {
-            transportExtensions.GetSettings().Set<IRoutingTopology>(new T());
+            transportExtensions.UseRoutingTopology(durable => new T());
             return transportExtensions;
         }
 
