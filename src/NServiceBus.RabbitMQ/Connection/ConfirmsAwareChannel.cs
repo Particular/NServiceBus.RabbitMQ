@@ -35,7 +35,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
+        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties, long delay)
         {
             Task task;
 
@@ -47,6 +47,18 @@ namespace NServiceBus.Transport.RabbitMQ
             else
             {
                 task = TaskEx.CompletedTask;
+            }
+
+            if (delay != 0)
+            {
+                for(var i=0; i <= 9; i++)
+                {
+                    properties.Headers[$"delay-level-{i}"] = delay%2 != 0 ? "1" : "0";
+
+                    delay = delay/2;
+                }
+
+                address = "delay-exchange-level-9";
             }
 
             routingTopology.Send(channel, address, message, properties);

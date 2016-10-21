@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -42,7 +43,11 @@
 
         public void Initialize(IModel channel, string main)
         {
-            //nothing needs to be done for direct routing
+            channel.ExchangeDeclare("delay-triggered", ExchangeType.Headers, useDurableExchanges);
+
+            var arguments = new Dictionary<string, object>();
+            arguments.Add("NServiceBus.Transport.RabbitMQ.DelayedDestination", main);
+            channel.QueueBind(main, "delay-triggered", "", arguments);
         }
 
         string ExchangeName() => conventions.ExchangeName(null, null);

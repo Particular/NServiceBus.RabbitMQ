@@ -4,14 +4,13 @@
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
+    using DelayedDelivery;
     using global::RabbitMQ.Client.Events;
-    using Janitor;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
 
-    [SkipWeaving]
-    class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
+    class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
@@ -38,7 +37,7 @@
             RequireOutboxConsent = false;
         }
 
-        public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery) };
+        public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DelayedDeliveryConstraint) };
 
         public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
@@ -83,9 +82,13 @@
             return queue.ToString();
         }
 
-        public void Dispose()
+        public override Task Start() => TaskEx.CompletedTask;
+
+        public override Task Stop()
         {
             channelProvider.Dispose();
+
+            return TaskEx.CompletedTask;
         }
 
         void CreateTopology()

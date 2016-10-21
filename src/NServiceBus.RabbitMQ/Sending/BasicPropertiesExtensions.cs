@@ -6,12 +6,13 @@
     using System.Linq;
     using System.Text;
     using global::RabbitMQ.Client;
+    using DelayedDelivery;
     using DeliveryConstraints;
     using Performance.TimeToBeReceived;
 
     static class BasicPropertiesExtensions
     {
-        public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints)
+        public static long Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints, string destination = null)
         {
             properties.MessageId = message.MessageId;
 
@@ -20,9 +21,20 @@
                 properties.CorrelationId = message.Headers[NServiceBus.Headers.CorrelationId];
             }
 
+            DelayDeliveryWith delayDeliveryWith;
+            DoNotDeliverBefore doNotDeliverBefore;
             DiscardIfNotReceivedBefore timeToBeReceived;
+            long delay = 0;
 
-            if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
+            if (TryGet(deliveryConstraints, out delayDeliveryWith))
+            {
+                delay = Convert.ToInt64(Math.Ceiling(delayDeliveryWith.Delay.TotalSeconds));
+            }
+            else if (TryGet(deliveryConstraints, out doNotDeliverBefore))
+            {
+                delay = Convert.ToInt64(Math.Ceiling((doNotDeliverBefore.At - DateTime.UtcNow).TotalSeconds));
+            }
+            else if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {
                 properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
             }
@@ -59,6 +71,13 @@
             {
                 properties.ReplyTo = message.Headers[NServiceBus.Headers.ReplyToAddress];
             }
+
+            if (delay > 0)
+            {
+                properties.Headers[delayedDestinationHeader] = destination;
+            }
+
+            return Math.Max(delay, 0);
         }
 
         public static void SetConfirmationId(this IBasicProperties properties, ulong confirmationId)
@@ -89,5 +108,6 @@
         }
 
         const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
+        const string delayedDestinationHeader = "NServiceBus.Transport.RabbitMQ.DelayedDestination";
     }
 }
