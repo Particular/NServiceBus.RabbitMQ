@@ -47,9 +47,9 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints);
+            var delay = properties.Fill(message, transportOperation.DeliveryConstraints, transportOperation.Destination);
 
-            return channel.SendMessage(transportOperation.Destination, message, properties);
+            return channel.SendMessage(transportOperation.Destination, message, properties, delay);
         }
 
         Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel)

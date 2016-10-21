@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -74,6 +75,28 @@
         {
             CreateExchange(channel, mainQueue);
             channel.QueueBind(mainQueue, mainQueue, string.Empty);
+
+            channel.ExchangeDeclare("delay-triggered", ExchangeType.Headers, useDurableExchanges);
+
+            var arguments = new Dictionary<string, object>();
+            arguments.Add("NServiceBus.Transport.RabbitMQ.DelayedDestination", mainQueue);
+            channel.QueueBind(mainQueue, "delay-triggered", "", arguments);
+        }
+
+        public string SetupDelay(IModel channel, long delay)
+        {
+            var address = $"delay-{delay}";
+
+            channel.ExchangeDeclare(address, "fanout", useDurableExchanges);
+
+            var arguments = new Dictionary<string, object>();
+            arguments.Add("x-message-ttl", delay);
+            arguments.Add("x-dead-letter-exchange", "delay-triggered");
+            channel.QueueDeclare(address, useDurableExchanges, false, false, arguments);
+
+            channel.QueueBind(address, address, "");
+
+            return address;
         }
 
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;
