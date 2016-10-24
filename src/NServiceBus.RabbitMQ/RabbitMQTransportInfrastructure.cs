@@ -25,7 +25,7 @@
             var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
             connectionFactory = new ConnectionFactory(connectionConfiguration);
 
-            CreateTopology();
+            routingTopology = CreateRoutingTopology();
 
             bool usePublisherConfirms;
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
@@ -88,27 +88,17 @@
             channelProvider.Dispose();
         }
 
-        void CreateTopology()
+        IRoutingTopology CreateRoutingTopology()
         {
-            if (settings.HasSetting<IRoutingTopology>())
-            {
-                routingTopology = settings.Get<IRoutingTopology>();
-            }
-            else
-            {
-                var durable = settings.DurableMessagesEnabled();
+            var durable = settings.DurableMessagesEnabled();
+            Func<bool, IRoutingTopology> topologyFactory;
 
-                DirectRoutingTopology.Conventions conventions;
-
-                if (settings.TryGet(out conventions))
-                {
-                    routingTopology = new DirectRoutingTopology(conventions, durable);
-                }
-                else
-                {
-                    routingTopology = new ConventionalRoutingTopology(durable);
-                }
+            if (!settings.TryGet(out topologyFactory))
+            {
+                topologyFactory = d => new ConventionalRoutingTopology(d);
             }
+
+            return topologyFactory(durable);
         }
 
         IPushMessages CreateMessagePump()
