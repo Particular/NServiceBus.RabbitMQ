@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
 
     class QueueCreator : ICreateQueues
     {
@@ -17,28 +18,28 @@
 
         public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
-            foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
-                CreateQueueIfNecessary(receivingAddress);
-            }
+                foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+                {
+                    CreateQueueIfNecessary(channel, receivingAddress);
+                }
 
-            foreach (var sendingAddress in queueBindings.SendingAddresses)
-            {
-                CreateQueueIfNecessary(sendingAddress);
+                foreach (var sendingAddress in queueBindings.SendingAddresses)
+                {
+                    CreateQueueIfNecessary(channel, sendingAddress);
+                }
             }
 
             return TaskEx.CompletedTask;
         }
 
-        void CreateQueueIfNecessary(string receivingAddress)
+        void CreateQueueIfNecessary(IModel channel, string receivingAddress)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
+            channel.QueueDeclare(receivingAddress, durableMessagesEnabled, false, false, null);
 
-                routingTopology.Initialize(channel, receivingAddress);
-            }
+            routingTopology.Initialize(channel, receivingAddress);
         }
     }
 }

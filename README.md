@@ -18,7 +18,7 @@ Before doing anything else, make sure you have RabbitMQ up and running in your e
 
 ## Samples
 
-See https://github.com/Particular/NServiceBus.RabbitMQ.Samples
+See http://docs.particular.net/samples/rabbitmq/
 
 ## Maintainers
 The following team is responsible for this repository: @Particular/rabbitmq-transport-maintainers
