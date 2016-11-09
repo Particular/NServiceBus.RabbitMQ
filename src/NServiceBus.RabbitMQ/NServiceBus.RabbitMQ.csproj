@@ -83,7 +83,7 @@
     <Compile Include="Connection\ConfirmsAwareChannel.cs" />
     <Compile Include="Receiving\ModelExtensions.cs" />
     <Compile Include="Routing\DefaultRoutingKeyConvention.cs" />
-    <Compile Include="Configuration\ConnectionConfiguration.cs" />
+    <Compile Include="Configuration\DefaultConfigurationValues.cs" />
     <Compile Include="Connection\ConnectionFactory.cs" />
     <Compile Include="Connection\IChannelProvider.cs" />
     <Compile Include="InternalsVisibleTo.cs" />

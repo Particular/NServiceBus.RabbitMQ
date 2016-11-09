@@ -53,21 +53,19 @@
             settings.Set("NServiceBus.Routing.EndpointName", "endpoint");
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
-
-            ConnectionConfiguration config;
-
+            
             if (connectionString != null)
             {
                 var parser = new ConnectionStringParser(settings);
-                config = parser.Parse(connectionString);
+                parser.Parse(connectionString);
             }
             else
             {
-                config = new ConnectionConfiguration(settings);
-                config.Host = "localhost";
+                DefaultConfigurationValues.Apply(settings);
+                settings.Set(SettingsKeys.Host, "localhost");
             }
 
-            connectionFactory = new ConnectionFactory(config);
+            connectionFactory = new ConnectionFactory(settings);
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
 
             messageDispatcher = new MessageDispatcher(channelProvider);
