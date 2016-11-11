@@ -44,7 +44,7 @@
         {
             var parser = new ConnectionStringParser(settings);
 
-            Assert.Throws<Exception>(() => parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3"));
+            Assert.Throws<NotSupportedException>(() => parser.Parse("virtualHost=Copa;username=Copa;password=abc_xyz;port=12345;requestedHeartbeat=3"));
         }
 
         [Test]
@@ -235,6 +235,21 @@
             var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost;usePublisherConfirms=true"));
 
             Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
+        }
+
+        [Test]
+        public void Should_list_all_invalid_options()
+        {
+            var parser = new ConnectionStringParser(settings);
+
+            var exception = Assert.Throws<NotSupportedException>(() => parser.Parse("host=localhost,host=localhost2;usePublisherConfirms=true;prefetchcount=100;maxWaitTimeForConfirms=02:03:39;dequeuetimeout=1"));
+
+            Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
+            Assert.That(exception.Message, Does.Contain("consider using a load balancer"));
+            Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'DequeueTimeout' connection string option has been removed"));
         }
     }
 }
