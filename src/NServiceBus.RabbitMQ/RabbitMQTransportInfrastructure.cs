@@ -16,7 +16,7 @@
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
-        IRoutingTopology routingTopology;
+        IRoutingTopology2 routingTopology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
@@ -50,7 +50,7 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, routingTopology),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
@@ -88,17 +88,26 @@
             channelProvider.Dispose();
         }
 
-        IRoutingTopology CreateRoutingTopology()
+        IRoutingTopology2 CreateRoutingTopology()
         {
             var durable = settings.DurableMessagesEnabled();
-            Func<bool, IRoutingTopology> topologyFactory;
+            Func<bool, IRoutingTopology2> topology2Factory;
 
-            if (!settings.TryGet(out topologyFactory))
+            if (!settings.TryGet(out topology2Factory))
             {
-                topologyFactory = d => new ConventionalRoutingTopology(d);
+                Func<bool, IRoutingTopology> topologyFactory;
+
+                if (!settings.TryGet(out topologyFactory))
+                {
+                    topology2Factory = d => new ConventionalRoutingTopology(d);
+                }
+                else
+                {
+                    topology2Factory = d => new RoutingTopology2Adapter(topologyFactory(d), durable);
+                }
             }
 
-            return topologyFactory(durable);
+            return topology2Factory(durable);
         }
 
         IPushMessages CreateMessagePump()

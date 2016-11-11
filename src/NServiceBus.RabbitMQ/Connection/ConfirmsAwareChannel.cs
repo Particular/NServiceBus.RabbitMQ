@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology2 routingTopology, bool usePublisherConfirms)
         {
             channel = connection.CreateModel();
             channel.BasicReturn += Channel_BasicReturn;
@@ -217,7 +217,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         IModel channel;
-        readonly IRoutingTopology routingTopology;
+        readonly IRoutingTopology2 routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 

@@ -1,12 +1,13 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys.
     /// </summary>
-    class DirectRoutingTopology : IRoutingTopology
+    class DirectRoutingTopology : IRoutingTopology2
     {
         public DirectRoutingTopology(Conventions conventions, bool useDurableExchanges)
         {
@@ -40,9 +41,12 @@
             channel.BasicPublish(string.Empty, address, true, properties, body);
         }
 
-        public void Initialize(IModel channel, string main)
+        public void Initialize(IModel channel, IEnumerable<string> addresses)
         {
-            //nothing needs to be done for direct routing
+            foreach (var address in addresses)
+            {
+                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+            }
         }
 
         string ExchangeName() => conventions.ExchangeName(null, null);
