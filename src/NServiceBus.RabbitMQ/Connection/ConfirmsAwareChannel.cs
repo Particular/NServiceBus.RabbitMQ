@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -80,6 +81,12 @@ namespace NServiceBus.Transport.RabbitMQ
             if (usePublisherConfirms)
             {
                 task = GetConfirmationTask();
+
+                if (properties.Headers == null)
+                {
+                    properties.Headers = new Dictionary<string, object>();
+                }
+
                 properties.SetConfirmationId(channel.NextPublishSeqNo);
             }
             else
