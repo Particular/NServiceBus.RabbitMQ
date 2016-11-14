@@ -39,7 +39,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     public interface IRoutingTopology
     {
-        void Initialize(RabbitMQ.Client.IModel channel, string main);
+        void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> addresses);
         void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
         void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, byte[] body, RabbitMQ.Client.IBasicProperties properties);
         void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);

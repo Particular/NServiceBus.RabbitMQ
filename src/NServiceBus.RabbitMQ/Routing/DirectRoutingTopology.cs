@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -40,9 +41,12 @@
             channel.BasicPublish(string.Empty, address, true, properties, body);
         }
 
-        public void Initialize(IModel channel, string main)
+        public void Initialize(IModel channel, IEnumerable<string> addresses)
         {
-            //nothing needs to be done for direct routing
+            foreach (var address in addresses)
+            {
+                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+            }
         }
 
         string ExchangeName() => conventions.ExchangeName(null, null);

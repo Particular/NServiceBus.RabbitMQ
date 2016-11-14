@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -70,10 +71,14 @@
             channel.BasicPublish(address, String.Empty, true, properties, body);
         }
 
-        public void Initialize(IModel channel, string mainQueue)
+        public void Initialize(IModel channel, IEnumerable<string> addresses)
         {
-            CreateExchange(channel, mainQueue);
-            channel.QueueBind(mainQueue, mainQueue, string.Empty);
+            foreach(var address in addresses)
+            {
+                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+                CreateExchange(channel, address);
+                channel.QueueBind(address, address, string.Empty);
+            }
         }
 
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;

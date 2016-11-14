@@ -20,7 +20,7 @@
                 //to make sure we kill old subscriptions
                 DeleteExchange(queueName);
 
-                routingTopology.Initialize(channel, queueName);
+                routingTopology.Initialize(channel, new[] { queueName });
             }
         }
 

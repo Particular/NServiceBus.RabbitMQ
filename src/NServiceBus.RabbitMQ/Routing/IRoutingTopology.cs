@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Collections.Generic;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -52,10 +53,10 @@
         void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties);
 
         /// <summary>
-        /// Performs any initialization logic needed (e.g., creating exchanges and bindings).
+        /// Performs any initialization logic needed (e.g., creating queues, exchanges and bindings).
         /// </summary>
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="main">The name of the queue to perform initialization on.</param>
-        void Initialize(IModel channel, string main);
+        /// <param name="addresses">The addresses of the queues to perform initialization on.</param>
+        void Initialize(IModel channel, IEnumerable<string> addresses);
     }
 }

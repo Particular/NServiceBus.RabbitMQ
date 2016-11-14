@@ -50,7 +50,7 @@
         {
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
-                    () => new QueueCreator(connectionFactory, routingTopology, settings.DurableMessagesEnabled()),
+                    () => new QueueCreator(connectionFactory, routingTopology),
                     () => Task.FromResult(ObsoleteAppSettings.Check()));
         }
 
