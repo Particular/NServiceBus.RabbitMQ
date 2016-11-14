@@ -32,6 +32,48 @@
         }
 
         [Test]
+        public void Should_throw_exception_when_no_message_id_is_set()
+        {
+            var message = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties()
+            };
+
+            Assert.Throws<InvalidOperationException>(() => converter.RetrieveMessageId(message));
+        }
+
+        [Test]
+        public void Should_throw_exception_when_using_custom_strategy_and_no_message_id_is_returned()
+        {
+            var customConverter = new MessageConverter(args => "");
+
+            var message = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties()
+            };
+
+            Assert.Throws<InvalidOperationException>(() => customConverter.RetrieveMessageId(message));
+        }
+
+        [Test]
+        public void Should_fall_back_to_message_id_when_custom_strategy_returns_empty_string()
+        {
+            var customConverter = new MessageConverter(args => "");
+
+            var message = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
+                {
+                    MessageId = "Blah"
+                }
+            };
+
+            var messageId = customConverter.RetrieveMessageId(message);
+
+            Assert.AreEqual(messageId, "Blah");
+        }
+
+        [Test]
         public void TestCanHandleByteArrayHeader()
         {
             var message = new BasicDeliverEventArgs
