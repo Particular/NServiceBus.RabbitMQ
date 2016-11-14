@@ -19,7 +19,17 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public string RetrieveMessageId(BasicDeliverEventArgs message) => messageIdStrategy(message);
+        public string RetrieveMessageId(BasicDeliverEventArgs message)
+        {
+            var messageId = messageIdStrategy(message);
+
+            if (string.IsNullOrWhiteSpace(messageId))
+            {
+                messageId = DefaultMessageIdStrategy(message);
+            }
+
+            return messageId;
+        }
 
         public Dictionary<string, string> RetrieveHeaders(BasicDeliverEventArgs message)
         {
