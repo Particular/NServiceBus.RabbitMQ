@@ -15,9 +15,21 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        [ObsoleteEx(RemoveInVersion = "6.0", TreatAsErrorFromVersion = "5.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.UseRoutingTopology(TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology2>)")]
         public static TransportExtensions<RabbitMQTransport> UseRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
         {
             transportExtensions.GetSettings().Set<Func<bool, IRoutingTopology>>(topologyFactory);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Registers a custom routing topology.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology2> topologyFactory)
+        {
+            transportExtensions.GetSettings().Set<Func<bool, IRoutingTopology2>>(topologyFactory);
             return transportExtensions;
         }
 

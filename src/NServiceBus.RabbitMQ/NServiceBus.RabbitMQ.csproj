@@ -91,6 +91,8 @@
     <Compile Include="obsoletes.cs" />
     <Compile Include="Administration\QueuePurger.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Routing\IRoutingTopology2.cs" />
+    <Compile Include="Routing\RoutingTopology2Adapter.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="Administration\QueueCreator.cs" />
     <Compile Include="Administration\SubscriptionManager.cs" />

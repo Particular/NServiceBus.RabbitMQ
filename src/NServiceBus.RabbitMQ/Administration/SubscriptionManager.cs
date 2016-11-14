@@ -7,10 +7,10 @@
     class SubscriptionManager : IManageSubscriptions
     {
         readonly ConnectionFactory connectionFactory;
-        readonly IRoutingTopology routingTopology;
+        readonly IRoutingTopology2 routingTopology;
         readonly string localQueue;
 
-        public SubscriptionManager(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, string localQueue)
+        public SubscriptionManager(ConnectionFactory connectionFactory, IRoutingTopology2 routingTopology, string localQueue)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
