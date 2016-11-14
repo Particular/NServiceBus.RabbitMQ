@@ -24,8 +24,8 @@
                 }
             };
 
-            var messageId = converter.RetrieveMessageId(message);
             var headers = converter.RetrieveHeaders(message);
+            var messageId = converter.RetrieveMessageId(message, headers);
 
             Assert.IsNotNull(messageId);
             Assert.IsNotNull(headers);
@@ -39,7 +39,9 @@
                 BasicProperties = new BasicProperties()
             };
 
-            Assert.Throws<InvalidOperationException>(() => converter.RetrieveMessageId(message));
+            var headers = new Dictionary<string, string>();
+
+            Assert.Throws<InvalidOperationException>(() => converter.RetrieveMessageId(message, headers));
         }
 
         [Test]
@@ -52,23 +54,24 @@
                 BasicProperties = new BasicProperties()
             };
 
-            Assert.Throws<InvalidOperationException>(() => customConverter.RetrieveMessageId(message));
+            var headers = new Dictionary<string, string>();
+
+            Assert.Throws<InvalidOperationException>(() => customConverter.RetrieveMessageId(message, headers));
         }
 
         [Test]
-        public void Should_fall_back_to_message_id_when_custom_strategy_returns_empty_string()
+        public void Should_fall_back_to_message_id_header_when_custom_strategy_returns_empty_string()
         {
             var customConverter = new MessageConverter(args => "");
 
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
-                {
-                    MessageId = "Blah"
-                }
+                BasicProperties = new BasicProperties()
             };
 
-            var messageId = customConverter.RetrieveMessageId(message);
+            var headers = new Dictionary<string, string> { { Headers.MessageId, "Blah" } };
+
+            var messageId = customConverter.RetrieveMessageId(message, headers);
 
             Assert.AreEqual(messageId, "Blah");
         }
