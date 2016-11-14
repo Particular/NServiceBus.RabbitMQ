@@ -1,25 +1,23 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
-    using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Runtime.Serialization.Formatters.Binary;
+    using System.Text;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using Extensibility;
     using Features;
-    using MessageInterfaces;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Routing;
-    using Serialization;
     using Settings;
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
+        const string customMessageId = "CustomMessageId";
+
         [Test]
-        public async Task Should_be_able_to_receive_messages_with_no_id()
+        public async Task Should_use_custom_strategy_to_set_message_id_on_message_with_no_id()
         {
             var context = await Scenario.Define<MyContext>()
                    .WithEndpoint<Receiver>()
@@ -27,6 +25,7 @@
                    .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
+            Assert.AreEqual(context.ReceivedMessageId, customMessageId, "Message id should equal custom id value");
         }
 
         public class Receiver : EndpointConfigurationBuilder
@@ -36,10 +35,8 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.EnableFeature<StarterFeature>();
-                    c.UseSerialization<MyCustomSerializerDefinition>();
                     c.UseTransport<RabbitMQTransport>()
-                        //just returning a guid here, not suitable for production use
-                        .CustomMessageIdStrategy(m => Guid.NewGuid().ToString());
+                        .CustomMessageIdStrategy(m => customMessageId);
                 });
             }
 
@@ -59,24 +56,22 @@
                         this.settings = settings;
                     }
 
-                    protected override async Task OnStart(IMessageSession session)
+                    protected override Task OnStart(IMessageSession session)
                     {
-                        using (var stream = new MemoryStream())
-                        {
-                            var serializer = new MyCustomSerializer();
-                            serializer.Serialize(new MyRequest(), stream);
+                        //Use feature to send message that has no message id
 
-                            var message = new OutgoingMessage(
-                                string.Empty,
-                                new Dictionary<string, string>
-                                {
+                        var messageBody = "<MyRequest></MyRequest>";
+
+                        var message = new OutgoingMessage(
+                            string.Empty,
+                            new Dictionary<string, string>
+                            {
                                     { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName }
-                                },
-                                stream.ToArray());
+                            },
+                            Encoding.UTF8.GetBytes(messageBody));
 
-                            var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
-                            await dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
-                        }
+                        var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
+                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
                     }
 
                     protected override Task OnStop(IMessageSession session) => TaskEx.CompletedTask;
@@ -98,13 +93,13 @@
                 public Task Handle(MyRequest message, IMessageHandlerContext context)
                 {
                     myContext.GotTheMessage = true;
+                    myContext.ReceivedMessageId = context.MessageId;
 
                     return TaskEx.CompletedTask;
                 }
             }
         }
 
-        [Serializable]
         class MyRequest : IMessage
         {
         }
@@ -112,38 +107,7 @@
         class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
-        }
-
-        class MyCustomSerializerDefinition : SerializationDefinition
-        {
-            public override Func<IMessageMapper, IMessageSerializer> Configure(ReadOnlySettings settings)
-            {
-                return mapper => new MyCustomSerializer();
-            }
-        }
-
-        class MyCustomSerializer : IMessageSerializer
-        {
-            public void Serialize(object message, Stream stream)
-            {
-                var serializer = new BinaryFormatter();
-                serializer.Serialize(stream, message);
-            }
-
-            public object[] Deserialize(Stream stream, IList<Type> messageTypes = null)
-            {
-                var serializer = new BinaryFormatter();
-
-                stream.Position = 0;
-                var msg = serializer.Deserialize(stream);
-
-                return new[]
-                {
-                    msg
-                };
-            }
-
-            public string ContentType => "MyCustomSerializer";
+            public string ReceivedMessageId { get; set; }
         }
     }
 }
