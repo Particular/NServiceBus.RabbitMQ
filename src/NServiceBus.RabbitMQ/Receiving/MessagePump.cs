@@ -180,20 +180,6 @@
 
         async Task Process(BasicDeliverEventArgs message)
         {
-            string messageId;
-
-            try
-            {
-                messageId = messageConverter.RetrieveMessageId(message);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
-
-                return;
-            }
-
             Dictionary<string, string> headers;
 
             try
@@ -202,8 +188,22 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve headers from poison message '{messageId}'. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue, messageId).ConfigureAwait(false);
+                Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
+                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+
+                return;
+            }
+
+            string messageId;
+
+            try
+            {
+                messageId = messageConverter.RetrieveMessageId(message, headers);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
+                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -248,7 +248,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue, string messageId = null)
+        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue)
         {
             try
             {
@@ -265,7 +265,7 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to move poison message{(messageId == null ? "" : $" '{messageId}'")} to queue '{queue}'. Returning message to original queue...", ex);
+                Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
                 await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
 
                 return;
@@ -277,7 +277,7 @@
             }
             catch (AlreadyClosedException ex)
             {
-                Logger.Warn($"Failed to acknowledge poison message{(messageId == null ? "" : $" '{messageId}'")} because the channel was closed. The message was sent to queue '{queue}' but also returned to the original queue.", ex);
+                Logger.Warn($"Failed to acknowledge poison message because the channel was closed. The message was sent to queue '{queue}' but also returned to the original queue.", ex);
             }
         }
 

@@ -19,13 +19,13 @@
             this.messageIdStrategy = messageIdStrategy;
         }
 
-        public string RetrieveMessageId(BasicDeliverEventArgs message)
+        public string RetrieveMessageId(BasicDeliverEventArgs message, Dictionary<string, string> headers)
         {
             var messageId = messageIdStrategy(message);
 
-            if (string.IsNullOrWhiteSpace(messageId))
+            if (string.IsNullOrWhiteSpace(messageId) && !headers.TryGetValue(Headers.MessageId, out messageId))
             {
-                messageId = DefaultMessageIdStrategy(message);
+                throw new InvalidOperationException("The registered message id strategy did not provide a message id, and the message does not have an 'NServiceBus.MessageId' header.");
             }
 
             return messageId;
