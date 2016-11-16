@@ -57,7 +57,7 @@
 
                 var received = WaitForMessage();
 
-                var result = channel.BasicGet("error", true);
+                var result = channel.BasicGet(ErrorQueue, true);
 
                 Assert.Null(received, "Message should not be processed processed successfully.");
                 Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
