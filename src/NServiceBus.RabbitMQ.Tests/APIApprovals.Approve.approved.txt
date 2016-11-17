@@ -37,6 +37,10 @@ namespace NServiceBus
 }
 namespace NServiceBus.Transport.RabbitMQ
 {
+    public interface IDeclareQueues
+    {
+        void DeclareAndInitialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses);
+    }
     public interface IRoutingTopology
     {
         void Initialize(RabbitMQ.Client.IModel channel, string main);
