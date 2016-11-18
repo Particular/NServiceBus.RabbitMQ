@@ -30,6 +30,7 @@ run-git.cmd
 src/Chocolatey/Build/*
 src/.nuget/NuGet.exe
 *.sln.inspections.xml
+databus
 
 installer/[F|f]iles
 installer/[C|c]ustom[A|a]ctions
