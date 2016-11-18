@@ -25,7 +25,7 @@
 
             if (string.IsNullOrWhiteSpace(messageId) && !headers.TryGetValue(Headers.MessageId, out messageId))
             {
-                throw new InvalidOperationException("The registered message id strategy did not provide a message id, and the message does not have an 'NServiceBus.MessageId' header.");
+                throw new InvalidOperationException("The message id strategy did not provide a message id, and the message does not have an 'NServiceBus.MessageId' header.");
             }
 
             return messageId;
