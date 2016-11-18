@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 
-public static void Download(string url, string path)
+public static void Download(Uri url, string path)
 {
     var directory = Path.GetDirectoryName(path);
     if (!Directory.Exists(directory))
