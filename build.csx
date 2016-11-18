@@ -7,11 +7,12 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using static SimpleTargets;
 
 // locations
-var resharperCltUrl = "https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160913.100041.zip";
-var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/JetBrains.ReSharper.CommandLineTools.2016.2.20160913.100041.zip";
+var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.3.20161116.170907-eap9.zip");
+var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/{resharperCltUrl.Segments.Last()}";
 var inspectCodePath = "./.resharper/inspectcode.exe";
 var msBuild = $"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}/MSBuild/14.0/Bin/msbuild.exe";
 var solution = "./src/NServiceBus.RabbitMQ.sln";
