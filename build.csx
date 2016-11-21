@@ -1,4 +1,5 @@
 #r "System.IO.Compression.FileSystem.dll"
+#load "scripts/broker.csx"
 #load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
@@ -55,10 +56,18 @@ targets.Add(
         }
     });
 
-targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, unitTests));
+targets.Add("delete-virtual-host", () => DeleteVirtualHost());
 
-targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, acceptanceTests));
+targets.Add("create-virtual-host", () => CreateVirtualHost());
 
-targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, transportTests));
+targets.Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
+
+targets.Add("prepare-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
+
+targets.Add("unit-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, unitTests));
+
+targets.Add("acceptance-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, acceptanceTests));
+
+targets.Add("transport-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, transportTests));
 
 Run(Args, targets);

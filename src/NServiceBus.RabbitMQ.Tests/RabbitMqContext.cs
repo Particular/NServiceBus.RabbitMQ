@@ -65,6 +65,7 @@
             {
                 config = new ConnectionConfiguration(settings);
                 config.Host = "localhost";
+                config.VirtualHost = "nsb-rabbitmq-test";
             }
 
             connectionFactory = new ConnectionFactory(config);

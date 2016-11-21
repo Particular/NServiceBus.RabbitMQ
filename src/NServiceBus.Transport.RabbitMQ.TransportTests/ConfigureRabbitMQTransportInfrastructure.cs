@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Settings;
 using NServiceBus.TransportTests;
 using NServiceBus.Transport;
-using System.Text.RegularExpressions;
 using RabbitMQ.Client;
 
 class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
@@ -14,22 +14,33 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         var result = new TransportConfigurationResult();
         var transport = new RabbitMQTransport();
 
-        connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
-
-        if (connectionString == null)
+        connectionStringBuilder = new DbConnectionStringBuilder
         {
-            connectionString = "host=localhost";
-        }
+            ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString")
+        };
+
+        ApplyDefault(connectionStringBuilder, "username", "guest");
+        ApplyDefault(connectionStringBuilder, "password", "guest");
+        ApplyDefault(connectionStringBuilder, "virtualhost", "nsb-rabbitmq-test");
+        ApplyDefault(connectionStringBuilder, "host", "localhost");
 
         queueBindings = settings.Get<QueueBindings>();
 
-        result.TransportInfrastructure = transport.Initialize(settings, connectionString);
+        result.TransportInfrastructure = transport.Initialize(settings, connectionStringBuilder.ConnectionString);
         result.PurgeInputQueueOnStartup = true;
 
         transportTransactionMode = result.TransportInfrastructure.TransactionMode;
         requestedTransactionMode = transactionMode;
 
         return result;
+    }
+
+    static void ApplyDefault(DbConnectionStringBuilder builder, string key, string value)
+    {
+        if (!builder.ContainsKey(key))
+        {
+            builder.Add(key, value);
+        }
     }
 
     public Task Cleanup()
@@ -75,19 +86,12 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
 
     ConnectionFactory CreateConnectionFactory()
     {
-        var match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", "host"), RegexOptions.IgnoreCase);
-
-        var username = match.Groups["UserName"].Success ? match.Groups["UserName"].Value : "guest";
-        var password = match.Groups["Password"].Success ? match.Groups["Password"].Value : "guest";
-        var host = match.Groups["host"].Success ? match.Groups["host"].Value : "localhost";
-        var virtualHost = match.Groups["VirtualHost"].Success ? match.Groups["VirtualHost"].Value : "/";
-
         var connectionFactory = new ConnectionFactory
         {
-            UserName = username,
-            Password = password,
-            VirtualHost = virtualHost,
-            HostName = host,
+            UserName = connectionStringBuilder["username"].ToString(),
+            Password = connectionStringBuilder["password"].ToString(),
+            VirtualHost = connectionStringBuilder["virtualhost"].ToString(),
+            HostName = connectionStringBuilder["host"].ToString(),
             AutomaticRecoveryEnabled = true,
             UseBackgroundThreadsForIO = true
         };
@@ -95,7 +99,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         return connectionFactory;
     }
 
-    string connectionString;
+    DbConnectionStringBuilder connectionStringBuilder;
     QueueBindings queueBindings;
     TransportTransactionMode transportTransactionMode;
     TransportTransactionMode requestedTransactionMode;
