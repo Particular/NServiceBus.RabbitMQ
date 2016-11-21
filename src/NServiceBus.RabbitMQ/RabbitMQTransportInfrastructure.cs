@@ -22,17 +22,13 @@
         {
             this.settings = settings;
 
-            var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
-            connectionFactory = new ConnectionFactory(connectionConfiguration);
+            new ConnectionStringParser(settings).Parse(connectionString);
+            connectionFactory = new ConnectionFactory(settings);
 
             routingTopology = CreateRoutingTopology();
 
-            bool usePublisherConfirms;
-            if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
-            {
-                usePublisherConfirms = true;
-            }
-
+            var usePublisherConfirms = settings.Get<bool>(SettingsKeys.UsePublisherConfirms);
+            
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
 
             RequireOutboxConsent = false;
@@ -114,33 +110,14 @@
                 messageConverter = new MessageConverter();
             }
 
-            string hostDisplayName;
-            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName))
-            {
-                hostDisplayName = Support.RuntimeEnvironment.MachineName;
-            }
-
+            string hostDisplayName = settings.Get<string>("NServiceBus.HostInformation.DisplayName");
             var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
 
             var queuePurger = new QueuePurger(connectionFactory);
 
-            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggeringCircuitBreaker))
-            {
-                timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
-            }
-
-            int prefetchMultiplier;
-            if (!settings.TryGet(SettingsKeys.PrefetchMultiplier, out prefetchMultiplier))
-            {
-                prefetchMultiplier = 3;
-            }
-
-            ushort prefetchCount;
-            if (!settings.TryGet(SettingsKeys.PrefetchCount, out prefetchCount))
-            {
-                prefetchCount = 0;
-            }
+            var timeToWaitBeforeTriggeringCircuitBreaker = settings.Get<TimeSpan>(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker);
+            var prefetchMultiplier = settings.Get<int>(SettingsKeys.PrefetchMultiplier);
+            var prefetchCount = settings.Get<ushort>(SettingsKeys.PrefetchCount);
 
             return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
         }

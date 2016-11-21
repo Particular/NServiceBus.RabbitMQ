@@ -25,18 +25,18 @@
         public void Should_correctly_parse_full_connection_string()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse(connectionString);
+            parser.Parse(connectionString);
 
-            Assert.AreEqual(connectionConfiguration.Host, "192.168.1.1");
-            Assert.AreEqual(connectionConfiguration.Port, 1234);
-            Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
-            Assert.AreEqual(connectionConfiguration.UserName, "Copa");
-            Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
-            Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
-            Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
-            Assert.AreEqual(connectionConfiguration.UseTls, true);
-            Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
-            Assert.AreEqual(connectionConfiguration.CertPassphrase, "abc123");
+            Assert.AreEqual(settings.Get(SettingsKeys.Host), "192.168.1.1");
+            Assert.AreEqual(settings.Get(SettingsKeys.Port), 1234);
+            Assert.AreEqual(settings.Get(SettingsKeys.VirtualHost), "Copa");
+            Assert.AreEqual(settings.Get(SettingsKeys.UserName), "Copa");
+            Assert.AreEqual(settings.Get(SettingsKeys.Password), "abc_xyz");
+            Assert.AreEqual(settings.Get(SettingsKeys.RequestedHeartbeat), 3);
+            Assert.AreEqual(settings.Get(SettingsKeys.RetryDelay), new TimeSpan(1, 2, 3)); //01:02:03
+            Assert.AreEqual(settings.Get(SettingsKeys.UseTls), true);
+            Assert.AreEqual(settings.Get(SettingsKeys.CertPath), "/path/to/client/keycert.p12");
+            Assert.AreEqual(settings.Get(SettingsKeys.CertPassphrase), "abc123");
         }
 
         [Test]
@@ -51,121 +51,121 @@
         public void Should_parse_host()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=host.one:1001");
+            parser.Parse("host=host.one:1001");
 
-            Assert.AreEqual(connectionConfiguration.Host, "host.one");
-            Assert.AreEqual(connectionConfiguration.Port, 1001);
+            Assert.AreEqual(settings.Get(SettingsKeys.Host), "host.one");
+            Assert.AreEqual(settings.Get(SettingsKeys.Port), 1001);
         }
 
         [Test]
         public void Should_parse_host_with_separate_port()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=my.host.com;port=1234");
+            parser.Parse("host=my.host.com;port=1234");
 
-            Assert.AreEqual(connectionConfiguration.Host, "my.host.com");
-            Assert.AreEqual(connectionConfiguration.Port, 1234);
+            Assert.AreEqual(settings.Get(SettingsKeys.Host), "my.host.com");
+            Assert.AreEqual(settings.Get(SettingsKeys.Port), 1234);
         }
 
         [Test]
         public void Should_parse_host_without_port()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=my.host.com");
+            parser.Parse("host=my.host.com");
 
-            Assert.AreEqual(connectionConfiguration.Host, "my.host.com");
-            Assert.AreEqual(connectionConfiguration.Port, 5672);
+            Assert.AreEqual(settings.Get(SettingsKeys.Host), "my.host.com");
+            Assert.AreEqual(settings.Get(SettingsKeys.Port), 5672);
         }
 
         [Test]
         public void Should_parse_the_hostname()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=myHost");
+            parser.Parse("host=myHost");
 
-            Assert.AreEqual("myHost", connectionConfiguration.Host);
+            Assert.AreEqual("myHost", settings.Get(SettingsKeys.Host));
         }
 
         [Test]
         public void Should_parse_the_password()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;password=test");
+            parser.Parse("host=localhost;password=test");
 
-            Assert.AreEqual("test", connectionConfiguration.Password);
+            Assert.AreEqual("test", settings.Get(SettingsKeys.Password));
         }
 
         [Test]
         public void Should_parse_the_port()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;port=8181");
+            parser.Parse("host=localhost;port=8181");
 
-            Assert.AreEqual(8181, connectionConfiguration.Port);
+            Assert.AreEqual(8181, settings.Get(SettingsKeys.Port));
         }
 
         [Test]
         public void Should_parse_the_requestedHeartbeat()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;requestedHeartbeat=5");
+            parser.Parse("host=localhost;requestedHeartbeat=5");
 
-            Assert.AreEqual(5, connectionConfiguration.RequestedHeartbeat);
+            Assert.AreEqual(5, settings.Get(SettingsKeys.RequestedHeartbeat));
         }
 
         [Test]
         public void Should_parse_the_retry_delay()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;retryDelay=00:00:10");
+            parser.Parse("host=localhost;retryDelay=00:00:10");
 
-            Assert.AreEqual(TimeSpan.FromSeconds(10), connectionConfiguration.RetryDelay);
+            Assert.AreEqual(TimeSpan.FromSeconds(10), settings.Get(SettingsKeys.RetryDelay));
         }
 
         [Test]
         public void Should_parse_the_username()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;username=test");
+            parser.Parse("host=localhost;username=test");
 
-            Assert.AreEqual("test", connectionConfiguration.UserName);
+            Assert.AreEqual("test", settings.Get(SettingsKeys.UserName));
         }
 
         [Test]
         public void Should_parse_the_virtual_hostname()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;virtualHost=myVirtualHost");
+            parser.Parse("host=localhost;virtualHost=myVirtualHost");
 
-            Assert.AreEqual("myVirtualHost", connectionConfiguration.VirtualHost);
+            Assert.AreEqual("myVirtualHost", settings.Get(SettingsKeys.VirtualHost));
         }
 
         [Test]
         public void Should_parse_use_tls()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;useTls=true");
+            parser.Parse("host=localhost;useTls=true");
 
-            Assert.AreEqual(true, connectionConfiguration.UseTls);
-            Assert.AreEqual(5671, connectionConfiguration.Port);
+            Assert.AreEqual(true, settings.Get(SettingsKeys.UseTls));
+            Assert.AreEqual(5671, settings.Get(SettingsKeys.Port));
         }
 
         [Test]
         public void Should_parse_the_cert_path()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;certPath=/path/keyfile.p12");
+            parser.Parse("host=localhost;certPath=/path/keyfile.p12");
 
-            Assert.AreEqual("/path/keyfile.p12", connectionConfiguration.CertPath);
+            Assert.AreEqual("/path/keyfile.p12", settings.Get(SettingsKeys.CertPath));
         }
 
         [Test]
         public void Should_parse_the_cert_passphrase()
         {
             var parser = new ConnectionStringParser(settings);
-            var connectionConfiguration = parser.Parse("host=localhost;certPassphrase=abc123");
+            parser.Parse("host=localhost;certPassphrase=abc123");
 
-            Assert.AreEqual("abc123", connectionConfiguration.CertPassphrase);
+            Assert.AreEqual("abc123", settings.Get(SettingsKeys.CertPassphrase));
         }
 
         [Test]

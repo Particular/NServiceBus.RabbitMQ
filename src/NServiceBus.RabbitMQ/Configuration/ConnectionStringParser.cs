@@ -4,7 +4,6 @@
     using System.ComponentModel;
     using System.Data.Common;
     using System.Linq;
-    using System.Reflection;
     using System.Text;
     using Logging;
     using Settings;
@@ -13,35 +12,41 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConnectionStringParser));
 
-        readonly ReadOnlySettings settings;
+        readonly SettingsHolder settings;
 
-        public ConnectionStringParser(ReadOnlySettings settings)
+        public ConnectionStringParser(SettingsHolder settings)
         {
             this.settings = settings;
         }
 
-        public ConnectionConfiguration Parse(string connectionString)
+        public void Parse(string connectionString)
         {
             ConnectionString = connectionString;
 
-            var connectionConfiguration = new ConnectionConfiguration(settings);
-            var connectionConfigurationType = typeof(ConnectionConfiguration);
+            DefaultConfigurationValues.Apply(settings);
             var invalidOptionsMessage = new StringBuilder();
 
             foreach (var key in Keys.Cast<string>())
             {
-                var property = connectionConfigurationType.GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                property?.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(property.PropertyType).ConvertFrom(this[key]));
+                var normalizedKey = string.Format("RabbitMQ.{0}", key);
+                if (settings.HasSetting(normalizedKey))
+                {
+                    settings.Set(normalizedKey, TypeDescriptor.GetConverter(settings.Get(normalizedKey).GetType()).ConvertFrom(this[key]));
+                }
+                else
+                {
+                    settings.Set(normalizedKey, this[key]);
+                }
             }
 
-            if (connectionConfiguration.UseTls && !ContainsKey("port"))
+            if (settings.Get<bool>(SettingsKeys.UseTls) && !ContainsKey("port"))
             {
-                connectionConfiguration.Port = 5671;
+                settings.Set(SettingsKeys.Port, 5671);
             }
 
             if (ContainsKey("host"))
             {
-                ParseHosts(connectionConfiguration, this["host"] as string, invalidOptionsMessage);
+                ParseHosts(this["host"] as string, invalidOptionsMessage);
             }
             else
             {
@@ -76,11 +81,9 @@
 
                 throw new NotSupportedException(message);
             }
-
-            return connectionConfiguration;
         }
 
-        void ParseHosts(ConnectionConfiguration connectionConfiguration, string hostsConnectionString, StringBuilder invalidOptionsMessage)
+        void ParseHosts(string hostsConnectionString, StringBuilder invalidOptionsMessage)
         {
             var hostsAndPorts = hostsConnectionString.Split(',');
 
@@ -92,10 +95,11 @@
             }
 
             var parts = hostsConnectionString.Split(':');
-            connectionConfiguration.Host = parts.ElementAt(0);
+            settings.Set(SettingsKeys.Host, parts.ElementAt(0));
 
             var portString = parts.ElementAtOrDefault(1);
-            connectionConfiguration.Port = (portString == null) ? connectionConfiguration.Port : int.Parse(portString);
+            if(!string.IsNullOrWhiteSpace(portString))
+                settings.Set(SettingsKeys.Port, int.Parse(portString));
         }
     }
 }
