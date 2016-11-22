@@ -3,7 +3,6 @@
     using System;
     using NUnit.Framework;
     using RabbitMQ;
-    using Settings;
 
     [TestFixture]
     public class ConnectionConfigurationTests
@@ -13,10 +12,7 @@
         [SetUp]
         public void Setup()
         {
-            var settings = new SettingsHolder();
-            settings.Set("NServiceBus.Routing.EndpointName", "endpoint");
-
-            defaults = new ConnectionConfiguration(settings);
+            defaults = new ConnectionConfiguration("endpoint");
         }
 
         [Test]

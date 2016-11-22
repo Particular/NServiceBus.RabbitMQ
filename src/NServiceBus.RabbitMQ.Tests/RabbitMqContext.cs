@@ -5,7 +5,6 @@
     using System.Diagnostics;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Settings;
 
     class RabbitMqContext
     {
@@ -49,8 +48,7 @@
             routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var settings = new SettingsHolder();
-            settings.Set("NServiceBus.Routing.EndpointName", "endpoint");
+            var endpointName = "endpoint";
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
@@ -58,12 +56,12 @@
 
             if (connectionString != null)
             {
-                var parser = new ConnectionStringParser(settings);
+                var parser = new ConnectionStringParser(endpointName);
                 config = parser.Parse(connectionString);
             }
             else
             {
-                config = new ConnectionConfiguration(settings);
+                config = new ConnectionConfiguration(endpointName);
                 config.Host = "localhost";
                 config.VirtualHost = "nsb-rabbitmq-test";
             }
