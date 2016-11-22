@@ -48,20 +48,18 @@
             routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var endpointName = "endpoint";
-
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
             ConnectionConfiguration config;
 
             if (connectionString != null)
             {
-                var parser = new ConnectionStringParser(endpointName);
+                var parser = new ConnectionStringParser(ReceiverQueue);
                 config = parser.Parse(connectionString);
             }
             else
             {
-                config = new ConnectionConfiguration(endpointName);
+                config = new ConnectionConfiguration(ReceiverQueue);
                 config.Host = "localhost";
                 config.VirtualHost = "nsb-rabbitmq-test";
             }
