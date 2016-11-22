@@ -7,24 +7,23 @@
     using System.Reflection;
     using System.Text;
     using Logging;
-    using Settings;
 
     class ConnectionStringParser : DbConnectionStringBuilder
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConnectionStringParser));
 
-        readonly ReadOnlySettings settings;
+        readonly string endpointName;
 
-        public ConnectionStringParser(ReadOnlySettings settings)
+        public ConnectionStringParser(string endpointName)
         {
-            this.settings = settings;
+            this.endpointName = endpointName;
         }
 
         public ConnectionConfiguration Parse(string connectionString)
         {
             ConnectionString = connectionString;
 
-            var connectionConfiguration = new ConnectionConfiguration(settings);
+            var connectionConfiguration = new ConnectionConfiguration(endpointName);
             var connectionConfigurationType = typeof(ConnectionConfiguration);
             var invalidOptionsMessage = new StringBuilder();
 
