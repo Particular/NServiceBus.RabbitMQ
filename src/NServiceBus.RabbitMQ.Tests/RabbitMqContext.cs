@@ -69,20 +69,25 @@
             channelProvider?.Dispose();
         }
 
-        protected IncomingMessage WaitForMessage()
+        protected bool TryWaitForMessageReceipt()
         {
-            var waitTime = TimeSpan.FromSeconds(1);
-
-            if (Debugger.IsAttached)
-            {
-                waitTime = TimeSpan.FromMinutes(10);
-            }
-
             IncomingMessage message;
-            receivedMessages.TryTake(out message, waitTime);
+            return TryReceiveMessage(out message, incomingMessageTimeout);
+        }
+
+        protected IncomingMessage ReceiveMessage()
+        {
+            IncomingMessage message;
+            if (!TryReceiveMessage(out message, incomingMessageTimeout))
+            {
+                throw new TimeoutException($"The message did not arrive within {incomingMessageTimeout.TotalSeconds} seconds.");
+            }
 
             return message;
         }
+
+        bool TryReceiveMessage(out IncomingMessage message, TimeSpan timeout) =>
+            receivedMessages.TryTake(out message, timeout);
 
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
@@ -96,5 +101,7 @@
         ChannelProvider channelProvider;
         BlockingCollection<IncomingMessage> receivedMessages;
         ConventionalRoutingTopology routingTopology;
+
+        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(Debugger.IsAttached ? 600 : 1);
     }
 }
