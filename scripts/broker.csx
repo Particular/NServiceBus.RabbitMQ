@@ -1,9 +1,7 @@
 #r "System.Data"
-#r "../src/packages/RabbitMQ.Client.4.1.1/lib/net451/RabbitMQ.Client.dll"
 
 using System.Data.Common;
 using System.Net;
-using RabbitMQ.Client;
 
 public void DeleteVirtualHost()
 {
