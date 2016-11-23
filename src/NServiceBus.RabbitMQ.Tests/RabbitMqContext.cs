@@ -90,11 +90,11 @@
         protected const string ErrorQueue = "error";
         protected MessageDispatcher messageDispatcher;
         protected ConnectionFactory connectionFactory;
-        private ChannelProvider channelProvider;
         protected MessagePump messagePump;
-        BlockingCollection<IncomingMessage> receivedMessages;
-
-        private ConventionalRoutingTopology routingTopology;
         protected SubscriptionManager subscriptionManager;
+
+        ChannelProvider channelProvider;
+        BlockingCollection<IncomingMessage> receivedMessages;
+        ConventionalRoutingTopology routingTopology;
     }
 }
