@@ -79,10 +79,11 @@
             sender = new RabbitMqMessageSender(routingTopology, channelProvider, new IncomingContext(null, null));
 
             dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, new RepeatedFailuresOverTimeCircuitBreaker("UnitTest",TimeSpan.FromMinutes(2),e=>{}),
-                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"));
+                new ReceiveOptions(s => SecondaryReceiveSettings.Enabled(CallbackQueue, 1), new MessageConverter(),1,1000,false,"Unit test"), ErrorQueue);
 
 
             MakeSureQueueAndExchangeExists(ReceiverQueue);
+            MakeSureQueueAndExchangeExists(ErrorQueue);
 
 
             MessagePublisher = new RabbitMqMessagePublisher
@@ -146,6 +147,7 @@
         protected string CallbackQueue = "testreceiver." + RuntimeEnvironment.MachineName;
 
         protected const string ReceiverQueue = "testreceiver";
+        protected const string ErrorQueue = "error";
         protected RabbitMqMessagePublisher MessagePublisher;
         protected RabbitMqConnectionManager connectionManager;
         protected RabbitMqDequeueStrategy dequeueStrategy;
