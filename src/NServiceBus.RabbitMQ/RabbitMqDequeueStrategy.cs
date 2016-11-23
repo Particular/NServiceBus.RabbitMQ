@@ -13,11 +13,12 @@
 
     class RabbitMqDequeueStrategy : IDequeueMessages, IDisposable
     {
-        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, ReceiveOptions receiveOptions)
+        public RabbitMqDequeueStrategy(IManageRabbitMqConnections connectionManager, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, ReceiveOptions receiveOptions, string errorQueue)
         {
             this.connectionManager = connectionManager;
             this.circuitBreaker = circuitBreaker;
             this.receiveOptions = receiveOptions;
+            this.errorQueue = errorQueue;
         }
 
         public void Init(Address address, TransactionSettings transactionSettings, Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
@@ -189,10 +190,8 @@
                             }
                             catch (Exception ex)
                             {
-                                Logger.Error("Poison message detected, deliveryTag: " + message.DeliveryTag, ex);
-
-                                //just ack the poison message to avoid getting stuck
-                                messageProcessedOk = true;
+                                Logger.Error($"Poison message detected. Moving message to queue '{errorQueue}'...", ex);
+                                messageProcessedOk = MovePoisonMessage(message, errorQueue);
                             }
 
                             if (transportMessage != null)
@@ -280,7 +279,26 @@
             }
         }
 
+        bool MovePoisonMessage(BasicDeliverEventArgs message, string queue)
+        {
+            var success = false;
+            var connection = connectionManager.GetPublishConnection();
 
+            using (var channel = connection.CreateModel())
+            {
+                try
+                {
+                    channel.BasicPublish("", queue, false, message.BasicProperties, message.Body);
+                    success = true;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
+                }
+            }
+
+            return success;
+        }
 
         static ILog Logger = LogManager.GetLogger(typeof(RabbitMqDequeueStrategy));
 
@@ -297,7 +315,7 @@
         readonly ReceiveOptions receiveOptions;
         ushort actualPrefetchCount;
         bool isStopping;
-
+        readonly string errorQueue;
 
         class ConsumeParams
         {
