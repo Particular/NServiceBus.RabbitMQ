@@ -104,6 +104,7 @@
     <Compile Include="ConnectionString\ConnectionStringParserTests.cs" />
     <Compile Include="MessageConverterTests.cs" />
     <Compile Include="RabbitMqContext.cs" />
+    <Compile Include="Support\ConventionalRoutingTopologyExtensions.cs" />
     <Compile Include="TestCategory.cs" />
     <Compile Include="When_consuming_messages.cs" />
     <Compile Include="When_stopping_endpoint.cs" />

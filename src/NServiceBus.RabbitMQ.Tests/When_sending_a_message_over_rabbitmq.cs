@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
@@ -11,6 +12,8 @@
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
+        const string queueToReceiveOn = "testEndPoint";
+
         [Test]
         public Task Should_populate_the_body()
         {
@@ -91,11 +94,11 @@
                 });
         }
 
-        async Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion, string queueToReceiveOn = "testEndPoint")
+        protected override IEnumerable<string> AdditionalReceiverQueues => new[] { queueToReceiveOn };
+
+        async Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion)
         {
             var operations = builder.SendTo(queueToReceiveOn).Build();
-
-            MakeSureQueueAndExchangeExists(queueToReceiveOn);
 
             await messageDispatcher.Dispatch(operations, new TransportTransaction(), new ContextBag());
 
@@ -112,9 +115,9 @@
             assertion(incomingMessage, result);
         }
 
-        Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage> assertion, string queueToReceiveOn = "testEndPoint") => Verify(builder, (t, r) => assertion(t), queueToReceiveOn);
+        Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage> assertion) => Verify(builder, (t, r) => assertion(t));
 
-        Task Verify(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, string queueToReceiveOn = "testEndPoint") => Verify(builder, (t, r) => assertion(r), queueToReceiveOn);
+        Task Verify(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion) => Verify(builder, (t, r) => assertion(r));
 
         BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
         {

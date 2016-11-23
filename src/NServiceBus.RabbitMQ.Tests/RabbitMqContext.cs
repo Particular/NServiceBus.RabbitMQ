@@ -2,44 +2,15 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Threading.Tasks;
     using NUnit.Framework;
+    using Support;
 
     class RabbitMqContext
     {
-        protected void MakeSureQueueAndExchangeExists(string queueName)
-        {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueueDeclare(queueName, true, false, false, null);
-                channel.QueuePurge(queueName);
-
-                //to make sure we kill old subscriptions
-                DeleteExchange(queueName);
-
-                routingTopology.Initialize(channel, queueName);
-            }
-        }
-
-        void DeleteExchange(string exchangeName)
-        {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                try
-                {
-                    channel.ExchangeDelete(exchangeName, false);
-                }
-                // ReSharper disable EmptyGeneralCatchClause
-                catch (Exception)
-                // ReSharper restore EmptyGeneralCatchClause
-                {
-                }
-            }
-        }
-
         public virtual int MaximumConcurrency => 1;
 
         [SetUp]
@@ -73,8 +44,7 @@
 
             messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
 
-            MakeSureQueueAndExchangeExists(ReceiverQueue);
-            MakeSureQueueAndExchangeExists(ErrorQueue);
+            routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
             subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
 
@@ -114,6 +84,8 @@
             return message;
         }
 
+        protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
+
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";
         protected MessageDispatcher messageDispatcher;
@@ -122,7 +94,7 @@
         protected MessagePump messagePump;
         BlockingCollection<IncomingMessage> receivedMessages;
 
-        protected ConventionalRoutingTopology routingTopology;
+        private ConventionalRoutingTopology routingTopology;
         protected SubscriptionManager subscriptionManager;
     }
 }
