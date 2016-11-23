@@ -44,7 +44,7 @@
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
-            var errorQueue = context.Settings.GetConfigSection<MessageForwardingInCaseOfFaultConfig>().ErrorQueue;
+            var errorQueue = context.Settings.GetConfigSection<MessageForwardingInCaseOfFaultConfig>()?.ErrorQueue;
 
             MessageConverter messageConverter;
 
