@@ -1,0 +1,47 @@
+{
+    "version": "0.1.0",
+    "windows": {
+        "command": "build.cmd",
+        "showOutput": "always",
+        "tasks": [
+            {
+                "taskName": "acceptance-test"
+            },
+            {
+                "taskName": "build",
+                "isBuildCommand": true
+            },
+            {
+                "taskName": "default"
+            },
+            {
+                "taskName": "inspect"
+            },
+            {
+                "taskName": "prepare-virtual-host"
+            },
+            {
+                "taskName": "transport-test"
+            },
+            {
+                "taskName": "unit-test",
+                "isTestCommand": true
+            },
+            {
+                "taskName": "(list targets and dependencies)",
+                "args": [
+                    "-D"
+                ],
+                "suppressTaskName": true
+            },
+            {
+                "taskName": "default (dry run)",
+                "args": [
+                    "default",
+                    "-n"
+                ],
+                "suppressTaskName": true
+            }
+        ]
+    }
+}
