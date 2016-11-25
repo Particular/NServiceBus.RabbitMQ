@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
     using NUnit.Framework;
@@ -102,6 +101,6 @@
         BlockingCollection<IncomingMessage> receivedMessages;
         ConventionalRoutingTopology routingTopology;
 
-        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(Debugger.IsAttached ? 600 : 1);
+        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(1);
     }
 }
