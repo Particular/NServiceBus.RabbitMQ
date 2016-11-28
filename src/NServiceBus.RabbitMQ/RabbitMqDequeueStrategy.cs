@@ -281,19 +281,19 @@
 
         bool MovePoisonMessage(BasicDeliverEventArgs message, string queue)
         {
+            var success = false;
             var connection = connectionManager.GetPublishConnection();
-            var success = true;
 
             using (var channel = connection.CreateModel())
             {
                 try
                 {
                     channel.BasicPublish("", queue, false, message.BasicProperties, message.Body);
+                    success = true;
                 }
                 catch (Exception ex)
                 {
                     Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
-                    success = false;
                 }
             }
 
