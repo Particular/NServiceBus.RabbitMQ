@@ -35,7 +35,7 @@
                 config.VirtualHost = "nsb-rabbitmq-test";
             }
 
-            connectionFactory = new ConnectionFactory(config);
+            connectionFactory = new ConnectionFactory(config, null);
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
 
             messageDispatcher = new MessageDispatcher(channelProvider);
