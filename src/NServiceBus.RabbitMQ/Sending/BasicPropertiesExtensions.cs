@@ -5,8 +5,8 @@
     using System.Globalization;
     using System.Linq;
     using System.Text;
-    using global::RabbitMQ.Client;
     using DeliveryConstraints;
+    using global::RabbitMQ.Client;
     using Performance.TimeToBeReceived;
 
     static class BasicPropertiesExtensions
