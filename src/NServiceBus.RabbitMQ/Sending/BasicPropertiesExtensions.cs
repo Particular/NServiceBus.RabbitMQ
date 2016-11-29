@@ -18,12 +18,6 @@
                 properties.MessageId = message.MessageId;
             }
 
-            string correlationId;
-            if (message.Headers.TryGetValue(NServiceBus.Headers.CorrelationId, out correlationId) && correlationId != null)
-            {
-                properties.CorrelationId = correlationId;
-            }
-
             DiscardIfNotReceivedBefore timeToBeReceived;
             if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {
@@ -32,7 +26,18 @@
 
             properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
 
+            if (message.Headers == null)
+            {
+                return;
+            }
+
             properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
+
+            string correlationId;
+            if (message.Headers.TryGetValue(NServiceBus.Headers.CorrelationId, out correlationId) && correlationId != null)
+            {
+                properties.CorrelationId = correlationId;
+            }
 
             string enclosedMessageTypes;
             if (message.Headers.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out enclosedMessageTypes) && enclosedMessageTypes != null)
