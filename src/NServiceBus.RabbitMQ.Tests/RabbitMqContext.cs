@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Data.Common;
     using System.Linq;
     using System.Threading.Tasks;
     using NUnit.Framework;
@@ -18,21 +19,20 @@
             routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
+            var connectionStringBuilder = new DbConnectionStringBuilder
+            {
+                ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString")
+            };
+
+            ApplyDefault(connectionStringBuilder, "username", "guest");
+            ApplyDefault(connectionStringBuilder, "password", "guest");
+            ApplyDefault(connectionStringBuilder, "virtualhost", "nsb-rabbitmq-test");
+            ApplyDefault(connectionStringBuilder, "host", "localhost");
 
             ConnectionConfiguration config;
 
-            if (connectionString != null)
-            {
-                var parser = new ConnectionStringParser(ReceiverQueue);
-                config = parser.Parse(connectionString);
-            }
-            else
-            {
-                config = new ConnectionConfiguration(ReceiverQueue);
-                config.Host = "localhost";
-                config.VirtualHost = "nsb-rabbitmq-test";
-            }
+            var parser = new ConnectionStringParser(ReceiverQueue);
+            config = parser.Parse(connectionStringBuilder.ConnectionString);
 
             connectionFactory = new ConnectionFactory(config, null);
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
@@ -58,6 +58,14 @@
             ).GetAwaiter().GetResult();
 
             messagePump.Start(new PushRuntimeSettings(MaximumConcurrency));
+        }
+
+        static void ApplyDefault(DbConnectionStringBuilder builder, string key, string value)
+        {
+            if (!builder.ContainsKey(key))
+            {
+                builder.Add(key, value);
+            }
         }
 
         [TearDown]
