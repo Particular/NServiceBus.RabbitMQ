@@ -2,12 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel;
     using System.Data.Common;
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
-    using System.Reflection;
     using System.Text;
     using Logging;
     using Support;
@@ -16,70 +14,109 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConnectionConfiguration));
 
-        public string Host { get; set; }
+        const bool defaultUseTls = false;
+        const int defaultPort = 5672;
+        const int defaultTlsPort = 5671;
+        const string defaultVirtualHost = "/";
+        const string defaultUserName = "guest";
+        const string defaultPassword = "guest";
+        const ushort defaultRequestedHeartbeat = 5;
+        static readonly TimeSpan defaultRetryDelay = TimeSpan.FromSeconds(10);
+        const string defaultCertPath = "";
+        const string defaultCertPassphrase = null;
 
-        public int Port { get; set; }
+        public string Host { get; }
 
-        public string VirtualHost { get; set; }
+        public int Port { get; }
 
-        public string UserName { get; set; }
+        public string VirtualHost { get; }
 
-        public string Password { get; set; }
+        public string UserName { get; }
 
-        public ushort RequestedHeartbeat { get; set; }
+        public string Password { get; }
 
-        public TimeSpan RetryDelay { get; set; }
+        public ushort RequestedHeartbeat { get; }
 
-        public bool UseTls { get; set; }
+        public TimeSpan RetryDelay { get; }
 
-        public string CertPath { get; set; }
+        public bool UseTls { get; }
 
-        public string CertPassphrase { get; set; }
+        public string CertPath { get; }
 
-        public Dictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
+        public string CertPassphrase { get; }
 
-        ConnectionConfiguration(string endpointName)
+        public Dictionary<string, string> ClientProperties { get; }
+
+        ConnectionConfiguration(
+            string host,
+            int port,
+            string virtualHost,
+            string userName,
+            string password,
+            ushort requestedHeartbeat,
+            TimeSpan retryDelay,
+            bool useTls,
+            string certPath,
+            string certPassphrase,
+            Dictionary<string, string> clientProperties)
         {
-            // set default values
-            VirtualHost = "/";
-            UserName = "guest";
-            Password = "guest";
-            CertPath = "";
-            CertPassphrase = null;
-
-            SetDefaultClientProperties(endpointName);
+            Host = host;
+            Port = port;
+            VirtualHost = virtualHost;
+            UserName = userName;
+            Password = password;
+            RequestedHeartbeat = requestedHeartbeat;
+            RetryDelay = retryDelay;
+            UseTls = useTls;
+            CertPath = certPath;
+            CertPassphrase = certPassphrase;
+            ClientProperties = clientProperties;
         }
 
         public static ConnectionConfiguration Create(string connectionString, string endpointName)
         {
-            var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+            var dictionary = new DbConnectionStringBuilder { ConnectionString = connectionString }
+                .OfType<KeyValuePair<string, object>>()
+                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
             var invalidOptionsMessage = new StringBuilder();
 
-            object value;
-
-            var useTls = false;
-            if (builder.TryGetValue("useTls", out value))
+            if (dictionary.ContainsKey("dequeuetimeout"))
             {
-                if (!bool.TryParse(value.ToString(), out useTls))
-                {
-                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid Boolean value for the 'useTls' connection string option.");
-                }
+                invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
             }
 
-            var port = useTls ? 5671 : 5672;
-            if (builder.TryGetValue("port", out value))
+            if (dictionary.ContainsKey("maxwaittimeforconfirms"))
             {
-                if (!int.TryParse(value.ToString(), out port))
-                {
-                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid Int32 value for the 'port' connection string option.");
-                }
+                invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information");
             }
+
+            if (dictionary.ContainsKey("prefetchcount"))
+            {
+                invalidOptionsMessage.AppendLine("The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.");
+            }
+
+            if (dictionary.ContainsKey("usepublisherconfirms"))
+            {
+                invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
+            }
+
+            var useTls = GetValue(dictionary, "useTls", bool.TryParse, defaultUseTls, invalidOptionsMessage);
+            var port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
+            var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);
+            var userName = GetValue(dictionary, "userName", defaultUserName);
+            var password = GetValue(dictionary, "password", defaultPassword);
+            var requestedHeartbeat = GetValue(dictionary, "requestedHeartbeat", ushort.TryParse, defaultRequestedHeartbeat, invalidOptionsMessage);
+            var retryDelay = GetValue(dictionary, "retryDelay", TimeSpan.TryParse, defaultRetryDelay, invalidOptionsMessage);
+            var certPath = GetValue(dictionary, "certPath", defaultCertPath);
+            var certPassPhrase = GetValue(dictionary, "certPassphrase", defaultCertPassphrase);
 
             var host = default(string);
-            if (builder.TryGetValue("host", out value))
+
+            string value;
+            if (dictionary.TryGetValue("host", out value))
             {
-                var hostsAndPorts = value.ToString().Split(',');
+                var hostsAndPorts = value.Split(',');
 
                 if (hostsAndPorts.Length > 1)
                 {
@@ -104,43 +141,29 @@
                 invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
 
-            ushort requestedHeartbeat = 5;
-            if (builder.TryGetValue("requestedHeartbeat", out value))
-            {
-                if (!ushort.TryParse(value.ToString(), out requestedHeartbeat))
-                {
-                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid UInt16 value for the 'requestedHeartbeat' connection string option.");
-                }
-            }
+            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
+            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
 
-            var retryDelay = TimeSpan.FromSeconds(10);
-            if (builder.TryGetValue("retryDelay", out value))
-            {
-                if (!TimeSpan.TryParse(value.ToString(), out retryDelay))
-                {
-                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid TimeSpan value for the 'retryDelay' connection string option.");
-                }
-            }
+            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionConfiguration).Assembly.Location);
+            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
 
-            if (builder.ContainsKey("dequeuetimeout"))
-            {
-                invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
-            }
+            var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
+            var applicationName = Path.GetFileName(applicationNameAndPath);
+            var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
 
-            if (builder.ContainsKey("maxwaittimeforconfirms"))
-            {
-                invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information");
-            }
+            var hostname = RuntimeEnvironment.MachineName;
 
-            if (builder.ContainsKey("prefetchcount"))
+            var clientProperties = new Dictionary<string, string>
             {
-                invalidOptionsMessage.AppendLine("The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.");
-            }
-
-            if (builder.ContainsKey("usepublisherconfirms"))
-            {
-                invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
-            }
+                { "client_api", "NServiceBus" },
+                { "nservicebus_version", nsbFileVersion },
+                { "nservicebus.rabbitmq_version", rabbitMQFileVersion },
+                { "application", applicationName },
+                { "application_location", applicationPath },
+                { "machine_name", hostname },
+                { "user", userName },
+                { "endpoint_name", endpointName },
+            };
 
             if (invalidOptionsMessage.Length > 0)
             {
@@ -151,47 +174,30 @@
                 throw new NotSupportedException(message);
             }
 
-            var connectionConfiguration = new ConnectionConfiguration(endpointName);
-            var connectionConfigurationType = typeof(ConnectionConfiguration);
-            foreach (var key in builder.Keys.Cast<string>())
+            return new ConnectionConfiguration(
+                host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
+        }
+
+        static string GetValue(Dictionary<string, string> dictionary, string key, string defaultValue)
+        {
+            string value;
+            return dictionary.TryGetValue(key, out value) ? value : defaultValue;
+        }
+
+        static T GetValue<T>(Dictionary<string, string> dictionary, string key, Convert<T> convert, T defaultValue, StringBuilder invalidOptionsMessage)
+        {
+            string value;
+            if (dictionary.TryGetValue(key, out value))
             {
-                var property = connectionConfigurationType.GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                property?.SetValue(connectionConfiguration, TypeDescriptor.GetConverter(property.PropertyType).ConvertFrom(builder[key]));
+                if (!convert(value, out defaultValue))
+                {
+                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid {typeof(T).Name} value for the '{key}' connection string option.");
+                }
             }
 
-            connectionConfiguration.UseTls = useTls;
-            connectionConfiguration.Port = port;
-            connectionConfiguration.Host = host;
-            connectionConfiguration.RequestedHeartbeat = requestedHeartbeat;
-            connectionConfiguration.RetryDelay = retryDelay;
-
-            return connectionConfiguration;
+            return defaultValue;
         }
 
-        void SetDefaultClientProperties(string endpointName)
-        {
-            var nsb = typeof(Endpoint).Assembly.Location;
-            var nsbVersion = FileVersionInfo.GetVersionInfo(nsb);
-            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
-
-            var rabbitMQ = typeof(ConnectionConfiguration).Assembly.Location;
-            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(rabbitMQ);
-            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
-
-            var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
-            var applicationName = Path.GetFileName(applicationNameAndPath);
-            var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
-
-            var hostname = RuntimeEnvironment.MachineName;
-
-            ClientProperties.Add("client_api", "NServiceBus");
-            ClientProperties.Add("nservicebus_version", nsbFileVersion);
-            ClientProperties.Add("nservicebus.rabbitmq_version", rabbitMQFileVersion);
-            ClientProperties.Add("application", applicationName);
-            ClientProperties.Add("application_location", applicationPath);
-            ClientProperties.Add("machine_name", hostname);
-            ClientProperties.Add("user", UserName);
-            ClientProperties.Add("endpoint_name", endpointName);
-        }
+        delegate bool Convert<T>(string input, out T output);
     }
 }
