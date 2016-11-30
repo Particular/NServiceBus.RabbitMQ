@@ -101,7 +101,6 @@
     <Compile Include="ApprovalTestConfig.cs" />
     <Compile Include="App_Packages\PublicApiGenerator.5.0.0\ApiGenerator.cs" />
     <Compile Include="ConnectionString\ConnectionConfigurationTests.cs" />
-    <Compile Include="ConnectionString\ConnectionStringParserTests.cs" />
     <Compile Include="MessageConverterTests.cs" />
     <Compile Include="RabbitMqContext.cs" />
     <Compile Include="Support\ConventionalRoutingTopologyExtensions.cs" />

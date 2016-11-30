@@ -24,14 +24,11 @@
 
             if (connectionString != null)
             {
-                var parser = new ConnectionStringParser(ReceiverQueue);
-                config = parser.Parse(connectionString);
+                config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
             }
             else
             {
-                config = new ConnectionConfiguration(ReceiverQueue);
-                config.Host = "localhost";
-                config.VirtualHost = "nsb-rabbitmq-test";
+                config = ConnectionConfiguration.Create("host=localhost;virtualHost=nsb-rabbitmq-test", ReceiverQueue);
             }
 
             connectionFactory = new ConnectionFactory(config, null);
