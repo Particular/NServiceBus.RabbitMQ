@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client.Events;
@@ -23,7 +24,10 @@
             this.settings = settings;
 
             var connectionConfiguration = new ConnectionStringParser(settings.EndpointName()).Parse(connectionString);
-            connectionFactory = new ConnectionFactory(connectionConfiguration);
+
+            X509CertificateCollection clientCertificates;
+            settings.TryGet(SettingsKeys.ClientCertificates, out clientCertificates);
+            connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates);
 
             routingTopology = CreateRoutingTopology();
 

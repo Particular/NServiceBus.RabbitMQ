@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus
 {
     using System;
+    using System.Security.Cryptography.X509Certificates;
     using Configuration.AdvanceExtensibility;
     using RabbitMQ.Client.Events;
     using Transport.RabbitMQ;
@@ -113,6 +114,18 @@
         public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
         {
             transportExtensions.GetSettings().Set(SettingsKeys.PrefetchCount, prefetchCount);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies the certificates to use for client authentication when connecting to the broker via TLS.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="clientCertificates">The collection of certificates to use for client authentication.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> SetClientCertificates(this TransportExtensions<RabbitMQTransport> transportExtensions, X509CertificateCollection clientCertificates)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificates, clientCertificates);
             return transportExtensions;
         }
     }
