@@ -18,9 +18,9 @@
 
             await messageDispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
 
-            var received = WaitForMessage();
+            var receivedMessage = ReceiveMessage();
 
-            Assert.AreEqual(message.MessageId, received.MessageId);
+            Assert.AreEqual(message.MessageId, receivedMessage.MessageId);
         }
 
         [Test]
@@ -38,9 +38,9 @@
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
             }
 
-            var received = WaitForMessage();
+            var receivedMessage = ReceiveMessage();
 
-            Assert.AreEqual(message.MessageId, received.MessageId);
+            Assert.AreEqual(message.MessageId, receivedMessage.MessageId);
         }
 
         [Test]
@@ -55,11 +55,11 @@
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
 
-                var received = WaitForMessage();
+                var messageWasReceived = TryWaitForMessageReceipt();
 
                 var result = channel.BasicGet(ErrorQueue, true);
 
-                Assert.Null(received, "Message should not be processed processed successfully.");
+                Assert.False(messageWasReceived, "Message should not be processed processed successfully.");
                 Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
             }
         }
@@ -82,10 +82,10 @@
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
             }
 
-            var received = WaitForMessage();
+            var receivedMessage = ReceiveMessage();
 
-            Assert.AreEqual(typeName, received.Headers[Headers.EnclosedMessageTypes]);
-            Assert.AreEqual(typeof(MyMessage), Type.GetType(received.Headers[Headers.EnclosedMessageTypes]));
+            Assert.AreEqual(typeName, receivedMessage.Headers[Headers.EnclosedMessageTypes]);
+            Assert.AreEqual(typeof(MyMessage), Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]));
         }
 
         class MyMessage

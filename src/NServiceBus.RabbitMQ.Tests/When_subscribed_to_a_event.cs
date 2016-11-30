@@ -146,9 +146,9 @@
 
         void AssertReceived<T>()
         {
-            var receivedEvent = WaitForMessage();
+            var receivedMessage = ReceiveMessage();
 
-            AssertReceived<T>(receivedEvent);
+            AssertReceived<T>(receivedMessage);
         }
 
         void AssertReceived<T>(IncomingMessage receivedEvent)
@@ -158,9 +158,9 @@
 
         void AssertNoEventReceived()
         {
-            var receivedEvent = WaitForMessage();
+            var messageWasReceived = TryWaitForMessageReceipt();
 
-            Assert.Null(receivedEvent);
+            Assert.False(messageWasReceived);
         }
     }
 
