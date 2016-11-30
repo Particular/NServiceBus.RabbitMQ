@@ -44,8 +44,6 @@
             VirtualHost = "/";
             UserName = "guest";
             Password = "guest";
-            RequestedHeartbeat = 5;
-            RetryDelay = TimeSpan.FromSeconds(10);
             CertPath = "";
             CertPassphrase = null;
 
@@ -63,13 +61,19 @@
             var useTls = false;
             if (builder.TryGetValue("useTls", out value))
             {
-                useTls = bool.Parse(value.ToString());
+                if (!bool.TryParse(value.ToString(), out useTls))
+                {
+                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid Boolean value for the 'useTls' connection string option.");
+                }
             }
 
             var port = useTls ? 5671 : 5672;
             if (builder.TryGetValue("port", out value))
             {
-                port = int.Parse(value.ToString());
+                if (!int.TryParse(value.ToString(), out port))
+                {
+                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid Int32 value for the 'port' connection string option.");
+                }
             }
 
             var host = default(string);
@@ -83,16 +87,39 @@
                 }
 
                 var parts = hostsAndPorts[0].Split(':');
-                host = parts[0];
+                host = parts.ElementAt(0);
 
-                if (parts.Length > 1)
+                if (host.Length == 0)
                 {
-                    port = int.Parse(parts[1]);
+                    invalidOptionsMessage.AppendLine("Empty host name in 'host' connection string option.");
+                }
+
+                if (parts.Length > 1 && !int.TryParse(parts[1], out port))
+                {
+                    invalidOptionsMessage.AppendLine($"'{parts[1]}' is not a valid Int32 value for the port in the 'host' connection string option.");
                 }
             }
             else
             {
                 invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
+            }
+
+            ushort requestedHeartbeat = 5;
+            if (builder.TryGetValue("requestedHeartbeat", out value))
+            {
+                if (!ushort.TryParse(value.ToString(), out requestedHeartbeat))
+                {
+                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid UInt16 value for the 'requestedHeartbeat' connection string option.");
+                }
+            }
+
+            var retryDelay = TimeSpan.FromSeconds(10);
+            if (builder.TryGetValue("retryDelay", out value))
+            {
+                if (!TimeSpan.TryParse(value.ToString(), out retryDelay))
+                {
+                    invalidOptionsMessage.AppendLine($"'{value}' is not a valid TimeSpan value for the 'retryDelay' connection string option.");
+                }
             }
 
             if (builder.ContainsKey("dequeuetimeout"))
@@ -135,6 +162,8 @@
             connectionConfiguration.UseTls = useTls;
             connectionConfiguration.Port = port;
             connectionConfiguration.Host = host;
+            connectionConfiguration.RequestedHeartbeat = requestedHeartbeat;
+            connectionConfiguration.RetryDelay = retryDelay;
 
             return connectionConfiguration;
         }
