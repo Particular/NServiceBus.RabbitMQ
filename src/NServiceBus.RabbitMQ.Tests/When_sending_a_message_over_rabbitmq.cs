@@ -104,12 +104,10 @@
             var result = Consume(messageId, queueToReceiveOn);
 
             var converter = new MessageConverter();
+            var convertedHeaders = converter.RetrieveHeaders(result);
+            var convertedMessageId = converter.RetrieveMessageId(result, convertedHeaders);
 
-            var incomingMessage = new IncomingMessage(
-                converter.RetrieveMessageId(result),
-                converter.RetrieveHeaders(result),
-                result.Body
-            );
+            var incomingMessage = new IncomingMessage(convertedMessageId, convertedHeaders, result.Body);
 
             assertion(incomingMessage, result);
         }

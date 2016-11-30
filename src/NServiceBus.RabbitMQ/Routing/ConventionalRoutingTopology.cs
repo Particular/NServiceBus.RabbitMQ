@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -19,7 +21,7 @@
     /// <item><description>we generate an exchange for each queue so that we can do direct sends to the queue. it is bound as a fanout exchange</description></item>
     /// </list>
     /// </summary>
-    class ConventionalRoutingTopology : IRoutingTopology
+    class ConventionalRoutingTopology : IRoutingTopology, IDeclareQueues
     {
         readonly bool useDurableExchanges;
 
@@ -68,6 +70,15 @@
         public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
         {
             channel.BasicPublish(address, String.Empty, true, properties, body);
+        }
+
+        public void DeclareAndInitialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
+        {
+            foreach (var address in receivingAddresses.Concat(sendingAddresses))
+            {
+                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+                Initialize(channel, address);
+            }
         }
 
         public void Initialize(IModel channel, string mainQueue)

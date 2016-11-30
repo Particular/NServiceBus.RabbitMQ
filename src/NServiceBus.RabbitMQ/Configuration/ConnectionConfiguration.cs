@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using Settings;
     using Support;
 
     class ConnectionConfiguration
@@ -31,7 +30,7 @@
 
         public Dictionary<string, object> ClientProperties { get; } = new Dictionary<string, object>();
 
-        public ConnectionConfiguration(ReadOnlySettings settings)
+        public ConnectionConfiguration(string endpointName)
         {
             // set default values
             Port = 5672;
@@ -44,10 +43,10 @@
             CertPath = "";
             CertPassphrase = null;
 
-            SetDefaultClientProperties(settings);
+            SetDefaultClientProperties(endpointName);
         }
 
-        void SetDefaultClientProperties(ReadOnlySettings settings)
+        void SetDefaultClientProperties(string endpointName)
         {
             var nsb = typeof(Endpoint).Assembly.Location;
             var nsbVersion = FileVersionInfo.GetVersionInfo(nsb);
@@ -70,7 +69,7 @@
             ClientProperties.Add("application_location", applicationPath);
             ClientProperties.Add("machine_name", hostname);
             ClientProperties.Add("user", UserName);
-            ClientProperties.Add("endpoint_name", settings.EndpointName());
+            ClientProperties.Add("endpoint_name", endpointName);
         }
     }
 }

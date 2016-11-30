@@ -21,14 +21,23 @@
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                foreach (var receivingAddress in queueBindings.ReceivingAddresses)
-                {
-                    CreateQueueIfNecessary(channel, receivingAddress);
-                }
+                var queueDeclaringTopology = routingTopology as IDeclareQueues;
 
-                foreach (var sendingAddress in queueBindings.SendingAddresses)
+                if (queueDeclaringTopology != null)
                 {
-                    CreateQueueIfNecessary(channel, sendingAddress);
+                    queueDeclaringTopology.DeclareAndInitialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
+                }
+                else
+                {
+                    foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+                    {
+                        CreateQueueIfNecessary(channel, receivingAddress);
+                    }
+
+                    foreach (var sendingAddress in queueBindings.SendingAddresses)
+                    {
+                        CreateQueueIfNecessary(channel, sendingAddress);
+                    }
                 }
             }
 

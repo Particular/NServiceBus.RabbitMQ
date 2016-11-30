@@ -47,12 +47,12 @@
       <HintPath>..\packages\NServiceBus.6.0.0\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.4.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.4.1\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="RabbitMQ.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
-      <HintPath>..\packages\RabbitMQ.Client.4.1.0\lib\net451\RabbitMQ.Client.dll</HintPath>
+      <HintPath>..\packages\RabbitMQ.Client.4.1.1\lib\net451\RabbitMQ.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -323,6 +323,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0\UnicastRoutingExtensions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
+    <Compile Include="When_using_a_custom_message_id_strategy_that_returns_an_invalid_message_id.cs" />
     <Compile Include="ConfigureEndpointRabbitMQTransport.cs" />
     <Compile Include="TaskEx.cs" />
     <Compile Include="When_receiving_a_reply_that_contains_a_legacy_callback_header.cs" />

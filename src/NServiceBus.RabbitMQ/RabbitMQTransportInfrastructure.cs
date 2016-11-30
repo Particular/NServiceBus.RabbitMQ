@@ -22,7 +22,7 @@
         {
             this.settings = settings;
 
-            var connectionConfiguration = new ConnectionStringParser(settings).Parse(connectionString);
+            var connectionConfiguration = new ConnectionStringParser(settings.EndpointName()).Parse(connectionString);
             connectionFactory = new ConnectionFactory(connectionConfiguration);
 
             routingTopology = CreateRoutingTopology();

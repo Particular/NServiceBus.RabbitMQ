@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NServiceBus;
@@ -20,14 +20,31 @@ class ConfigureScenariosForRabbitMQTransport : IConfigureSupportedScenariosForTe
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
-    string connectionString;
+    DbConnectionStringBuilder connectionStringBuilder;
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
     {
-        connectionString = settings.Get<string>("Transport.ConnectionString");
-        configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionString);
+        connectionStringBuilder = new DbConnectionStringBuilder
+        {
+            ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString")
+        };
+
+        ApplyDefault(connectionStringBuilder, "username", "guest");
+        ApplyDefault(connectionStringBuilder, "password", "guest");
+        ApplyDefault(connectionStringBuilder, "virtualhost", "nsb-rabbitmq-test");
+        ApplyDefault(connectionStringBuilder, "host", "localhost");
+
+        configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionStringBuilder.ConnectionString);
 
         return TaskEx.CompletedTask;
+    }
+
+    static void ApplyDefault(DbConnectionStringBuilder builder, string key, string value)
+    {
+        if (!builder.ContainsKey(key))
+        {
+            builder.Add(key, value);
+        }
     }
 
     public Task Cleanup() => PurgeQueues();
@@ -57,19 +74,12 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     ConnectionFactory CreateConnectionFactory()
     {
-        var match = Regex.Match(connectionString, string.Format("[^\\w]*{0}=(?<{0}>[^;]+)", "host"), RegexOptions.IgnoreCase);
-
-        var username = match.Groups["UserName"].Success ? match.Groups["UserName"].Value : "guest";
-        var password = match.Groups["Password"].Success ? match.Groups["Password"].Value : "guest";
-        var host = match.Groups["host"].Success ? match.Groups["host"].Value : "localhost";
-        var virtualHost = match.Groups["VirtualHost"].Success ? match.Groups["VirtualHost"].Value : "/";
-
         var connectionFactory = new ConnectionFactory
         {
-            UserName = username,
-            Password = password,
-            VirtualHost = virtualHost,
-            HostName = host,
+            UserName = connectionStringBuilder["username"].ToString(),
+            Password = connectionStringBuilder["password"].ToString(),
+            VirtualHost = connectionStringBuilder["virtualhost"].ToString(),
+            HostName = connectionStringBuilder["host"].ToString(),
             AutomaticRecoveryEnabled = true
         };
 

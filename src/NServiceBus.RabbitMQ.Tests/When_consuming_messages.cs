@@ -44,7 +44,7 @@
         }
 
         [Test]
-        public void Should_be_able_to_receive_a_blank_message()
+        public void Should_move_message_without_message_id_to_error_queue()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
@@ -53,14 +53,15 @@
             {
                 var properties = channel.CreateBasicProperties();
 
-                properties.MessageId = message.MessageId;
-
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+
+                var received = WaitForMessage();
+
+                var result = channel.BasicGet(ErrorQueue, true);
+
+                Assert.Null(received, "Message should not be processed processed successfully.");
+                Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
             }
-
-            var received = WaitForMessage();
-
-            Assert.NotNull(received.MessageId, "The message id should be defaulted to a new guid if not set");
         }
 
         [Test]
