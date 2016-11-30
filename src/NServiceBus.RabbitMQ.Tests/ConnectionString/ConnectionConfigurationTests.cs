@@ -41,7 +41,7 @@
         [Test]
         public void Should_parse_host()
         {
-            var connectionConfiguration = ConnectionConfiguration.Create("host=host.one:1001", endpointName);
+            var connectionConfiguration = ConnectionConfiguration.Create("host=host.one:1001;port=1002", endpointName);
 
             Assert.AreEqual(connectionConfiguration.Host, "host.one");
             Assert.AreEqual(connectionConfiguration.Port, 1001);
