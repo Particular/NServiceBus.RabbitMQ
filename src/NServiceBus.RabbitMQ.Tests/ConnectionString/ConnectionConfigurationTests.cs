@@ -147,68 +147,36 @@
         }
 
         [Test]
-        public void Should_throw_if_given_badly_formatted_retry_delay()
-        {
-            var formatException = Assert.Throws<FormatException>(
-                () => ConnectionConfiguration.Create("host=localhost;retryDelay=00:0d0:10", endpointName));
-
-            Assert.AreEqual("00:0d0:10 is not a valid value for TimeSpan.", formatException.Message);
-        }
-
-        [Test]
         public void Should_throw_on_malformed_string()
         {
             Assert.Throws<ArgumentException>(() => ConnectionConfiguration.Create("not a well formed name value pair;", endpointName));
         }
 
         [Test]
-        public void Should_inform_that_multiple_hosts_are_not_supported()
-        {
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create("host=localhost,host=localhost2", endpointName));
-
-            Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
-            Assert.That(exception.Message, Does.Contain("consider using a load balancer"));
-        }
-
-        [Test]
-        public void Should_inform_that_dequeuetimeout_has_been_removed()
-        {
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create("host=localhost;dequeuetimeout=1", endpointName));
-
-            Assert.That(exception.Message, Does.Contain("The 'DequeueTimeout' connection string option has been removed"));
-        }
-
-        [Test]
-        public void Should_inform_that_max_wait_time_for_confirmss_has_been_removed()
-        {
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create("host=localhost;maxWaitTimeForConfirms=02:03:39", endpointName));
-
-            Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
-        }
-
-        [Test]
-        public void Should_inform_that_prefetchcount_has_been_removed()
-        {
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create("host=localhost;prefetchcount=100", endpointName));
-
-            Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
-        }
-
-        [Test]
-        public void Should_inform_that_usepublisherconfirms_has_been_removed()
-        {
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create("host=localhost;usePublisherConfirms=true", endpointName));
-
-            Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
-        }
-
-        [Test]
         public void Should_list_all_invalid_options()
         {
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create("host=localhost,host=localhost2;usePublisherConfirms=true;prefetchcount=100;maxWaitTimeForConfirms=02:03:39;dequeuetimeout=1", endpointName));
+            var connectionString =
+                "host=:notaport1,host=localhost2;" +
+                "port=notaport2;" +
+                "useTls=notusetls;" +
+                "requestedHeartbeat=notaheartbeat;" +
+                "retryDelay=notaretrydelay;" +
+                "usePublisherConfirms=true;" +
+                "prefetchcount=100;" +
+                "maxWaitTimeForConfirms=02:03:39;" +
+                "dequeuetimeout=1;";
+
+            var exception = Assert.Throws<NotSupportedException>(() =>
+                ConnectionConfiguration.Create(connectionString, endpointName));
 
             Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Does.Contain("consider using a load balancer"));
+            Assert.That(exception.Message, Does.Contain("Empty host name in 'host' connection string option."));
+            Assert.That(exception.Message, Does.Contain("'notaport1' is not a valid Int32 value for the port in the 'host' connection string option."));
+            Assert.That(exception.Message, Does.Contain("'notaport2' is not a valid Int32 value for the 'port' connection string option."));
+            Assert.That(exception.Message, Does.Contain("'notusetls' is not a valid Boolean value for the 'useTls' connection string option."));
+            Assert.That(exception.Message, Does.Contain("'notaheartbeat' is not a valid UInt16 value for the 'requestedHeartbeat' connection string option."));
+            Assert.That(exception.Message, Does.Contain("'notaretrydelay' is not a valid TimeSpan value for the 'retryDelay' connection string option."));
             Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
