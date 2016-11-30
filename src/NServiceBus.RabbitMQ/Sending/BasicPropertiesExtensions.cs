@@ -19,7 +19,7 @@
             }
 
             DiscardIfNotReceivedBefore timeToBeReceived;
-            if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
+            if (deliveryConstraints.TryGet(out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
             {
                 properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
             }
@@ -79,24 +79,14 @@
         public static bool TryGetConfirmationId(this IBasicProperties properties, out ulong confirmationId)
         {
             confirmationId = 0;
+            object value;
 
-            if (properties.Headers.ContainsKey(confirmationIdHeader))
-            {
-                var headerBytes = properties.Headers[confirmationIdHeader] as byte[];
-                var headerString = Encoding.UTF8.GetString(headerBytes ?? new byte[0]);
-
-                return UInt64.TryParse(headerString, out confirmationId);
-            }
-
-            return false;
+            return properties.Headers.TryGetValue(confirmationIdHeader, out value) &&
+                ulong.TryParse(Encoding.UTF8.GetString(value as byte[] ?? new byte[0]), out confirmationId);
         }
 
-        static bool TryGet<T>(List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
-        {
-            constraint = list.OfType<T>().FirstOrDefault();
-
-            return constraint != null;
-        }
+        static bool TryGet<T>(this List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint =>
+            (constraint = list.OfType<T>().FirstOrDefault()) != null;
 
         const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
     }
