@@ -2,15 +2,16 @@
 {
     using System;
     using System.Configuration;
-    using NServiceBus.CircuitBreakers;
-    using NServiceBus.Pipeline;
-    using NServiceBus.Transports.RabbitMQ.Connection;
+    using CircuitBreakers;
+    using Config;
+    using Pipeline;
     using RabbitMQ.Client.Events;
     using Settings;
     using Support;
     using Transports;
     using Transports.RabbitMQ;
     using Transports.RabbitMQ.Config;
+    using Transports.RabbitMQ.Connection;
     using Transports.RabbitMQ.Routing;
 
     class RabbitMqTransportFeature : ConfigureTransport
@@ -43,6 +44,7 @@
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
             var connectionConfiguration = new ConnectionStringParser(context.Settings).Parse(connectionString);
+            var errorQueue = context.Settings.GetConfigSection<MessageForwardingInCaseOfFaultConfig>()?.ErrorQueue;
 
             MessageConverter messageConverter;
 
@@ -85,7 +87,8 @@
             context.Container.ConfigureComponent(builder => new RabbitMqDequeueStrategy(
                 builder.Build<IManageRabbitMqConnections>(),
                 SetupCircuitBreaker(builder.Build<CriticalError>()),
-                receiveOptions), DependencyLifecycle.InstancePerCall);
+                receiveOptions,
+                errorQueue), DependencyLifecycle.InstancePerCall);
 
 
             context.Container.ConfigureComponent<OpenPublishChannelBehavior>(DependencyLifecycle.InstancePerCall);
