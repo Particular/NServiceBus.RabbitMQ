@@ -7,13 +7,10 @@
     using System.IO;
     using System.Linq;
     using System.Text;
-    using Logging;
     using Support;
 
     class ConnectionConfiguration
     {
-        static readonly ILog Logger = LogManager.GetLogger(typeof(ConnectionConfiguration));
-
         const bool defaultUseTls = false;
         const int defaultPort = 5672;
         const int defaultTlsPort = 5671;
@@ -167,11 +164,7 @@
 
             if (invalidOptionsMessage.Length > 0)
             {
-                var message = invalidOptionsMessage.ToString().TrimEnd('\r', '\n');
-
-                Logger.Error(message);
-
-                throw new NotSupportedException(message);
+                throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
             }
 
             return new ConnectionConfiguration(
