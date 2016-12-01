@@ -22,6 +22,7 @@
     public abstract class ClusteredTestContext
     {
         protected const string QueueName = "testreceiver";
+        protected const string ErrorQueue = "error";
         const string ErlangProcessName = "erl";
         protected static Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -138,7 +139,7 @@
 
             publishChannel.Close();
             publishChannel.Dispose();
-            
+
             connectionManager.Dispose();
 
             var erlangProcessesToKill = GetExistingErlangProcesses().Select(p => p.Id).Except(erlangProcessesRunningBeforeTheTest).ToList();
@@ -210,7 +211,7 @@
         void SetupQueueListener(string queueName)
         {
             receivedMessages = new BlockingCollection<TransportMessage>();
-            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new ReceiveOptions(s => SecondaryReceiveSettings.Disabled(), new MessageConverter(),1,1000,true,"Cluster test"));
+            dequeueStrategy = new RabbitMqDequeueStrategy(connectionManager, null, new ReceiveOptions(s => SecondaryReceiveSettings.Disabled(), new MessageConverter(),1,1000,true,"Cluster test"), ErrorQueue);
             dequeueStrategy.Init(Address.Parse(queueName), new TransactionSettings(true, TimeSpan.FromSeconds(30), IsolationLevel.ReadCommitted, 5, false, false), m =>
                 {
                     receivedMessages.Add(m);
@@ -224,7 +225,8 @@
 
         void EnsureRabbitQueueExists(string queueName)
         {
-            using (var channel = connectionManager.GetAdministrationConnection().CreateModel())
+            using (var connection = connectionManager.GetAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queueName, true, false, false, null);
                 channel.QueuePurge(queueName);
