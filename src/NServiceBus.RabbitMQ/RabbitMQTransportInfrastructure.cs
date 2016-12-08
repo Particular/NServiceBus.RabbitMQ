@@ -23,7 +23,7 @@
         {
             this.settings = settings;
 
-            var connectionConfiguration = new ConnectionStringParser(settings.EndpointName()).Parse(connectionString);
+            var connectionConfiguration = ConnectionConfiguration.Create(connectionString, settings.EndpointName());
 
             X509CertificateCollection clientCertificates;
             settings.TryGet(SettingsKeys.ClientCertificates, out clientCertificates);
