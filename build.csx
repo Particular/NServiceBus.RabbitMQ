@@ -59,10 +59,9 @@ targets.Add(
         {
             Console.WriteLine($"##teamcity[importData path='{solution}.inspections.xml' type='ReSharperInspectCode']");
         }
-        else if (!Inspect($"{solution}.inspections.xml"))
+        else
         {
-            Console.WriteLine("Inspection failed!");
-            Environment.Exit(1);
+            Inspect($"{solution}.inspections.xml");
         }
     });
 
