@@ -23,6 +23,10 @@ var unitTests = "./src/NServiceBus.Transport.RabbitMQ.Tests/bin/Release/net452/N
 var acceptanceTests = "./src/NServiceBus.Transport.RabbitMQ.AcceptanceTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.AcceptanceTests.dll";
 var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
 
+// CI
+var isTeamCity = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TEAMCITY_VERSION"));
+var nunitTeamCityOption = isTeamCity ? " --teamcity" : "";
+
 // targets
 var targets = new TargetDictionary();
 
@@ -30,7 +34,7 @@ targets.Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-te
 
 targets.Add("restore", () => Cmd(msBuild, $"{solution} /p:Configuration=Release /t:restore"));
 
-targets.Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
+targets.Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:n /nr:false"));
 
 targets.Add(
     "download-resharper-clt",
@@ -51,7 +55,11 @@ targets.Add(
     DependsOn("run-inspectcode"),
     () =>
     {
-        if (!Inspect($"{solution}.inspections.xml"))
+        if (isTeamCity)
+        {
+            Console.WriteLine($"##teamcity[importData path='{solution}.inspections.xml' type='ReSharperInspectCode']");
+        }
+        else if (!Inspect($"{solution}.inspections.xml"))
         {
             Console.WriteLine("Inspection failed!");
             Environment.Exit(1);
@@ -66,10 +74,10 @@ targets.Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
 
 targets.Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
+targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)}{nunitTeamCityOption} {unitTests}"));
 
-targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
+targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)}{nunitTeamCityOption} {acceptanceTests}"));
 
-targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
+targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)}{nunitTeamCityOption} {transportTests}"));
 
 Run(Args, targets);
