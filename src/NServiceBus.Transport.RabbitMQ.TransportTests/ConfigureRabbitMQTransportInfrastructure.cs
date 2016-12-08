@@ -14,19 +14,22 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         var result = new TransportConfigurationResult();
         var transport = new RabbitMQTransport();
 
+        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
+
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
+        }
+
         connectionStringBuilder = new DbConnectionStringBuilder
         {
-            ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString")
+            ConnectionString = connectionString
         };
-
-        ApplyDefault(connectionStringBuilder, "username", "guest");
-        ApplyDefault(connectionStringBuilder, "password", "guest");
-        ApplyDefault(connectionStringBuilder, "virtualhost", "nsb-rabbitmq-test");
-        ApplyDefault(connectionStringBuilder, "host", "localhost");
 
         queueBindings = settings.Get<QueueBindings>();
 
         result.TransportInfrastructure = transport.Initialize(settings, connectionStringBuilder.ConnectionString);
+        isTransportInitialized = true;
         result.PurgeInputQueueOnStartup = true;
 
         transportTransactionMode = result.TransportInfrastructure.TransactionMode;
@@ -35,27 +38,54 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         return result;
     }
 
-    static void ApplyDefault(DbConnectionStringBuilder builder, string key, string value)
-    {
-        if (!builder.ContainsKey(key))
-        {
-            builder.Add(key, value);
-        }
-    }
-
     public Task Cleanup()
     {
-        if (transportTransactionMode >= requestedTransactionMode)
+        if (isTransportInitialized && transportTransactionMode >= requestedTransactionMode)
         {
-            PurgeQueues();
+            PurgeQueues(connectionStringBuilder, queueBindings);
         }
 
         return Task.FromResult(0);
     }
 
-    void PurgeQueues()
+    static void PurgeQueues(DbConnectionStringBuilder connectionStringBuilder, QueueBindings queueBindings)
     {
-        var connectionFactory = CreateConnectionFactory();
+        if (connectionStringBuilder == null)
+        {
+            return;
+        }
+
+        var connectionFactory = new ConnectionFactory
+        {
+            AutomaticRecoveryEnabled = true,
+            UseBackgroundThreadsForIO = true
+        };
+
+        object value;
+
+        if (connectionStringBuilder.TryGetValue("username", out value))
+        {
+            connectionFactory.UserName = value.ToString();
+        }
+
+        if (connectionStringBuilder.TryGetValue("password", out value))
+        {
+            connectionFactory.Password = value.ToString();
+        }
+
+        if (connectionStringBuilder.TryGetValue("virtualhost", out value))
+        {
+            connectionFactory.VirtualHost = value.ToString();
+        }
+
+        if (connectionStringBuilder.TryGetValue("host", out value))
+        {
+            connectionFactory.HostName = value.ToString();
+        }
+        else
+        {
+            throw new Exception("The connection string doesn't contain a value for 'host'.");
+        }
 
         using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
@@ -84,24 +114,10 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         }
     }
 
-    ConnectionFactory CreateConnectionFactory()
-    {
-        var connectionFactory = new ConnectionFactory
-        {
-            UserName = connectionStringBuilder["username"].ToString(),
-            Password = connectionStringBuilder["password"].ToString(),
-            VirtualHost = connectionStringBuilder["virtualhost"].ToString(),
-            HostName = connectionStringBuilder["host"].ToString(),
-            AutomaticRecoveryEnabled = true,
-            UseBackgroundThreadsForIO = true
-        };
-
-        return connectionFactory;
-    }
-
     DbConnectionStringBuilder connectionStringBuilder;
     QueueBindings queueBindings;
     TransportTransactionMode transportTransactionMode;
     TransportTransactionMode requestedTransactionMode;
+    bool isTransportInitialized;
 }
 

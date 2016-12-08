@@ -65,12 +65,12 @@ targets.Add("create-virtual-host", () => CreateVirtualHost());
 
 targets.Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
 
-targets.Add("prepare-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
+targets.Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-targets.Add("unit-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
+targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
 
-targets.Add("acceptance-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
+targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
 
-targets.Add("transport-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
+targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
 
 Run(Args, targets);
