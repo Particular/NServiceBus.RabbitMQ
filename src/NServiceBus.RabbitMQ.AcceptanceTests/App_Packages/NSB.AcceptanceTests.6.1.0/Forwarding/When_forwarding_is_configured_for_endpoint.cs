@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.AcceptanceTests.Forwarding
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using EndpointTemplates;
@@ -18,7 +19,10 @@
                 .Run();
 
             Assert.IsTrue(context.GotForwardedMessage);
-            CollectionAssert.AreEqual(context.ForwardedHeaders, context.ReceivedHeaders, "Headers should be preserved on the forwarded message");
+            CollectionAssert.AreEqual(
+                context.ForwardedHeaders.Where(header => header.Key != "NServiceBus.Transport.RabbitMQ.ConfirmationId"),
+                context.ReceivedHeaders.Where(header => header.Key != "NServiceBus.Transport.RabbitMQ.ConfirmationId"),
+                "Headers should be preserved on the forwarded message");
         }
 
         public class Context : ScenarioContext
