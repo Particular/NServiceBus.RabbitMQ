@@ -31,10 +31,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
         }
 
-        connectionStringBuilder = new DbConnectionStringBuilder
-        {
-            ConnectionString = connectionString
-        };
+        connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionStringBuilder.ConnectionString);
 
@@ -82,11 +79,9 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
 
-        connectionFactory.ClientProperties["purpose"] = "Test Queue Purger";
-
         var queues = await GetQueues(connectionFactory);
 
-        using (var connection = connectionFactory.CreateConnection())
+        using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
         {
             foreach (var queue in queues)

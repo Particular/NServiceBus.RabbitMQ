@@ -27,10 +27,7 @@ public Broker GetBroker()
         throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
     }
 
-    var connectionStringBuilder = new DbConnectionStringBuilder
-    {
-        ConnectionString = connectionString
-    };
+    var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
     string hostName;
     
