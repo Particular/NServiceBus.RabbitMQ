@@ -109,12 +109,12 @@
             }
         }
 
-        class MyRequest : IMessage
+        public class MyRequest : IMessage
         {
             public string Client { get; set; }
         }
 
-        class MyResponse : IMessage
+        public class MyResponse : IMessage
         {
             public string Client { get; set; }
         }
