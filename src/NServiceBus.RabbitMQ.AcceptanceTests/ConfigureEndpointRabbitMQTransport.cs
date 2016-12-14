@@ -52,7 +52,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
         var connectionFactory = new ConnectionFactory
         {
-            AutomaticRecoveryEnabled = true
+            AutomaticRecoveryEnabled = true,
+            UseBackgroundThreadsForIO = true
         };
 
         object value;
