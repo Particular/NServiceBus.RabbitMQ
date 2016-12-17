@@ -15,6 +15,7 @@ using static SimpleTargets;
 var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.3.20161215.134936.zip");
 var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/{resharperCltUrl.Segments.Last()}";
 var inspectCodePath = $"./.resharper/{Path.GetFileNameWithoutExtension(resharperCltUrl.Segments.Last())}/inspectcode.exe";
+var nuget = "src/.nuget/v3.4.4/NuGet.exe";
 var msBuild = $"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}/MSBuild/14.0/Bin/msbuild.exe";
 var solution = "./src/NServiceBus.RabbitMQ.sln";
 var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
@@ -28,7 +29,9 @@ var targets = new TargetDictionary();
 
 targets.Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-test", "transport-test"));
 
-targets.Add("build", () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
+targets.Add("restore", () => Cmd(nuget, $"restore {solution}"));
+
+targets.Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
 
 targets.Add(
     "download-resharper-clt",
