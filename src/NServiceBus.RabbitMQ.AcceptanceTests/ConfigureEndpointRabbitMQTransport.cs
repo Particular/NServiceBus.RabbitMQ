@@ -24,38 +24,64 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
-        connectionStringBuilder = new DbConnectionStringBuilder
-        {
-            ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString")
-        };
+        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
-        ApplyDefault(connectionStringBuilder, "username", "guest");
-        ApplyDefault(connectionStringBuilder, "password", "guest");
-        ApplyDefault(connectionStringBuilder, "virtualhost", "nsb-rabbitmq-test");
-        ApplyDefault(connectionStringBuilder, "host", "localhost");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
+        }
+
+        connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
         configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionStringBuilder.ConnectionString);
 
         return TaskEx.CompletedTask;
     }
 
-    static void ApplyDefault(DbConnectionStringBuilder builder, string key, string value)
-    {
-        if (!builder.ContainsKey(key))
-        {
-            builder.Add(key, value);
-        }
-    }
-
     public Task Cleanup() => PurgeQueues();
 
     async Task PurgeQueues()
     {
-        var connectionFactory = CreateConnectionFactory();
+        if (connectionStringBuilder == null)
+        {
+            return;
+        }
+
+        var connectionFactory = new ConnectionFactory
+        {
+            AutomaticRecoveryEnabled = true,
+            UseBackgroundThreadsForIO = true
+        };
+
+        object value;
+
+        if (connectionStringBuilder.TryGetValue("username", out value))
+        {
+            connectionFactory.UserName = value.ToString();
+        }
+
+        if (connectionStringBuilder.TryGetValue("password", out value))
+        {
+            connectionFactory.Password = value.ToString();
+        }
+
+        if (connectionStringBuilder.TryGetValue("virtualhost", out value))
+        {
+            connectionFactory.VirtualHost = value.ToString();
+        }
+
+        if (connectionStringBuilder.TryGetValue("host", out value))
+        {
+            connectionFactory.HostName = value.ToString();
+        }
+        else
+        {
+            throw new Exception("The connection string doesn't contain a value for 'host'.");
+        }
 
         var queues = await GetQueues(connectionFactory);
 
-        using (var connection = connectionFactory.CreateConnection())
+        using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
         {
             foreach (var queue in queues)
@@ -70,22 +96,6 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
                 }
             }
         }
-    }
-
-    ConnectionFactory CreateConnectionFactory()
-    {
-        var connectionFactory = new ConnectionFactory
-        {
-            UserName = connectionStringBuilder["username"].ToString(),
-            Password = connectionStringBuilder["password"].ToString(),
-            VirtualHost = connectionStringBuilder["virtualhost"].ToString(),
-            HostName = connectionStringBuilder["host"].ToString(),
-            AutomaticRecoveryEnabled = true
-        };
-
-        connectionFactory.ClientProperties["purpose"] = "Test Queue Purger";
-
-        return connectionFactory;
     }
 
     // Requires that the RabbitMQ Management API has been enabled: https://www.rabbitmq.com/management.html

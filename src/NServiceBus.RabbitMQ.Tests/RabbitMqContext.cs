@@ -20,16 +20,12 @@
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
-            ConnectionConfiguration config;
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
+            }
 
-            if (connectionString != null)
-            {
-                config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
-            }
-            else
-            {
-                config = ConnectionConfiguration.Create("host=localhost;virtualHost=nsb-rabbitmq-test", ReceiverQueue);
-            }
+            var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
 
             connectionFactory = new ConnectionFactory(config, null);
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
