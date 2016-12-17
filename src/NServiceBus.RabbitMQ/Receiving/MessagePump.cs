@@ -26,9 +26,9 @@
         readonly ushort overriddenPrefetchCount;
 
         // Init
-        Func<MessageContext, Task> onMessage;
-        Func<ErrorContext, Task<ErrorHandleResult>> onError;
-        PushSettings settings;
+        Func<MessageContext, Task> processMessage;
+        Func<ErrorContext, Task<ErrorHandleResult>> processError;
+        PushSettings pushSettings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
 
@@ -56,9 +56,9 @@
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
         {
-            this.onMessage = onMessage;
-            this.onError = onError;
-            this.settings = settings;
+            processMessage = onMessage;
+            processError = onError;
+            pushSettings = settings;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
@@ -78,7 +78,7 @@
             semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
             messageProcessing = new CancellationTokenSource();
 
-            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
+            connection = connectionFactory.CreateConnection($"{pushSettings.InputQueue} MessagePump");
 
             var channel = connection.CreateModel();
 
@@ -108,7 +108,7 @@
 
             consumer.Received += Consumer_Received;
 
-            channel.BasicConsume(settings.InputQueue, false, consumerTag, consumer);
+            channel.BasicConsume(pushSettings.InputQueue, false, consumerTag, consumer);
         }
 
         public async Task Stop()
@@ -188,8 +188,8 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{pushSettings.ErrorQueue}'...", ex);
+                await MovePoisonMessage(message, pushSettings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -202,8 +202,8 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{pushSettings.ErrorQueue}'...", ex);
+                await MovePoisonMessage(message, pushSettings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -219,14 +219,14 @@
                     try
                     {
                         var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTranaction, tokenSource, contextBag);
-                        await onMessage(messageContext).ConfigureAwait(false);
+                        await processMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
                     catch (Exception ex)
                     {
                         ++numberOfDeliveryAttempts;
                         var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], transportTranaction, numberOfDeliveryAttempts);
-                        errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                        errorHandled = await processError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
                     }
                 }
 

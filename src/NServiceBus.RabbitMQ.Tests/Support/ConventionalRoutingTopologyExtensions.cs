@@ -8,8 +8,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Support
         public static void Reset(
             this ConventionalRoutingTopology routingTopology,
             ConnectionFactory connectionFactory,
-            IEnumerable<string> receivingAddresses,
-            IEnumerable<string> sendingAddresses)
+            IList<string> receivingAddresses,
+            IList<string> sendingAddresses)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())

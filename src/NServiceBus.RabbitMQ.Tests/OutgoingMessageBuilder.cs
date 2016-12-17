@@ -8,9 +8,9 @@
 
     public class OutgoingMessageBuilder
     {
-        public OutgoingMessageBuilder WithBody(byte[] body)
+        public OutgoingMessageBuilder WithBody(byte[] newBody)
         {
-            this.body = body;
+            body = newBody;
             return this;
         }
 
