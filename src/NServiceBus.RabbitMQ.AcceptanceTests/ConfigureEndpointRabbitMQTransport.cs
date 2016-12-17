@@ -15,14 +15,14 @@ using RabbitMQ.Client;
 
 class ConfigureScenariosForRabbitMQTransport : IConfigureSupportedScenariosForTestExecution
 {
-    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferralAndWithAtomicSendAndReceive) };
+    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub) };
 }
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     DbConnectionStringBuilder connectionStringBuilder;
 
-    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
         connectionStringBuilder = new DbConnectionStringBuilder
         {

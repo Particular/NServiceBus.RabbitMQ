@@ -107,7 +107,7 @@
             }
         }
 
-        class MyRequest : IMessage
+        public class MyRequest : IMessage
         {
             public string MessageId { get; set; }
         }
