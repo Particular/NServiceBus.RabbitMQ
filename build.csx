@@ -3,7 +3,7 @@
 #load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
-#load "src/packages/simple-targets-csx.5.0.0/simple-targets.csx"
+#load "src/packages/simple-targets-csx.5.2.0/simple-targets.csx"
 
 using System;
 using System.IO;
