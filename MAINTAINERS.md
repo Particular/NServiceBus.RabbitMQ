@@ -19,3 +19,7 @@ The maintainers [watch](https://github.com/Particular/NServiceBus.RabbitMQ/watch
 - A pull request created by a maintainer must be merged by *another* maintainer. No "self-merges".
 - The pull request must be made from a branch which is a straight line of commits from `develop`. There must be no merges in the branch history since the commit on `develop`.
   - The branch does not have to be based on the latest commit in `develop` but this is preferable, where practical.
+
+## RabbitMQ.Client Updates
+
+In order to reduce the burden of backporting patches to many versions of the package, when a new version of RabbitMQ.Client is released with breaking changes, we will update to that version in a patch release (hotfix on `master`).
