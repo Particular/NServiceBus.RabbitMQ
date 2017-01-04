@@ -22,4 +22,4 @@ The maintainers [watch](https://github.com/Particular/NServiceBus.RabbitMQ/watch
 
 ## RabbitMQ.Client Updates
 
-In order to reduce the burden of backporting patches to many versions of the package, when a new version of RabbitMQ.Client is released with breaking changes, we will update to that version in a patch release (hotfix on `master`).
+In order to reduce the burden of backporting patches to many versions of the package, when a new version of RabbitMQ.Client is released with breaking changes, whenever possible, we will update to that version in a patch release (hotfix on `master`).
