@@ -7,10 +7,6 @@
     [TestFixture]
     public class ConnectionConfigurationTests
     {
-        const string connectionString =
-            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
-
         const string endpointName = "endpoint";
 
         ConnectionConfiguration defaults = ConnectionConfiguration.Create("host=localhost", "endpoint");
@@ -18,6 +14,10 @@
         [Test]
         public void Should_correctly_parse_full_connection_string()
         {
+            var connectionString =
+               "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
+               "retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
+
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString, endpointName);
 
             Assert.AreEqual(connectionConfiguration.Host, "192.168.1.1");

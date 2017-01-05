@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
@@ -47,7 +48,7 @@
         {
             var timeToBeReceived = TimeSpan.FromDays(1);
 
-            return Verify(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived), received => Assert.AreEqual(timeToBeReceived.TotalMilliseconds.ToString(), received.BasicProperties.Expiration));
+            return Verify(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived), received => Assert.AreEqual(timeToBeReceived.TotalMilliseconds.ToString(CultureInfo.CurrentCulture), received.BasicProperties.Expiration));
         }
 
         [Test]
@@ -104,7 +105,7 @@
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
-            var result = Consume(messageId, queueToReceiveOn);
+            var result = Consume(messageId);
 
             var converter = new MessageConverter();
             var convertedHeaders = converter.RetrieveHeaders(result);
@@ -119,7 +120,7 @@
 
         Task Verify(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion) => Verify(builder, (t, r) => assertion(r));
 
-        BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
+        BasicDeliverEventArgs Consume(string id)
         {
             using (var connection = connectionFactory.CreateConnection("Consume"))
             using (var channel = connection.CreateModel())

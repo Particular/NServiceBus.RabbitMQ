@@ -130,6 +130,11 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class Queue
     {
-        public string Name { get; set; }
+        public Queue(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 }

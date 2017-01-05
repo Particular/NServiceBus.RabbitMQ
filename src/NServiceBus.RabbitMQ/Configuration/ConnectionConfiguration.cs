@@ -138,11 +138,13 @@
                 invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
             }
 
-            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
-            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
+            var nsbLocation = typeof(Endpoint).Assembly.Location;
+            var nsbVersion = nsbLocation != null ? FileVersionInfo.GetVersionInfo(nsbLocation) : null;
+            var nsbFileVersion = nsbVersion != null ? $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}" : "(unknown)";
 
-            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionConfiguration).Assembly.Location);
-            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
+            var rabbitMQLocation = typeof(ConnectionConfiguration).Assembly.Location;
+            var rabbitMQVersion = rabbitMQLocation != null ? FileVersionInfo.GetVersionInfo(rabbitMQLocation) : null;
+            var rabbitMQFileVersion = rabbitMQVersion != null ? $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}" : "(unknown)";
 
             var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
             var applicationName = Path.GetFileName(applicationNameAndPath);
