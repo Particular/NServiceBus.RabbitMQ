@@ -33,36 +33,44 @@
         public Dictionary<string, string> RetrieveHeaders(BasicDeliverEventArgs message)
         {
             var properties = message.BasicProperties;
+            var messageHeaders = properties.Headers;
 
-            var headers = DeserializeHeaders(properties.Headers);
+            if (messageHeaders != null)
+            {
+                //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
+                messageHeaders.Remove(DelayInfrastructure.DelayHeader);
+                messageHeaders.Remove(DelayInfrastructure.DeadLetteredMessageHeader);
+            }
+
+            var deserializedHeaders = DeserializeHeaders(messageHeaders);
 
             if (properties.IsReplyToPresent())
             {
-                headers[Headers.ReplyToAddress] = properties.ReplyTo;
+                deserializedHeaders[Headers.ReplyToAddress] = properties.ReplyTo;
             }
 
             if (properties.IsCorrelationIdPresent())
             {
-                headers[Headers.CorrelationId] = properties.CorrelationId;
+                deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId;
             }
 
             //When doing native interop we only require the type to be set the "fullName" of the message
-            if (!headers.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
+            if (!deserializedHeaders.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
-                headers[Headers.EnclosedMessageTypes] = properties.Type;
+                deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type;
             }
 
             if (properties.IsDeliveryModePresent())
             {
-                headers[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
+                deserializedHeaders[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
             }
 
-            if (headers.ContainsKey("NServiceBus.RabbitMQ.CallbackQueue"))
+            if (deserializedHeaders.ContainsKey("NServiceBus.RabbitMQ.CallbackQueue"))
             {
-                headers[Headers.ReplyToAddress] = headers["NServiceBus.RabbitMQ.CallbackQueue"];
+                deserializedHeaders[Headers.ReplyToAddress] = deserializedHeaders["NServiceBus.RabbitMQ.CallbackQueue"];
             }
 
-            return headers;
+            return deserializedHeaders;
         }
 
         string DefaultMessageIdStrategy(BasicDeliverEventArgs message)

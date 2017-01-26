@@ -128,5 +128,12 @@
             transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificates, clientCertificates);
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Gets the delayed delivery settings.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <returns></returns>
+        public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions) => new DelayedDeliverySettings(transportExtensions.GetSettings());
     }
 }

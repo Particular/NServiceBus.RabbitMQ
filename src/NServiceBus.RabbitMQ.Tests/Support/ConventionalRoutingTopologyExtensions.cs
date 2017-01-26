@@ -20,6 +20,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Support
                     channel.ExchangeDelete(address, false);
                 }
 
+                DelayInfrastructure.TearDown(channel);
+                DelayInfrastructure.Build(channel);
+
                 routingTopology.DeclareAndInitialize(channel, receivingAddresses, sendingAddresses);
             }
         }
