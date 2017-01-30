@@ -165,6 +165,12 @@
 
             try
             {
+                // If the semaphore was acquired successfully on the synchronous path the thread entering
+                // the process method will be the worker service thread. It is crucial to offload the processing
+                // onto the worker thread pool. Theoretically the yield would not be required when the semaphore could not be acquired before. 
+                // The the continuation of WaitAsync is scheduled but we have no way of detecting this.
+                // This is no longer needed when rabbitmq client is fully async.
+                await Task.Yield();
                 await Process(eventArgs).ConfigureAwait(false);
             }
             catch (Exception ex)
