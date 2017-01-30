@@ -152,25 +152,30 @@
             }
         }
 
-        async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
+        void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
             try
             {
-                await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
+                semaphore.Wait(messageProcessing.Token);
             }
             catch (OperationCanceledException)
             {
                 return;
             }
 
+            ProcessWithinGuard(eventArgs).Ignore();
+        }
+
+        async Task ProcessWithinGuard(BasicDeliverEventArgs message)
+        {
             try
             {
-                await Process(eventArgs).ConfigureAwait(false);
+                await Process(message).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Logger.Warn("Failed to process message. Returning message to queue...", ex);
-                await consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
             }
             finally
             {
