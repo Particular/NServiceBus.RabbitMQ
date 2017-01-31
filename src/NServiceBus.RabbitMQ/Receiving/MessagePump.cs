@@ -154,8 +154,10 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
+            bool needsYield;
             try
             {
+                needsYield = semaphore.CurrentCount > 0;
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -170,7 +172,11 @@
                 // onto the worker thread pool. Theoretically the yield would not be required when the semaphore could not be acquired before. 
                 // The the continuation of WaitAsync is scheduled but we have no way of detecting this.
                 // This is no longer needed when rabbitmq client is fully async.
-                await Task.Yield();
+                if (needsYield)
+                {
+                    await Task.Yield();
+                }
+
                 await Process(eventArgs).ConfigureAwait(false);
             }
             catch (Exception ex)
