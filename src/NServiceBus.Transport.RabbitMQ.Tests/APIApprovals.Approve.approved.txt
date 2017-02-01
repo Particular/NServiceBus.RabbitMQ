@@ -19,6 +19,7 @@ namespace NServiceBus
         [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
             "mentedException. Will be removed in version 5.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        public static RabbitMQ.Client.Events.BasicDeliverEventArgs GetBasicDeliverEventArgs(this NServiceBus.IMessageHandlerContext context) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchMultiplier(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int prefetchMultiplier) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificates(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Security.Cryptography.X509Certificates.X509CertificateCollection clientCertificates) { }
