@@ -154,10 +154,10 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            bool needsYield;
+            var eventRaisingThreadId = Thread.CurrentThread.ManagedThreadId;
+
             try
             {
-                needsYield = semaphore.CurrentCount > 0;
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -167,13 +167,27 @@
 
             try
             {
-                // If the semaphore was acquired successfully on the synchronous path the thread entering
-                // the process method will be the worker service thread. It is crucial to offload the processing
-                // onto the worker thread pool. Theoretically the yield would not be required when the semaphore could not be acquired before. 
-                // The the continuation of WaitAsync is scheduled but we have no way of detecting this.
-                // This is no longer needed when rabbitmq client is fully async.
-                if (needsYield)
+                // The current thread will be the event-raising thread if either:
+                //
+                // a) the semaphore was entered synchronously (did not have to wait).
+                // b) the event was raised on a thread pool thread,
+                //    and the semaphore was entered asynchronously (had to wait),
+                //    and the continuation happened to be scheduled back onto the same thread.
+                if (Thread.CurrentThread.ManagedThreadId == eventRaisingThreadId)
                 {
+                    // In RabbitMQ.Client 4.1.0, the event is raised by reusing a single, explicitly created thread,
+                    // so we are in scenario (a) described above.
+                    // We must yield to allow the thread to raise more events while we handle this one,
+                    // otherwise we will never process messages concurrently.
+                    //
+                    // If a future version of RabbitMQ.Client changes its threading model, then either:
+                    //
+                    // 1) we are in scenario (a), but we *may not* need to yield.
+                    //    E.g. the client may raise the event on a new, explicitly created thread each time.
+                    // 2) we cannot tell whether we are in scenario (a) or scenario (b).
+                    //    E.g. the client may raise the event on a thread pool thread.
+                    // 
+                    // In both cases, we cannot tell whether we need to yield or not, so we must yield.
                     await Task.Yield();
                 }
 
