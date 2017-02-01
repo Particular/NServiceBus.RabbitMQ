@@ -214,6 +214,7 @@
                 var errorHandled = false;
                 var numberOfDeliveryAttempts = 0;
 
+                contextBag.Set(message);
                 while (!processed && !errorHandled)
                 {
                     try

@@ -128,5 +128,13 @@
             transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificates, clientCertificates);
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Gets the <see cref="BasicDeliverEventArgs"/> for the current message being processed.
+        /// </summary>
+        public static BasicDeliverEventArgs GetBasicDeliverEventArgs(this IMessageHandlerContext context)
+        {
+            return context.Extensions.Get<BasicDeliverEventArgs>();
+        }
     }
 }
