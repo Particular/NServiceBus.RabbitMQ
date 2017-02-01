@@ -135,5 +135,13 @@
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
         public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions) => new DelayedDeliverySettings(transportExtensions.GetSettings());
+
+        /// <summary>
+        /// Gets the <see cref="BasicDeliverEventArgs"/> for the current message being processed.
+        /// </summary>
+        public static BasicDeliverEventArgs GetBasicDeliverEventArgs(this IMessageHandlerContext context)
+        {
+            return context.Extensions.Get<BasicDeliverEventArgs>();
+        }
     }
 }
