@@ -154,6 +154,8 @@
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
+            var eventRaisingThreadId = Thread.CurrentThread.ManagedThreadId;
+
             try
             {
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
@@ -165,6 +167,30 @@
 
             try
             {
+                // The current thread will be the event-raising thread if either:
+                //
+                // a) the semaphore was entered synchronously (did not have to wait).
+                // b) the event was raised on a thread pool thread,
+                //    and the semaphore was entered asynchronously (had to wait),
+                //    and the continuation happened to be scheduled back onto the same thread.
+                if (Thread.CurrentThread.ManagedThreadId == eventRaisingThreadId)
+                {
+                    // In RabbitMQ.Client 4.1.0, the event is raised by reusing a single, explicitly created thread,
+                    // so we are in scenario (a) described above.
+                    // We must yield to allow the thread to raise more events while we handle this one,
+                    // otherwise we will never process messages concurrently.
+                    //
+                    // If a future version of RabbitMQ.Client changes its threading model, then either:
+                    //
+                    // 1) we are in scenario (a), but we *may not* need to yield.
+                    //    E.g. the client may raise the event on a new, explicitly created thread each time.
+                    // 2) we cannot tell whether we are in scenario (a) or scenario (b).
+                    //    E.g. the client may raise the event on a thread pool thread.
+                    // 
+                    // In both cases, we cannot tell whether we need to yield or not, so we must yield.
+                    await Task.Yield();
+                }
+
                 await Process(eventArgs).ConfigureAwait(false);
             }
             catch (Exception ex)
