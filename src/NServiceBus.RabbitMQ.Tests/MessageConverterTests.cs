@@ -138,6 +138,62 @@
         }
 
         [Test]
+        public void TestCanHandleHeadersWithAllAmqpFieldValues()
+        {
+            var message = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
+                {
+                    MessageId = "Blah",
+                    Headers = new Dictionary<string, object>
+                    {
+                        {"short", (short)42},
+                        {"int", 42},
+                        {"long", 42L},
+                        {"decimal", 42m},
+                        {"sbyte", (sbyte)42},
+                        {"double", 42d},
+                        {"single", 42f},
+                        {"bool", true }
+                    }
+                }
+            };
+
+            var headers = converter.RetrieveHeaders(message);
+
+            Assert.NotNull(headers);
+            Assert.AreEqual("42", headers["short"]);
+            Assert.AreEqual("42", headers["int"]);
+            Assert.AreEqual("42", headers["long"]);
+            Assert.AreEqual("42", headers["decimal"]);
+            Assert.AreEqual("42", headers["sbyte"]);
+            Assert.AreEqual("42", headers["double"]);
+            Assert.AreEqual("42", headers["single"]);
+            Assert.AreEqual("True", headers["bool"]);
+        }
+
+        [Test]
+        public void TestCanHandleAmqpTimestampHeader()
+        {
+            var message = new BasicDeliverEventArgs
+            {
+                BasicProperties = new BasicProperties
+                {
+                    MessageId = "Blah",
+                    Headers = new Dictionary<string, object>
+                    {
+                        {"Foo", new global::RabbitMQ.Client.AmqpTimestamp(int.MaxValue) }
+                    }
+                }
+            };
+
+            var headers = converter.RetrieveHeaders(message);
+
+            Assert.NotNull(headers);
+            Assert.AreEqual("2038-01-19 03:14:07:000000 Z", headers["Foo"]);
+        }
+
+        [Test]
         public void TestCanHandleStringHeader()
         {
             var message = new BasicDeliverEventArgs
