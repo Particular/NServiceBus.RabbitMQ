@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Text;
     using global::RabbitMQ.Client.Events;
@@ -89,7 +88,7 @@
 
                 foreach (var header in messageHeaders)
                 {
-                    deserializedHeaders.Add(header.Key, header.Value == null ? null : ValueToString(header.Value));
+                    deserializedHeaders.Add(header.Key, ValueToString(header.Value));
                 }
             }
 
@@ -98,50 +97,65 @@
 
         static string ValueToString(object value)
         {
-            var s = value as string;
-            if (s != null)
-            {
-                return s;
-            }
-
             var bytes = value as byte[];
             if (bytes != null)
             {
                 return Encoding.UTF8.GetString(bytes);
             }
 
-            var dictionary = value as IDictionary<string, object>;
+            var dictionary = value as Dictionary<string, object>;
             if (dictionary != null)
             {
-                var valuesToJoin = new List<string>();
+                var sb = new StringBuilder();
 
-                // ReSharper disable once LoopCanBeConvertedToQuery
                 foreach (var kvp in dictionary)
                 {
-                    valuesToJoin.Add(string.Concat(kvp.Key, "=", ValueToString(kvp.Value)));
+                    sb.Append(kvp.Key);
+                    sb.Append("=");
+                    sb.Append(ValueToString(kvp.Value));
+                    sb.Append(",");
                 }
 
-                return string.Join(",", valuesToJoin);
+                if (sb.Length > 0)
+                {
+                    sb.Remove(sb.Length - 1, 1);
+                }
+
+                return sb.ToString();
             }
 
-            var list = value as IList;
+            var list = value as List<object>;
             if (list != null)
             {
-                var valuesToJoin = new List<string>();
+                var sb = new StringBuilder();
 
                 foreach (var entry in list)
                 {
-                    valuesToJoin.Add(ValueToString(entry));
+                    sb.Append(ValueToString(entry));
+                    sb.Append(";");
                 }
 
-                return string.Join(";", valuesToJoin);
+                if (sb.Length > 0)
+                {
+                    sb.Remove(sb.Length - 1, 1);
+                }
+
+                return sb.ToString();
             }
 
-            return null;
+            var timestamp = value as global::RabbitMQ.Client.AmqpTimestamp?;
+            if (timestamp.HasValue)
+            {
+                return DateTimeExtensions.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.Value.UnixTime));
+            }
+
+            return value?.ToString();
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
+
+        static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 }
