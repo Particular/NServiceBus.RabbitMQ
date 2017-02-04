@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Text;
     using global::RabbitMQ.Client.Events;
@@ -212,27 +211,6 @@
 
             Assert.NotNull(headers);
             Assert.AreEqual("ni", headers["Foo"]);
-        }
-
-        [Test]
-        public void TestCanHandleStringArrayListsHeader()
-        {
-            var message = new BasicDeliverEventArgs
-            {
-                BasicProperties = new BasicProperties
-                {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                {
-                    {"Foo", new ArrayList{"Bing"}}
-                }
-                }
-            };
-
-            var headers = converter.RetrieveHeaders(message);
-
-            Assert.NotNull(headers);
-            Assert.AreEqual("Bing", headers["Foo"]);
         }
 
         [Test]
