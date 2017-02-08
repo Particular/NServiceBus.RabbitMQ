@@ -80,12 +80,10 @@
         static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers)
         {
             var deserializedHeaders = new Dictionary<string, string>();
+            var messageHeaders = headers as Dictionary<string, object>;
 
-            if (headers != null)
+            if (messageHeaders != null)
             {
-                var messageHeaders = headers as Dictionary<string, object>
-                    ?? new Dictionary<string, object>(headers);
-
                 foreach (var header in messageHeaders)
                 {
                     deserializedHeaders.Add(header.Key, ValueToString(header.Value));
