@@ -53,6 +53,11 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 connection.Value.Dispose();
             }
+
+            foreach (var channel in channels)
+            {
+                channel.Dispose();
+            }
         }
 
         readonly Lazy<IConnection> connection;
