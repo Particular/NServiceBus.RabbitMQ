@@ -1,8 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using ApprovalTests;
-using NServiceBus;
 using NUnit.Framework;
 using PublicApiGenerator;
 
@@ -13,7 +14,9 @@ public class APIApprovals
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void Approve()
     {
-        var publicApi = Filter(ApiGenerator.GeneratePublicApi(typeof(RabbitMQTransport).Assembly));
+        var combine = Path.Combine(TestContext.CurrentContext.TestDirectory, "NServiceBus.Transports.RabbitMQ.dll");
+        var assembly = Assembly.LoadFile(combine);
+        var publicApi = Filter(ApiGenerator.GeneratePublicApi(assembly));
         Approvals.Verify(publicApi);
     }
 
