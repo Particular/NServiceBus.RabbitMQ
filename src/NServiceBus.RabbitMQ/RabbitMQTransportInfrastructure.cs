@@ -12,7 +12,7 @@
     using Settings;
 
     [SkipWeaving]
-    class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
+    sealed class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
