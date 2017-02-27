@@ -40,6 +40,7 @@
                 //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
                 messageHeaders.Remove(DelayInfrastructure.DelayHeader);
                 messageHeaders.Remove(DelayInfrastructure.DeadLetteredMessageHeader);
+                messageHeaders.Remove(BasicPropertiesExtensions.ConfirmationIdHeader);
             }
 
             var deserializedHeaders = DeserializeHeaders(messageHeaders);

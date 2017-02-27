@@ -116,7 +116,7 @@
 
         public static void SetConfirmationId(this IBasicProperties properties, ulong confirmationId)
         {
-            properties.Headers[confirmationIdHeader] = confirmationId.ToString();
+            properties.Headers[ConfirmationIdHeader] = confirmationId.ToString();
         }
 
         public static bool TryGetConfirmationId(this IBasicProperties properties, out ulong confirmationId)
@@ -124,13 +124,13 @@
             confirmationId = 0;
             object value;
 
-            return properties.Headers.TryGetValue(confirmationIdHeader, out value) &&
+            return properties.Headers.TryGetValue(ConfirmationIdHeader, out value) &&
                 ulong.TryParse(Encoding.UTF8.GetString(value as byte[] ?? new byte[0]), out confirmationId);
         }
 
         static bool TryGet<T>(this List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint =>
             (constraint = list.OfType<T>().FirstOrDefault()) != null;
 
-        const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
+        public const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
     }
 }
