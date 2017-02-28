@@ -21,6 +21,8 @@
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
+                DelayInfrastructure.Build(channel);
+
                 var queueDeclaringTopology = routingTopology as IDeclareQueues;
 
                 if (queueDeclaringTopology != null)
@@ -37,6 +39,16 @@
                     foreach (var sendingAddress in queueBindings.SendingAddresses)
                     {
                         CreateQueueIfNecessary(channel, sendingAddress);
+                    }
+                }
+
+                var delayTopology = routingTopology as ISupportDelayedDelivery;
+
+                if (delayTopology != null)
+                {
+                    foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+                    {
+                        delayTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
                     }
                 }
             }

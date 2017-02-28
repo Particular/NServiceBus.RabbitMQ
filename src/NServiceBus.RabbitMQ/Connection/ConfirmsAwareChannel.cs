@@ -10,12 +10,16 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms, bool allEndpointsSupportDelayedDelivery)
         {
             channel = connection.CreateModel();
             channel.BasicReturn += Channel_BasicReturn;
 
             this.routingTopology = routingTopology;
+
+            delayTopology = routingTopology as ISupportDelayedDelivery;
+            this.allEndpointsSupportDelayedDelivery = allEndpointsSupportDelayedDelivery;
+
             this.usePublisherConfirms = usePublisherConfirms;
 
             if (usePublisherConfirms)
@@ -50,7 +54,23 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            routingTopology.Send(channel, address, message, properties);
+            object delayValue;
+            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out delayValue) && delayTopology != null)
+            {
+                int startingDelayLevel;
+                var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out startingDelayLevel);
+
+                if (!allEndpointsSupportDelayedDelivery)
+                {
+                    delayTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
+                }
+
+                channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body);
+            }
+            else
+            {
+                routingTopology.Send(channel, address, message, properties);
+            }
 
             return task;
         }
@@ -225,6 +245,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
         IModel channel;
         readonly IRoutingTopology routingTopology;
+        readonly ISupportDelayedDelivery delayTopology;
+        readonly bool allEndpointsSupportDelayedDelivery;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 

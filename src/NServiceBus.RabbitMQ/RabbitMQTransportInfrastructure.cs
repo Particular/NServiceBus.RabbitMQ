@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
+    using DelayedDelivery;
     using global::RabbitMQ.Client.Events;
     using Janitor;
     using Performance.TimeToBeReceived;
@@ -18,6 +19,8 @@
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
         IRoutingTopology routingTopology;
+        readonly bool routingTopologySupportsDelayedDelivery;
+        readonly bool disableTimeoutManager;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
@@ -31,18 +34,44 @@
 
             routingTopology = CreateRoutingTopology();
 
+            routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
+            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
+
             bool usePublisherConfirms;
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
             {
                 usePublisherConfirms = true;
             }
 
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
+            settings.TryGet(SettingsKeys.DisableTimeoutManager, out disableTimeoutManager);
+
+            bool allEndpointsSupportDelayedDelivery;
+            settings.TryGet(SettingsKeys.AllEndpointsSupportDelayedDelivery, out allEndpointsSupportDelayedDelivery);
+
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms, allEndpointsSupportDelayedDelivery);
 
             RequireOutboxConsent = false;
         }
 
-        public override IEnumerable<Type> DeliveryConstraints => new[] { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery) };
+        public override IEnumerable<Type> DeliveryConstraints
+        {
+            get
+            {
+                var constraints = new List<Type>
+                {
+                    typeof(DiscardIfNotReceivedBefore),
+                    typeof(NonDurableDelivery)
+                };
+
+                if (disableTimeoutManager)
+                {
+                    constraints.Add(typeof(DoNotDeliverBefore));
+                    constraints.Add(typeof(DelayDeliveryWith));
+                }
+
+                return constraints;
+            }
+        }
 
         public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
@@ -62,7 +91,7 @@
         {
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(channelProvider),
-                () => Task.FromResult(StartupCheckResult.Success));
+                () => Task.FromResult(DelayInfrastructure.CheckForInvalidSetting(routingTopologySupportsDelayedDelivery, disableTimeoutManager)));
         }
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()

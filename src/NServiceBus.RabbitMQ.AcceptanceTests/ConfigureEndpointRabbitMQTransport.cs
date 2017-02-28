@@ -15,7 +15,7 @@ using RabbitMQ.Client;
 
 class ConfigureScenariosForRabbitMQTransport : IConfigureSupportedScenariosForTestExecution
 {
-    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub) };
+    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferral) };
 }
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
