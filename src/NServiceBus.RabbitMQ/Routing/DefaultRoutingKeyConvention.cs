@@ -4,6 +4,7 @@
     using System.Collections;
     using System.Collections.Concurrent;
     using System.Linq;
+    using Logging;
 
     class DefaultRoutingKeyConvention
     {
@@ -23,6 +24,11 @@
 
             var implementedInterface = interfaces.FirstOrDefault();
 
+            if (interfaces.Count > 1)
+            {
+                Logger.WarnFormat("The direct routing topology cannot properly publish a message type that implements more than one relevant interface. The type '{0}' implements the following interfaces: {1}. The interface that will be used is '{2}'. The others will be ignored, and any endpoints that subscribe to those interfaces will not receive a copy of the message.", type, string.Join(", ", interfaces), implementedInterface);
+            }
+            
             if (implementedInterface != null)
             {
                 key = GetRoutingKey(implementedInterface, key);
@@ -59,5 +65,6 @@
 
         static readonly byte[] MsPublicKeyToken = typeof(string).Assembly.GetName().GetPublicKeyToken();
         static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new ConcurrentDictionary<Type, bool>();
+        static readonly ILog Logger = LogManager.GetLogger(typeof(DefaultRoutingKeyConvention));
     }
 }

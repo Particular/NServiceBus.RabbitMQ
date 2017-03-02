@@ -329,6 +329,7 @@
     <Compile Include="TaskEx.cs" />
     <Compile Include="When_receiving_a_reply_that_contains_a_legacy_callback_header.cs" />
     <Compile Include="When_the_message_contains_a_legacy_callback_header.cs" />
+    <Compile Include="When_publishing_message_implementing_interface_in_direct_topology.cs" />
     <Compile Include="When_using_direct_routing.cs" />
     <Compile Include="When_the_broker_connection_is_lost.cs" />
     <Compile Include="When_using_a_custom_message_id_strategy.cs" />
