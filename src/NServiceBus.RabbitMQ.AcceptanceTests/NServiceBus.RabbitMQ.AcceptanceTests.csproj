@@ -267,6 +267,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.2.0\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.2.0\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="DelayedDelivery\When_deferring_a_message_longer_than_allowed_maximum.cs" />
+    <Compile Include="TestSuiteConstraints.cs" />
     <Compile Include="When_using_a_custom_message_id_strategy_that_returns_an_invalid_message_id.cs" />
     <Compile Include="ConfigureEndpointRabbitMQTransport.cs" />
     <Compile Include="TaskEx.cs" />

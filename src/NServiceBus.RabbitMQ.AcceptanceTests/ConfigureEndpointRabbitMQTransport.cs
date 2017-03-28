@@ -9,14 +9,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 using RabbitMQ.Client;
-
-class ConfigureScenariosForRabbitMQTransport : IConfigureSupportedScenariosForTestExecution
-{
-    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes => new[] { typeof(AllDtcTransports), typeof(AllNativeMultiQueueTransactionTransports), typeof(AllTransportsWithMessageDrivenPubSub), typeof(AllTransportsWithoutNativeDeferral) };
-}
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {

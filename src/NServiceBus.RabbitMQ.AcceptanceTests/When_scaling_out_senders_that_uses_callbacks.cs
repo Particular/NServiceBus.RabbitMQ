@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
     using Configuration.AdvanceExtensibility;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -69,8 +70,8 @@
         {
             public ScaledOutClient()
             {
-                EndpointSetup<DefaultServer>()
-                    .AddMapping<MyRequest>(typeof(ServerThatRespondsToCallbacks));
+                EndpointSetup<DefaultServer>(config =>
+                    config.ConfigureTransport().Routing().RouteToEndpoint(typeof(MyRequest), typeof(ServerThatRespondsToCallbacks)));
             }
 
             class MyResponseHandler : IHandleMessages<MyResponse>
