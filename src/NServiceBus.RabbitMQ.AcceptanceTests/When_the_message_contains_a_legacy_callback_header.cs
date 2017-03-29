@@ -46,8 +46,8 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
         {
             public OriginatingEndpoint()
             {
-                EndpointSetup<DefaultServer>()
-                    .AddMapping<Request>(typeof(ReceivingEndpoint));
+                EndpointSetup<DefaultServer>(config =>
+                    config.ConfigureTransport().Routing().RouteToEndpoint(typeof(Request), typeof(ReceivingEndpoint)));
             }
 
             class ReplyHandler : IHandleMessages<Reply>

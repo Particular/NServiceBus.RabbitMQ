@@ -46,9 +46,11 @@
         {
             public OriginatingEndpoint()
             {
-                EndpointSetup<DefaultServer>()
-                    .AddMapping<Request>(typeof(ReceivingEndpoint))
-                    .AuditTo<AuditSpyEndpoint>();
+                EndpointSetup<DefaultServer>(config =>
+                {
+                    config.ConfigureTransport().Routing().RouteToEndpoint(typeof(Request), typeof(ReceivingEndpoint));
+                    config.AuditProcessedMessagesTo<AuditSpyEndpoint>();
+                });
             }
 
             class ReplyHandler : IHandleMessages<Reply>
