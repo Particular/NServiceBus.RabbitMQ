@@ -20,32 +20,41 @@ public void AddUserToVirtualHost() => CreateUserPermissionRequest("PUT", GetBrok
 
 public Broker GetBroker()
 {
-    var connectionStringBuilder = new DbConnectionStringBuilder
-    {
-        ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString")
-    };
+    var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
-    ApplyDefault(connectionStringBuilder, "username", "guest");
-    ApplyDefault(connectionStringBuilder, "password", "guest");
-    ApplyDefault(connectionStringBuilder, "virtualhost", "nsb-rabbitmq-test");
-    ApplyDefault(connectionStringBuilder, "host", "localhost");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
+    }
+
+    var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+
+    string hostName;
+    
+    object value;
+    if (connectionStringBuilder.TryGetValue("host", out value))
+    {
+        hostName = value.ToString();
+    }
+    else
+    {
+        throw new Exception("The connection string doesn't contain a value for 'host'.");
+    }
 
     return new Broker
     {
-        UserName = connectionStringBuilder["username"].ToString(),
-        Password = connectionStringBuilder["password"].ToString(),
-        VirtualHost = connectionStringBuilder["virtualhost"].ToString(),
-        HostName = connectionStringBuilder["host"].ToString(),
+        UserName = connectionStringBuilder.GetOrDefault("username", "guest"),
+        Password = connectionStringBuilder.GetOrDefault("password", "guest"),
+        VirtualHost = connectionStringBuilder.GetOrDefault("virtualhost", "/"),
+        HostName = hostName,
         Port = 15672,
     };
 }
 
-public void ApplyDefault(DbConnectionStringBuilder builder, string key, string value)
+public static string GetOrDefault(this DbConnectionStringBuilder builder, string key, string defaultValue)
 {
-    if (!builder.ContainsKey(key))
-    {
-        builder.Add(key, value);
-    }
+    object value;
+    return builder.TryGetValue(key, out value) ? value.ToString() : defaultValue;
 }
 
 public HttpWebRequest CreateVirtualHostRequest(string method, Broker broker) =>

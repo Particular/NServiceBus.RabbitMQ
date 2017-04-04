@@ -97,13 +97,14 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DelayedDelivery\When_calculating_a_routing_key.cs" />
     <Compile Include="APIApprovals.cs" />
     <Compile Include="ApprovalTestConfig.cs" />
-    <Compile Include="App_Packages\PublicApiGenerator.5.0.0\ApiGenerator.cs" />
+    <Compile Include="App_Packages\PublicApiGenerator.6.0.0\ApiGenerator.cs" />
     <Compile Include="ConnectionString\ConnectionConfigurationTests.cs" />
-    <Compile Include="ConnectionString\ConnectionStringParserTests.cs" />
     <Compile Include="MessageConverterTests.cs" />
     <Compile Include="RabbitMqContext.cs" />
+    <Compile Include="Support\ConventionalRoutingTopologyExtensions.cs" />
     <Compile Include="TestCategory.cs" />
     <Compile Include="When_consuming_messages.cs" />
     <Compile Include="When_stopping_endpoint.cs" />

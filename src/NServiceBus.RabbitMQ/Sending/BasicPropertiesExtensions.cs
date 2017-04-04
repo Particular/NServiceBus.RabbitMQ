@@ -5,89 +5,132 @@
     using System.Globalization;
     using System.Linq;
     using System.Text;
-    using global::RabbitMQ.Client;
+    using DelayedDelivery;
     using DeliveryConstraints;
+    using global::RabbitMQ.Client;
     using Performance.TimeToBeReceived;
 
     static class BasicPropertiesExtensions
     {
         public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints)
         {
-            properties.MessageId = message.MessageId;
-
-            if (message.Headers.ContainsKey(NServiceBus.Headers.CorrelationId))
+            if (message.MessageId != null)
             {
-                properties.CorrelationId = message.Headers[NServiceBus.Headers.CorrelationId];
-            }
-
-            DiscardIfNotReceivedBefore timeToBeReceived;
-
-            if (TryGet(deliveryConstraints, out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
-            {
-                properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
+                properties.MessageId = message.MessageId;
             }
 
             properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
 
-            properties.Headers = message.Headers.ToDictionary(p => p.Key, p => (object)p.Value);
+            var messageHeaders = message.Headers ?? new Dictionary<string, string>();
+            properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
-            string messageTypesHeader;
-            if (message.Headers.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out messageTypesHeader))
+            long delay;
+            var delayed = CalculateDelay(deliveryConstraints, out delay);
+
+            if (delayed)
             {
-                var index = messageTypesHeader.IndexOf(',');
+                properties.Headers[DelayInfrastructure.DelayHeader] = Convert.ToInt32(delay);
+            }
+
+            DiscardIfNotReceivedBefore timeToBeReceived;
+            if (deliveryConstraints.TryGet(out timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
+            {
+                // align with TimeoutManager behavior
+                if (delayed)
+                {
+                    throw new Exception("Postponed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to postpone messages of this type.");
+                }
+
+                properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
+            }
+
+            string correlationId;
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.CorrelationId, out correlationId) && correlationId != null)
+            {
+                properties.CorrelationId = correlationId;
+            }
+
+            string enclosedMessageTypes;
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out enclosedMessageTypes) && enclosedMessageTypes != null)
+            {
+                var index = enclosedMessageTypes.IndexOf(',');
 
                 if (index > -1)
                 {
-                    properties.Type = messageTypesHeader.Substring(0, index);
+                    properties.Type = enclosedMessageTypes.Substring(0, index);
                 }
                 else
                 {
-                    properties.Type = messageTypesHeader;
+                    properties.Type = enclosedMessageTypes;
                 }
             }
 
-            if (message.Headers.ContainsKey(NServiceBus.Headers.ContentType))
+            string contentType;
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.ContentType, out contentType) && contentType != null)
             {
-                properties.ContentType = message.Headers[NServiceBus.Headers.ContentType];
+                properties.ContentType = contentType;
             }
             else
             {
                 properties.ContentType = "application/octet-stream";
             }
 
-            if (message.Headers.ContainsKey(NServiceBus.Headers.ReplyToAddress))
+            string replyToAddress;
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.ReplyToAddress, out replyToAddress) && replyToAddress != null)
             {
-                properties.ReplyTo = message.Headers[NServiceBus.Headers.ReplyToAddress];
+                properties.ReplyTo = replyToAddress;
             }
+        }
+
+        static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, out long delay)
+        {
+            DoNotDeliverBefore doNotDeliverBefore;
+            DelayDeliveryWith delayDeliveryWith;
+            delay = 0;
+            var delayed = false;
+
+            if (deliveryConstraints.TryGet(out doNotDeliverBefore))
+            {
+                delayed = true;
+                delay = Convert.ToInt64(Math.Ceiling((doNotDeliverBefore.At - DateTime.UtcNow).TotalSeconds));
+
+                if (delay > DelayInfrastructure.MaxDelayInSeconds)
+                {
+                    throw new Exception($"Message cannot be sent with {nameof(DoNotDeliverBefore)} value '{doNotDeliverBefore.At}' because it exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
+                }
+
+            }
+            else if (deliveryConstraints.TryGet(out delayDeliveryWith))
+            {
+                delayed = true;
+                delay = Convert.ToInt64(Math.Ceiling(delayDeliveryWith.Delay.TotalSeconds));
+
+                if (delay > DelayInfrastructure.MaxDelayInSeconds)
+                {
+                    throw new Exception($"Message cannot be sent with {nameof(DelayDeliveryWith)} value '{delayDeliveryWith.Delay}' because it exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
+                }
+            }
+
+            return delayed;
         }
 
         public static void SetConfirmationId(this IBasicProperties properties, ulong confirmationId)
         {
-            properties.Headers[confirmationIdHeader] = confirmationId.ToString();
+            properties.Headers[ConfirmationIdHeader] = confirmationId.ToString();
         }
 
         public static bool TryGetConfirmationId(this IBasicProperties properties, out ulong confirmationId)
         {
             confirmationId = 0;
+            object value;
 
-            if (properties.Headers.ContainsKey(confirmationIdHeader))
-            {
-                var headerBytes = properties.Headers[confirmationIdHeader] as byte[];
-                var headerString = Encoding.UTF8.GetString(headerBytes ?? new byte[0]);
-
-                return UInt64.TryParse(headerString, out confirmationId);
-            }
-
-            return false;
+            return properties.Headers.TryGetValue(ConfirmationIdHeader, out value) &&
+                ulong.TryParse(Encoding.UTF8.GetString(value as byte[] ?? new byte[0]), out confirmationId);
         }
 
-        static bool TryGet<T>(List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint
-        {
-            constraint = list.OfType<T>().FirstOrDefault();
+        static bool TryGet<T>(this List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint =>
+            (constraint = list.OfType<T>().FirstOrDefault()) != null;
 
-            return constraint != null;
-        }
-
-        const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
+        public const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
     }
 }

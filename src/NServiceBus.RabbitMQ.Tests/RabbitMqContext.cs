@@ -2,44 +2,14 @@
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Diagnostics;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using NUnit.Framework;
+    using Support;
 
     class RabbitMqContext
     {
-        protected void MakeSureQueueAndExchangeExists(string queueName)
-        {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueueDeclare(queueName, true, false, false, null);
-                channel.QueuePurge(queueName);
-
-                //to make sure we kill old subscriptions
-                DeleteExchange(queueName);
-
-                routingTopology.Initialize(channel, queueName);
-            }
-        }
-
-        void DeleteExchange(string exchangeName)
-        {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                try
-                {
-                    channel.ExchangeDelete(exchangeName, false);
-                }
-                // ReSharper disable EmptyGeneralCatchClause
-                catch (Exception)
-                // ReSharper restore EmptyGeneralCatchClause
-                {
-                }
-            }
-        }
-
         public virtual int MaximumConcurrency => 1;
 
         [SetUp]
@@ -50,22 +20,15 @@
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
 
-            ConnectionConfiguration config;
-
-            if (connectionString != null)
+            if (string.IsNullOrEmpty(connectionString))
             {
-                var parser = new ConnectionStringParser(ReceiverQueue);
-                config = parser.Parse(connectionString);
-            }
-            else
-            {
-                config = new ConnectionConfiguration(ReceiverQueue);
-                config.Host = "localhost";
-                config.VirtualHost = "nsb-rabbitmq-test";
+                throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
             }
 
-            connectionFactory = new ConnectionFactory(config);
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
+            var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
+
+            connectionFactory = new ConnectionFactory(config, null);
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, true, false);
 
             messageDispatcher = new MessageDispatcher(channelProvider);
 
@@ -73,8 +36,7 @@
 
             messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
 
-            MakeSureQueueAndExchangeExists(ReceiverQueue);
-            MakeSureQueueAndExchangeExists(ErrorQueue);
+            routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
             subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
 
@@ -99,30 +61,39 @@
             channelProvider?.Dispose();
         }
 
-        protected IncomingMessage WaitForMessage()
+        protected bool TryWaitForMessageReceipt()
         {
-            var waitTime = TimeSpan.FromSeconds(1);
-
-            if (Debugger.IsAttached)
-            {
-                waitTime = TimeSpan.FromMinutes(10);
-            }
-
             IncomingMessage message;
-            receivedMessages.TryTake(out message, waitTime);
+            return TryReceiveMessage(out message, incomingMessageTimeout);
+        }
+
+        protected IncomingMessage ReceiveMessage()
+        {
+            IncomingMessage message;
+            if (!TryReceiveMessage(out message, incomingMessageTimeout))
+            {
+                throw new TimeoutException($"The message did not arrive within {incomingMessageTimeout.TotalSeconds} seconds.");
+            }
 
             return message;
         }
+
+        bool TryReceiveMessage(out IncomingMessage message, TimeSpan timeout) =>
+            receivedMessages.TryTake(out message, timeout);
+
+        protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";
         protected MessageDispatcher messageDispatcher;
         protected ConnectionFactory connectionFactory;
-        private ChannelProvider channelProvider;
         protected MessagePump messagePump;
-        BlockingCollection<IncomingMessage> receivedMessages;
-
-        protected ConventionalRoutingTopology routingTopology;
         protected SubscriptionManager subscriptionManager;
+
+        ChannelProvider channelProvider;
+        BlockingCollection<IncomingMessage> receivedMessages;
+        ConventionalRoutingTopology routingTopology;
+
+        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(1);
     }
 }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Security.Authentication;
+    using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
 
     class ConnectionFactory
@@ -9,7 +10,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(ConnectionConfiguration connectionConfiguration)
+        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates)
         {
             if (connectionConfiguration == null)
             {
@@ -35,6 +36,7 @@
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
+            connectionFactory.Ssl.Certs = clientCertificates;
             connectionFactory.Ssl.CertPath = connectionConfiguration.CertPath;
             connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;

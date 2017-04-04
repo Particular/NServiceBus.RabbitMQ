@@ -28,11 +28,11 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
             Assert.IsFalse(context.RepliedToWrongQueue);
         }
 
-        class Request : IMessage
+        public class Request : IMessage
         {
         }
 
-        class Reply : IMessage
+        public class Reply : IMessage
         {
         }
 

@@ -3,7 +3,7 @@
 #load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
-#load "src/packages/simple-targets-csx.5.0.0/simple-targets.csx"
+#load "src/packages/simple-targets-csx.5.2.0/simple-targets.csx"
 
 using System;
 using System.IO;
@@ -12,9 +12,10 @@ using System.Linq;
 using static SimpleTargets;
 
 // locations
-var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.3.20161116.170907-eap9.zip");
+var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.3.20161215.134936.zip");
 var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/{resharperCltUrl.Segments.Last()}";
-var inspectCodePath = "./.resharper/inspectcode.exe";
+var inspectCodePath = $"./.resharper/{Path.GetFileNameWithoutExtension(resharperCltUrl.Segments.Last())}/inspectcode.exe";
+var nuget = "src/.nuget/v3.4.4/NuGet.exe";
 var msBuild = $"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}/MSBuild/14.0/Bin/msbuild.exe";
 var solution = "./src/NServiceBus.RabbitMQ.sln";
 var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
@@ -28,7 +29,9 @@ var targets = new TargetDictionary();
 
 targets.Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-test", "transport-test"));
 
-targets.Add("build", () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
+targets.Add("restore", () => Cmd(nuget, $"restore {solution}"));
+
+targets.Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
 
 targets.Add(
     "download-resharper-clt",
@@ -62,12 +65,12 @@ targets.Add("create-virtual-host", () => CreateVirtualHost());
 
 targets.Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
 
-targets.Add("prepare-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
+targets.Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-targets.Add("unit-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
+targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
 
-targets.Add("acceptance-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
+targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
 
-targets.Add("transport-test", DependsOn("build", "prepare-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
+targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
 
 Run(Args, targets);
