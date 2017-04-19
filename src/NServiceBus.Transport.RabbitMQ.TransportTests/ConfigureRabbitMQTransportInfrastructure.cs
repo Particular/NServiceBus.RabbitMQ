@@ -58,9 +58,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             UseBackgroundThreadsForIO = true
         };
 
-        object value;
-
-        if (connectionStringBuilder.TryGetValue("username", out value))
+        if (connectionStringBuilder.TryGetValue("username", out var value))
         {
             connectionFactory.UserName = value.ToString();
         }

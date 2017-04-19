@@ -110,8 +110,7 @@
 
             var host = default(string);
 
-            string value;
-            if (dictionary.TryGetValue("host", out value))
+            if (dictionary.TryGetValue("host", out var value))
             {
                 var hostsAndPorts = value.Split(',');
 
@@ -173,14 +172,12 @@
 
         static string GetValue(Dictionary<string, string> dictionary, string key, string defaultValue)
         {
-            string value;
-            return dictionary.TryGetValue(key, out value) ? value : defaultValue;
+            return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
         }
 
         static T GetValue<T>(Dictionary<string, string> dictionary, string key, Convert<T> convert, T defaultValue, StringBuilder invalidOptionsMessage)
         {
-            string value;
-            if (dictionary.TryGetValue(key, out value))
+            if (dictionary.TryGetValue(key, out var value))
             {
                 if (!convert(value, out defaultValue))
                 {

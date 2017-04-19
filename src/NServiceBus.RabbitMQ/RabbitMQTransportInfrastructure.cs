@@ -28,8 +28,7 @@
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString, settings.EndpointName());
 
-            X509CertificateCollection clientCertificates;
-            settings.TryGet(SettingsKeys.ClientCertificates, out clientCertificates);
+            settings.TryGet(SettingsKeys.ClientCertificates, out X509CertificateCollection clientCertificates);
             connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates);
 
             routingTopology = CreateRoutingTopology();
@@ -37,8 +36,7 @@
             routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
             settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
 
-            bool usePublisherConfirms;
-            if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
+            if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out bool usePublisherConfirms))
             {
                 usePublisherConfirms = true;
             }
@@ -121,9 +119,8 @@
         IRoutingTopology CreateRoutingTopology()
         {
             var durable = settings.DurableMessagesEnabled();
-            Func<bool, IRoutingTopology> topologyFactory;
 
-            if (!settings.TryGet(out topologyFactory))
+            if (!settings.TryGet(out Func<bool, IRoutingTopology> topologyFactory))
             {
                 topologyFactory = d => new ConventionalRoutingTopology(d);
             }
@@ -144,8 +141,7 @@
                 messageConverter = new MessageConverter();
             }
 
-            string hostDisplayName;
-            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName))
+            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out string hostDisplayName))
             {
                 hostDisplayName = Support.RuntimeEnvironment.MachineName;
             }
@@ -154,20 +150,17 @@
 
             var queuePurger = new QueuePurger(connectionFactory);
 
-            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out timeToWaitBeforeTriggeringCircuitBreaker))
+            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out TimeSpan timeToWaitBeforeTriggeringCircuitBreaker))
             {
                 timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
             }
 
-            int prefetchMultiplier;
-            if (!settings.TryGet(SettingsKeys.PrefetchMultiplier, out prefetchMultiplier))
+            if (!settings.TryGet(SettingsKeys.PrefetchMultiplier, out int prefetchMultiplier))
             {
                 prefetchMultiplier = 3;
             }
 
-            ushort prefetchCount;
-            if (!settings.TryGet(SettingsKeys.PrefetchCount, out prefetchCount))
+            if (!settings.TryGet(SettingsKeys.PrefetchCount, out ushort prefetchCount))
             {
                 prefetchCount = 0;
             }
