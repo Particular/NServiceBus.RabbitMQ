@@ -24,7 +24,7 @@ if not exist %NUGET_LOCAL_DIR%\NuGet.exe (
 )
 
 :: restore packages
-%NUGET_LOCAL_DIR%\NuGet.exe restore .\packages.config -PackagesDirectory ./src/packages -MSBuildVersion 14 -Verbosity quiet
+%NUGET_LOCAL_DIR%\NuGet.exe restore .\packages.config -PackagesDirectory ./src/packages -MSBuildVersion 15 -Verbosity quiet
 
 :: run script
 "%ProgramFiles(x86)%\MSBuild\14.0\Bin\csi.exe" build.csx %*
