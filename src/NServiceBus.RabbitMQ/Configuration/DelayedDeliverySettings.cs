@@ -6,7 +6,7 @@
     /// <summary>
     /// The delayed delivery settings.
     /// </summary>
-    public class DelayedDeliverySettings : ExposeSettings
+    public partial class DelayedDeliverySettings : ExposeSettings
     {
         internal DelayedDeliverySettings(SettingsHolder settings) : base(settings) { }
 
@@ -20,14 +20,6 @@
         {
             this.GetSettings().Set(SettingsKeys.DisableTimeoutManager, true);
 
-            return this;
-        }
-
-        /// <summary>
-        /// Tells the endpoint that all other endpoints can manage their own bindings to the delay infrastructure.
-        /// </summary>
-        public DelayedDeliverySettings AllEndpointsSupportDelayedDelivery()
-        {
             return this;
         }
     }
