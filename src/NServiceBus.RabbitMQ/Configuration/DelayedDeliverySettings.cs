@@ -28,8 +28,6 @@
         /// </summary>
         public DelayedDeliverySettings AllEndpointsSupportDelayedDelivery()
         {
-            this.GetSettings().Set(SettingsKeys.AllEndpointsSupportDelayedDelivery, true);
-
             return this;
         }
     }

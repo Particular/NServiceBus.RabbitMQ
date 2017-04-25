@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms, bool allEndpointsSupportDelayedDelivery)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             channel = connection.CreateModel();
             channel.BasicReturn += Channel_BasicReturn;
@@ -18,7 +18,6 @@ namespace NServiceBus.Transport.RabbitMQ
             this.routingTopology = routingTopology;
 
             delayTopology = routingTopology as ISupportDelayedDelivery;
-            this.allEndpointsSupportDelayedDelivery = allEndpointsSupportDelayedDelivery;
 
             this.usePublisherConfirms = usePublisherConfirms;
 
@@ -60,11 +59,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 int startingDelayLevel;
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out startingDelayLevel);
 
-                if (!allEndpointsSupportDelayedDelivery)
-                {
-                    delayTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
-                }
-
+                delayTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
                 channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body);
             }
             else
@@ -246,7 +241,6 @@ namespace NServiceBus.Transport.RabbitMQ
         IModel channel;
         readonly IRoutingTopology routingTopology;
         readonly ISupportDelayedDelivery delayTopology;
-        readonly bool allEndpointsSupportDelayedDelivery;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 
