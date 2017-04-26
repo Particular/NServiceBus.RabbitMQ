@@ -45,10 +45,7 @@
 
             settings.TryGet(SettingsKeys.DisableTimeoutManager, out disableTimeoutManager);
 
-            bool allEndpointsSupportDelayedDelivery;
-            settings.TryGet(SettingsKeys.AllEndpointsSupportDelayedDelivery, out allEndpointsSupportDelayedDelivery);
-
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms, allEndpointsSupportDelayedDelivery);
+            channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
 
             RequireOutboxConsent = false;
         }

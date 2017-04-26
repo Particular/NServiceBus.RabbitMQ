@@ -26,6 +26,18 @@ namespace NServiceBus
     }
 }
 
+namespace NServiceBus.Transport.RabbitMQ
+{
+    public partial class DelayedDeliverySettings
+    {
+        [ObsoleteEx(RemoveInVersion = "5.0", TreatAsErrorFromVersion = "5.0")]
+        public DelayedDeliverySettings AllEndpointsSupportDelayedDelivery()
+        {
+            return this;
+        }
+    }
+}
+
 namespace NServiceBus.Transports.RabbitMQ
 {
     [ObsoleteEx(RemoveInVersion = "5.0", TreatAsErrorFromVersion = "4.0")]
