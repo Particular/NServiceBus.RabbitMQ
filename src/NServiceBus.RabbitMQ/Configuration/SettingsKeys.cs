@@ -9,7 +9,6 @@
         public const string PrefetchCount = "RabbitMQ.PrefetchCount";
         public const string ClientCertificates = "RabbitMQ.ClientCertificates";
         public const string DisableTimeoutManager = "RabbitMQ.DisableTimeoutManager";
-        public const string AllEndpointsSupportDelayedDelivery = "RabbitMQ.AllEndpointsSupportDelayedDelivery";
         public const string RoutingTopologySupportsDelayedDelivery = "RabbitMQ.RoutingTopologySupportsDelayedDelivery";
     }
 }

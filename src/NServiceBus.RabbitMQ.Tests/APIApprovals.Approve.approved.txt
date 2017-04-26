@@ -41,6 +41,8 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     public class DelayedDeliverySettings : NServiceBus.Configuration.AdvanceExtensibility.ExposeSettings
     {
+        [System.ObsoleteAttribute("Will be treated as an error from version 5.0.0. Will be removed in version 5.0.0." +
+            "", false)]
         public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings AllEndpointsSupportDelayedDelivery() { }
         public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DisableTimeoutManager() { }
     }
