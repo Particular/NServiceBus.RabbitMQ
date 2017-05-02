@@ -186,7 +186,7 @@
                     //    E.g. the client may raise the event on a new, explicitly created thread each time.
                     // 2) we cannot tell whether we are in scenario (a) or scenario (b).
                     //    E.g. the client may raise the event on a thread pool thread.
-                    // 
+                    //
                     // In both cases, we cannot tell whether we need to yield or not, so we must yield.
                     await Task.Yield();
                 }

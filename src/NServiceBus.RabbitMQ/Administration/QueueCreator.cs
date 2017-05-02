@@ -23,9 +23,7 @@
             {
                 DelayInfrastructure.Build(channel);
 
-                var queueDeclaringTopology = routingTopology as IDeclareQueues;
-
-                if (queueDeclaringTopology != null)
+                if (routingTopology is IDeclareQueues queueDeclaringTopology)
                 {
                     queueDeclaringTopology.DeclareAndInitialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
                 }
@@ -42,9 +40,7 @@
                     }
                 }
 
-                var delayTopology = routingTopology as ISupportDelayedDelivery;
-
-                if (delayTopology != null)
+                if (routingTopology is ISupportDelayedDelivery delayTopology)
                 {
                     foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                     {

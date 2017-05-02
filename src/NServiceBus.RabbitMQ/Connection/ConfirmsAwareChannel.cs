@@ -53,11 +53,9 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            object delayValue;
-            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out delayValue) && delayTopology != null)
+            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue) && delayTopology != null)
             {
-                int startingDelayLevel;
-                var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out startingDelayLevel);
+                var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
                 delayTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
                 channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body);
@@ -144,8 +142,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                 if (!eventState.Multiple)
                 {
-                    TaskCompletionSource<bool> tcs;
-                    eventState.Messages.TryRemove(eventState.DeliveryTag, out tcs);
+                    eventState.Messages.TryRemove(eventState.DeliveryTag, out var tcs);
 
                     tcs?.SetResult(true);
                 }
@@ -155,8 +152,7 @@ namespace NServiceBus.Transport.RabbitMQ
                     {
                         if (message.Key <= eventState.DeliveryTag)
                         {
-                            TaskCompletionSource<bool> tcs;
-                            eventState.Messages.TryRemove(message.Key, out tcs);
+                            eventState.Messages.TryRemove(message.Key, out var tcs);
 
                             tcs?.SetResult(true);
                         }
@@ -173,8 +169,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                 if (!eventState.Multiple)
                 {
-                    TaskCompletionSource<bool> tcs;
-                    eventState.Messages.TryRemove(eventState.DeliveryTag, out tcs);
+                    eventState.Messages.TryRemove(eventState.DeliveryTag, out var tcs);
 
                     tcs?.SetException(new Exception("Message rejected by broker."));
                 }
@@ -184,8 +179,7 @@ namespace NServiceBus.Transport.RabbitMQ
                     {
                         if (message.Key <= eventState.DeliveryTag)
                         {
-                            TaskCompletionSource<bool> tcs;
-                            eventState.Messages.TryRemove(message.Key, out tcs);
+                            eventState.Messages.TryRemove(message.Key, out var tcs);
 
                             tcs?.SetException(new Exception("Message rejected by broker."));
                         }
@@ -200,12 +194,9 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 var message = $"Message could not be routed to {e.Exchange + e.RoutingKey}: {e.ReplyCode} {e.ReplyText}";
 
-                ulong deliveryTag;
-
-                if (e.BasicProperties.TryGetConfirmationId(out deliveryTag))
+                if (e.BasicProperties.TryGetConfirmationId(out var deliveryTag))
                 {
-                    TaskCompletionSource<bool> tcs;
-                    messages.TryRemove(deliveryTag, out tcs);
+                    messages.TryRemove(deliveryTag, out var tcs);
 
                     tcs?.SetException(new Exception(message));
                 }
@@ -224,8 +215,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 {
                     foreach (var message in messages)
                     {
-                        TaskCompletionSource<bool> tcs;
-                        messages.TryRemove(message.Key, out tcs);
+                        messages.TryRemove(message.Key, out var tcs);
 
                         tcs?.SetException(new Exception($"Channel has been closed: {e}"));
                     }

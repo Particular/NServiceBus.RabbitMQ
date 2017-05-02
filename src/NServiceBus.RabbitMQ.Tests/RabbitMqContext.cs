@@ -63,14 +63,12 @@
 
         protected bool TryWaitForMessageReceipt()
         {
-            IncomingMessage message;
-            return TryReceiveMessage(out message, incomingMessageTimeout);
+            return TryReceiveMessage(out var message, incomingMessageTimeout);
         }
 
         protected IncomingMessage ReceiveMessage()
         {
-            IncomingMessage message;
-            if (!TryReceiveMessage(out message, incomingMessageTimeout))
+            if (!TryReceiveMessage(out var message, incomingMessageTimeout))
             {
                 throw new TimeoutException($"The message did not arrive within {incomingMessageTimeout.TotalSeconds} seconds.");
             }

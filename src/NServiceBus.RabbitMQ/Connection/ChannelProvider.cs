@@ -18,9 +18,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public ConfirmsAwareChannel GetPublishChannel()
         {
-            ConfirmsAwareChannel channel;
-
-            if (!channels.TryDequeue(out channel) || channel.IsClosed)
+            if (!channels.TryDequeue(out var channel) || channel.IsClosed)
             {
                 channel?.Dispose();
 

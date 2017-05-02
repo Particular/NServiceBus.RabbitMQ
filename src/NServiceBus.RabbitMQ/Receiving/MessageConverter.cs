@@ -89,9 +89,8 @@
         static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers)
         {
             var deserializedHeaders = new Dictionary<string, string>();
-            var messageHeaders = headers as Dictionary<string, object>;
 
-            if (messageHeaders != null)
+            if (headers is Dictionary<string, object> messageHeaders)
             {
                 foreach (var header in messageHeaders)
                 {
@@ -104,14 +103,12 @@
 
         static string ValueToString(object value)
         {
-            var bytes = value as byte[];
-            if (bytes != null)
+            if (value is byte[] bytes)
             {
                 return Encoding.UTF8.GetString(bytes);
             }
 
-            var dictionary = value as Dictionary<string, object>;
-            if (dictionary != null)
+            if (value is Dictionary<string, object> dictionary)
             {
                 var sb = new StringBuilder();
 
@@ -131,8 +128,7 @@
                 return sb.ToString();
             }
 
-            var list = value as List<object>;
-            if (list != null)
+            if (value is List<object> list)
             {
                 var sb = new StringBuilder();
 
@@ -150,10 +146,9 @@
                 return sb.ToString();
             }
 
-            var timestamp = value as global::RabbitMQ.Client.AmqpTimestamp?;
-            if (timestamp.HasValue)
+            if (value is global::RabbitMQ.Client.AmqpTimestamp timestamp)
             {
-                return DateTimeExtensions.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.Value.UnixTime));
+                return DateTimeExtensions.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.UnixTime));
             }
 
             return value?.ToString();

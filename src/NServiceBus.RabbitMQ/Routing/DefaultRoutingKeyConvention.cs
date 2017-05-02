@@ -28,7 +28,7 @@
             {
                 Logger.WarnFormat("The direct routing topology cannot properly publish a message type that implements more than one relevant interface. The type '{0}' implements the following interfaces: {1}. The interface that will be used is '{2}'. The others will be ignored, and any endpoints that subscribe to those interfaces will not receive a copy of the message.", type, string.Join(", ", interfaces), implementedInterface);
             }
-            
+
             if (implementedInterface != null)
             {
                 key = GetRoutingKey(implementedInterface, key);
@@ -44,9 +44,7 @@
 
         static bool IsSystemType(Type type)
         {
-            bool result;
-
-            if (!IsSystemTypeCache.TryGetValue(type, out result))
+            if (!IsSystemTypeCache.TryGetValue(type, out var result))
             {
                 var nameOfContainingAssembly = type.Assembly.GetName().GetPublicKeyToken();
                 IsSystemTypeCache[type] = result = IsClrType(nameOfContainingAssembly);
