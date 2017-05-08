@@ -24,7 +24,7 @@ The maintainers [watch](https://github.com/Particular/NServiceBus.RabbitMQ/watch
 
 ### Smoke testing
 
-When a new version of RabbitMQ.Client is released, we smoke test it to gain some confidence that it hasn't broken anything relied upon by NServiceBus.RabbitMQ. Smoke testing is performed by updating to the new version of RabbitMQ.Client in the appropriate projecs in the following places:
+When a new version of RabbitMQ.Client is released, we smoke test it to gain some confidence that it hasn't broken anything relied upon by NServiceBus.RabbitMQ. Smoke testing is performed by updating to the new version of RabbitMQ.Client in the appropriate projects in the following places:
 
 - [Samples](https://github.com/Particular/docs.particular.net/tree/master/samples/rabbitmq): run all samples after updating.
 - [Snippets](https://github.com/Particular/docs.particular.net/tree/master/Snippets/Rabbit): compile the solution after updating.
