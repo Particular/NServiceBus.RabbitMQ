@@ -3,7 +3,7 @@
 #load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
-#load "src/packages/simple-targets-csx.5.2.0/simple-targets.csx"
+#load "build-packages/simple-targets-csx.5.2.0/simple-targets.csx"
 
 using System;
 using System.IO;
@@ -12,24 +12,23 @@ using System.Linq;
 using static SimpleTargets;
 
 // locations
-var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2016.3.20170126.124346.zip");
+var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.1.20170428.83814.zip");
 var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/{resharperCltUrl.Segments.Last()}";
 var inspectCodePath = $"./.resharper/{Path.GetFileNameWithoutExtension(resharperCltUrl.Segments.Last())}/inspectcode.exe";
-var nuget = "src/.nuget/v4.0.0/NuGet.exe";
 var msBuild = $"{Environment.GetEnvironmentVariable("VS_INSTALL_PATH")}/MSBuild/15.0/Bin/MSBuild.exe";
 var solution = "./src/NServiceBus.RabbitMQ.sln";
 var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
-var nunit = "./src/packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe";
-var unitTests = "./src/NServiceBus.RabbitMQ.Tests/bin/Release/NServiceBus.Transports.RabbitMQ.Tests.dll";
-var acceptanceTests = "./src/NServiceBus.RabbitMQ.AcceptanceTests/bin/Release/NServiceBus.RabbitMQ.AcceptanceTests.dll";
-var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
+var nunit = "./build-packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe";
+var unitTests = "./src/NServiceBus.RabbitMQ.Tests/bin/Release/net452/NServiceBus.Transports.RabbitMQ.Tests.dll";
+var acceptanceTests = "./src/NServiceBus.RabbitMQ.AcceptanceTests/bin/Release/net452/NServiceBus.RabbitMQ.AcceptanceTests.dll";
+var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
 
 // targets
 var targets = new TargetDictionary();
 
 targets.Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-test", "transport-test"));
 
-targets.Add("restore", () => Cmd(nuget, $"restore {solution}"));
+targets.Add("restore", () => Cmd(msBuild, $"{solution} /p:Configuration=Release /t:restore"));
 
 targets.Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
 
