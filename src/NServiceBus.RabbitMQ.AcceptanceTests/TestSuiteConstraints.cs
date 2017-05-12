@@ -14,8 +14,8 @@
 
         public bool SupportsOutbox => true;
 
-        public IConfigureEndpointTestExecution TransportConfiguration => new ConfigureEndpointRabbitMQTransport();
+        public IConfigureEndpointTestExecution CreateTransportConfiguration() => new ConfigureEndpointRabbitMQTransport();
 
-        public IConfigureEndpointTestExecution PersistenceConfiguration => new ConfigureEndpointInMemoryPersistence();
+        public IConfigureEndpointTestExecution CreatePersistenceConfiguration() => new ConfigureEndpointInMemoryPersistence();
     }
 }
