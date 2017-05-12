@@ -39,6 +39,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
+        public bool SupportsDelayedDelivery => delayTopology != null;
+
         public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
         {
             Task task;
@@ -54,7 +56,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
 
             object delayValue;
-            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out delayValue) && delayTopology != null)
+            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out delayValue) && SupportsDelayedDelivery)
             {
                 int startingDelayLevel;
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out startingDelayLevel);
