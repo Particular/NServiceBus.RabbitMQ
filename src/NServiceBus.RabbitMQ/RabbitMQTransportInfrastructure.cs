@@ -6,6 +6,7 @@
     using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
+    using Features;
     using global::RabbitMQ.Client.Events;
     using Janitor;
     using Performance.TimeToBeReceived;
@@ -32,7 +33,19 @@
 
             routingTopology = CreateRoutingTopology();
 
-            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopology is ISupportDelayedDelivery);
+            var routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
+            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
+
+            if (routingTopologySupportsDelayedDelivery)
+            {
+                var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+                var sendOnlyEndpoint = settings.GetOrDefault<bool>("Endpoint.SendOnly");
+
+                if (timeoutManagerFeatureDisabled || sendOnlyEndpoint)
+                {
+                    settings.Set(SettingsKeys.DisableTimeoutManager, true);
+                }
+            }
 
             bool usePublisherConfirms;
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
