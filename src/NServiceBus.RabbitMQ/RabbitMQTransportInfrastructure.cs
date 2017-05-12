@@ -19,8 +19,6 @@
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
         IRoutingTopology routingTopology;
-        readonly bool routingTopologySupportsDelayedDelivery;
-        readonly bool disableTimeoutManager;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
@@ -34,16 +32,13 @@
 
             routingTopology = CreateRoutingTopology();
 
-            routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
-            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
+            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopology is ISupportDelayedDelivery);
 
             bool usePublisherConfirms;
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
             {
                 usePublisherConfirms = true;
             }
-
-            settings.TryGet(SettingsKeys.DisableTimeoutManager, out disableTimeoutManager);
 
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
 
@@ -60,7 +55,7 @@
                     typeof(NonDurableDelivery)
                 };
 
-                if (disableTimeoutManager)
+                if (settings.HasSetting(SettingsKeys.DisableTimeoutManager))
                 {
                     constraints.Add(typeof(DoNotDeliverBefore));
                     constraints.Add(typeof(DelayDeliveryWith));
@@ -88,7 +83,7 @@
         {
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(channelProvider),
-                () => Task.FromResult(DelayInfrastructure.CheckForInvalidSetting(routingTopologySupportsDelayedDelivery, disableTimeoutManager)));
+                () => Task.FromResult(DelayInfrastructure.CheckForInvalidSettings(settings)));
         }
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
