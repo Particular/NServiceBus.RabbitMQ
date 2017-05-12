@@ -4,7 +4,9 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Text;
+    using Features;
     using global::RabbitMQ.Client;
+    using Settings;
 
     static class DelayInfrastructure
     {
@@ -73,11 +75,20 @@
             }
         }
 
-        public static StartupCheckResult CheckForInvalidSetting(bool routingTopologySupportsDelayedDelivery, bool disableTimeoutManager)
+        public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
         {
-            if (!routingTopologySupportsDelayedDelivery && disableTimeoutManager)
+            var routingTopologySupportsDelayedDelivery = settings.GetOrDefault<bool>(SettingsKeys.RoutingTopologySupportsDelayedDelivery);
+            var TimeoutManagerDisabled = settings.GetOrDefault<bool>(SettingsKeys.DisableTimeoutManager);
+            var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
+
+            if (!routingTopologySupportsDelayedDelivery && (TimeoutManagerDisabled || !timeoutManagerFeatureActive))
             {
                 return StartupCheckResult.Failed($"Cannot disable the timeout manager when the specified routing topology does not implement {nameof(ISupportDelayedDelivery)}.");
+            }
+
+            if (!TimeoutManagerDisabled && !timeoutManagerFeatureActive)
+            {
+                return StartupCheckResult.Failed("The timeout manager is not active, but the transport has not been properly configured for this. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().DisableTimeoutManager()' to ensure delayed messages can be sent properly.");
             }
 
             return StartupCheckResult.Success;
