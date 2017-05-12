@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.RabbitMQ.Accept
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.TransportTests", "NServiceBus.Transport.RabbitMQ.TransportTests\NServiceBus.Transport.RabbitMQ.TransportTests.csproj", "{F8F0BF86-3847-4066-AA6E-0698A6FBAAE6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.RabbitMQ.Tests", "NServiceBus.RabbitMQ.Tests\NServiceBus.RabbitMQ.Tests.csproj", "{D4292935-25A1-4941-BC20-EEE27BF696E6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{F8F0BF86-3847-4066-AA6E-0698A6FBAAE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8F0BF86-3847-4066-AA6E-0698A6FBAAE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8F0BF86-3847-4066-AA6E-0698A6FBAAE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4292935-25A1-4941-BC20-EEE27BF696E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4292935-25A1-4941-BC20-EEE27BF696E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4292935-25A1-4941-BC20-EEE27BF696E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4292935-25A1-4941-BC20-EEE27BF696E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
