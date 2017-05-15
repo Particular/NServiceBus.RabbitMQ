@@ -12,6 +12,7 @@
     {
         const int maxNumberOfBitsToUse = 28;
         const int maxLevel = maxNumberOfBitsToUse - 1;
+        const string CoreExternalTimeoutManagerAddressKey = "NServiceBus.ExternalTimeoutManagerAddress";
 
         public const int MaxDelayInSeconds = (1 << maxNumberOfBitsToUse) - 1;
         public const string DelayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
@@ -79,7 +80,7 @@
         {
             var routingTopologySupportsDelayedDelivery = settings.GetOrDefault<bool>(SettingsKeys.RoutingTopologySupportsDelayedDelivery);
             var TimeoutManagerDisabled = settings.GetOrDefault<bool>(SettingsKeys.DisableTimeoutManager);
-            var externalTimeoutManagerAddress = settings.GetOrDefault<string>("NServiceBus.ExternalTimeoutManagerAddress") != null;
+            var externalTimeoutManagerAddress = settings.GetOrDefault<string>(CoreExternalTimeoutManagerAddressKey) != null;
             var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
 
             if (!routingTopologySupportsDelayedDelivery && TimeoutManagerDisabled)
