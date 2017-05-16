@@ -6,6 +6,7 @@
     using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
+    using Features;
     using global::RabbitMQ.Client.Events;
     using Janitor;
     using Performance.TimeToBeReceived;
@@ -15,6 +16,9 @@
     [SkipWeaving]
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
+        const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
+        const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
+
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
@@ -32,7 +36,19 @@
 
             routingTopology = CreateRoutingTopology();
 
-            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopology is ISupportDelayedDelivery);
+            var routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
+            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
+
+            if (routingTopologySupportsDelayedDelivery)
+            {
+                var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+                var sendOnlyEndpoint = settings.GetOrDefault<bool>(coreSendOnlyEndpointKey);
+
+                if (timeoutManagerFeatureDisabled || sendOnlyEndpoint)
+                {
+                    settings.Set(SettingsKeys.DisableTimeoutManager, true);
+                }
+            }
 
             bool usePublisherConfirms;
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out usePublisherConfirms))
@@ -140,7 +156,7 @@
             }
 
             string hostDisplayName;
-            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out hostDisplayName))
+            if (!settings.TryGet(coreHostInformationDisplayNameKey, out hostDisplayName))
             {
                 hostDisplayName = Support.RuntimeEnvironment.MachineName;
             }
