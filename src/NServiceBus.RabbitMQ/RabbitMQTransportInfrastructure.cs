@@ -6,6 +6,7 @@
     using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
+    using Features;
     using global::RabbitMQ.Client.Events;
     using Janitor;
     using Performance.TimeToBeReceived;
@@ -15,12 +16,13 @@
     [SkipWeaving]
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
+        const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
+        const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
+
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
         IRoutingTopology routingTopology;
-        readonly bool routingTopologySupportsDelayedDelivery;
-        readonly bool disableTimeoutManager;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
@@ -33,15 +35,24 @@
 
             routingTopology = CreateRoutingTopology();
 
-            routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
+            var routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
             settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
+
+            if (routingTopologySupportsDelayedDelivery)
+            {
+                var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+                var sendOnlyEndpoint = settings.GetOrDefault<bool>(coreSendOnlyEndpointKey);
+
+                if (timeoutManagerFeatureDisabled || sendOnlyEndpoint)
+                {
+                    settings.Set(SettingsKeys.DisableTimeoutManager, true);
+                }
+            }
 
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out bool usePublisherConfirms))
             {
                 usePublisherConfirms = true;
             }
-
-            settings.TryGet(SettingsKeys.DisableTimeoutManager, out disableTimeoutManager);
 
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
 
@@ -58,7 +69,7 @@
                     typeof(NonDurableDelivery)
                 };
 
-                if (disableTimeoutManager)
+                if (settings.HasSetting(SettingsKeys.DisableTimeoutManager))
                 {
                     constraints.Add(typeof(DoNotDeliverBefore));
                     constraints.Add(typeof(DelayDeliveryWith));
@@ -86,7 +97,7 @@
         {
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(channelProvider),
-                () => Task.FromResult(DelayInfrastructure.CheckForInvalidSetting(routingTopologySupportsDelayedDelivery, disableTimeoutManager)));
+                () => Task.FromResult(DelayInfrastructure.CheckForInvalidSettings(settings)));
         }
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
@@ -141,7 +152,7 @@
                 messageConverter = new MessageConverter();
             }
 
-            if (!settings.TryGet("NServiceBus.HostInformation.DisplayName", out string hostDisplayName))
+            if (!settings.TryGet(coreHostInformationDisplayNameKey, out string hostDisplayName))
             {
                 hostDisplayName = Support.RuntimeEnvironment.MachineName;
             }

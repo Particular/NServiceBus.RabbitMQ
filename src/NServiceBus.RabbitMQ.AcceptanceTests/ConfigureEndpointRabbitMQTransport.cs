@@ -27,7 +27,9 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        configuration.UseTransport<RabbitMQTransport>().ConnectionString(connectionStringBuilder.ConnectionString);
+        var transport = configuration.UseTransport<RabbitMQTransport>();
+        transport.ConnectionString(connectionStringBuilder.ConnectionString);
+        transport.DelayedDelivery().DisableTimeoutManager();
 
         return TaskEx.CompletedTask;
     }
