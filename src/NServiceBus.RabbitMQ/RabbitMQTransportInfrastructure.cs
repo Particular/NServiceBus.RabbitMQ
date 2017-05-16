@@ -16,8 +16,8 @@
     [SkipWeaving]
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
-        const string CoreSendOnlyEndpointKey = "Endpoint.SendOnly";
-        const string CoreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
+        const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
+        const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
 
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
@@ -42,7 +42,7 @@
             if (routingTopologySupportsDelayedDelivery)
             {
                 var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
-                var sendOnlyEndpoint = settings.GetOrDefault<bool>(CoreSendOnlyEndpointKey);
+                var sendOnlyEndpoint = settings.GetOrDefault<bool>(coreSendOnlyEndpointKey);
 
                 if (timeoutManagerFeatureDisabled || sendOnlyEndpoint)
                 {
@@ -156,7 +156,7 @@
             }
 
             string hostDisplayName;
-            if (!settings.TryGet(CoreHostInformationDisplayNameKey, out hostDisplayName))
+            if (!settings.TryGet(coreHostInformationDisplayNameKey, out hostDisplayName))
             {
                 hostDisplayName = Support.RuntimeEnvironment.MachineName;
             }

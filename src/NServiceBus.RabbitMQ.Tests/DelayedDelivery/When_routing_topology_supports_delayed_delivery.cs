@@ -7,8 +7,8 @@
     [TestFixture]
     class When_routing_topology_supports_delayed_delivery
     {
-        const string CoreSendOnlyEndpointKey = "Endpoint.SendOnly";
-        const string CoreExternalTimeoutManagerAddressKey = "NServiceBus.ExternalTimeoutManagerAddress";
+        const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
+        const string coreExternalTimeoutManagerAddressKey = "NServiceBus.ExternalTimeoutManagerAddress";
 
         SettingsHolder settings;
 
@@ -76,7 +76,7 @@
         public void Should_prevent_startup_if_timeout_manager_feature_is_deactivated_by_send_only_and_DisableTimeoutManager_setting_is_not_set()
         {
             settings.Set(typeof(TimeoutManager).FullName, FeatureState.Deactivated);
-            settings.Set(CoreSendOnlyEndpointKey, true);
+            settings.Set(coreSendOnlyEndpointKey, true);
 
             var result = DelayInfrastructure.CheckForInvalidSettings(settings);
 
@@ -86,11 +86,11 @@
         }
 
         [Test]
-        public void Should_allow_startup_if_timeout_manager_feature_is_deactivated_by_send_only_and_DisableTimeoutManager_setting_set()
+        public void Should_allow_startup_if_timeout_manager_feature_is_deactivated_by_send_only_and_DisableTimeoutManager_setting_is_set()
         {
             settings.Set(SettingsKeys.DisableTimeoutManager, true);
             settings.Set(typeof(TimeoutManager).FullName, FeatureState.Deactivated);
-            settings.Set(CoreSendOnlyEndpointKey, true);
+            settings.Set(coreSendOnlyEndpointKey, true);
 
             var result = DelayInfrastructure.CheckForInvalidSettings(settings);
 
@@ -100,7 +100,7 @@
         [Test]
         public void Should_prevent_startup_if_external_timeout_manager_address_is_configured()
         {
-            settings.Set(CoreExternalTimeoutManagerAddressKey, "endpoint");
+            settings.Set(coreExternalTimeoutManagerAddressKey, "endpoint");
 
             var result = DelayInfrastructure.CheckForInvalidSettings(settings);
 
