@@ -79,7 +79,8 @@
             }
         }
 
-        public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
+        public override OutboundRoutingPolicy OutboundRoutingPolicy =>
+            new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
         public override TransportTransactionMode TransactionMode => TransportTransactionMode.ReceiveOnly;
 
@@ -176,7 +177,15 @@
                 prefetchCount = 0;
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
+            return new MessagePump(
+                connectionFactory,
+                messageConverter,
+                consumerTag,
+                channelProvider,
+                queuePurger,
+                timeToWaitBeforeTriggeringCircuitBreaker,
+                prefetchMultiplier,
+                prefetchCount);
         }
     }
 }

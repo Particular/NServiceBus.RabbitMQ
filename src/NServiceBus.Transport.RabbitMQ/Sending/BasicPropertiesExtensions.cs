@@ -12,7 +12,12 @@
 
     static class BasicPropertiesExtensions
     {
-        public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints, bool routingTopologySupportsDelayedDelivery, out string destination)
+        public static void Fill(
+            this IBasicProperties properties,
+            OutgoingMessage message,
+            List<DeliveryConstraint> deliveryConstraints,
+            bool routingTopologySupportsDelayedDelivery,
+            out string destination)
         {
             if (message.MessageId != null)
             {
@@ -23,7 +28,12 @@
 
             var messageHeaders = message.Headers ?? new Dictionary<string, string>();
 
-            var delayed = CalculateDelay(deliveryConstraints, messageHeaders, routingTopologySupportsDelayedDelivery, out var delay, out destination);
+            var delayed = CalculateDelay(
+                deliveryConstraints,
+                messageHeaders,
+                routingTopologySupportsDelayedDelivery,
+                out var delay,
+                out destination);
 
             properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
@@ -77,7 +87,12 @@
             }
         }
 
-        static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, Dictionary<string, string> messageHeaders, bool routingTopologySupportsDelayedDelivery, out long delay, out string destination)
+        static bool CalculateDelay(
+            List<DeliveryConstraint> deliveryConstraints,
+            Dictionary<string, string> messageHeaders,
+            bool routingTopologySupportsDelayedDelivery,
+            out long delay,
+            out string destination)
         {
             destination = null;
 
