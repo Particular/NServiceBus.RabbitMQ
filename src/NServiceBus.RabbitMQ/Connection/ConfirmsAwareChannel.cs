@@ -127,103 +127,83 @@ namespace NServiceBus.Transport.RabbitMQ
             return tcs.Task;
         }
 
-        class EventState
-        {
-            public ConcurrentDictionary<ulong, TaskCompletionSource<bool>> Messages { get; set; }
-
-            public bool Multiple { get; set; }
-
-            public ulong DeliveryTag { get; set; }
-        }
-
         void Channel_BasicAcks(object sender, BasicAckEventArgs e)
         {
-            TaskEx.StartNew(new EventState { Messages = messages, DeliveryTag = e.DeliveryTag, Multiple = e.Multiple }, state =>
+            if (!e.Multiple)
             {
-                var eventState = (EventState)state;
-
-                if (!eventState.Multiple)
+                SetResult(e.DeliveryTag);
+            }
+            else
+            {
+                foreach (var message in messages)
                 {
-                    eventState.Messages.TryRemove(eventState.DeliveryTag, out var tcs);
-
-                    tcs?.SetResult(true);
-                }
-                else
-                {
-                    foreach (var message in eventState.Messages)
+                    if (message.Key <= e.DeliveryTag)
                     {
-                        if (message.Key <= eventState.DeliveryTag)
-                        {
-                            eventState.Messages.TryRemove(message.Key, out var tcs);
-
-                            tcs?.SetResult(true);
-                        }
+                        SetResult(message.Key);
                     }
                 }
-            });
+            }
         }
 
         void Channel_BasicNacks(object sender, BasicNackEventArgs e)
         {
-            TaskEx.StartNew(new EventState { Messages = messages, DeliveryTag = e.DeliveryTag, Multiple = e.Multiple }, state =>
+            if (!e.Multiple)
             {
-                var eventState = (EventState)state;
-
-                if (!eventState.Multiple)
+                SetException(e.DeliveryTag, "Message rejected by broker.");
+            }
+            else
+            {
+                foreach (var message in messages)
                 {
-                    eventState.Messages.TryRemove(eventState.DeliveryTag, out var tcs);
-
-                    tcs?.SetException(new Exception("Message rejected by broker."));
-                }
-                else
-                {
-                    foreach (var message in eventState.Messages)
+                    if (message.Key <= e.DeliveryTag)
                     {
-                        if (message.Key <= eventState.DeliveryTag)
-                        {
-                            eventState.Messages.TryRemove(message.Key, out var tcs);
-
-                            tcs?.SetException(new Exception("Message rejected by broker."));
-                        }
+                        SetException(message.Key, "Message rejected by broker.");
                     }
                 }
-            });
+            }
         }
 
         void Channel_BasicReturn(object sender, BasicReturnEventArgs e)
         {
-            Task.Run(() =>
+            var message = $"Message could not be routed to {e.Exchange + e.RoutingKey}: {e.ReplyCode} {e.ReplyText}";
+
+            if (e.BasicProperties.TryGetConfirmationId(out var deliveryTag))
             {
-                var message = $"Message could not be routed to {e.Exchange + e.RoutingKey}: {e.ReplyCode} {e.ReplyText}";
-
-                if (e.BasicProperties.TryGetConfirmationId(out var deliveryTag))
-                {
-                    messages.TryRemove(deliveryTag, out var tcs);
-
-                    tcs?.SetException(new Exception(message));
-                }
-                else
-                {
-                    Logger.Warn(message);
-                }
-            });
+                SetException(deliveryTag, message);
+            }
+            else
+            {
+                Logger.Warn(message);
+            }
         }
 
         void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
-            Task.Run(() =>
+            do
             {
-                do
+                foreach (var message in messages)
                 {
-                    foreach (var message in messages)
-                    {
-                        messages.TryRemove(message.Key, out var tcs);
-
-                        tcs?.SetException(new Exception($"Channel has been closed: {e}"));
-                    }
-                } while (!messages.IsEmpty);
-            });
+                    SetException(message.Key, $"Channel has been closed: {e}");
+                }
+            } while (!messages.IsEmpty);
         }
+
+        void SetResult(ulong key)
+        {
+            if (messages.TryRemove(key, out var tcs))
+            {
+                TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetResult(true));
+            }
+        }
+
+        void SetException(ulong key, string exceptionMessage)
+        {
+            if (messages.TryRemove(key, out var tcs))
+            {
+                TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetException(new Exception(exceptionMessage)));
+            }
+        }
+
 
         public void Dispose()
         {
