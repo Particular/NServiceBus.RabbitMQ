@@ -176,7 +176,12 @@
                 prefetchCount = 0;
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
+            if (!settings.TryGet(SettingsKeys.PropagateBasicDeliverEventArgs, out bool propagateBasicDeliverEventArgs))
+            {
+                propagateBasicDeliverEventArgs = false;
+            }
+
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount, propagateBasicDeliverEventArgs);
         }
     }
 }

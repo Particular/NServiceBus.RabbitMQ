@@ -144,7 +144,7 @@
         /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> PropagateBasicDeliverEventArgs(this TransportExtensions<RabbitMQTransport> transportExtensions, bool propagateBasicDeliverEventArgs)
         {
-            // TODO: implement
+            transportExtensions.GetSettings().Set(SettingsKeys.PropagateBasicDeliverEventArgs, propagateBasicDeliverEventArgs);
             return transportExtensions;
         }
     }
