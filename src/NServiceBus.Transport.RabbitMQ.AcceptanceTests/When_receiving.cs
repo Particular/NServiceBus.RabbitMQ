@@ -12,59 +12,59 @@
         class And_the_endpoint_propagates_BasicDeliverEventArgs : NServiceBusAcceptanceTest
         {
             [Test]
-            public async Task Should_have_access_to_BasicDeliverEventArgs()
+            public async Task Then_the_handler_should_have_access_to_BasicDeliverEventArgs()
             {
-                var context = await Scenario.Define<MyContext>()
-                    .WithEndpoint<PropagatingReceiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                var scenario = await Scenario.Define<MyScenario>()
+                    .WithEndpoint<Propagating>(b => b.When((bus, c) => bus.SendLocal(new Message())))
                     .Done(c => c.MessageReceived)
                     .Run();
 
-                Assert.True(context.GotTheArgs, "Should have access to BasicDeliverEventArgs");
+                Assert.True(scenario.HandlerHasAccessToBasicDeliverEventArgs, "The handler should have access to BasicDeliverEventArgs");
             }
         }
 
         class And_the_endpoint_does_not_propagate_BasicDeliverEventArgs : NServiceBusAcceptanceTest
         {
             [Test]
-            public async Task Should_not_have_access_to_BasicDeliverEventArgs()
+            public async Task Then_the_handler_should_not_have_access_to_BasicDeliverEventArgs()
             {
-                var context = await Scenario.Define<MyContext>()
-                    .WithEndpoint<NonPropagatingReceiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                var scenario = await Scenario.Define<MyScenario>()
+                    .WithEndpoint<NonPropagating>(b => b.When((bus, c) => bus.SendLocal(new Message())))
                     .Done(c => c.MessageReceived)
                     .Run();
 
-                Assert.False(context.GotTheArgs, "Should not have access to BasicDeliverEventArgs");
+                Assert.False(scenario.HandlerHasAccessToBasicDeliverEventArgs, "The handler should not have access to BasicDeliverEventArgs");
             }
         }
 
-        public class PropagatingReceiver : EndpointConfigurationBuilder
+        public class Propagating : EndpointConfigurationBuilder
         {
-            public PropagatingReceiver()
+            public Propagating()
             {
                 EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>().PropagateBasicDeliverEventArgs(true));
             }
         }
 
-        public class NonPropagatingReceiver : EndpointConfigurationBuilder
+        public class NonPropagating : EndpointConfigurationBuilder
         {
-            public NonPropagatingReceiver()
+            public NonPropagating()
             {
                 EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>().PropagateBasicDeliverEventArgs(false));
             }
         }
 
-        class MyEventHandler : IHandleMessages<MyRequest>
+        class MyEventHandler : IHandleMessages<Message>
         {
-            readonly MyContext myContext;
+            readonly MyScenario scenario;
 
-            public MyEventHandler(MyContext myContext)
+            public MyEventHandler(MyScenario scenario)
             {
-                this.myContext = myContext;
+                this.scenario = scenario;
             }
 
-            public Task Handle(MyRequest message, IMessageHandlerContext context)
+            public Task Handle(Message message, IMessageHandlerContext context)
             {
-                myContext.MessageReceived = true;
+                scenario.MessageReceived = true;
 
                 try
                 {
@@ -72,24 +72,24 @@
                 }
                 catch (InvalidOperationException)
                 {
-                    myContext.GotTheArgs = false;
+                    scenario.HandlerHasAccessToBasicDeliverEventArgs = false;
                     return TaskEx.CompletedTask;
                 }
 
-                myContext.GotTheArgs = true;
+                scenario.HandlerHasAccessToBasicDeliverEventArgs = true;
                 return TaskEx.CompletedTask;
             }
         }
 
-        public class MyRequest : IMessage
+        public class Message : IMessage
         {
         }
 
-        class MyContext : ScenarioContext
+        class MyScenario : ScenarioContext
         {
             public bool MessageReceived { get; set; }
 
-            public bool GotTheArgs { get; set; }
+            public bool HandlerHasAccessToBasicDeliverEventArgs { get; set; }
         }
     }
 }
