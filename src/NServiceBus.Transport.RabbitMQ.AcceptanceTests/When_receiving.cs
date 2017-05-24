@@ -6,7 +6,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_sending : NServiceBusAcceptanceTest
+    public class When_receiving : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_have_access_to_Rabbit_args()
