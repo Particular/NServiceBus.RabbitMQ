@@ -1,45 +1,83 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
+    using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_receiving : NServiceBusAcceptanceTest
+    public class When_receiving
     {
-        [Test]
-        public async Task Should_have_access_to_Rabbit_args()
+        class And_the_endpoint_propagates_BasicDeliverEventArgs : NServiceBusAcceptanceTest
         {
-            var context = await Scenario.Define<MyContext>()
-                .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
-                .Done(c => c.GotTheArgs)
-                .Run();
+            [Test]
+            public async Task Should_have_access_to_BasicDeliverEventArgs()
+            {
+                var context = await Scenario.Define<MyContext>()
+                    .WithEndpoint<PropagatingReceiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                    .Done(c => c.MessageReceived)
+                    .Run();
 
-            Assert.True(context.GotTheArgs, "Should receive the Args");
+                Assert.True(context.GotTheArgs, "Should have access to BasicDeliverEventArgs");
+            }
         }
 
-        public class Receiver : EndpointConfigurationBuilder
+        class And_the_endpoint_does_not_propagate_BasicDeliverEventArgs : NServiceBusAcceptanceTest
         {
-            public Receiver()
+            [Test]
+            public async Task Should_not_have_access_to_BasicDeliverEventArgs()
             {
-                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>());
+                var context = await Scenario.Define<MyContext>()
+                    .WithEndpoint<NonPropagatingReceiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                    .Done(c => c.MessageReceived)
+                    .Run();
+
+                Assert.False(context.GotTheArgs, "Should not have access to BasicDeliverEventArgs");
+            }
+        }
+
+        public class PropagatingReceiver : EndpointConfigurationBuilder
+        {
+            public PropagatingReceiver()
+            {
+                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>().PropagateBasicDeliverEventArgs(true));
+            }
+        }
+
+        public class NonPropagatingReceiver : EndpointConfigurationBuilder
+        {
+            public NonPropagatingReceiver()
+            {
+                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>().PropagateBasicDeliverEventArgs(false));
+            }
+        }
+
+        class MyEventHandler : IHandleMessages<MyRequest>
+        {
+            readonly MyContext myContext;
+
+            public MyEventHandler(MyContext myContext)
+            {
+                this.myContext = myContext;
             }
 
-            class MyEventHandler : IHandleMessages<MyRequest>
+            public Task Handle(MyRequest message, IMessageHandlerContext context)
             {
-                readonly MyContext myContext;
+                myContext.MessageReceived = true;
 
-                public MyEventHandler(MyContext myContext)
+                try
                 {
-                    this.myContext = myContext;
+                    context.GetBasicDeliverEventArgs();
                 }
-
-                public Task Handle(MyRequest message, IMessageHandlerContext context)
+                catch (InvalidOperationException)
                 {
-                    myContext.GotTheArgs = context.GetBasicDeliverEventArgs() != null;
+                    myContext.GotTheArgs = false;
                     return TaskEx.CompletedTask;
                 }
+
+                myContext.GotTheArgs = true;
+                return TaskEx.CompletedTask;
             }
         }
 
@@ -49,6 +87,8 @@
 
         class MyContext : ScenarioContext
         {
+            public bool MessageReceived { get; set; }
+
             public bool GotTheArgs { get; set; }
         }
     }

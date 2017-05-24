@@ -135,5 +135,17 @@
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
         public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions) => new DelayedDeliverySettings(transportExtensions.GetSettings());
+
+        /// <summary>
+        /// Specifies whether <see cref="BasicDeliverEventArgs" /> should be propagated to the <see cref="IMessageHandlerContext" /> when receiving messages.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="propagateBasicDeliverEventArgs">Specifies whether <see cref="BasicDeliverEventArgs" /> should be propagated to the <see cref="IMessageHandlerContext" /> when receiving messages.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> PropagateBasicDeliverEventArgs(this TransportExtensions<RabbitMQTransport> transportExtensions, bool propagateBasicDeliverEventArgs)
+        {
+            // TODO: implement
+            return transportExtensions;
+        }
     }
 }

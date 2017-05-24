@@ -25,6 +25,7 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchMultiplier(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int prefetchMultiplier) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PropagateBasicDeliverEventArgs(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool propagateBasicDeliverEventArgs) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificates(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Security.Cryptography.X509Certificates.X509CertificateCollection clientCertificates) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
         [System.ObsoleteAttribute("The member currently throws a NotImplementedException. Will be removed in version" +
