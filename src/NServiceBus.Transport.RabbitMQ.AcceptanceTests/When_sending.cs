@@ -12,9 +12,9 @@
         public async Task Should_have_access_to_Rabbit_args()
         {
             var context = await Scenario.Define<MyContext>()
-                   .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
-                   .Done(c => c.GotTheArgs)
-                   .Run();
+                .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new MyRequest())))
+                .Done(c => c.GotTheArgs)
+                .Run();
 
             Assert.True(context.GotTheArgs, "Should receive the Args");
         }
