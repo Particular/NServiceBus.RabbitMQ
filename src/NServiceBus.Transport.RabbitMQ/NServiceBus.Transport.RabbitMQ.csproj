@@ -3,18 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
     <AssemblyName>NServiceBus.Transports.RabbitMQ</AssemblyName>
-    <Copyright>Copyright NServiceBus. All rights reserved</Copyright>
-    <Company>NServiceBus Ltd.</Company>
+    <Product>NServiceBus.RabbitMQ</Product>
+    <AssemblyTitle>NServiceBus.RabbitMQ</AssemblyTitle>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <Product>NServiceBus.RabbitMQ</Product>
-    <AssemblyTitle>NServiceBus.RabbitMQ</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,13 +17,34 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="3.6.5" PrivateAssets="All" />
+    <PackageReference Include="GitVersionTask" Version="4.0.0-beta0012" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.4.1" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="6.0.0" />
-    <PackageReference Include="NuGetPackager" Version="0.6.1" PrivateAssets="All" />
+    <PackageReference Include="NServiceBus" Version="[6.0.0, 7.0.0)" PrivateAssets="None" />
     <PackageReference Include="Obsolete.Fody" Version="4.2.2" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
-    <PackageReference Include="RabbitMQ.Client" Version="4.1.1" />
+    <PackageReference Include="RabbitMQ.Client" Version="[4.1.0, 4.2.0)" PrivateAssets="None" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>NServiceBus.RabbitMQ</PackageId>
+    <Authors>NServiceBus Ltd</Authors>
+    <Company>NServiceBus Ltd</Company>
+    <Description>RabbitMQ support for NServicebus</Description>
+    <PackageLicenseUrl>http://particular.net/LicenseAgreement</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright 2010-2017 NServiceBus. All rights reserved</Copyright>
+    <PackageTags>nservicebus servicebus msmq cqrs publish subscribe</PackageTags>
+    <PackageIconUrl>http://s3.amazonaws.com/nuget.images/NServiceBus_32.png</PackageIconUrl>
+    <PackageProjectUrl>http://particular.net/</PackageProjectUrl>
+    <PackageOutputPath>..\..\nugets</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="$(OutputPath)$(AssemblyName).pdb">
+      <Pack>true</Pack>
+      <PackagePath>lib/net452</PackagePath>
+    </Content>
   </ItemGroup>
 
 </Project>
