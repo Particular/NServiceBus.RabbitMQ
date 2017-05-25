@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
-    <RootNamespace>NServiceBus.Transport.RabbitMQ.AcceptanceTests</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

@@ -20,7 +20,7 @@ var solution = "./src/NServiceBus.RabbitMQ.sln";
 var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
 var nunit = "./build-packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe";
 var unitTests = "./src/NServiceBus.Transport.RabbitMQ.Tests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.Tests.dll";
-var acceptanceTests = "./src/NServiceBus.RabbitMQ.AcceptanceTests/bin/Release/net452/NServiceBus.RabbitMQ.AcceptanceTests.dll";
+var acceptanceTests = "./src/NServiceBus.Transport.RabbitMQ.AcceptanceTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.AcceptanceTests.dll";
 var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
 
 // targets
