@@ -14,6 +14,8 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <Product>NServiceBus.RabbitMQ</Product>
+    <AssemblyTitle>NServiceBus.RabbitMQ</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>
