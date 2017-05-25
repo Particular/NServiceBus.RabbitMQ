@@ -3,11 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{87D8530F-671C-4E77-8B93-BCE848FCF2F4}"
-	ProjectSection(SolutionItems) = preProject
-		..\packaging\nuget\NServiceBus.Transport.RabbitMQ.nuspec = ..\packaging\nuget\NServiceBus.Transport.RabbitMQ.nuspec
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.TransportTests", "NServiceBus.Transport.RabbitMQ.TransportTests\NServiceBus.Transport.RabbitMQ.TransportTests.csproj", "{9D218CB8-1A64-4209-8156-81F44BB17986}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.Tests", "NServiceBus.Transport.RabbitMQ.Tests\NServiceBus.Transport.RabbitMQ.Tests.csproj", "{6B8E21A6-9C69-418B-88B0-2802380F4074}"
