@@ -5,8 +5,6 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AssemblyName>NServiceBus.Transports.RabbitMQ.Tests</AssemblyName>
-    <RootNamespace>NServiceBus.Transport.RabbitMQ.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

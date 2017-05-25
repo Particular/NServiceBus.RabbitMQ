@@ -12,9 +12,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.RabbitMQ", "NSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.RabbitMQ.AcceptanceTests", "NServiceBus.RabbitMQ.AcceptanceTests\NServiceBus.RabbitMQ.AcceptanceTests.csproj", "{2854457F-912C-4228-9F22-E1A3DC97D0BA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.RabbitMQ.Tests", "NServiceBus.RabbitMQ.Tests\NServiceBus.RabbitMQ.Tests.csproj", "{89EC11E0-08AC-4201-AFB8-B7E63C4BAF1D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.TransportTests", "NServiceBus.Transport.RabbitMQ.TransportTests\NServiceBus.Transport.RabbitMQ.TransportTests.csproj", "{9D218CB8-1A64-4209-8156-81F44BB17986}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.Tests", "NServiceBus.Transport.RabbitMQ.Tests\NServiceBus.Transport.RabbitMQ.Tests.csproj", "{6B8E21A6-9C69-418B-88B0-2802380F4074}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,14 +30,14 @@ Global
 		{2854457F-912C-4228-9F22-E1A3DC97D0BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2854457F-912C-4228-9F22-E1A3DC97D0BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2854457F-912C-4228-9F22-E1A3DC97D0BA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{89EC11E0-08AC-4201-AFB8-B7E63C4BAF1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{89EC11E0-08AC-4201-AFB8-B7E63C4BAF1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{89EC11E0-08AC-4201-AFB8-B7E63C4BAF1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{89EC11E0-08AC-4201-AFB8-B7E63C4BAF1D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9D218CB8-1A64-4209-8156-81F44BB17986}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9D218CB8-1A64-4209-8156-81F44BB17986}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D218CB8-1A64-4209-8156-81F44BB17986}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D218CB8-1A64-4209-8156-81F44BB17986}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B8E21A6-9C69-418B-88B0-2802380F4074}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B8E21A6-9C69-418B-88B0-2802380F4074}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B8E21A6-9C69-418B-88B0-2802380F4074}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B8E21A6-9C69-418B-88B0-2802380F4074}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
