@@ -3,13 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
     <AssemblyName>NServiceBus.Transports.RabbitMQ</AssemblyName>
-    <RootNamespace>NServiceBus.Transport.RabbitMQ</RootNamespace>
     <Copyright>Copyright NServiceBus. All rights reserved</Copyright>
     <Company>NServiceBus Ltd.</Company>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
-    <DocumentationFile>$(OutputPath)net452\NServiceBus.Transports.RabbitMQ.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>

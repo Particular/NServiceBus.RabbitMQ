@@ -2,12 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
-    <RootNamespace>NServiceBus.Transport.RabbitMQ.AcceptanceTests</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\NServiceBus.Transport.RabbitMQ\NServiceBus.Transport.RabbitMQ.csproj" />
   </ItemGroup>
 
   <ItemGroup>
