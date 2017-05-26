@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFrameworks>net452;net462</TargetFrameworks>
     <AssemblyName>NServiceBus.Transports.RabbitMQ</AssemblyName>
     <Product>NServiceBus.RabbitMQ</Product>
     <AssemblyTitle>NServiceBus.RabbitMQ</AssemblyTitle>
@@ -41,9 +41,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="$(OutputPath)$(AssemblyName).pdb">
+    <Content Include="$(OutputPath)**\$(AssemblyName).pdb">
       <Pack>true</Pack>
-      <PackagePath>lib/net452</PackagePath>
+      <PackagePath>lib\</PackagePath>
     </Content>
   </ItemGroup>
 
