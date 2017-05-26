@@ -26,6 +26,11 @@
     <PackageReference Include="RabbitMQ.Client" Version="[4.1.0, 4.2.0)" PrivateAssets="None" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.GitHub" Version="2.1.2" PrivateAssets="All" />
+    <DotNetCliToolReference Include="dotnet-sourcelink-git" Version="2.1.2" />
+  </ItemGroup>
+
   <PropertyGroup>
     <PackageId>NServiceBus.RabbitMQ</PackageId>
     <Authors>NServiceBus Ltd</Authors>
