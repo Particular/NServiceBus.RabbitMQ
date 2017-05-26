@@ -116,7 +116,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
         Task GetConfirmationTask()
         {
+#if NET452
             var tcs = new TaskCompletionSource<bool>();
+#else
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+#endif
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
             if (!added) //debug check, this shouldn't happen
@@ -192,7 +196,11 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (messages.TryRemove(key, out var tcs))
             {
+#if NET452
                 TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetResult(true)).Ignore();
+#else
+                tcs.SetResult(true);
+#endif
             }
         }
 
@@ -200,7 +208,11 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (messages.TryRemove(key, out var tcs))
             {
+#if NET452
                 TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetException(new Exception(exceptionMessage))).Ignore();
+#else
+                tcs.SetException(new Exception(exceptionMessage));
+#endif
             }
         }
 
