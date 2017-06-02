@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Concurrent;
     using global::RabbitMQ.Client;
 
-    class ChannelProvider : IChannelProvider, IDisposable
+    sealed class ChannelProvider : IChannelProvider, IDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
@@ -41,11 +41,6 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         public void Dispose()
-        {
-            //injected
-        }
-
-        void DisposeManaged()
         {
             if (connection.IsValueCreated)
             {
