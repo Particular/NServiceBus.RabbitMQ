@@ -10,7 +10,7 @@
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
 
-    class MessagePump : IPushMessages, IDisposable
+    sealed class MessagePump : IPushMessages, IDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new TransportTransaction();
@@ -309,7 +309,10 @@
 
         public void Dispose()
         {
-            // Injected
+            circuitBreaker?.Dispose();
+            semaphore?.Dispose();
+            messageProcessing?.Dispose();
+            connection?.Dispose();
         }
     }
 }

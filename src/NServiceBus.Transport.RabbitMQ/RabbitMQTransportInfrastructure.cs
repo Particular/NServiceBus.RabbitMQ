@@ -8,12 +8,10 @@
     using DelayedDelivery;
     using Features;
     using global::RabbitMQ.Client.Events;
-    using Janitor;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
 
-    [SkipWeaving]
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
