@@ -105,7 +105,7 @@
             CreateExchange(channel, ExchangeName(typeToProcess));
             var baseType = typeToProcess.BaseType;
 
-            while (baseType != null)
+            while (baseType != null && baseType != typeof(Object))
             {
                 CreateExchange(channel, ExchangeName(baseType));
                 channel.ExchangeBind(ExchangeName(baseType), ExchangeName(typeToProcess), string.Empty);
