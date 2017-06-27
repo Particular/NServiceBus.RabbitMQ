@@ -55,8 +55,6 @@
             }
 
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
-
-            RequireOutboxConsent = false;
         }
 
         public override IEnumerable<Type> DeliveryConstraints

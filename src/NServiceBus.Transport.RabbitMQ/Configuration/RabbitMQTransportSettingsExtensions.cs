@@ -2,7 +2,7 @@
 {
     using System;
     using System.Security.Cryptography.X509Certificates;
-    using Configuration.AdvanceExtensibility;
+    using Configuration.AdvancedExtensibility;
     using RabbitMQ.Client.Events;
     using Transport.RabbitMQ;
 
