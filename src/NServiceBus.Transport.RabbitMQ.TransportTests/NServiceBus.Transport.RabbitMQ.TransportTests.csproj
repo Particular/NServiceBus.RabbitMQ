@@ -9,22 +9,14 @@
     <ProjectReference Include="..\NServiceBus.Transport.RabbitMQ\NServiceBus.Transport.RabbitMQ.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170618-03" />
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="7.0.0-alpha0030" />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="7.0.0-alpha0031" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.8.0-alpha1" />
   </ItemGroup>
 
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
-
-  <ItemGroup Label="Workaround for package's incorrect build action">
-    <Compile Include="$(NuGetPackageRoot)nservicebus.transporttests.sources\7.0.0-alpha0030\contentFiles\**\*.cs" />
   </ItemGroup>
 
 </Project>
