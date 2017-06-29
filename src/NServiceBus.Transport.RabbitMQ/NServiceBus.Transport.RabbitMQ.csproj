@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fody" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="GitVersionTask" Version="4.0.0-beta0012" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.4.1" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.0.0-alpha0031, 8.0.0)" PrivateAssets="None" />
