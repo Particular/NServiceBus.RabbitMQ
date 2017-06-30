@@ -39,7 +39,7 @@ namespace NServiceBus
 }
 namespace NServiceBus.Transport.RabbitMQ
 {
-    public class DelayedDeliverySettings : NServiceBus.Configuration.AdvanceExtensibility.ExposeSettings
+    public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
         [System.ObsoleteAttribute("Will be treated as an error from version 5.0.0. Will be removed in version 5.0.0." +
             "", false)]
