@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="7.0.0-alpharelease0039" />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="7.0.0-alpha*" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.8.0-alpha1" />
   </ItemGroup>
 
