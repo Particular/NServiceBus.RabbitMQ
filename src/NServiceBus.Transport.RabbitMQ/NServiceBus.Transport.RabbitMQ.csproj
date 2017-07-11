@@ -20,7 +20,7 @@
     <PackageReference Include="Fody" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="GitVersionTask" Version="4.0.0-beta0012" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.4.1" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="[7.0.0-alpha0032, 8.0.0)" PrivateAssets="None" />
+    <PackageReference Include="NServiceBus" Version="7.0.0-alpharelease0005" PrivateAssets="None" />
     <PackageReference Include="Obsolete.Fody" Version="4.2.2" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
     <PackageReference Include="RabbitMQ.Client" Version="[4.1.0, 4.2.0)" PrivateAssets="None" />
