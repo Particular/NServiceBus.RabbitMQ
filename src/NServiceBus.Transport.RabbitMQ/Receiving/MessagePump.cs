@@ -14,7 +14,7 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new TransportTransaction();
-        static readonly ContextBag contextBag = new ContextBag();
+        static readonly ContextBag emptyContextBag = new ContextBag();
 
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
@@ -24,6 +24,7 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly int prefetchMultiplier;
         readonly ushort overriddenPrefetchCount;
+        readonly bool propagateBasicDeliverEventArgs;
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -42,7 +43,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount, bool propagateBasicDeliverEventArgs)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -52,6 +53,7 @@
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchMultiplier = prefetchMultiplier;
             this.overriddenPrefetchCount = overriddenPrefetchCount;
+            this.propagateBasicDeliverEventArgs = propagateBasicDeliverEventArgs;
         }
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
@@ -239,6 +241,17 @@
                 var processed = false;
                 var errorHandled = false;
                 var numberOfDeliveryAttempts = 0;
+
+                ContextBag contextBag;
+                if (propagateBasicDeliverEventArgs)
+                {
+                    contextBag = new ContextBag();
+                    contextBag.Set(message);
+                }
+                else
+                {
+                    contextBag = emptyContextBag;
+                }
 
                 while (!processed && !errorHandled)
                 {
