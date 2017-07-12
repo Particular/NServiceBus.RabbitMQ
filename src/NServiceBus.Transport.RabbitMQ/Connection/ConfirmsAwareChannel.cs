@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client.Events;
     using Logging;
 
-    class ConfirmsAwareChannel : IDisposable
+    sealed class ConfirmsAwareChannel : IDisposable
     {
         public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
@@ -207,7 +207,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
-            //injected
+            channel?.Dispose();
         }
 
         IModel channel;

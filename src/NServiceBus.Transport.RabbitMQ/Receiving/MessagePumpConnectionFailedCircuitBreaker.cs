@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading;
     using Logging;
 
-    class MessagePumpConnectionFailedCircuitBreaker : IDisposable
+    sealed class MessagePumpConnectionFailedCircuitBreaker : IDisposable
     {
         public MessagePumpConnectionFailedCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, CriticalError criticalError)
         {
@@ -42,7 +42,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
-            //Injected
+            timer?.Dispose();
         }
 
         void CircuitBreakerTriggered(object state)
