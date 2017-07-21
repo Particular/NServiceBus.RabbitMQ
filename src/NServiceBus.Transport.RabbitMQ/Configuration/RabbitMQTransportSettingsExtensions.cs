@@ -2,14 +2,14 @@
 {
     using System;
     using System.Security.Cryptography.X509Certificates;
-    using Configuration.AdvanceExtensibility;
+    using Configuration.AdvancedExtensibility;
     using RabbitMQ.Client.Events;
     using Transport.RabbitMQ;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.
     /// </summary>
-    public static partial class RabbitMQTransportSettingsExtensions
+    public static class RabbitMQTransportSettingsExtensions
     {
         /// <summary>
         /// Registers a custom routing topology.

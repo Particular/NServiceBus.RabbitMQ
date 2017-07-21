@@ -11,39 +11,26 @@ namespace NServiceBus
     }
     public class static RabbitMQTransportSettingsExtensions
     {
-        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
-            "mentedException. Will be removed in version 5.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CallbackReceiverMaxConcurrency(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int maxConcurrency) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
         public static NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
-        [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
-            "mentedException. Will be removed in version 5.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchMultiplier(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int prefetchMultiplier) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificates(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Security.Cryptography.X509Certificates.X509CertificateCollection clientCertificates) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
-        [System.ObsoleteAttribute("The member currently throws a NotImplementedException. Will be removed in version" +
-            " 5.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConnectionManager<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string, System.Type, string> exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UsePublisherConfirms(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool usePublisherConfirms) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
         [System.ObsoleteAttribute("Use `RabbitMQTransportSettingsExtensions.UseRoutingTopology(TransportExtensions<R" +
             "abbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)` instead. W" +
-            "ill be treated as an error from version 5.0.0. Will be removed in version 6.0.0." +
-            "", false)]
+            "ill be removed in version 6.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions)
             where T : NServiceBus.Transport.RabbitMQ.IRoutingTopology, new () { }
     }
 }
 namespace NServiceBus.Transport.RabbitMQ
 {
-    public class DelayedDeliverySettings : NServiceBus.Configuration.AdvanceExtensibility.ExposeSettings
+    public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
-        [System.ObsoleteAttribute("Will be treated as an error from version 5.0.0. Will be removed in version 5.0.0." +
-            "", false)]
-        public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings AllEndpointsSupportDelayedDelivery() { }
         public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DisableTimeoutManager() { }
     }
     public interface IDeclareQueues
@@ -63,15 +50,4 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey);
     }
-}
-namespace NServiceBus.Transports.RabbitMQ
-{
-    [System.ObsoleteAttribute("Will be removed in version 5.0.0.", true)]
-    public interface IManageRabbitMqConnections { }
-}
-namespace NServiceBus.Transports.RabbitMQ.Routing
-{
-    [System.ObsoleteAttribute("Use `NServiceBus.Transport.RabbitMQ.IRoutingTopology` instead. Will be removed in" +
-        " version 5.0.0.", true)]
-    public interface IRoutingTopology { }
 }

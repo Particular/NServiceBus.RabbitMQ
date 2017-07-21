@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if NET452
+using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using ApprovalTests;
@@ -29,3 +30,4 @@ public class APIApprovals
     }
 
 }
+#endif
