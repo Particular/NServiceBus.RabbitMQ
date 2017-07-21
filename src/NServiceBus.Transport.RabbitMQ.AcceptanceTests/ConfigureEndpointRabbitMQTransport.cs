@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Globalization;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
+using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Transport;
 using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 using RabbitMQ.Client;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     DbConnectionStringBuilder connectionStringBuilder;
+    QueueBindings queueBindings;
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
@@ -31,12 +29,19 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         transport.ConnectionString(connectionStringBuilder.ConnectionString);
         transport.DelayedDelivery().DisableTimeoutManager();
 
+        queueBindings = configuration.GetSettings().Get<QueueBindings>();
+
         return TaskEx.CompletedTask;
     }
 
-    public Task Cleanup() => PurgeQueues();
+    public Task Cleanup()
+    {
+        PurgeQueues();
 
-    async Task PurgeQueues()
+        return TaskEx.CompletedTask;
+    }
+
+    void PurgeQueues()
     {
         if (connectionStringBuilder == null)
         {
@@ -73,7 +78,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
 
-        var queues = await GetQueues(connectionFactory);
+        var queues = queueBindings.ReceivingAddresses.Concat(queueBindings.SendingAddresses);
 
         using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
@@ -82,48 +87,13 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             {
                 try
                 {
-                    channel.QueuePurge(queue.Name);
+                    channel.QueuePurge(queue);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Unable to clear queue {0}: {1}", queue.Name, ex);
+                    Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
                 }
             }
         }
-    }
-
-    // Requires that the RabbitMQ Management API has been enabled: https://www.rabbitmq.com/management.html
-    async Task<IEnumerable<Queue>> GetQueues(ConnectionFactory connectionFactory)
-    {
-        var httpClient = CreateHttpClient(connectionFactory);
-
-        var queueResult = await httpClient.GetAsync(string.Format(CultureInfo.InvariantCulture, "api/queues/{0}", Uri.EscapeDataString(connectionFactory.VirtualHost)));
-        queueResult.EnsureSuccessStatusCode();
-
-        var content = await queueResult.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<List<Queue>>(content);
-    }
-
-    HttpClient CreateHttpClient(ConnectionFactory details)
-    {
-        var handler = new HttpClientHandler
-        {
-            Credentials = new NetworkCredential(details.UserName, details.Password)
-        };
-
-        var httpClient = new HttpClient(handler)
-        {
-            BaseAddress = new Uri(string.Format(CultureInfo.InvariantCulture, "http://{0}:15672/", details.HostName))
-        };
-
-        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        return httpClient;
-    }
-
-    class Queue
-    {
-        public string Name { get; set; }
     }
 }
