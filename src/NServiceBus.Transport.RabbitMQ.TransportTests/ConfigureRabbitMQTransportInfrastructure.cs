@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Settings;
-using NServiceBus.TransportTests;
 using NServiceBus.Transport;
+using NServiceBus.TransportTests;
 using RabbitMQ.Client;
 
 class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
@@ -82,30 +83,22 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
 
+        var queues = queueBindings.ReceivingAddresses.Concat(queueBindings.SendingAddresses);
+
         using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
         {
-            foreach (var queue in queueBindings.ReceivingAddresses)
+            foreach (var queue in queues)
             {
-                PurgeQueue(channel, queue);
+                try
+                {
+                    channel.QueuePurge(queue);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
+                }
             }
-
-            foreach (var queue in queueBindings.SendingAddresses)
-            {
-                PurgeQueue(channel, queue);
-            }
-        }
-    }
-
-    static void PurgeQueue(IModel channel, string queue)
-    {
-        try
-        {
-            channel.QueuePurge(queue);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Unable to clear queue '{queue}': {ex}");
         }
     }
 
