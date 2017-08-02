@@ -23,7 +23,7 @@
     <PackageReference Include="NServiceBus" Version="7.0.0-alpharelease0026" PrivateAssets="None" />
     <PackageReference Include="Obsolete.Fody" Version="4.2.2" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
-    <PackageReference Include="RabbitMQ.Client" Version="[4.1.0, 4.2.0)" PrivateAssets="None" />
+    <PackageReference Include="RabbitMQ.Client" Version="[4.1.0, 5.1.0)" PrivateAssets="None" />
   </ItemGroup>
 
   <ItemGroup>
