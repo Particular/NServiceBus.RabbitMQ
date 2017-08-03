@@ -15,7 +15,7 @@ The maintainers [watch](https://github.com/Particular/NServiceBus.RabbitMQ/watch
   - A pull request created by a maintainer is implicitly approved by that maintainer.
   - Approval is given by submitting a review and choosing the **Approve** option
   - For some pull requests, it may be appropriate to require a third maintainer to give approval before the pull request is merged. This may be requested by either of the current approvers based on their assessment of factors such as the impact or risk of the changes.
-- A pull request created by a maintainer must be merged by *another* maintainer. No "self-merges".
+- An approved pull request may be merged by any maintainer. A maintainer may merge their own pull request once it is approved.
 - The pull request must be made from a branch which is a straight line of commits from `develop`. There must be no merges in the branch history since the commit on `develop`.
   - The branch does not have to be based on the latest commit in `develop` but this is preferable, where practical.
 
