@@ -23,7 +23,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Support
                 DelayInfrastructure.TearDown(channel);
                 DelayInfrastructure.Build(channel);
 
-                routingTopology.DeclareAndInitialize(channel, receivingAddresses, sendingAddresses);
+                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
             }
         }
     }
