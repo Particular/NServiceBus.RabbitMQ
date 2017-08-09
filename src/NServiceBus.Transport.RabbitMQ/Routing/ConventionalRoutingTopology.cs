@@ -21,7 +21,7 @@
     /// <item><description>we generate an exchange for each queue so that we can do direct sends to the queue. it is bound as a fanout exchange</description></item>
     /// </list>
     /// </summary>
-    class ConventionalRoutingTopology : IRoutingTopology, IDeclareQueues, ISupportDelayedDelivery
+    class ConventionalRoutingTopology : IRoutingTopology, ISupportDelayedDelivery
     {
         readonly bool useDurableExchanges;
 
@@ -72,24 +72,19 @@
             channel.BasicPublish(address, String.Empty, true, properties, body);
         }
 
-        public void DeclareAndInitialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
+        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
                 channel.QueueDeclare(address, useDurableExchanges, false, false, null);
-                Initialize(channel, address);
+                CreateExchange(channel, address);
+                channel.QueueBind(address, address, string.Empty);
             }
         }
 
         public void BindToDelayInfrastructure(IModel channel, string address, string deliveryExchange, string routingKey)
         {
             channel.ExchangeBind(address, deliveryExchange, routingKey);
-        }
-
-        public void Initialize(IModel channel, string mainQueue)
-        {
-            CreateExchange(channel, mainQueue);
-            channel.QueueBind(mainQueue, mainQueue, string.Empty);
         }
 
         static string ExchangeName(Type type) => type.Namespace + ":" + type.Name;

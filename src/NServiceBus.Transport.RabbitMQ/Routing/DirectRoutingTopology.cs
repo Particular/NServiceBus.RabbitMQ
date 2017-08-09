@@ -8,7 +8,7 @@
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys.
     /// </summary>
-    class DirectRoutingTopology : IRoutingTopology, IDeclareQueues, ISupportDelayedDelivery
+    class DirectRoutingTopology : IRoutingTopology, ISupportDelayedDelivery
     {
         public DirectRoutingTopology(Conventions conventions, bool useDurableExchanges)
         {
@@ -42,7 +42,7 @@
             channel.BasicPublish(string.Empty, address, true, properties, body);
         }
 
-        public void DeclareAndInitialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
+        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
@@ -53,11 +53,6 @@
         public void BindToDelayInfrastructure(IModel channel, string address, string deliveryExchange, string routingKey)
         {
             channel.QueueBind(address, deliveryExchange, routingKey);
-        }
-
-        public void Initialize(IModel channel, string main)
-        {
-            //nothing needs to be done for direct routing
         }
 
         string ExchangeName() => conventions.ExchangeName(null, null);
