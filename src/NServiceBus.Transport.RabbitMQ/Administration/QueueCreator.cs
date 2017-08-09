@@ -1,19 +1,16 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client;
 
     class QueueCreator : ICreateQueues
     {
         readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
-        readonly bool durableMessagesEnabled;
 
-        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool durableMessagesEnabled)
+        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
-            this.durableMessagesEnabled = durableMessagesEnabled;
         }
 
         public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
