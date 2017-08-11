@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
@@ -10,7 +11,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates, bool useExternalAuthMechanism)
+        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism)
         {
             if (connectionConfiguration == null)
             {
@@ -41,6 +42,13 @@
             connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;
             connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
+
+            if (disableRemoteCertificateValidation)
+            {
+                connectionFactory.Ssl.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateChainErrors |
+                                                               SslPolicyErrors.RemoteCertificateNameMismatch |
+                                                               SslPolicyErrors.RemoteCertificateNotAvailable;
+            }
 
             if (useExternalAuthMechanism)
             {
