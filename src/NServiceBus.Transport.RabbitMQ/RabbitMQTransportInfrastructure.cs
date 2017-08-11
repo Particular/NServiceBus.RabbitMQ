@@ -31,8 +31,9 @@
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString, settings.EndpointName());
 
             settings.TryGet(SettingsKeys.ClientCertificates, out X509CertificateCollection clientCertificates);
+            settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);
             settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
-            connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates, useExternalAuthMechanism);
+            connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism);
 
             routingTopology = CreateRoutingTopology();
 

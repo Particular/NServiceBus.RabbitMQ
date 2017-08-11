@@ -127,6 +127,17 @@
         }
 
         /// <summary>
+        /// Disables all remote certificate validation when connecting to the broker via TLS.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> DisableRemoteCertificateValidation(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.DisableRemoteCertificateValidation, true);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Specifies that an external authentication mechanism should be used for client authentication.
         /// </summary>
         /// <param name="transportExtensions"></param>
