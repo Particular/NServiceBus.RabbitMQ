@@ -9,7 +9,7 @@
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.
     /// </summary>
-    public static class RabbitMQTransportSettingsExtensions
+    public static partial class RabbitMQTransportSettingsExtensions
     {
         /// <summary>
         /// Registers a custom routing topology.
@@ -42,16 +42,6 @@
 
             transportExtensions.UseRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
 
-            return transportExtensions;
-        }
-
-        /// <summary>
-        /// Registers a custom routing topology.
-        /// </summary>
-        [ObsoleteEx(RemoveInVersion = "6.0", TreatAsErrorFromVersion = "5.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.UseRoutingTopology(TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)")]
-        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology<T>(this TransportExtensions<RabbitMQTransport> transportExtensions) where T : IRoutingTopology, new()
-        {
-            transportExtensions.UseRoutingTopology(durable => new T());
             return transportExtensions;
         }
 
