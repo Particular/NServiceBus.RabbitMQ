@@ -88,7 +88,7 @@
             return new TransportReceiveInfrastructure(
                     () => CreateMessagePump(),
                     () => new QueueCreator(connectionFactory, routingTopology),
-                    () => Task.FromResult(ObsoleteAppSettings.Check()));
+                    () => Task.FromResult(StartupCheckResult.Success));
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
