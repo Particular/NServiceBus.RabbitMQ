@@ -127,6 +127,17 @@
         }
 
         /// <summary>
+        /// Specifies that an external authentication mechanism should be used for client authentication.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> UseExternalAuthMechanism(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.UseExternalAuthMechanism, true);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Gets the delayed delivery settings.
         /// </summary>
         /// <param name="transportExtensions"></param>
