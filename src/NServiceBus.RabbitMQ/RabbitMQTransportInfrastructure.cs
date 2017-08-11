@@ -32,7 +32,11 @@
 
             X509CertificateCollection clientCertificates;
             settings.TryGet(SettingsKeys.ClientCertificates, out clientCertificates);
-            connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates);
+
+            bool useExternalAuthMechanism;
+            settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out useExternalAuthMechanism);
+
+            connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates, useExternalAuthMechanism);
 
             routingTopology = CreateRoutingTopology();
 

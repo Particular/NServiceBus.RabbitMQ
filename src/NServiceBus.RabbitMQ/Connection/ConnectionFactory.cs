@@ -10,7 +10,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates)
+        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates, bool useExternalAuthMechanism)
         {
             if (connectionConfiguration == null)
             {
@@ -41,6 +41,11 @@
             connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;
             connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
+
+            if (useExternalAuthMechanism)
+            {
+                connectionFactory.AuthMechanisms = new[] { new ExternalMechanismFactory() };
+            }
 
             connectionFactory.ClientProperties.Clear();
 
