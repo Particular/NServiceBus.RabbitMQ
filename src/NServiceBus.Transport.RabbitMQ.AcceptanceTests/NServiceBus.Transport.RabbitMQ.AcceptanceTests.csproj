@@ -9,10 +9,6 @@
     <ProjectReference Include="..\NServiceBus.Transport.RabbitMQ\NServiceBus.Transport.RabbitMQ.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
     <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="7.0.0-alpharelease0039" />
