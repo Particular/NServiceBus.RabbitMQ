@@ -28,7 +28,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string, Type, string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
             if (routingKeyConvention == null)
             {
@@ -37,7 +37,7 @@
 
             if (exchangeNameConvention == null)
             {
-                exchangeNameConvention = (address, eventType) => "amq.topic";
+                exchangeNameConvention = () => "amq.topic";
             }
 
             transportExtensions.UseRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
