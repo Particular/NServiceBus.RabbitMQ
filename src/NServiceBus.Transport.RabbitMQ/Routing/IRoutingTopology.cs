@@ -63,5 +63,14 @@
         /// The addresses of the queues to declare and perform initialization for, that this endpoint is sending to.
         /// </param>
         void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses);
+
+        /// <summary>
+        /// Binds an address to the delay infrastructure's delivery exchange.
+        /// </summary>
+        /// <param name="channel">The RabbitMQ channel to operate on.</param>
+        /// <param name="address">The address that needs to be bound to the delivery exchange.</param>
+        /// <param name="deliveryExchange">The name of the delivery exchange.</param>
+        /// <param name="routingKey">The routing key required for the binding.</param>
+        void BindToDelayInfrastructure(IModel channel, string address, string deliveryExchange, string routingKey);
     }
 }

@@ -22,12 +22,9 @@
 
                 routingTopology.Initialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
 
-                if (routingTopology is ISupportDelayedDelivery delayTopology)
+                foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
-                    foreach (var receivingAddress in queueBindings.ReceivingAddresses)
-                    {
-                        delayTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
-                    }
+                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
                 }
             }
 

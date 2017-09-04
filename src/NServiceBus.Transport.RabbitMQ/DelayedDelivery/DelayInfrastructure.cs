@@ -78,28 +78,19 @@
 
         public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
         {
-            var routingTopologySupportsDelayedDelivery = settings.GetOrDefault<bool>(SettingsKeys.RoutingTopologySupportsDelayedDelivery);
             var timeoutManagerDisabled = settings.GetOrDefault<bool>(SettingsKeys.DisableTimeoutManager);
             var externalTimeoutManagerAddress = settings.GetOrDefault<string>(coreExternalTimeoutManagerAddressKey) != null;
             var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
 
-            if (!routingTopologySupportsDelayedDelivery && timeoutManagerDisabled)
+            if (externalTimeoutManagerAddress)
             {
-                return StartupCheckResult.Failed($"Cannot disable the timeout manager when the specified routing topology does not implement {nameof(ISupportDelayedDelivery)}.");
+                return StartupCheckResult.Failed("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.");
             }
 
-            if (routingTopologySupportsDelayedDelivery)
+            if (!timeoutManagerDisabled && !timeoutManagerFeatureActive)
             {
-                if (externalTimeoutManagerAddress)
-                {
-                    return StartupCheckResult.Failed("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.");
-                }
-
-                if (!timeoutManagerDisabled && !timeoutManagerFeatureActive)
-                {
-                    return StartupCheckResult.Failed("The timeout manager is not active, but the transport has not been properly configured for this. " +
-                        "Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().DisableTimeoutManager()' to ensure delayed messages can be sent properly.");
-                }
+                return StartupCheckResult.Failed("The timeout manager is not active, but the transport has not been properly configured for this. " +
+                    "Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().DisableTimeoutManager()' to ensure delayed messages can be sent properly.");
             }
 
             return StartupCheckResult.Success;

@@ -35,18 +35,12 @@
 
             routingTopology = CreateRoutingTopology();
 
-            var routingTopologySupportsDelayedDelivery = routingTopology is ISupportDelayedDelivery;
-            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, routingTopologySupportsDelayedDelivery);
+            var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+            var sendOnlyEndpoint = settings.GetOrDefault<bool>(coreSendOnlyEndpointKey);
 
-            if (routingTopologySupportsDelayedDelivery)
+            if (timeoutManagerFeatureDisabled || sendOnlyEndpoint)
             {
-                var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
-                var sendOnlyEndpoint = settings.GetOrDefault<bool>(coreSendOnlyEndpointKey);
-
-                if (timeoutManagerFeatureDisabled || sendOnlyEndpoint)
-                {
-                    settings.Set(SettingsKeys.DisableTimeoutManager, true);
-                }
+                settings.Set(SettingsKeys.DisableTimeoutManager, true);
             }
 
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out bool usePublisherConfirms))

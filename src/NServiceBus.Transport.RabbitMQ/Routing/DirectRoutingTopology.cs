@@ -8,7 +8,7 @@
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys.
     /// </summary>
-    class DirectRoutingTopology : IRoutingTopology, ISupportDelayedDelivery
+    class DirectRoutingTopology : IRoutingTopology
     {
         public DirectRoutingTopology(Conventions conventions, bool useDurableExchanges)
         {
