@@ -12,7 +12,7 @@ using System.Linq;
 using static SimpleTargets;
 
 // locations
-var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.1.20170428.83814.zip");
+var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.2.0.zip");
 var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/{resharperCltUrl.Segments.Last()}";
 var inspectCodePath = $"./.resharper/{Path.GetFileNameWithoutExtension(resharperCltUrl.Segments.Last())}/inspectcode.exe";
 var msBuild = $"{Environment.GetEnvironmentVariable("VS_INSTALL_PATH")}/MSBuild/15.0/Bin/MSBuild.exe";
