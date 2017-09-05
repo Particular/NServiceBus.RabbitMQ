@@ -3,7 +3,7 @@
 #load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
-#load "build-packages/simple-targets-csx.5.2.0/simple-targets.csx"
+#load "build-packages/simple-targets-csx.5.2.1/simple-targets.csx"
 
 using System;
 using System.IO;
@@ -18,7 +18,7 @@ var inspectCodePath = $"./.resharper/{Path.GetFileNameWithoutExtension(resharper
 var msBuild = $"{Environment.GetEnvironmentVariable("VS_INSTALL_PATH")}/MSBuild/15.0/Bin/MSBuild.exe";
 var solution = "./src/NServiceBus.Transport.RabbitMQ.sln";
 var dotSettings = "./src/NServiceBus.Transport.RabbitMQ.sln.DotSettings";
-var nunit = "./build-packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe";
+var nunit = "./build-packages/NUnit.ConsoleRunner.3.7.0/tools/nunit3-console.exe";
 var unitTests = "./src/NServiceBus.Transport.RabbitMQ.Tests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.Tests.dll";
 var acceptanceTests = "./src/NServiceBus.Transport.RabbitMQ.AcceptanceTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.AcceptanceTests.dll";
 var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
