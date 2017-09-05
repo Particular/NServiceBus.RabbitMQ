@@ -12,12 +12,12 @@ using System.Linq;
 using static SimpleTargets;
 
 // locations
-var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.1.20170428.83814.zip");
+var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.2.0.zip");
 var resharperCltPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/.resharper/{resharperCltUrl.Segments.Last()}";
 var inspectCodePath = $"./.resharper/{Path.GetFileNameWithoutExtension(resharperCltUrl.Segments.Last())}/inspectcode.exe";
 var msBuild = $"{Environment.GetEnvironmentVariable("VS_INSTALL_PATH")}/MSBuild/15.0/Bin/MSBuild.exe";
-var solution = "./src/NServiceBus.RabbitMQ.sln";
-var dotSettings = "./src/NServiceBus.RabbitMQ.sln.DotSettings";
+var solution = "./src/NServiceBus.Transport.RabbitMQ.sln";
+var dotSettings = "./src/NServiceBus.Transport.RabbitMQ.sln.DotSettings";
 var nunit = "./build-packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe";
 var unitTests = "./src/NServiceBus.Transport.RabbitMQ.Tests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.Tests.dll";
 var acceptanceTests = "./src/NServiceBus.Transport.RabbitMQ.AcceptanceTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.AcceptanceTests.dll";
