@@ -55,7 +55,7 @@
             channel.QueueBind(address, deliveryExchange, routingKey);
         }
 
-        string ExchangeName() => conventions.ExchangeName(null, null);
+        string ExchangeName() => conventions.ExchangeName();
 
         void CreateExchange(IModel channel, string exchangeName)
         {
@@ -95,13 +95,13 @@
 
         public class Conventions
         {
-            public Conventions(Func<string, Type, string> exchangeName, Func<Type, string> routingKey)
+            public Conventions(Func<string> exchangeName, Func<Type, string> routingKey)
             {
                 ExchangeName = exchangeName;
                 RoutingKey = routingKey;
             }
 
-            public Func<string, Type, string> ExchangeName { get; }
+            public Func<string> ExchangeName { get; }
 
             public Func<Type, string> RoutingKey { get; }
         }
