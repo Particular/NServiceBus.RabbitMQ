@@ -23,6 +23,13 @@
         }
 
         /// <summary>
+        /// Uses the conventional routing topology.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions) =>
+            transportExtensions.UseRoutingTopology(durable => new ConventionalRoutingTopology(durable));
+
+        /// <summary>
         /// Uses the direct routing topology with the specified conventions.
         /// </summary>
         /// <param name="transportExtensions"></param>

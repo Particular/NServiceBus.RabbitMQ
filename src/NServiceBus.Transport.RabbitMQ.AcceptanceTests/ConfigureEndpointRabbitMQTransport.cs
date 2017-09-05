@@ -28,6 +28,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         var transport = configuration.UseTransport<RabbitMQTransport>();
         transport.ConnectionString(connectionStringBuilder.ConnectionString);
         transport.DelayedDelivery().DisableTimeoutManager();
+        transport.UseConventionalRoutingTopology();
 
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
 
