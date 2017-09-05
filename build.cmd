@@ -27,7 +27,7 @@ if not exist %NUGET_LOCAL_DIR%\NuGet.exe (
 %NUGET_LOCAL_DIR%\NuGet.exe restore .\packages.config -PackagesDirectory ./build-packages -MSBuildVersion 15 -Verbosity quiet
 
 :: find VS install path
-for /f "usebackq tokens=*" %%i in (`build-packages\vswhere.1.0.62\tools\vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do (
+for /f "usebackq tokens=*" %%i in (`build-packages\vswhere.2.1.3\tools\vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do (
   set VS_INSTALL_PATH=%%i
 )
 
