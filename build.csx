@@ -73,10 +73,10 @@ targets.Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
 
 targets.Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)}{nunitTeamCityOption} {unitTests}"));
+targets.Add("unit-test", DependsOn("build", "reset-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)}{nunitTeamCityOption} {unitTests}"));
 
-targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)}{nunitTeamCityOption} {acceptanceTests}"));
+targets.Add("acceptance-test", DependsOn("build", "reset-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)}{nunitTeamCityOption} {acceptanceTests}"));
 
-targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)}{nunitTeamCityOption} {transportTests}"));
+targets.Add("transport-test", DependsOn("build", "reset-virtual-host"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)}{nunitTeamCityOption} {transportTests}"));
 
 Run(Args, targets);
