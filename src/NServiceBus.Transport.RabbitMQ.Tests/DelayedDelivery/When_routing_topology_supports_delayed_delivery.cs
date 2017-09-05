@@ -16,7 +16,6 @@
         public void Setup()
         {
             settings = new SettingsHolder();
-            settings.Set(SettingsKeys.RoutingTopologySupportsDelayedDelivery, true);
         }
 
         [Test]

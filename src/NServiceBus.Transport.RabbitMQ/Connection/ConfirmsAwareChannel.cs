@@ -17,8 +17,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
             this.routingTopology = routingTopology;
 
-            delayTopology = routingTopology as ISupportDelayedDelivery;
-
             this.usePublisherConfirms = usePublisherConfirms;
 
             if (usePublisherConfirms)
@@ -39,8 +37,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public bool SupportsDelayedDelivery => delayTopology != null;
-
         public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
         {
             Task task;
@@ -55,11 +51,11 @@ namespace NServiceBus.Transport.RabbitMQ
                 task = TaskEx.CompletedTask;
             }
 
-            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue) && SupportsDelayedDelivery)
+            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
             {
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
-                delayTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
+                routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
                 channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body);
             }
             else
@@ -212,7 +208,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
         IModel channel;
         readonly IRoutingTopology routingTopology;
-        readonly ISupportDelayedDelivery delayTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 

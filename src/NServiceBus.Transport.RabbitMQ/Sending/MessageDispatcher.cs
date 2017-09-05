@@ -47,7 +47,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints, channel.SupportsDelayedDelivery, out var destination);
+            properties.Fill(message, transportOperation.DeliveryConstraints, true, out var destination);
 
             return channel.SendMessage(destination ?? transportOperation.Destination, message, properties);
         }
@@ -57,7 +57,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints, channel.SupportsDelayedDelivery, out _);
+            properties.Fill(message, transportOperation.DeliveryConstraints, true, out _);
 
             return channel.PublishMessage(transportOperation.MessageType, message, properties);
         }

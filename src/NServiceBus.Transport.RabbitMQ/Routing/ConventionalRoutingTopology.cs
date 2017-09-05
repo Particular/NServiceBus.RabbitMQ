@@ -21,7 +21,7 @@
     /// <item><description>we generate an exchange for each queue so that we can do direct sends to the queue. it is bound as a fanout exchange</description></item>
     /// </list>
     /// </summary>
-    class ConventionalRoutingTopology : IRoutingTopology, ISupportDelayedDelivery
+    class ConventionalRoutingTopology : IRoutingTopology
     {
         readonly bool useDurableExchanges;
 
