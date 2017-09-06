@@ -125,7 +125,7 @@
 
             if (!settings.TryGet(out Func<bool, IRoutingTopology> topologyFactory))
             {
-                topologyFactory = d => new ConventionalRoutingTopology(d);
+                throw new InvalidOperationException("A routing topology factory has not been configured. Configure a routing topology with a TransportExtensions<RabbitMQTransport>.UseXXXRoutingTopology() method.");
             }
 
             return topologyFactory(durable);
