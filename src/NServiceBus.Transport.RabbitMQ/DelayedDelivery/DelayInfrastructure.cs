@@ -79,10 +79,10 @@
         public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
         {
             var timeoutManagerDisabled = settings.GetOrDefault<bool>(SettingsKeys.DisableTimeoutManager);
-            var externalTimeoutManagerAddress = settings.GetOrDefault<string>(coreExternalTimeoutManagerAddressKey) != null;
+            var externalTimeoutManagerAddressConfigured = settings.GetOrDefault<string>(coreExternalTimeoutManagerAddressKey) != null;
             var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
 
-            if (externalTimeoutManagerAddress)
+            if (externalTimeoutManagerAddressConfigured)
             {
                 return StartupCheckResult.Failed("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.");
             }
