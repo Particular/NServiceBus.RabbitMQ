@@ -61,11 +61,7 @@
             channelProvider?.Dispose();
         }
 
-        protected bool TryWaitForMessageReceipt()
-        {
-            IncomingMessage message;
-            return TryReceiveMessage(out message, incomingMessageTimeout);
-        }
+        protected bool TryWaitForMessageReceipt() => TryReceiveMessage(out _, incomingMessageTimeout);
 
         protected IncomingMessage ReceiveMessage()
         {
