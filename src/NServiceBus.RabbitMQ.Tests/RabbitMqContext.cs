@@ -27,7 +27,7 @@
 
             var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
 
-            connectionFactory = new ConnectionFactory(config, null);
+            connectionFactory = new ConnectionFactory(config, null, false, false);
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
 
             messageDispatcher = new MessageDispatcher(channelProvider);
@@ -61,11 +61,7 @@
             channelProvider?.Dispose();
         }
 
-        protected bool TryWaitForMessageReceipt()
-        {
-            IncomingMessage message;
-            return TryReceiveMessage(out message, incomingMessageTimeout);
-        }
+        protected bool TryWaitForMessageReceipt() => TryReceiveMessage(out _, incomingMessageTimeout);
 
         protected IncomingMessage ReceiveMessage()
         {
