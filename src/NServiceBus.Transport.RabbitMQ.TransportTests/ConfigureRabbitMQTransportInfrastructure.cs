@@ -15,7 +15,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         var result = new TransportConfigurationResult();
         var transport = new RabbitMQTransport();
 
-        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
+        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
 
         if (string.IsNullOrEmpty(connectionString))
         {
