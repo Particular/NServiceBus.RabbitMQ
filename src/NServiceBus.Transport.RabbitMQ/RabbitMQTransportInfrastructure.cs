@@ -12,7 +12,7 @@
     using Routing;
     using Settings;
 
-    sealed class RabbitMQTransportInfrastructure : TransportInfrastructure, IDisposable
+    sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
         const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
         const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
@@ -114,9 +114,10 @@
             return queue.ToString();
         }
 
-        public void Dispose()
+        public override Task Stop()
         {
             channelProvider.Dispose();
+            return base.Stop();
         }
 
         IRoutingTopology CreateRoutingTopology()
