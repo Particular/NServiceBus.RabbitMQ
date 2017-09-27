@@ -18,7 +18,7 @@
             routingTopology = new ConventionalRoutingTopology(true);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
+            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
 
             if (string.IsNullOrEmpty(connectionString))
             {
