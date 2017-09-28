@@ -1,3 +1,5 @@
+test CI 3
+
 # RabbitMQ Transport for NServiceBus
 
 The [NServiceBus.RabbitMQ NuGet package](https://www.nuget.org/packages/NServiceBus.RabbitMQ) provides support for sending messages over [RabbitMQ](http://www.rabbitmq.com/).
