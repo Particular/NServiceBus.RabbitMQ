@@ -22,7 +22,7 @@
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
+                throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
             }
 
             var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
