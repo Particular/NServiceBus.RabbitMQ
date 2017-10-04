@@ -5,16 +5,15 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Fody" Version="2.1.3" PrivateAssets="All" />
-    <PackageReference Include="GitVersionTask" Version="4.0.0-beta0012" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.0.0-beta0007, 8)" PrivateAssets="None" />
     <PackageReference Include="Obsolete.Fody" Version="4.3.2" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="0.1.0" PrivateAssets="All" />
     <PackageReference Include="RabbitMQ.Client" Version="[4.1.0, 5.1.0)" PrivateAssets="None" />
   </ItemGroup>
 
@@ -25,24 +24,7 @@
 
   <PropertyGroup>
     <PackageId>NServiceBus.RabbitMQ</PackageId>
-    <Authors>NServiceBus Ltd</Authors>
-    <Company>NServiceBus Ltd</Company>
-    <Description>RabbitMQ support for NServicebus</Description>
-    <PackageLicenseUrl>http://particular.net/LicenseAgreement</PackageLicenseUrl>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Copyright>Copyright 2010-$([System.DateTime]::UtcNow.ToString(yyyy)) NServiceBus. All rights reserved</Copyright>
-    <PackageTags>nservicebus servicebus msmq cqrs publish subscribe</PackageTags>
-    <PackageIconUrl>http://s3.amazonaws.com/nuget.images/NServiceBus_32.png</PackageIconUrl>
-    <PackageProjectUrl>https://docs.particular.net/nuget/$(PackageId)</PackageProjectUrl>
-    <PackageOutputPath>..\..\nugets</PackageOutputPath>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludePDBsInPackage</TargetsForTfmSpecificContentInPackage>
+    <Description>RabbitMQ support for NServiceBus</Description>
   </PropertyGroup>
-
-  <Target Name="IncludePDBsInPackage">
-    <ItemGroup>
-      <TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).pdb" PackagePath="lib\$(TargetFramework)" />
-    </ItemGroup>
-  </Target>
 
 </Project>
