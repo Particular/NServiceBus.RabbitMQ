@@ -13,17 +13,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="[15.*,16)" />
-    <PackageReference Include="NServiceBus" Version="[7.0.0-*,8)" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
+    <PackageReference Include="NServiceBus" Version="7.0.0-beta0007" />
     <PackageReference Include="NUnit" Version="3.8.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.8.0-alpha1" />
-    <PackageReference Include="RabbitMQ.Client" Version="[5.*, 5.1.0)" />
+    <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <PackageReference Include="ApprovalTests" Version="[3.*,4)" />
-    <PackageReference Include="Mono.Cecil" Version="[0.10.0-*,2)" />
-    <PackageReference Include="PublicApiGenerator" Version="[6.1.0-*,7)" />
+    <PackageReference Include="ApprovalTests" Version="3.0.13" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
+    <PackageReference Include="PublicApiGenerator" Version="6.1.0-beta2" />
   </ItemGroup>
 
 </Project>
