@@ -122,14 +122,22 @@
 
         IRoutingTopology CreateRoutingTopology()
         {
-            var durable = settings.DurableMessagesEnabled();
-
             if (!settings.TryGet(out Func<bool, IRoutingTopology> topologyFactory))
             {
                 throw new InvalidOperationException("A routing topology factory has not been configured. Configure a routing topology with a TransportExtensions<RabbitMQTransport>.UseXXXRoutingTopology() method.");
             }
 
-            return topologyFactory(durable);
+            if (!settings.TryGet(SettingsKeys.UseDurableExchangesAndQueues, out bool useDurableExchangesAndQueues))
+            {
+                if (!settings.DurableMessagesEnabled())
+                {
+                    throw new Exception("When durable messages are disabled, 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseDurableExchangesAndQueues()' must also be called to specify exchange and queue durability settings.");
+                }
+
+                useDurableExchangesAndQueues = true;
+            }
+
+            return topologyFactory(useDurableExchangesAndQueues);
         }
 
         IPushMessages CreateMessagePump()

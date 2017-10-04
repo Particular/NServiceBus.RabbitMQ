@@ -154,5 +154,17 @@
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
         public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions) => new DelayedDeliverySettings(transportExtensions.GetSettings());
+
+        /// <summary>
+        /// Specifies whether exchanges and queues should be declared as durable or not.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="useDurableExchangesAndQueues">Specifies whether exchanges and queues should be declared as durable or not.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> UseDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.UseDurableExchangesAndQueues, useDurableExchangesAndQueues);
+            return transportExtensions;
+        }
     }
 }
