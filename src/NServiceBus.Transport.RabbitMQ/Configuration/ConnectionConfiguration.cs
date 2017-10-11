@@ -85,7 +85,7 @@
 
             if (dictionary.ContainsKey("maxwaittimeforconfirms"))
             {
-                invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information");
+                invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information.");
             }
 
             if (dictionary.ContainsKey("prefetchcount"))
