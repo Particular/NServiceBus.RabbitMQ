@@ -124,7 +124,7 @@
         {
             if (!settings.TryGet(out Func<bool, IRoutingTopology> topologyFactory))
             {
-                throw new InvalidOperationException("A routing topology factory has not been configured. Configure a routing topology with a TransportExtensions<RabbitMQTransport>.UseXXXRoutingTopology() method.");
+                throw new InvalidOperationException("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
             }
 
             if (!settings.TryGet(SettingsKeys.UseDurableExchangesAndQueues, out bool useDurableExchangesAndQueues))
