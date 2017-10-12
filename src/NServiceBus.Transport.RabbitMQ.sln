@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.0
+VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.TransportTests", "NServiceBus.Transport.RabbitMQ.TransportTests\NServiceBus.Transport.RabbitMQ.TransportTests.csproj", "{9D218CB8-1A64-4209-8156-81F44BB17986}"
 EndProject
@@ -10,6 +10,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.AcceptanceTests", "NServiceBus.Transport.RabbitMQ.AcceptanceTests\NServiceBus.Transport.RabbitMQ.AcceptanceTests.csproj", "{F9CEE33E-C664-4D8E-926D-747544B47FE1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ", "NServiceBus.Transport.RabbitMQ\NServiceBus.Transport.RabbitMQ.csproj", "{E48E7FEE-B8C1-43C2-A9CC-98934BB16D05}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CAE42966-8BAA-4BFB-849E-8EE715646607}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
