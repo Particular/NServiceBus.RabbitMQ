@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Fody" Version="2.2.0" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="7.0.0-beta0011" PrivateAssets="None" />
+    <PackageReference Include="NServiceBus" Version="[7.0.0-beta0012, 8)" PrivateAssets="None" />
     <PackageReference Include="Obsolete.Fody" Version="4.3.2" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.1.0" PrivateAssets="All" />
