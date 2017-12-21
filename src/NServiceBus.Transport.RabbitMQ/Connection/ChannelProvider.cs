@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Concurrent;
     using global::RabbitMQ.Client;
 
-    sealed class ChannelProvider : IChannelProvider, IDisposable
+    sealed class ChannelProvider : IDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
