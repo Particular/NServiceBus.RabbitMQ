@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
@@ -6,16 +6,16 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        readonly ChannelProvider channelProvider;
+        readonly ChannelPool channelPool;
 
-        public MessageDispatcher(ChannelProvider channelProvider)
+        public MessageDispatcher(ChannelPool channelPool)
         {
-            this.channelProvider = channelProvider;
+            this.channelPool = channelPool;
         }
 
         public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
         {
-            var channel = channelProvider.GetPublishChannel();
+            var channel = channelPool.GetChannel();
 
             try
             {
@@ -38,7 +38,7 @@
             }
             finally
             {
-                channelProvider.ReturnPublishChannel(channel);
+                channelPool.ReturnChannel(channel);
             }
         }
 

@@ -4,11 +4,11 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Concurrent;
     using global::RabbitMQ.Client;
 
-    sealed class ChannelProvider : IDisposable
+    sealed class ChannelPool : IDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ChannelPool(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
-            connection = new Lazy<IConnection>(() => connectionFactory.CreatePublishConnection());
+            connection = new Lazy<IConnection>(() => connectionFactory.CreateMessagesConnection());
 
             this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
@@ -16,7 +16,7 @@ namespace NServiceBus.Transport.RabbitMQ
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
         }
 
-        public ConfirmsAwareChannel GetPublishChannel()
+        public ConfirmsAwareChannel GetChannel()
         {
             if (!channels.TryDequeue(out var channel) || channel.IsClosed)
             {
@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.RabbitMQ
             return channel;
         }
 
-        public void ReturnPublishChannel(ConfirmsAwareChannel channel)
+        public void ReturnChannel(ConfirmsAwareChannel channel)
         {
             if (channel.IsOpen)
             {

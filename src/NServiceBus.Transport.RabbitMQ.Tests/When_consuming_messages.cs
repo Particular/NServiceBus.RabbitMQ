@@ -28,7 +28,7 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            using (var connection = connectionFactory.CreateMessagesConnection())
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();
@@ -48,7 +48,7 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            using (var connection = connectionFactory.CreateMessagesConnection())
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();
@@ -71,7 +71,7 @@
 
             var typeName = typeof(MyMessage).FullName;
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            using (var connection = connectionFactory.CreateMessagesConnection())
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();

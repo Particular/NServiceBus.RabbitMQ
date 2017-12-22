@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.Tests
+namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Concurrent;
@@ -28,13 +28,13 @@
             var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
 
             connectionFactory = new ConnectionFactory(config, null, false, false);
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
+            channelPool = new ChannelPool(connectionFactory, routingTopology, true);
 
-            messageDispatcher = new MessageDispatcher(channelProvider);
+            messageDispatcher = new MessageDispatcher(channelPool);
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelPool, purger, TimeSpan.FromMinutes(2), 3, 0);
 
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
@@ -58,7 +58,7 @@
         {
             messagePump?.Stop().GetAwaiter().GetResult();
 
-            channelProvider?.Dispose();
+            channelPool?.Dispose();
         }
 
         protected bool TryWaitForMessageReceipt() => TryReceiveMessage(out var _, incomingMessageTimeout);
@@ -85,7 +85,7 @@
         protected MessagePump messagePump;
         protected SubscriptionManager subscriptionManager;
 
-        ChannelProvider channelProvider;
+        ChannelPool channelPool;
         BlockingCollection<IncomingMessage> receivedMessages;
         ConventionalRoutingTopology routingTopology;
 

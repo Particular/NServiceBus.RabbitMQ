@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -19,7 +19,7 @@
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
-        readonly ChannelProvider channelProvider;
+        readonly ChannelPool channelPool;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly int prefetchMultiplier;
@@ -42,12 +42,12 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelPool channelPool, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
-            this.channelProvider = channelProvider;
+            this.channelPool = channelPool;
             this.queuePurger = queuePurger;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchMultiplier = prefetchMultiplier;
@@ -278,7 +278,7 @@
         {
             try
             {
-                var channel = channelProvider.GetPublishChannel();
+                var channel = channelPool.GetChannel();
 
                 try
                 {
@@ -286,7 +286,7 @@
                 }
                 finally
                 {
-                    channelProvider.ReturnPublishChannel(channel);
+                    channelPool.ReturnChannel(channel);
                 }
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -19,7 +19,7 @@
 
         readonly SettingsHolder settings;
         readonly ConnectionFactory connectionFactory;
-        readonly ChannelProvider channelProvider;
+        readonly ChannelPool channelPool;
         IRoutingTopology routingTopology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
@@ -48,7 +48,7 @@
                 usePublisherConfirms = true;
             }
 
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
+            channelPool = new ChannelPool(connectionFactory, routingTopology, usePublisherConfirms);
         }
 
         public override IEnumerable<Type> DeliveryConstraints
@@ -88,7 +88,7 @@
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(channelProvider),
+                () => new MessageDispatcher(channelPool),
                 () => Task.FromResult(DelayInfrastructure.CheckForInvalidSettings(settings)));
         }
 
@@ -116,7 +116,7 @@
 
         public override Task Stop()
         {
-            channelProvider.Dispose();
+            channelPool.Dispose();
             return base.Stop();
         }
 
@@ -177,7 +177,7 @@
                 prefetchCount = 0;
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelPool, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
         }
     }
 }

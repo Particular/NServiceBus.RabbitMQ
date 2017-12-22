@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Net.Security;
@@ -63,7 +63,7 @@
             }
         }
 
-        public IConnection CreatePublishConnection() => CreateConnection("Publish");
+        public IConnection CreateMessagesConnection() => CreateConnection("Messages");
 
         public IConnection CreateAdministrationConnection() => CreateConnection("Administration");
 
