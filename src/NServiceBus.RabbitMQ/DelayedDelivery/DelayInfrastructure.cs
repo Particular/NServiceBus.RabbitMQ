@@ -16,7 +16,10 @@
 
         public const int MaxDelayInSeconds = (1 << maxNumberOfBitsToUse) - 1;
         public const string DelayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
-        public const string DeadLetteredMessageHeader = "x-death";
+        public const string XDeathHeader = "x-death";
+        public const string XFirstDeathExchangeHeader = "x-first-death-exchange";
+        public const string XFirstDeathQueueHeader = "x-first-death-queue";
+        public const string XFirstDeathReasonHeader = "x-first-death-reason";
         public const string DeliveryExchange = "nsb.delay-delivery";
 
         public static string LevelName(int level) => $"nsb.delay-level-{level:D2}";
