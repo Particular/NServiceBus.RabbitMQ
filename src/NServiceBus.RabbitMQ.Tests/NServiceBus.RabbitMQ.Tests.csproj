@@ -79,10 +79,6 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClusteringTests\ClusteredTestContext.cs" />
-    <Compile Include="ClusteringTests\when_connected_to_local_cluster_and_all_nodes_are_up.cs" />
-    <Compile Include="ClusteringTests\when_connected_to_local_cluster_and_first_node_is_unavailable.cs" />
-    <Compile Include="ClusteringTests\when_connected_to_local_cluster_and_nodes_start_going_down.cs" />
     <Compile Include="ConnectionString\ConnectionConfigurationTests.cs" />
     <Compile Include="ConnectionString\ConnectionStringParserTests.cs" />
     <Compile Include="RabbitMqTransportMessageExtensionsTests.cs" />
@@ -93,9 +89,6 @@
     <Compile Include="When_sending_a_message_over_rabbitmq.cs" />
     <Compile Include="TransportMessageBuilder.cs" />
     <Compile Include="When_subscribed_to_a_event.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="ClusteringTests\readme.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj">
