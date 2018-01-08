@@ -80,6 +80,14 @@
                 return new Dictionary<string, string>();
             }
 
+            //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
+            message.BasicProperties.Headers.Remove(delayHeader);
+            message.BasicProperties.Headers.Remove(xDeathHeader);
+            message.BasicProperties.Headers.Remove(xFirstDeathExchangeHeader);
+            message.BasicProperties.Headers.Remove(xFirstDeathQueueHeader);
+            message.BasicProperties.Headers.Remove(xFirstDeathReasonHeader);
+            message.BasicProperties.Headers.Remove(confirmationIdHeader);
+
             return message.BasicProperties.Headers
                 .ToDictionary(
                     dictionaryEntry => dictionaryEntry.Key,
@@ -118,5 +126,12 @@
 
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
+
+        const string delayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
+        const string xDeathHeader = "x-death";
+        const string xFirstDeathExchangeHeader = "x-first-death-exchange";
+        const string xFirstDeathQueueHeader = "x-first-death-queue";
+        const string xFirstDeathReasonHeader = "x-first-death-reason";
+        const string confirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
     }
 }
