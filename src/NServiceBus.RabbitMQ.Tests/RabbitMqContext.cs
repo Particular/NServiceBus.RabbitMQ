@@ -29,6 +29,7 @@
 
             connectionFactory = new ConnectionFactory(config, null, false, false);
             channelProvider = new ChannelProvider(connectionFactory, routingTopology, true);
+            channelProvider.CreateConnection();
 
             messageDispatcher = new MessageDispatcher(channelProvider);
 

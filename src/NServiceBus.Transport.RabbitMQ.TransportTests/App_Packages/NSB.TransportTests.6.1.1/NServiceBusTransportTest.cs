@@ -71,9 +71,9 @@
             queueBindings.BindReceiving(InputQueueName);
             queueBindings.BindSending(ErrorQueueName);
             transportSettings.Set<QueueBindings>(queueBindings);
-            
+
             transportSettings.Set<EndpointInstances>(new EndpointInstances());
-            
+
             Configurer = CreateConfigurer();
 
             var configuration = Configurer.Configure(transportSettings, transactionMode);
@@ -85,6 +85,8 @@
 
             ReceiveInfrastructure = TransportInfrastructure.ConfigureReceiveInfrastructure();
             SendInfrastructure = TransportInfrastructure.ConfigureSendInfrastructure();
+
+            await TransportInfrastructure.Start();
 
             lazyDispatcher = new Lazy<IDispatchMessages>(() => SendInfrastructure.DispatcherFactory());
 
