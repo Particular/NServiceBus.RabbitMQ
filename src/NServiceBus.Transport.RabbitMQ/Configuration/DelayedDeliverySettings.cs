@@ -22,5 +22,18 @@
 
             return this;
         }
+
+        /// <summary>
+        /// Enables the timeout manager for this endpoint.
+        /// <para>
+        /// If the timeout manager is enabled, any preexisting timeouts stored in the persistence for this endpoint will be delivered.
+        /// </para>
+        /// </summary>
+        public DelayedDeliverySettings EnableTimeoutManager()
+        {
+            this.GetSettings().Set(SettingsKeys.EnableTimeoutManager, true);
+
+            return this;
+        }
     }
 }
