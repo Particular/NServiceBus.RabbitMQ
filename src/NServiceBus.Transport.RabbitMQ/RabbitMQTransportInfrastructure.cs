@@ -114,6 +114,12 @@
             return queue.ToString();
         }
 
+        public override Task Start()
+        {
+            channelProvider.CreateConnection();
+            return base.Start();
+        }
+
         public override Task Stop()
         {
             channelProvider.Dispose();
