@@ -39,7 +39,10 @@
             {
                 //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
                 messageHeaders.Remove(DelayInfrastructure.DelayHeader);
-                messageHeaders.Remove(DelayInfrastructure.DeadLetteredMessageHeader);
+                messageHeaders.Remove(DelayInfrastructure.XDeathHeader);
+                messageHeaders.Remove(DelayInfrastructure.XFirstDeathExchangeHeader);
+                messageHeaders.Remove(DelayInfrastructure.XFirstDeathQueueHeader);
+                messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
                 messageHeaders.Remove(BasicPropertiesExtensions.ConfirmationIdHeader);
             }
 
