@@ -7,7 +7,6 @@
     [TestFixture]
     class When_routing_topology_supports_delayed_delivery
     {
-        const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
         const string coreExternalTimeoutManagerAddressKey = "NServiceBus.ExternalTimeoutManagerAddress";
 
         SettingsHolder settings;
@@ -19,51 +18,16 @@
         }
 
         [Test]
-        public void Should_allow_startup_if_DisableTimeoutManager_setting_is_not_set()
+        public void Should_allow_startup_if_EnableTimeoutManager_setting_is_not_set()
         {
-            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Active);
-
             var result = DelayInfrastructure.CheckForInvalidSettings(settings);
 
             Assert.True(result.Succeeded);
         }
 
         [Test]
-        public void Should_allow_startup_if_DisableTimeoutManager_setting_is_set()
+        public void Should_allow_startup_if_EnableTimeoutManager_setting_is_not_set_and_timeout_manager_feature_is_disabled()
         {
-            settings.Set(SettingsKeys.DisableTimeoutManager, true);
-
-            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
-
-            Assert.True(result.Succeeded);
-        }
-
-        [Test]
-        public void Should_allow_startup_if_timeout_manager_feature_is_active()
-        {
-            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Active);
-
-            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
-
-            Assert.True(result.Succeeded);
-        }
-
-        [Test]
-        public void Should_prevent_startup_if_timeout_manager_feature_is_disabled_and_DisableTimeoutManager_setting_is_not_set()
-        {
-            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Disabled);
-
-            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
-
-            Assert.False(result.Succeeded);
-            Assert.AreEqual("The timeout manager is not active, but the transport has not been properly configured for this. " +
-                        "Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().DisableTimeoutManager()' to ensure delayed messages can be sent properly.", result.ErrorMessage);
-        }
-
-        [Test]
-        public void Should_allow_startup_if_timeout_manager_feature_is_disabled_and_DisableTimeoutManager_setting_is_set()
-        {
-            settings.Set(SettingsKeys.DisableTimeoutManager, true);
             settings.Set(typeof(TimeoutManager).FullName, FeatureState.Disabled);
 
             var result = DelayInfrastructure.CheckForInvalidSettings(settings);
@@ -72,28 +36,50 @@
         }
 
         [Test]
-        public void Should_prevent_startup_if_timeout_manager_feature_is_deactivated_by_send_only_and_DisableTimeoutManager_setting_is_not_set()
+        public void Should_allow_startup_if_EnableTimeoutManager_setting_is_not_set_and_timeout_manager_feature_is_deactivated()
         {
             settings.Set(typeof(TimeoutManager).FullName, FeatureState.Deactivated);
-            settings.Set(coreSendOnlyEndpointKey, true);
-
-            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
-
-            Assert.False(result.Succeeded);
-            Assert.AreEqual("The timeout manager is not active, but the transport has not been properly configured for this. " +
-                     "Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().DisableTimeoutManager()' to ensure delayed messages can be sent properly.", result.ErrorMessage);
-        }
-
-        [Test]
-        public void Should_allow_startup_if_timeout_manager_feature_is_deactivated_by_send_only_and_DisableTimeoutManager_setting_is_set()
-        {
-            settings.Set(SettingsKeys.DisableTimeoutManager, true);
-            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Deactivated);
-            settings.Set(coreSendOnlyEndpointKey, true);
 
             var result = DelayInfrastructure.CheckForInvalidSettings(settings);
 
             Assert.True(result.Succeeded);
+        }
+
+        [Test]
+        public void Should_allow_startup_if_EnableTimeoutManager_setting_is_set_and_timeout_manager_feature_is_active()
+        {
+            settings.Set(SettingsKeys.EnableTimeoutManager, true);
+            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Active);
+
+            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
+
+            Assert.True(result.Succeeded);
+        }
+
+        [Test]
+        public void Should_prevent_startup_if_EnableTimeoutManager_setting_is_set_and_timeout_feature_is_disabled()
+        {
+            settings.Set(SettingsKeys.EnableTimeoutManager, true);
+            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Disabled);
+
+            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
+
+            Assert.False(result.Succeeded);
+            Assert.AreEqual("The transport has been configured to enable the timeout manager, but the timeout manager is not active." +
+                        "Ensure that the timeout manager is active or remove the call to 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().EnableTimeoutManager()'.", result.ErrorMessage);
+        }
+
+        [Test]
+        public void Should_prevent_startup_if_EnableTimeoutManager_setting_is_set_and_timeout_feature_is_deactivated()
+        {
+            settings.Set(SettingsKeys.EnableTimeoutManager, true);
+            settings.Set(typeof(TimeoutManager).FullName, FeatureState.Deactivated);
+
+            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
+
+            Assert.False(result.Succeeded);
+            Assert.AreEqual("The transport has been configured to enable the timeout manager, but the timeout manager is not active." +
+                        "Ensure that the timeout manager is active or remove the call to 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().EnableTimeoutManager()'.", result.ErrorMessage);
         }
 
         [Test]

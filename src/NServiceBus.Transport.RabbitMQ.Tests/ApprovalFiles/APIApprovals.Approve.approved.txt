@@ -39,7 +39,10 @@ namespace NServiceBus.Transport.RabbitMQ
     
     public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
+        [System.ObsoleteAttribute("The timeout manager is now disabled by default. The member currently throws a Not" +
+            "ImplementedException. Will be removed in version 6.0.0.", true)]
         public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DisableTimeoutManager() { }
+        public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings EnableTimeoutManager() { }
     }
     public interface IRoutingTopology
     {
