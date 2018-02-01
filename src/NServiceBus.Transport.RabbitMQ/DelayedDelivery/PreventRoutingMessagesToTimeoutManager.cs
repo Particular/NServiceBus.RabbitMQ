@@ -6,8 +6,6 @@
     {
         public PreventRoutingMessagesToTimeoutManager()
         {
-            EnableByDefault();
-
             Prerequisite(context => !context.Settings.HasSetting(SettingsKeys.DisableTimeoutManager), "The timeout manager is disabled.");
         }
 
