@@ -35,6 +35,8 @@
 
             routingTopology = CreateRoutingTopology();
 
+            settings.EnableFeatureByDefault<PreventRoutingMessagesToTimeoutManager>();
+
             var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
             var sendOnlyEndpoint = settings.GetOrDefault<bool>(coreSendOnlyEndpointKey);
 
