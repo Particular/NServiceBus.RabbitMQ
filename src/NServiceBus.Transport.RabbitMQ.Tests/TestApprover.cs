@@ -1,9 +1,9 @@
-﻿#if NET452
-namespace NServiceBus.Transport.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.IO;
     using ApprovalTests;
     using ApprovalTests.Namers;
+    using NUnit.Framework;
 
     static class TestApprover
     {
@@ -16,18 +16,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
         class ApprovalNamer : UnitTestFrameworkNamer
         {
-            public ApprovalNamer()
-            {
-                var assemblyPath = GetType().Assembly.Location;
-                var assemblyDir = Path.GetDirectoryName(assemblyPath);
-
-                sourcePath = Path.Combine(assemblyDir, "..", "..", "..", "ApprovalFiles");
-            }
-
-            public override string SourcePath => sourcePath;
-
-            readonly string sourcePath;
+            public override string SourcePath { get; } = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "ApprovalFiles");
         }
     }
 }
-#endif
