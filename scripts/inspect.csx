@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 
-public static bool Inspect(string inputFile)
+public static void Inspect(string inputFile)
 {
     var colors = new Dictionary<string, ConsoleColor>
     {
@@ -42,5 +42,8 @@ public static bool Inspect(string inputFile)
         }
     }
 
-    return !hasError;
+    if (hasError)
+    {
+        throw new Exception("Inspection failed!");
+    }
 }
