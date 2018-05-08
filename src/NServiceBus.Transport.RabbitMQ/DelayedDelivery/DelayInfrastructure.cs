@@ -16,7 +16,10 @@
 
         public const int MaxDelayInSeconds = (1 << maxNumberOfBitsToUse) - 1;
         public const string DelayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
-        public const string DeadLetteredMessageHeader = "x-death";
+        public const string XDeathHeader = "x-death";
+        public const string XFirstDeathExchangeHeader = "x-first-death-exchange";
+        public const string XFirstDeathQueueHeader = "x-first-death-queue";
+        public const string XFirstDeathReasonHeader = "x-first-death-reason";
         public const string DeliveryExchange = "nsb.delay-delivery";
 
         public static string LevelName(int level) => $"nsb.delay-level-{level:D2}";
@@ -78,19 +81,20 @@
 
         public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
         {
-            var timeoutManagerDisabled = settings.GetOrDefault<bool>(SettingsKeys.DisableTimeoutManager);
             var externalTimeoutManagerAddressConfigured = settings.GetOrDefault<string>(coreExternalTimeoutManagerAddressKey) != null;
-            var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
 
             if (externalTimeoutManagerAddressConfigured)
             {
                 return StartupCheckResult.Failed("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.");
             }
 
-            if (!timeoutManagerDisabled && !timeoutManagerFeatureActive)
+            var timeoutManagerShouldBeEnabled = settings.GetOrDefault<bool>(SettingsKeys.EnableTimeoutManager);
+            var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
+
+            if (timeoutManagerShouldBeEnabled && !timeoutManagerFeatureActive)
             {
-                return StartupCheckResult.Failed("The timeout manager is not active, but the transport has not been properly configured for this. " +
-                    "Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().DisableTimeoutManager()' to ensure delayed messages can be sent properly.");
+                return StartupCheckResult.Failed("The transport has been configured to enable the timeout manager, but the timeout manager is not active." +
+                    "Ensure that the timeout manager is active or remove the call to 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().EnableTimeoutManager()'.");
             }
 
             return StartupCheckResult.Success;

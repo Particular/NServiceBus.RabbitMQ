@@ -15,4 +15,18 @@ namespace NServiceBus
     }
 }
 
+namespace NServiceBus.Transport.RabbitMQ
+{
+    using System;
+
+    public partial class DelayedDeliverySettings
+    {
+        [ObsoleteEx(RemoveInVersion = "6.0", TreatAsErrorFromVersion = "5.0", Message = "The timeout manager is now disabled by default.")]
+        public DelayedDeliverySettings DisableTimeoutManager()
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
 #pragma warning restore 1591
