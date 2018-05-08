@@ -6,6 +6,7 @@
     using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
+    using Features;
     using global::RabbitMQ.Client.Events;
     using Performance.TimeToBeReceived;
     using Routing;
