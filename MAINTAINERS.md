@@ -15,11 +15,20 @@ The maintainers [watch](https://github.com/Particular/NServiceBus.RabbitMQ/watch
   - A pull request created by a maintainer is implicitly approved by that maintainer.
   - Approval is given by submitting a review and choosing the **Approve** option
   - For some pull requests, it may be appropriate to require a third maintainer to give approval before the pull request is merged. This may be requested by either of the current approvers based on their assessment of factors such as the impact or risk of the changes.
-- There is a flaw in the GitHub pull request approval system in that a pull request may be altered (by adding more commits or force-pushing) after an approval is made, and the approval remains in place. When a pull request is altered after approval, the approval should be dismissed and the pull request must be re-approved.
-- A pull request created by a maintainer must be merged by *another* maintainer. No "self-merges".
+- An approved pull request may be merged by any maintainer. A maintainer may merge their own pull request once it is approved.
 - The pull request must be made from a branch which is a straight line of commits from `develop`. There must be no merges in the branch history since the commit on `develop`.
   - The branch does not have to be based on the latest commit in `develop` but this is preferable, where practical.
 
 ## RabbitMQ.Client Updates
+
+### Smoke testing
+
+When a new version of RabbitMQ.Client is released, we smoke test it to gain some confidence that it hasn't broken anything relied upon by NServiceBus.RabbitMQ. Smoke testing is performed by updating to the new version of RabbitMQ.Client in the appropriate projects in the following places:
+
+- [Samples](https://github.com/Particular/docs.particular.net/tree/master/samples/rabbitmq): run all samples after updating.
+- [Snippets](https://github.com/Particular/docs.particular.net/tree/master/Snippets/Rabbit): run all the tests after updating (note that most, if not all, of the tests are marked as explicit).
+- This repo. Use the branch (`master` or `support-x.y`) which is relevant to the new version of RabbitMQ.Client. Compile the solution and run all tests after updating.
+
+### Breaking changes
 
 In order to reduce the burden of backporting patches to many versions of the package, when a new version of RabbitMQ.Client is released with breaking changes, whenever possible, we will update to that version in a patch release (hotfix on `master`).

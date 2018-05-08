@@ -3,18 +3,19 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
-using NServiceBus.Settings;
+using NServiceBus.AcceptanceTesting.Support;
+using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
-using NServiceBus.TransportTests;
+using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 using RabbitMQ.Client;
 
-class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
+class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
-    public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transactionMode)
-    {
-        var result = new TransportConfigurationResult();
-        var transport = new RabbitMQTransport();
+    DbConnectionStringBuilder connectionStringBuilder;
+    QueueBindings queueBindings;
 
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
+    {
         var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
 
         if (string.IsNullOrEmpty(connectionString))
@@ -24,33 +25,23 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
 
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        queueBindings = settings.Get<QueueBindings>();
+        var transport = configuration.UseTransport<RabbitMQTransport>();
+        transport.ConnectionString(connectionStringBuilder.ConnectionString);
+        transport.UseConventionalRoutingTopology();
 
-        new TransportExtensions<RabbitMQTransport>(settings).UseConventionalRoutingTopology();
-        result.TransportInfrastructure = transport.Initialize(settings, connectionStringBuilder.ConnectionString);
-        isTransportInitialized = true;
-        result.PurgeInputQueueOnStartup = true;
+        queueBindings = configuration.GetSettings().Get<QueueBindings>();
 
-        transportTransactionMode = result.TransportInfrastructure.TransactionMode;
-        requestedTransactionMode = transactionMode;
-
-        //work around for TransportTests not calling Start
-        result.TransportInfrastructure.Start();
-
-        return result;
+        return TaskEx.CompletedTask;
     }
 
     public Task Cleanup()
     {
-        if (isTransportInitialized && transportTransactionMode >= requestedTransactionMode)
-        {
-            PurgeQueues(connectionStringBuilder, queueBindings);
-        }
+        PurgeQueues();
 
-        return Task.FromResult(0);
+        return TaskEx.CompletedTask;
     }
 
-    static void PurgeQueues(DbConnectionStringBuilder connectionStringBuilder, QueueBindings queueBindings)
+    void PurgeQueues()
     {
         if (connectionStringBuilder == null)
         {
@@ -105,11 +96,4 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             }
         }
     }
-
-    DbConnectionStringBuilder connectionStringBuilder;
-    QueueBindings queueBindings;
-    TransportTransactionMode transportTransactionMode;
-    TransportTransactionMode requestedTransactionMode;
-    bool isTransportInitialized;
 }
-

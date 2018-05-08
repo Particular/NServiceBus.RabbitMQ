@@ -20,11 +20,11 @@ public void AddUserToVirtualHost() => CreateUserPermissionRequest("PUT", GetBrok
 
 public Broker GetBroker()
 {
-    var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport.ConnectionString");
+    var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
 
     if (string.IsNullOrEmpty(connectionString))
     {
-        throw new Exception("The 'RabbitMQTransport.ConnectionString' environment variable is not set.");
+        throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
     }
 
     var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
