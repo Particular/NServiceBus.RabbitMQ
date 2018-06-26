@@ -1,15 +1,16 @@
 #r "System.IO.Compression.FileSystem.dll"
+#r "build-packages/Bullseye.1.0.0-rc.4/lib/netstandard2.0/Bullseye.dll"
+#r "build-packages/SimpleExec.2.2.0/lib/netstandard2.0/SimpleExec.dll"
 #load "scripts/broker.csx"
-#load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
-#load "build-packages/simple-targets-csx.5.2.0/simple-targets.csx"
 
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using static SimpleTargets;
+using static Bullseye.Targets;
+using static SimpleExec.Command;
 
 // locations
 var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.2.0.zip");
@@ -24,29 +25,27 @@ var acceptanceTests = "./src/NServiceBus.Transport.RabbitMQ.AcceptanceTests/bin/
 var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Release/net452/NServiceBus.Transport.RabbitMQ.TransportTests.dll";
 
 // targets
-var targets = new TargetDictionary();
+Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-test", "transport-test"));
 
-targets.Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-test", "transport-test"));
+Add("restore", () => Run(msBuild, $"{solution} /p:Configuration=Release /t:restore"));
 
-targets.Add("restore", () => Cmd(msBuild, $"{solution} /p:Configuration=Release /t:restore"));
+Add("build", DependsOn("restore"), () => Run(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
 
-targets.Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
-
-targets.Add(
+Add(
     "download-resharper-clt",
     () => { if (!File.Exists(resharperCltPath)) Download(resharperCltUrl, resharperCltPath); });
 
-targets.Add(
+Add(
     "unzip-resharper-clt",
     DependsOn("download-resharper-clt"),
     () => { if (!File.Exists(inspectCodePath)) ZipFile.ExtractToDirectory(resharperCltPath, Path.GetDirectoryName(inspectCodePath)); });
 
-targets.Add(
+Add(
     "run-inspectcode",
     DependsOn("build", "unzip-resharper-clt"),
-    () => Cmd(inspectCodePath, $"--profile={dotSettings} --output={solution}.inspections.xml {solution}"));
+    () => Run(inspectCodePath, $"--profile={dotSettings} --output={solution}.inspections.xml {solution}"));
 
-targets.Add(
+Add(
     "inspect",
     DependsOn("run-inspectcode"),
     () =>
@@ -58,18 +57,18 @@ targets.Add(
         }
     });
 
-targets.Add("delete-virtual-host", () => DeleteVirtualHost());
+Add("delete-virtual-host", () => DeleteVirtualHost());
 
-targets.Add("create-virtual-host", () => CreateVirtualHost());
+Add("create-virtual-host", () => CreateVirtualHost());
 
-targets.Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
+Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
 
-targets.Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
+Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-targets.Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
+Add("unit-test", DependsOn("build"), () => Run(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
 
-targets.Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
+Add("acceptance-test", DependsOn("build"), () => Run(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
 
-targets.Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
+Add("transport-test", DependsOn("build"), () => Run(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
 
-Run(Args, targets);
+Run(Args);
