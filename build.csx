@@ -1,7 +1,7 @@
 #r "System.IO.Compression.FileSystem.dll"
 #r "build-packages/Bullseye.1.0.0-rc.4/lib/netstandard2.0/Bullseye.dll"
+#r "build-packages/SimpleExec.2.2.0/lib/netstandard2.0/SimpleExec.dll"
 #load "scripts/broker.csx"
-#load "scripts/cmd.csx"
 #load "scripts/download.csx"
 #load "scripts/inspect.csx"
 
@@ -10,6 +10,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using static Bullseye.Targets;
+using static SimpleExec.Command;
 
 // locations
 var resharperCltUrl = new Uri("https://download.jetbrains.com/resharper/JetBrains.ReSharper.CommandLineTools.2017.2.0.zip");
@@ -26,9 +27,9 @@ var transportTests = "./src/NServiceBus.Transport.RabbitMQ.TransportTests/bin/Re
 // targets
 Add("default", DependsOn("build", "inspect", "unit-test", "acceptance-test", "transport-test"));
 
-Add("restore", () => Cmd(msBuild, $"{solution} /p:Configuration=Release /t:restore"));
+Add("restore", () => Run(msBuild, $"{solution} /p:Configuration=Release /t:restore"));
 
-Add("build", DependsOn("restore"), () => Cmd(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
+Add("build", DependsOn("restore"), () => Run(msBuild, $"{solution} /p:Configuration=Release /nologo /m /v:m /nr:false"));
 
 Add(
     "download-resharper-clt",
@@ -42,7 +43,7 @@ Add(
 Add(
     "run-inspectcode",
     DependsOn("build", "unzip-resharper-clt"),
-    () => Cmd(inspectCodePath, $"--profile={dotSettings} --output={solution}.inspections.xml {solution}"));
+    () => Run(inspectCodePath, $"--profile={dotSettings} --output={solution}.inspections.xml {solution}"));
 
 Add(
     "inspect",
@@ -64,10 +65,10 @@ Add("add-user-to-virtual-host", () => AddUserToVirtualHost());
 
 Add("reset-virtual-host", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-Add("unit-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
+Add("unit-test", DependsOn("build"), () => Run(nunit, $"--work={Path.GetDirectoryName(unitTests)} {unitTests}"));
 
-Add("acceptance-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
+Add("acceptance-test", DependsOn("build"), () => Run(nunit, $"--work={Path.GetDirectoryName(acceptanceTests)} {acceptanceTests}"));
 
-Add("transport-test", DependsOn("build"), () => Cmd(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
+Add("transport-test", DependsOn("build"), () => Run(nunit, $"--work={Path.GetDirectoryName(transportTests)} {transportTests}"));
 
 Run(Args);
