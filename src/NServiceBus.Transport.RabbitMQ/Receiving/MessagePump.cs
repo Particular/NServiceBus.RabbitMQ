@@ -244,7 +244,8 @@
                 {
                     try
                     {
-                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, contextBag);
+                        var msgHeaders = new Dictionary<string, string>(headers);
+                        var messageContext = new MessageContext(messageId, msgHeaders, message.Body ?? new byte[0], transportTransaction, tokenSource, contextBag);
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
