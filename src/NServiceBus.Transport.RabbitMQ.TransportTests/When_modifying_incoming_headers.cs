@@ -40,7 +40,7 @@
         }
 
         [Test]
-        public async Task Should_roll_back_header_modifications_when_handling_error()
+        public async Task Should_roll_back_header_modifications_before_handling_error()
         {
             var errorHandled = new TaskCompletionSource<ErrorContext>();
 
@@ -64,6 +64,40 @@
             var errorContext = await errorHandled.Task;
 
             Assert.AreEqual("original", errorContext.Message.Headers["test-header"]);
+        }
+
+        [Test]
+        public async Task Should_roll_back_header_modifications_from_handling_error()
+        {
+            var messageRetries = new TaskCompletionSource<MessageContext>();
+            var firstInvocation = true;
+
+            await StartPump(context =>
+                {
+                    if (firstInvocation)
+                    {
+                        firstInvocation = false;
+                        throw new Exception();
+                    }
+
+                    messageRetries.SetResult(context);
+                    return Task.FromResult(0);
+                },
+                context =>
+                {
+                    context.Message.Headers["test-header"] = "modified";
+                    return Task.FromResult(ErrorHandleResult.RetryRequired);
+                },
+                TransportTransactionMode.None);
+
+            await SendMessage(InputQueueName, new Dictionary<string, string>
+            {
+                {"test-header", "original"}
+            });
+
+            var retriedMessage = await messageRetries.Task;
+
+            Assert.AreEqual("original", retriedMessage.Headers["test-header"]);
         }
     }
 }
