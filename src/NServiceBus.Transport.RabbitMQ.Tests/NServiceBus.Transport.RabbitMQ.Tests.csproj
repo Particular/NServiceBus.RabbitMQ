@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="ApprovalTests" Version="3.0.13" NoWarn="NU1701" />
     <PackageReference Include="ApprovalUtilities" Version="3.0.13" NoWarn="NU1701" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="NServiceBus" Version="7.1.0" />
     <PackageReference Include="NUnit" Version="3.10.1" />
     <!-- requries a version that works with PublicApiGenerator (Mono.Cecil) -->
