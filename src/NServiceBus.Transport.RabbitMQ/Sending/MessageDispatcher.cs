@@ -1,6 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
+    using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
 
@@ -38,6 +40,11 @@
             }
             finally
             {
+                while (channel.IsOpen == false)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(2));
+                }
+
                 channelProvider.ReturnPublishChannel(channel);
             }
         }

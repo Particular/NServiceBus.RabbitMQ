@@ -3,6 +3,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -112,6 +113,10 @@ namespace NServiceBus.Transport.RabbitMQ
 
         Task GetConfirmationTask()
         {
+            while (afterShutdown == false)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(2));
+            }
             var tcs = new TaskCompletionSource<bool>();
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
@@ -173,6 +178,8 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
+        bool afterShutdown = false;
+
         void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
             do
@@ -182,6 +189,8 @@ namespace NServiceBus.Transport.RabbitMQ
                     SetException(message.Key, $"Channel has been closed: {e}");
                 }
             } while (!messages.IsEmpty);
+
+            afterShutdown = true;
         }
 
         void SetResult(ulong key)

@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
+    using System;
+    using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -16,7 +18,18 @@
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<Publisher>(b =>
-                        b.When(c => c.Subscriber1Subscribed, session => session.Publish(new MyRequest())))
+                        b.When(c => c.Subscriber1Subscribed, async session =>
+                        {
+                            try
+                            {
+                                await session.Publish(new MyRequest());
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                            }
+                            await session.Publish(new MyRequest());
+                        }))
                 .WithEndpoint<Receiver>(b => b.When(async (session, c) =>
                 {
                     await session.Subscribe<IMyRequest>();
