@@ -31,7 +31,6 @@
                 UserName = connectionConfiguration.UserName,
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
-                AutomaticRecoveryEnabled = true,
                 NetworkRecoveryInterval = connectionConfiguration.RetryDelay,
                 UseBackgroundThreadsForIO = true
             };
