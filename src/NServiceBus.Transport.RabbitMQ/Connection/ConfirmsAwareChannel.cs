@@ -175,11 +175,18 @@ namespace NServiceBus.Transport.RabbitMQ
 
         void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
+            shutdownEventArgs = e;
+
+            FailPendingMessages();
+        }
+
+        void FailPendingMessages()
+        {
             do
             {
                 foreach (var message in messages)
                 {
-                    SetException(message.Key, $"Channel has been closed: {e}");
+                    SetException(message.Key, $"Channel has been closed: {shutdownEventArgs}");
                 }
             } while (!messages.IsEmpty);
         }
@@ -200,6 +207,15 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
+        public void CleanAfterShutdown()
+        {
+            if (shutdownEventArgs != null)
+            {
+                FailPendingMessages();
+
+                shutdownEventArgs = null;
+            }
+        }
 
         public void Dispose()
         {
@@ -212,5 +228,6 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConfirmsAwareChannel));
+        ShutdownEventArgs shutdownEventArgs;
     }
 }

@@ -30,6 +30,8 @@ namespace NServiceBus.Transport.RabbitMQ
                 channel = new ConfirmsAwareChannel(connection, routingTopology, usePublisherConfirms);
             }
 
+            channel.CleanAfterShutdown();
+
             return channel;
         }
 
