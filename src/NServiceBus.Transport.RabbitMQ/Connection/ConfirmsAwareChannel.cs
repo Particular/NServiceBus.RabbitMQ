@@ -26,6 +26,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 channel.BasicAcks += Channel_BasicAcks;
                 channel.BasicNacks += Channel_BasicNacks;
                 channel.ModelShutdown += Channel_ModelShutdown;
+                connection.RecoverySucceeded += Connection_RecoverySucceeded;
 
                 messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
             }
@@ -180,6 +181,17 @@ namespace NServiceBus.Transport.RabbitMQ
                 foreach (var message in messages)
                 {
                     SetException(message.Key, $"Channel has been closed: {e}");
+                }
+            } while (!messages.IsEmpty);
+        }
+
+        void Connection_RecoverySucceeded(object sender, EventArgs e)
+        {
+            do
+            {
+                foreach (var message in messages)
+                {
+                    SetException(message.Key, "Channel has been closed and recovered, so message must be sent again.");
                 }
             } while (!messages.IsEmpty);
         }
