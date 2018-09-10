@@ -26,6 +26,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 channel.BasicAcks += Channel_BasicAcks;
                 channel.BasicNacks += Channel_BasicNacks;
                 channel.ModelShutdown += Channel_ModelShutdown;
+                connection.RecoverySucceeded += Connection_RecoverySucceeded;
 
                 messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
             }
@@ -115,9 +116,9 @@ namespace NServiceBus.Transport.RabbitMQ
             var tcs = new TaskCompletionSource<bool>();
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
-            if (!added) //debug check, this shouldn't happen
+            if (!added)
             {
-                throw new Exception($"Failed to add {channel.NextPublishSeqNo}");
+                throw new Exception($"Cannot publish a message with sequence number '{channel.NextPublishSeqNo}' on this channel. A message was already published on this channel with the same confirmation number.");
             }
 
             return tcs.Task;
@@ -184,6 +185,24 @@ namespace NServiceBus.Transport.RabbitMQ
             } while (!messages.IsEmpty);
         }
 
+        void Connection_RecoverySucceeded(object sender, EventArgs e)
+        {
+            FailAllMessages();
+
+            RecoveryCleanUpNeeded = true;
+        }
+
+        void FailAllMessages()
+        {
+            do
+            {
+                foreach (var message in messages)
+                {
+                    SetException(message.Key, "Channel has been closed and recovered, so message must be sent again.");
+                }
+            } while (!messages.IsEmpty);
+        }
+
         void SetResult(ulong key)
         {
             if (messages.TryRemove(key, out var tcs))
@@ -200,6 +219,15 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
+        public void CleanUpAfterRecovery()
+        {
+            if (RecoveryCleanUpNeeded)
+            {
+                FailAllMessages();
+            }
+
+            RecoveryCleanUpNeeded = false;
+        }
 
         public void Dispose()
         {
@@ -207,6 +235,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         IModel channel;
+        bool RecoveryCleanUpNeeded;
         readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
