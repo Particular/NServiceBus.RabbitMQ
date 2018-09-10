@@ -187,6 +187,13 @@ namespace NServiceBus.Transport.RabbitMQ
 
         void Connection_RecoverySucceeded(object sender, EventArgs e)
         {
+            FailAllMessages();
+
+            RecoveryCleanUpNeeded = true;
+        }
+
+        void FailAllMessages()
+        {
             do
             {
                 foreach (var message in messages)
@@ -212,6 +219,15 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
+        public void CleanUpAfterRecovery()
+        {
+            if (RecoveryCleanUpNeeded)
+            {
+                FailAllMessages();
+            }
+
+            RecoveryCleanUpNeeded = false;
+        }
 
         public void Dispose()
         {
@@ -219,6 +235,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         IModel channel;
+        bool RecoveryCleanUpNeeded;
         readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;

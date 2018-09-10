@@ -30,6 +30,8 @@ namespace NServiceBus.Transport.RabbitMQ
                 channel = new ConfirmsAwareChannel(connection, routingTopology, usePublisherConfirms);
             }
 
+            channel.CleanUpAfterRecovery();
+
             return channel;
         }
 
@@ -37,6 +39,8 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (channel.IsOpen)
             {
+                channel.CleanUpAfterRecovery();
+
                 channels.Enqueue(channel);
             }
             else
