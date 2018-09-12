@@ -2,13 +2,15 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
     sealed class ChannelProvider : IChannelProvider, IDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             this.connectionFactory = connectionFactory;
+            this.retryDelay = retryDelay;
 
             this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
@@ -19,6 +21,35 @@ namespace NServiceBus.Transport.RabbitMQ
         public void CreateConnection()
         {
             connection = connectionFactory.CreatePublishConnection();
+            connection.ConnectionShutdown += Connection_ConnectionShutdown;
+        }
+
+        void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
+        {
+            if (e.Initiator != ShutdownInitiator.Application)
+            {
+                Task.Run(Reconnect).Ignore();
+            }
+        }
+
+        async Task Reconnect()
+        {
+            var reconnected = false;
+
+            while (!reconnected)
+            {
+                await Task.Delay(retryDelay).ConfigureAwait(false);
+
+                try
+                {
+                    CreateConnection();
+                    reconnected = true;
+                }
+                catch
+                {
+                    reconnected = false;
+                }
+            }
         }
 
         public ConfirmsAwareChannel GetPublishChannel()
@@ -59,6 +90,7 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         readonly ConnectionFactory connectionFactory;
+        readonly TimeSpan retryDelay;
         readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
