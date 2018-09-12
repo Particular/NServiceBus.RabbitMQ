@@ -115,9 +115,9 @@ namespace NServiceBus.Transport.RabbitMQ
             var tcs = new TaskCompletionSource<bool>();
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
-            if (!added) //debug check, this shouldn't happen
+            if (!added)
             {
-                throw new Exception($"Failed to add {channel.NextPublishSeqNo}");
+                throw new Exception($"Cannot publish a message with sequence number '{channel.NextPublishSeqNo}' on this channel. A message was already published on this channel with the same confirmation number.");
             }
 
             return tcs.Task;
