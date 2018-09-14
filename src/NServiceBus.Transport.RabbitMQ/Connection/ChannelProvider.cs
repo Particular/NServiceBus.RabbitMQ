@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Concurrent;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
+    using Logging;
 
     sealed class ChannelProvider : IChannelProvider, IDisposable
     {
@@ -38,16 +39,22 @@ namespace NServiceBus.Transport.RabbitMQ
 
             while (!reconnected)
             {
+                Logger.Warn($"Connection to the broker lost. Reconnecting in {retryDelay.TotalSeconds} seconds.");
+
                 await Task.Delay(retryDelay).ConfigureAwait(false);
 
                 try
                 {
                     CreateConnection();
                     reconnected = true;
+
+                    Logger.Info("Connection to the broker re-established successfuly.");
                 }
-                catch
+                catch(Exception e)
                 {
                     reconnected = false;
+
+                    Logger.Info("Reconnecting to the broker failed.", e);
                 }
             }
         }
@@ -95,5 +102,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly bool usePublisherConfirms;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         IConnection connection;
+
+        static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
     }
 }

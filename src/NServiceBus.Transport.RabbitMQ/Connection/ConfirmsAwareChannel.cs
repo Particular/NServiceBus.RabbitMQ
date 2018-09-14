@@ -200,13 +200,13 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-
         public void Dispose()
         {
             channel?.Dispose();
         }
 
         IModel channel;
+
         readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
