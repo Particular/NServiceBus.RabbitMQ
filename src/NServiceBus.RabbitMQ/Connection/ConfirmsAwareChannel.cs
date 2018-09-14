@@ -121,9 +121,9 @@ namespace NServiceBus.Transport.RabbitMQ
             var tcs = new TaskCompletionSource<bool>();
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
-            if (!added) //debug check, this shouldn't happen
+            if (!added)
             {
-                throw new Exception($"Failed to add {channel.NextPublishSeqNo}");
+                throw new Exception($"Cannot publish a message with sequence number '{channel.NextPublishSeqNo}' on this channel. A message was already published on this channel with the same confirmation number.");
             }
 
             return tcs.Task;
@@ -220,19 +220,23 @@ namespace NServiceBus.Transport.RabbitMQ
 
         void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
-            Task.Run(() =>
-            {
-                do
-                {
-                    foreach (var message in messages)
-                    {
-                        TaskCompletionSource<bool> tcs;
-                        messages.TryRemove(message.Key, out tcs);
+            shutdownReason = e;
 
-                        tcs?.SetException(new Exception($"Channel has been closed: {e}"));
-                    }
-                } while (!messages.IsEmpty);
-            });
+            ClearMessages();
+        }
+
+        void ClearMessages()
+        {
+            do
+            {
+                foreach (var message in messages)
+                {
+                    TaskCompletionSource<bool> tcs;
+                    messages.TryRemove(message.Key, out tcs);
+
+                    tcs?.SetException(new Exception($"Channel has been closed: {shutdownReason}"));
+                }
+            } while (!messages.IsEmpty);
         }
 
         public void Dispose()
@@ -240,7 +244,13 @@ namespace NServiceBus.Transport.RabbitMQ
             //injected
         }
 
+        void DisposeManaged()
+        {
+            ClearMessages();
+        }
+
         IModel channel;
+        ShutdownEventArgs shutdownReason;
         readonly IRoutingTopology routingTopology;
         readonly ISupportDelayedDelivery delayTopology;
         readonly bool usePublisherConfirms;

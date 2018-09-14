@@ -63,7 +63,7 @@
                 usePublisherConfirms = true;
             }
 
-            channelProvider = new ChannelProvider(connectionFactory, routingTopology, usePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology, usePublisherConfirms);
 
             RequireOutboxConsent = false;
         }
