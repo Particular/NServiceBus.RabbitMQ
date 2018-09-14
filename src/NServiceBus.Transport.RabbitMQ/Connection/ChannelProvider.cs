@@ -29,6 +29,8 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
+                Logger.WarnFormat("Connection to the broker lost: {0}", e.ReplyText);
+
                 Task.Run(Reconnect).Ignore();
             }
         }
@@ -39,7 +41,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
             while (!reconnected)
             {
-                Logger.Warn($"Connection to the broker lost. Reconnecting in {retryDelay.TotalSeconds} seconds.");
+                Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
 
                 await Task.Delay(retryDelay).ConfigureAwait(false);
 
@@ -48,12 +50,10 @@ namespace NServiceBus.Transport.RabbitMQ
                     CreateConnection();
                     reconnected = true;
 
-                    Logger.Info("Connection to the broker re-established successfuly.");
+                    Logger.Info("Connection to the broker reestablished successfully.");
                 }
                 catch(Exception e)
                 {
-                    reconnected = false;
-
                     Logger.Info("Reconnecting to the broker failed.", e);
                 }
             }
