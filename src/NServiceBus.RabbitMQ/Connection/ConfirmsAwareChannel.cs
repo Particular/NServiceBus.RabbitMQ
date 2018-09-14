@@ -220,23 +220,19 @@ namespace NServiceBus.Transport.RabbitMQ
 
         void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
-            shutdownReason = e;
-
-            ClearMessages();
-        }
-
-        void ClearMessages()
-        {
-            do
+            Task.Run(() =>
             {
-                foreach (var message in messages)
+                do
                 {
-                    TaskCompletionSource<bool> tcs;
-                    messages.TryRemove(message.Key, out tcs);
+                    foreach (var message in messages)
+                    {
+                        TaskCompletionSource<bool> tcs;
+                        messages.TryRemove(message.Key, out tcs);
 
-                    tcs?.SetException(new Exception($"Channel has been closed: {shutdownReason}"));
-                }
-            } while (!messages.IsEmpty);
+                        tcs?.SetException(new Exception($"Channel has been closed: {e}"));
+                    }
+                } while (!messages.IsEmpty);
+            });
         }
 
         public void Dispose()
@@ -244,13 +240,7 @@ namespace NServiceBus.Transport.RabbitMQ
             //injected
         }
 
-        void DisposeManaged()
-        {
-            ClearMessages();
-        }
-
         IModel channel;
-        ShutdownEventArgs shutdownReason;
         readonly IRoutingTopology routingTopology;
         readonly ISupportDelayedDelivery delayTopology;
         readonly bool usePublisherConfirms;
