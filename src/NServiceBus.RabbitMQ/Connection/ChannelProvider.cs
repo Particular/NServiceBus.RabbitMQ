@@ -2,13 +2,16 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
+    using Logging;
 
     class ChannelProvider : IChannelProvider, IDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             this.connectionFactory = connectionFactory;
+            this.retryDelay = retryDelay;
             this.routingTopology = routingTopology;
             this.usePublisherConfirms = usePublisherConfirms;
 
@@ -18,13 +21,46 @@ namespace NServiceBus.Transport.RabbitMQ
         public void CreateConnection()
         {
             connection = connectionFactory.CreatePublishConnection();
+            connection.ConnectionShutdown += Connection_ConnectionShutdown;
+        }
+
+        void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
+        {
+            if (e.Initiator != ShutdownInitiator.Application)
+            {
+                Logger.WarnFormat("Connection to the broker lost: {0}", e.ReplyText);
+
+                Task.Run(Reconnect);
+            }
+        }
+
+        async Task Reconnect()
+        {
+            var reconnected = false;
+
+            while (!reconnected)
+            {
+                Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
+
+                await Task.Delay(retryDelay).ConfigureAwait(false);
+
+                try
+                {
+                    CreateConnection();
+                    reconnected = true;
+
+                    Logger.Info("Connection to the broker reestablished successfully.");
+                }
+                catch(Exception e)
+                {
+                    Logger.Info("Reconnecting to the broker failed.", e);
+                }
+            }
         }
 
         public ConfirmsAwareChannel GetPublishChannel()
         {
-            ConfirmsAwareChannel channel;
-
-            if (!channels.TryDequeue(out channel) || channel.IsClosed)
+            if (!channels.TryDequeue(out var channel) || channel.IsClosed)
             {
                 channel?.Dispose();
 
@@ -53,10 +89,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         void DisposeManaged()
         {
-            if (connection != null)
-            {
-                connection.Dispose();
-            }
+            connection?.Dispose();
 
             foreach (var channel in channels)
             {
@@ -65,9 +98,12 @@ namespace NServiceBus.Transport.RabbitMQ
         }
 
         readonly ConnectionFactory connectionFactory;
+        readonly TimeSpan retryDelay;
         readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         IConnection connection;
+
+        static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
     }
 }

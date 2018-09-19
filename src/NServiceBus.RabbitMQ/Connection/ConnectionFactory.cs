@@ -31,7 +31,6 @@
                 UserName = connectionConfiguration.UserName,
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
-                AutomaticRecoveryEnabled = true,
                 NetworkRecoveryInterval = connectionConfiguration.RetryDelay,
                 UseBackgroundThreadsForIO = true
             };
@@ -63,14 +62,15 @@
             }
         }
 
-        public IConnection CreatePublishConnection() => CreateConnection("Publish");
+        public IConnection CreatePublishConnection() => CreateConnection("Publish", false);
 
-        public IConnection CreateAdministrationConnection() => CreateConnection("Administration");
+        public IConnection CreateAdministrationConnection() => CreateConnection("Administration", false);
 
-        public IConnection CreateConnection(string connectionName)
+        public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true)
         {
             lock (lockObject)
             {
+                connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
                 return connectionFactory.CreateConnection(connectionName);
