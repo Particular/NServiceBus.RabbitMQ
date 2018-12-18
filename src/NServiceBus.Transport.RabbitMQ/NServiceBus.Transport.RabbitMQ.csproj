@@ -4,21 +4,15 @@
     <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\NServiceBus.snk</AssemblyOriginatorKeyFile>
-    <OutputPath>..\..\binaries\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fody" Version="2.2.0" PrivateAssets="All" />
+    <PackageReference Include="Fody" Version="3.3.3" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.0.0, 8.0.0)" />
-    <PackageReference Include="Obsolete.Fody" Version="4.3.2" PrivateAssets="All" />
-    <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
-    <PackageReference Include="Particular.Packaging" Version="0.1.0" PrivateAssets="All" />
+    <PackageReference Include="Obsolete.Fody" Version="4.4.3" PrivateAssets="All" />
+    <PackageReference Include="Particular.CodeRules" Version="0.2.1" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="0.2.1" PrivateAssets="All" />
     <PackageReference Include="RabbitMQ.Client" Version="[5.0.1, 5.1.0)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="SourceLink.Create.GitHub" Version="2.5.0" PrivateAssets="All" />
-    <DotNetCliToolReference Include="dotnet-sourcelink-git" Version="2.5.0" />
   </ItemGroup>
 
   <PropertyGroup>
