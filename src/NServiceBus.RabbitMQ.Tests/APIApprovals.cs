@@ -1,31 +1,15 @@
-﻿using System;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using ApprovalTests;
-using NServiceBus;
+﻿using NServiceBus;
 using NUnit.Framework;
+using Particular.Approvals;
 using PublicApiGenerator;
 
 [TestFixture]
 public class APIApprovals
 {
     [Test]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public void Approve()
     {
-        var publicApi = Filter(ApiGenerator.GeneratePublicApi(typeof(RabbitMQTransport).Assembly));
-        Approvals.Verify(publicApi);
+        var publicApi = ApiGenerator.GeneratePublicApi(typeof(RabbitMQTransport).Assembly);
+        Approver.Verify(publicApi);
     }
-
-    string Filter(string text)
-    {
-        return string.Join(Environment.NewLine, text.Split(new[]
-        {
-            Environment.NewLine
-        }, StringSplitOptions.RemoveEmptyEntries)
-            .Where(l => !l.StartsWith("[assembly: ReleaseDateAttribute("))
-            .Where(l => !string.IsNullOrWhiteSpace(l))
-            );
-    }
-
 }
