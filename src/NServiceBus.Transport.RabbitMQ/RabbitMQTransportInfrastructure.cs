@@ -6,7 +6,6 @@
     using System.Text;
     using System.Threading.Tasks;
     using DelayedDelivery;
-    using Features;
     using global::RabbitMQ.Client.Events;
     using Performance.TimeToBeReceived;
     using Routing;
@@ -34,8 +33,6 @@
             connectionFactory = new ConnectionFactory(connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism);
 
             routingTopology = CreateRoutingTopology();
-
-            settings.EnableFeatureByDefault<PreventRoutingMessagesToTimeoutManager>();
 
             if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out bool usePublisherConfirms))
             {
