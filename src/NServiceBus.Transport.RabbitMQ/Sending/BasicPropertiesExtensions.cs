@@ -23,7 +23,7 @@
 
             var messageHeaders = message.Headers ?? new Dictionary<string, string>();
 
-            var delayed = CalculateDelay(deliveryConstraints, messageHeaders, out var delay, out destination);
+            var delayed = CalculateDelay(deliveryConstraints, out var delay, out destination);
 
             properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
@@ -77,7 +77,7 @@
             }
         }
 
-        static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, Dictionary<string, string> messageHeaders, out long delay, out string destination)
+        static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, out long delay, out string destination)
         {
             destination = null;
 
@@ -105,21 +105,6 @@
                     throw new Exception($"Message cannot be sent with {nameof(DelayDeliveryWith)} value '{delayDeliveryWith.Delay}' because it exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
                 }
             }
-            else if (messageHeaders.TryGetValue(TimeoutManagerHeaders.Expire, out var expire))
-            {
-                delayed = true;
-                var expiration = DateTimeExtensions.ToUtcDateTime(expire);
-                delay = Convert.ToInt64(Math.Ceiling((expiration - DateTime.UtcNow).TotalSeconds));
-                destination = messageHeaders[TimeoutManagerHeaders.RouteExpiredTimeoutTo];
-
-                messageHeaders.Remove(TimeoutManagerHeaders.Expire);
-                messageHeaders.Remove(TimeoutManagerHeaders.RouteExpiredTimeoutTo);
-
-                if (delay > DelayInfrastructure.MaxDelayInSeconds)
-                {
-                    throw new Exception($"Message cannot be sent with delay value '{expiration}' because it exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
-                }
-            }
 
             return delayed;
         }
@@ -141,11 +126,5 @@
             (constraint = list.OfType<T>().FirstOrDefault()) != null;
 
         public const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
-
-        static class TimeoutManagerHeaders
-        {
-            public const string Expire = "NServiceBus.Timeout.Expire";
-            public const string RouteExpiredTimeoutTo = "NServiceBus.Timeout.RouteExpiredTimeoutTo";
-        }
     }
 }

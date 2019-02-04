@@ -10,7 +10,7 @@
         public const string ClientCertificates = "RabbitMQ.ClientCertificates";
         public const string DisableRemoteCertificateValidation = "RabbitMQ.DisableRemoteCertificateValidation";
         public const string UseExternalAuthMechanism = "RabbitMQ.UseExternalAuthMechanism";
-        public const string EnableTimeoutManager = "RabbitMQ.EnableTimeoutManager";
+        public const string EnableTimeoutManager = "NServiceBus.TimeoutManager.EnableMigrationMode";
         public const string UseDurableExchangesAndQueues = "RabbitMQ.UseDurableExchangesAndQueues";
     }
 }

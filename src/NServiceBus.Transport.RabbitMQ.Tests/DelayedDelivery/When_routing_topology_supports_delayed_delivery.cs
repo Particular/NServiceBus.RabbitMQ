@@ -81,16 +81,5 @@
             Assert.AreEqual("The transport has been configured to enable the timeout manager, but the timeout manager is not active." +
                         "Ensure that the timeout manager is active or remove the call to 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().EnableTimeoutManager()'.", result.ErrorMessage);
         }
-
-        [Test]
-        public void Should_prevent_startup_if_external_timeout_manager_address_is_configured()
-        {
-            settings.Set(coreExternalTimeoutManagerAddressKey, "endpoint");
-
-            var result = DelayInfrastructure.CheckForInvalidSettings(settings);
-
-            Assert.False(result.Succeeded);
-            Assert.AreEqual("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.", result.ErrorMessage);
-        }
     }
 }
