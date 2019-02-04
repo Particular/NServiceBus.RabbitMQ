@@ -12,7 +12,6 @@
     {
         const int maxNumberOfBitsToUse = 28;
         const int maxLevel = maxNumberOfBitsToUse - 1;
-        const string coreExternalTimeoutManagerAddressKey = "NServiceBus.ExternalTimeoutManagerAddress";
 
         public const int MaxDelayInSeconds = (1 << maxNumberOfBitsToUse) - 1;
         public const string DelayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
@@ -81,13 +80,6 @@
 
         public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
         {
-            var externalTimeoutManagerAddressConfigured = settings.GetOrDefault<string>(coreExternalTimeoutManagerAddressKey) != null;
-
-            if (externalTimeoutManagerAddressConfigured)
-            {
-                return StartupCheckResult.Failed("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.");
-            }
-
             var timeoutManagerShouldBeEnabled = settings.GetOrDefault<bool>(SettingsKeys.EnableTimeoutManager);
             var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
 

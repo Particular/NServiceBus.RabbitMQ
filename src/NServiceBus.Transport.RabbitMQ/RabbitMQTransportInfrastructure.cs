@@ -45,25 +45,7 @@
             channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology, usePublisherConfirms);
         }
 
-        public override IEnumerable<Type> DeliveryConstraints
-        {
-            get
-            {
-                var constraints = new List<Type>
-                {
-                    typeof(DiscardIfNotReceivedBefore),
-                    typeof(NonDurableDelivery)
-                };
-
-                if (!settings.HasSetting(SettingsKeys.EnableTimeoutManager))
-                {
-                    constraints.Add(typeof(DoNotDeliverBefore));
-                    constraints.Add(typeof(DelayDeliveryWith));
-                }
-
-                return constraints;
-            }
-        }
+        public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };
 
         public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
