@@ -5,9 +5,12 @@
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
+    using NServiceBus.Logging;
 
     class ConnectionFactory
     {
+        static readonly ILog Logger = LogManager.GetLogger(typeof(IConnection));
+
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
@@ -73,7 +76,12 @@
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
-                return connectionFactory.CreateConnection(connectionName);
+                var connection = connectionFactory.CreateConnection(connectionName);
+
+                connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
+                connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
+
+                return connection;
             }
         }
     }
