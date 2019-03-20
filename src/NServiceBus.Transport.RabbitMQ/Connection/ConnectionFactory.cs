@@ -5,7 +5,7 @@
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
-    using NServiceBus.Logging;
+    using Logging;
 
     class ConnectionFactory
     {
