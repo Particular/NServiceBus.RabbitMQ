@@ -243,7 +243,10 @@
                 {
                     try
                     {
-                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, new ContextBag());
+                        var contextBag = new ContextBag();
+                        contextBag.Set(message);
+                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, contextBag);
+
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
