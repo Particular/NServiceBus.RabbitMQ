@@ -29,8 +29,6 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                Logger.WarnFormat("Connection to the broker lost: {0}", e.ReplyText);
-
                 Task.Run(Reconnect).Ignore();
             }
         }
