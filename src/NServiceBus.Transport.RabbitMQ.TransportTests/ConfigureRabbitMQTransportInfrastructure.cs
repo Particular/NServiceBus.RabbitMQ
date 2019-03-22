@@ -34,9 +34,6 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         transportTransactionMode = result.TransportInfrastructure.TransactionMode;
         requestedTransactionMode = transactionMode;
 
-        //work around for TransportTests not calling Start
-        result.TransportInfrastructure.Start();
-
         return result;
     }
 
