@@ -253,8 +253,14 @@
                     catch (Exception ex)
                     {
                         ++numberOfDeliveryAttempts;
+                        headers = messageConverter.RetrieveHeaders(message);
                         var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
                         errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+
+                        if (!errorHandled)
+                        {
+                            headers = messageConverter.RetrieveHeaders(message);
+                        }
                     }
                 }
 
