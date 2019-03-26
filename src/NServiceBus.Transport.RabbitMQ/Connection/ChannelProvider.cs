@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client;
     using Logging;
 
-    sealed class ChannelProvider : IChannelProvider, IDisposable
+    sealed class ChannelProvider : IDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
@@ -29,8 +29,6 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                Logger.WarnFormat("Connection to the broker lost: {0}", e.ReplyText);
-
                 Task.Run(Reconnect).Ignore();
             }
         }

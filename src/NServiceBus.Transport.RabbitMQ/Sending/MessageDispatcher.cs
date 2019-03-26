@@ -6,9 +6,9 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        readonly IChannelProvider channelProvider;
+        readonly ChannelProvider channelProvider;
 
-        public MessageDispatcher(IChannelProvider channelProvider)
+        public MessageDispatcher(ChannelProvider channelProvider)
         {
             this.channelProvider = channelProvider;
         }

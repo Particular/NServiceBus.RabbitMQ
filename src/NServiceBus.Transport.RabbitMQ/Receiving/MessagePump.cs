@@ -18,7 +18,7 @@
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
-        readonly IChannelProvider channelProvider;
+        readonly ChannelProvider channelProvider;
         readonly QueuePurger queuePurger;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly int prefetchMultiplier;
@@ -41,7 +41,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, IChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -243,15 +243,24 @@
                 {
                     try
                     {
-                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, new ContextBag());
+                        var contextBag = new ContextBag();
+                        contextBag.Set(message);
+                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, contextBag);
+
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
                     catch (Exception ex)
                     {
                         ++numberOfDeliveryAttempts;
+                        headers = messageConverter.RetrieveHeaders(message);
                         var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
                         errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+
+                        if (!errorHandled)
+                        {
+                            headers = messageConverter.RetrieveHeaders(message);
+                        }
                     }
                 }
 

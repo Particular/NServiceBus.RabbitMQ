@@ -1,21 +1,18 @@
-﻿#if NET452
-namespace NServiceBus.Transport.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
-    using System.Runtime.CompilerServices;
     using NServiceBus;
     using NUnit.Framework;
+    using Particular.Approvals;
     using PublicApiGenerator;
 
     [TestFixture]
     public class APIApprovals
     {
         [Test]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Approve()
         {
-            var publicApi = ApiGenerator.GeneratePublicApi(typeof(RabbitMQTransport).Assembly);
-            TestApprover.Verify(publicApi);
+            var publicApi = ApiGenerator.GeneratePublicApi(typeof(RabbitMQTransport).Assembly, excludeAttributes: new[] { "System.Runtime.Versioning.TargetFrameworkAttribute" });
+            Approver.Verify(publicApi);
         }
     }
 }
-#endif
