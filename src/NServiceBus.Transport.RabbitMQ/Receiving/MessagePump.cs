@@ -28,6 +28,7 @@
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
         PushSettings settings;
+        CriticalError criticalError;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
 
@@ -58,6 +59,7 @@
             this.onMessage = onMessage;
             this.onError = onError;
             this.settings = settings;
+            this.criticalError = criticalError;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
@@ -250,16 +252,27 @@
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
-                    catch (Exception ex)
+                    catch (Exception exception)
                     {
                         ++numberOfDeliveryAttempts;
                         headers = messageConverter.RetrieveHeaders(message);
-                        var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
-                        errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
 
-                        if (!errorHandled)
+                        try
                         {
-                            headers = messageConverter.RetrieveHeaders(message);
+                            errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+
+                            if (!errorHandled)
+                            {
+                                headers = messageConverter.RetrieveHeaders(message);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
+                            await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+
+                            return;
                         }
                     }
                 }

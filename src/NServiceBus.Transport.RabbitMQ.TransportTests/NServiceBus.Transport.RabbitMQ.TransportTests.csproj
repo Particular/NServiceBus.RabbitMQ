@@ -17,4 +17,10 @@
     <PackageReference Include="RabbitMQ.Client" Version="5.1.0" />
   </ItemGroup>
 
+  <!-- Replaces transport tests/classes as of 7.1.6. See KTLO issue 218  -->
+  <ItemGroup>
+    <Compile Remove="\**\nserviceBus.transporttests.sources\**\When_on_error_throws.cs" />
+    <Compile Remove="\**\nserviceBus.transporttests.sources\**\NServiceBusTransportTest.cs" />
+    <Compile Remove="\**\nserviceBus.transporttests.sources\**\TransportTestLoggerFactory.cs" />
+  </ItemGroup>
 </Project>
