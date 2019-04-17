@@ -81,6 +81,7 @@
     <Compile Include="App_Packages\NSB.TransportTests.6.1.1\When_user_aborts_processing.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.1.1\When_using_non_durable_delivery.cs" />
     <Compile Include="ConfigureRabbitMQTransportInfrastructure.cs" />
+    <Compile Include="TransportTestLoggerFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.RabbitMQ\NServiceBus.RabbitMQ.csproj">

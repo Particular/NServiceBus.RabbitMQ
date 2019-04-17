@@ -30,6 +30,7 @@
         PushSettings settings;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
+        CriticalError criticalError;
 
         // Start
         int maxConcurrency;
@@ -58,6 +59,7 @@
             this.onMessage = onMessage;
             this.onError = onError;
             this.settings = settings;
+            this.criticalError = criticalError;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
@@ -185,7 +187,7 @@
                     //    E.g. the client may raise the event on a new, explicitly created thread each time.
                     // 2) we cannot tell whether we are in scenario (a) or scenario (b).
                     //    E.g. the client may raise the event on a thread pool thread.
-                    // 
+                    //
                     // In both cases, we cannot tell whether we need to yield or not, so we must yield.
                     await Task.Yield();
                 }
@@ -247,11 +249,21 @@
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
                     }
-                    catch (Exception ex)
+                    catch (Exception exception)
                     {
                         ++numberOfDeliveryAttempts;
-                        var errorContext = new ErrorContext(ex, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
-                        errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
+                        try
+                        {
+                            errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                        }
+                        catch (Exception ex)
+                        {
+                            criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
+                            await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+
+                            return;
+                        }
                     }
                 }
 
