@@ -34,11 +34,14 @@
                     tasks.Add(PublishMessage(operation, channel));
                 }
 
+                channelProvider.ReturnPublishChannel(channel);
+
                 return tasks.Count == 1 ? tasks[0] : Task.WhenAll(tasks);
             }
-            finally
+            catch
             {
-                channelProvider.ReturnPublishChannel(channel);
+                channel.Dispose();
+                throw;
             }
         }
 
