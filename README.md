@@ -7,7 +7,7 @@ For more information, see the [documentation](https://docs.particular.net/nservi
 
 ## Running Tests Locally
 
-By default both the AcceptanceTests and Tests projects will connect to a RabbitMQ broker on localhost listening on port `5672`
+By default the tests will connect to a RabbitMQ broker on localhost listening on port `5672`
 
 For developers using Docker containers the following docker command will quickly setup a container configured to use the default port:
 
