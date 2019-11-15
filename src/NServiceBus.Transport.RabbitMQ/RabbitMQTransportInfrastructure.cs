@@ -39,7 +39,7 @@
                 usePublisherConfirms = true;
             }
 
-            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology, usePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology, usePublisherConfirms, settings.EndpointName());
         }
 
         public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };

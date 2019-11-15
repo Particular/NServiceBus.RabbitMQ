@@ -35,7 +35,7 @@
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
                 NetworkRecoveryInterval = connectionConfiguration.RetryDelay,
-                UseBackgroundThreadsForIO = true
+                UseBackgroundThreadsForIO = true,
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
@@ -65,7 +65,7 @@
             }
         }
 
-        public IConnection CreatePublishConnection() => CreateConnection("Publish", false);
+        public IConnection CreatePublishConnection(string prefix = null) => CreateConnection($"{prefix} Publish", false);
 
         public IConnection CreateAdministrationConnection() => CreateConnection("Administration", false);
 
@@ -77,7 +77,7 @@
                 connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
 
                 var connection = connectionFactory.CreateConnection(connectionName);
-
+                
                 connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
                 connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
 

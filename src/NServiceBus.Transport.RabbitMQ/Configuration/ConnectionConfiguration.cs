@@ -42,6 +42,8 @@
 
         public string CertPassphrase { get; }
 
+        public string CustomConnectionNamePrefix { get; }
+
         public Dictionary<string, string> ClientProperties { get; }
 
         ConnectionConfiguration(
@@ -55,6 +57,7 @@
             bool useTls,
             string certPath,
             string certPassphrase,
+            string customConnectionNamePrefix,
             Dictionary<string, string> clientProperties)
         {
             Host = host;
@@ -67,6 +70,7 @@
             UseTls = useTls;
             CertPath = certPath;
             CertPassphrase = certPassphrase;
+            CustomConnectionNamePrefix = customConnectionNamePrefix;
             ClientProperties = clientProperties;
         }
 
@@ -107,6 +111,7 @@
             var retryDelay = GetValue(dictionary, "retryDelay", TimeSpan.TryParse, defaultRetryDelay, invalidOptionsMessage);
             var certPath = GetValue(dictionary, "certPath", defaultCertPath);
             var certPassPhrase = GetValue(dictionary, "certPassphrase", defaultCertPassphrase);
+            var customConnectionNamePrefix = GetValue(dictionary, "customConnectionNamePrefix", endpointName);
 
             var host = default(string);
 
@@ -167,7 +172,7 @@
             }
 
             return new ConnectionConfiguration(
-                host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
+                host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, customConnectionNamePrefix, clientProperties);
         }
 
         static string GetValue(Dictionary<string, string> dictionary, string key, string defaultValue)
