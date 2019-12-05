@@ -27,7 +27,7 @@
 
             var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
 
-            connectionFactory = new ConnectionFactory(config, null, false, false);
+            connectionFactory = new ConnectionFactory(ReceiverQueue, config, null, false, false);
             channelProvider = new ChannelProvider(connectionFactory, config.RetryDelay, routingTopology, true);
             channelProvider.CreateConnection();
 

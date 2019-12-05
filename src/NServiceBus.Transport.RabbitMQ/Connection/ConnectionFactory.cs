@@ -11,11 +11,24 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(IConnection));
 
+        readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism)
         {
+            if (endpointName is null)
+            {
+                throw new ArgumentNullException(nameof(endpointName));
+            }
+
+            if (endpointName == string.Empty)
+            {
+                throw new ArgumentException("The endpoint name cannot be empty.", nameof(endpointName));
+            }
+
+            this.endpointName = endpointName;
+
             if (connectionConfiguration == null)
             {
                 throw new ArgumentNullException(nameof(connectionConfiguration));
@@ -65,9 +78,9 @@
             }
         }
 
-        public IConnection CreatePublishConnection() => CreateConnection("Publish", false);
+        public IConnection CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);
 
-        public IConnection CreateAdministrationConnection() => CreateConnection("Administration", false);
+        public IConnection CreateAdministrationConnection() => CreateConnection($"{endpointName} Administration", false);
 
         public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true)
         {
