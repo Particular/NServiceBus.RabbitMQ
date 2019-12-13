@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Fody" Version="4.0.2" PrivateAssets="All" />
+    <PackageReference Include="GitVersionTask" Version="5.1.2" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.1.6, 8.0.0)" />
     <PackageReference Include="Obsolete.Fody" Version="4.4.3" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.1" PrivateAssets="All" />
