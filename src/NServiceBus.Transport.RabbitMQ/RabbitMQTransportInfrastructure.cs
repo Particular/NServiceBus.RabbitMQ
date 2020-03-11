@@ -13,7 +13,6 @@
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
-        const string coreSendOnlyEndpointKey = "Endpoint.SendOnly";
         const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
 
         readonly SettingsHolder settings;
