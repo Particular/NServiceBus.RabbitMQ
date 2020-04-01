@@ -17,7 +17,7 @@
         const string defaultVirtualHost = "/";
         const string defaultUserName = "guest";
         const string defaultPassword = "guest";
-        const ushort defaultRequestedHeartbeat = 5;
+        const ushort defaultRequestedHeartbeat = 60;
         static readonly TimeSpan defaultRetryDelay = TimeSpan.FromSeconds(10);
         const string defaultCertPath = "";
         const string defaultCertPassphrase = null;
