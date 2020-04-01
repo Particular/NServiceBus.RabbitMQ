@@ -12,7 +12,7 @@
     <PackageReference Include="Obsolete.Fody" Version="5.2.0" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.1" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.6.2" PrivateAssets="All" />
-    <PackageReference Include="RabbitMQ.Client" Version="[5.1.0, 6.0.0)" />
+    <PackageReference Include="RabbitMQ.Client" Version="[5.1.2, 6.0.0)" />
   </ItemGroup>
 
   <PropertyGroup>
