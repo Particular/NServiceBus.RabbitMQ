@@ -210,7 +210,7 @@
         [Test]
         public void Should_set_default_requested_heartbeat()
         {
-            Assert.AreEqual(defaults.RequestedHeartbeat, 5);
+            Assert.AreEqual(defaults.RequestedHeartbeat, 60);
         }
 
         [Test]
