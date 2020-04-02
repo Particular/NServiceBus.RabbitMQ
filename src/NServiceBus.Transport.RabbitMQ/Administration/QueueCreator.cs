@@ -4,10 +4,10 @@
 
     class QueueCreator : ICreateQueues
     {
-        readonly ConnectionFactory connectionFactory;
+        readonly AmqpConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
 
-        public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology)
+        public QueueCreator(AmqpConnectionFactory connectionFactory, IRoutingTopology routingTopology)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;

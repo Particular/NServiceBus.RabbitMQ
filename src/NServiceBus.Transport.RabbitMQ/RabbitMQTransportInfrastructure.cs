@@ -16,7 +16,7 @@
         const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
 
         readonly SettingsHolder settings;
-        readonly ConnectionFactory connectionFactory;
+        readonly AmqpConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
         IRoutingTopology routingTopology;
 
@@ -25,12 +25,15 @@
             this.settings = settings;
 
             var endpointName = settings.EndpointName();
-            var connectionConfiguration = ConnectionConfiguration.Create(connectionString, endpointName);
+            // var connectionConfiguration = ConnectionConfiguration.Create(connectionString, endpointName);
             settings.TryGet(SettingsKeys.ClientCertificates, out X509CertificateCollection clientCertificates);
             settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);
             settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
 
-            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism);
+            // connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism);
+            ushort requestedHeartbeat = 5;
+            var retryDelay = TimeSpan.FromSeconds(10);
+            connectionFactory = new AmqpConnectionFactory(endpointName, connectionString, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism, requestedHeartbeat, retryDelay);
 
             routingTopology = CreateRoutingTopology();
 
@@ -39,7 +42,7 @@
                 usePublisherConfirms = true;
             }
 
-            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology, usePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, retryDelay, routingTopology, usePublisherConfirms);
         }
 
         public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };

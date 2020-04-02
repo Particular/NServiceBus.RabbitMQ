@@ -6,11 +6,11 @@
 
     class SubscriptionManager : IManageSubscriptions
     {
-        readonly ConnectionFactory connectionFactory;
+        readonly AmqpConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
         readonly string localQueue;
 
-        public SubscriptionManager(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, string localQueue)
+        public SubscriptionManager(AmqpConnectionFactory connectionFactory, IRoutingTopology routingTopology, string localQueue)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;

@@ -1,4 +1,5 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿/*
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -191,3 +192,4 @@
         delegate bool Convert<T>(string input, out T output);
     }
 }
+*/

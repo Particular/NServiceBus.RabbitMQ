@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     sealed class ChannelProvider : IDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ChannelProvider(AmqpConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
@@ -94,7 +94,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        readonly ConnectionFactory connectionFactory;
+        readonly AmqpConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
         readonly IRoutingTopology routingTopology;
         readonly bool usePublisherConfirms;

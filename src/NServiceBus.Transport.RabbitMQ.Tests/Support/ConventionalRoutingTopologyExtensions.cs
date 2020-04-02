@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Support
     {
         public static void Reset(
             this ConventionalRoutingTopology routingTopology,
-            ConnectionFactory connectionFactory,
+            AmqpConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
             IEnumerable<string> sendingAddresses)
         {

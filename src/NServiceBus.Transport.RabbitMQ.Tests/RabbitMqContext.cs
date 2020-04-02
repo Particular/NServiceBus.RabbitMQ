@@ -25,10 +25,9 @@
                 throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
             }
 
-            var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
-
-            connectionFactory = new ConnectionFactory(ReceiverQueue, config, null, false, false);
-            channelProvider = new ChannelProvider(connectionFactory, config.RetryDelay, routingTopology, true);
+            var retryDelay = TimeSpan.FromSeconds(10);
+            connectionFactory = new AmqpConnectionFactory(ReceiverQueue, connectionString, null, false, false, 5, retryDelay);
+            channelProvider = new ChannelProvider(connectionFactory, retryDelay, routingTopology, true);
             channelProvider.CreateConnection();
 
             messageDispatcher = new MessageDispatcher(channelProvider);
@@ -82,7 +81,7 @@
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";
         protected MessageDispatcher messageDispatcher;
-        protected ConnectionFactory connectionFactory;
+        protected AmqpConnectionFactory connectionFactory;
         protected MessagePump messagePump;
         protected SubscriptionManager subscriptionManager;
 

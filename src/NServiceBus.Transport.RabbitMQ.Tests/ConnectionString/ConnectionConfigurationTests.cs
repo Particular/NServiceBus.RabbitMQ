@@ -1,4 +1,5 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
+﻿/*
+namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
     using NUnit.Framework;
@@ -238,3 +239,4 @@
         }
     }
 }
+*/

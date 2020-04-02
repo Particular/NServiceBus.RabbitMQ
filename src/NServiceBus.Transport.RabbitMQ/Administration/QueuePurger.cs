@@ -2,9 +2,9 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     class QueuePurger
     {
-        readonly ConnectionFactory connectionFactory;
+        readonly AmqpConnectionFactory connectionFactory;
 
-        public QueuePurger(ConnectionFactory connectionFactory)
+        public QueuePurger(AmqpConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
