@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -15,19 +14,17 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         var result = new TransportConfigurationResult();
         var transport = new RabbitMQTransport();
 
-        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
+        connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
 
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
         }
 
-        connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
-
         queueBindings = settings.Get<QueueBindings>();
 
         new TransportExtensions<RabbitMQTransport>(settings).UseConventionalRoutingTopology();
-        result.TransportInfrastructure = transport.Initialize(settings, connectionStringBuilder.ConnectionString);
+        result.TransportInfrastructure = transport.Initialize(settings, connectionString);
         isTransportInitialized = true;
         result.PurgeInputQueueOnStartup = true;
 
@@ -41,48 +38,20 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     {
         if (isTransportInitialized && transportTransactionMode >= requestedTransactionMode)
         {
-            PurgeQueues(connectionStringBuilder, queueBindings);
+            PurgeQueues(connectionString, queueBindings);
         }
 
         return Task.FromResult(0);
     }
 
-    static void PurgeQueues(DbConnectionStringBuilder connectionStringBuilder, QueueBindings queueBindings)
+    static void PurgeQueues(string connectionString, QueueBindings queueBindings)
     {
-        if (connectionStringBuilder == null)
-        {
-            return;
-        }
-
         var connectionFactory = new ConnectionFactory
         {
+            Uri = new Uri(connectionString),
             AutomaticRecoveryEnabled = true,
             UseBackgroundThreadsForIO = true
         };
-
-        if (connectionStringBuilder.TryGetValue("username", out var value))
-        {
-            connectionFactory.UserName = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("password", out value))
-        {
-            connectionFactory.Password = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("virtualhost", out value))
-        {
-            connectionFactory.VirtualHost = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("host", out value))
-        {
-            connectionFactory.HostName = value.ToString();
-        }
-        else
-        {
-            throw new Exception("The connection string doesn't contain a value for 'host'.");
-        }
 
         var queues = queueBindings.ReceivingAddresses.Concat(queueBindings.SendingAddresses);
 
@@ -103,7 +72,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         }
     }
 
-    DbConnectionStringBuilder connectionStringBuilder;
+    string connectionString;
     QueueBindings queueBindings;
     TransportTransactionMode transportTransactionMode;
     TransportTransactionMode requestedTransactionMode;
