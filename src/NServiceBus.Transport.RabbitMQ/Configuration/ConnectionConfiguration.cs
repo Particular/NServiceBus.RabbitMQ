@@ -72,34 +72,126 @@
 
         public static ConnectionConfiguration Create(string connectionString, string endpointName)
         {
-            var dictionary = new DbConnectionStringBuilder { ConnectionString = connectionString }
-                .OfType<KeyValuePair<string, object>>()
-                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
+            Dictionary<string, string> dictionary;
             var invalidOptionsMessage = new StringBuilder();
+            var host = default(string);
+            int port;
 
-            if (dictionary.ContainsKey("dequeuetimeout"))
+            if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
-                invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
+                dictionary = new Dictionary<string, string>();
+
+                var uri = new Uri(connectionString);
+
+                var usingTls = string.Equals("amqps", uri.Scheme, StringComparison.OrdinalIgnoreCase) ? bool.TrueString : bool.FalseString;
+                dictionary.Add("useTls", usingTls);
+
+                if (!string.IsNullOrEmpty(uri.Host))
+                {
+                    host = uri.Host;
+                }
+
+                if (!uri.IsDefaultPort)
+                {
+                    dictionary.Add("port", uri.Port.ToString());
+                }
+
+                if (!string.IsNullOrEmpty(uri.UserInfo))
+                {
+                    var userPass = uri.UserInfo.Split(':');
+                    if (userPass.Length > 2)
+                    {
+                        invalidOptionsMessage.AppendLine($"Bad user info in AMQP URI: {uri.UserInfo}");
+                    }
+                    else
+                    {
+                        dictionary.Add("userName", UriDecode(userPass[0]));
+
+                        if (userPass.Length == 2)
+                        {
+                            dictionary.Add("password", UriDecode(userPass[1]));
+                        }
+                    }
+                }
+
+                if (uri.Segments.Length > 2)
+                {
+                    invalidOptionsMessage.AppendLine($"Multiple segments in path of AMQP URI: {string.Join(", ", uri.Segments)}");
+                }
+                else if (uri.Segments.Length == 2)
+                {
+                    dictionary.Add("virtualHost", UriDecode(uri.Segments[1]));
+                }
             }
-
-            if (dictionary.ContainsKey("maxwaittimeforconfirms"))
+            else // non-AMQP connection string
             {
-                invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information.");
-            }
+                dictionary = new DbConnectionStringBuilder {ConnectionString = connectionString}
+                    .OfType<KeyValuePair<string, object>>()
+                    .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
-            if (dictionary.ContainsKey("prefetchcount"))
-            {
-                invalidOptionsMessage.AppendLine("The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.");
-            }
+                if (dictionary.ContainsKey("dequeuetimeout"))
+                {
+                    invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
+                }
 
-            if (dictionary.ContainsKey("usepublisherconfirms"))
-            {
-                invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
+                if (dictionary.ContainsKey("maxwaittimeforconfirms"))
+                {
+                    invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information.");
+                }
+
+                if (dictionary.ContainsKey("prefetchcount"))
+                {
+                    invalidOptionsMessage.AppendLine("The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.");
+                }
+
+                if (dictionary.ContainsKey("usepublisherconfirms"))
+                {
+                    invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
+                }
+
+                if (dictionary.TryGetValue("port", out var portValue) && !int.TryParse(portValue, out port))
+                {
+                    invalidOptionsMessage.AppendLine($"'{portValue}' is not a valid Int32 value for the 'port' connection string option.");
+                }
+
+                if (dictionary.TryGetValue("host", out var value))
+                {
+                    var hostsAndPorts = value.Split(',');
+
+                    if (hostsAndPorts.Length > 1)
+                    {
+                        invalidOptionsMessage.AppendLine("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.");
+                    }
+
+                    var parts = hostsAndPorts[0].Split(':');
+                    host = parts.ElementAt(0);
+
+                    if (host.Length == 0)
+                    {
+                        invalidOptionsMessage.AppendLine("Empty host name in 'host' connection string option.");
+                    }
+
+                    if (parts.Length > 1)
+                    {
+                        if (!int.TryParse(parts[1], out port))
+                        {
+                            invalidOptionsMessage.AppendLine($"'{parts[1]}' is not a valid Int32 value for the port in the 'host' connection string option.");
+                        }
+                        else
+                        {
+                            // Override the port with the value provided via host ("host=hostname:portnumber")
+                            dictionary["port"] = port.ToString();
+                        }
+                    }
+                }
+                else
+                {
+                    invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
+                }
             }
 
             var useTls = GetValue(dictionary, "useTls", bool.TryParse, defaultUseTls, invalidOptionsMessage);
-            var port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
+            port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
             var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);
             var userName = GetValue(dictionary, "userName", defaultUserName);
             var password = GetValue(dictionary, "password", defaultPassword);
@@ -108,33 +200,9 @@
             var certPath = GetValue(dictionary, "certPath", defaultCertPath);
             var certPassPhrase = GetValue(dictionary, "certPassphrase", defaultCertPassphrase);
 
-            var host = default(string);
-
-            if (dictionary.TryGetValue("host", out var value))
+            if (invalidOptionsMessage.Length > 0)
             {
-                var hostsAndPorts = value.Split(',');
-
-                if (hostsAndPorts.Length > 1)
-                {
-                    invalidOptionsMessage.AppendLine("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.");
-                }
-
-                var parts = hostsAndPorts[0].Split(':');
-                host = parts.ElementAt(0);
-
-                if (host.Length == 0)
-                {
-                    invalidOptionsMessage.AppendLine("Empty host name in 'host' connection string option.");
-                }
-
-                if (parts.Length > 1 && !int.TryParse(parts[1], out port))
-                {
-                    invalidOptionsMessage.AppendLine($"'{parts[1]}' is not a valid Int32 value for the port in the 'host' connection string option.");
-                }
-            }
-            else
-            {
-                invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
+                throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
             }
 
             var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
@@ -161,11 +229,6 @@
                 { "endpoint_name", endpointName },
             };
 
-            if (invalidOptionsMessage.Length > 0)
-            {
-                throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
-            }
-
             return new ConnectionConfiguration(
                 host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
         }
@@ -189,5 +252,10 @@
         }
 
         delegate bool Convert<T>(string input, out T output);
+
+        static string UriDecode(string value)
+        {
+            return Uri.UnescapeDataString(value.Replace("+", "%2B"));
+        }
     }
 }
