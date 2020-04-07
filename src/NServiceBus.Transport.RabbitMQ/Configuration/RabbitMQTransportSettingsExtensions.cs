@@ -16,6 +16,18 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
+        {
+            transportExtensions.GetSettings().Set(topologyFactory);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Registers a custom routing topology.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.UseCustomRoutingTopology(TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)")]
         public static TransportExtensions<RabbitMQTransport> UseRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
         {
             transportExtensions.GetSettings().Set(topologyFactory);
@@ -27,7 +39,7 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions) =>
-            transportExtensions.UseRoutingTopology(durable => new ConventionalRoutingTopology(durable));
+            transportExtensions.UseCustomRoutingTopology(durable => new ConventionalRoutingTopology(durable));
 
         /// <summary>
         /// Uses the direct routing topology with the specified conventions.
@@ -47,7 +59,7 @@
                 exchangeNameConvention = () => "amq.topic";
             }
 
-            transportExtensions.UseRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
+            transportExtensions.UseCustomRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
 
             return transportExtensions;
         }
