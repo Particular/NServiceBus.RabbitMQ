@@ -28,10 +28,10 @@ namespace NServiceBus
             "ead. Will be treated as an error from version 6.0.0. Will be removed in version " +
             "7.0.0.", false)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
-        [System.ObsoleteAttribute("Use `RabbitMQTransportSettingsExtensions.UseRoutingTopology(TransportExtensions<R" +
-            "abbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)` instead. T" +
-            "he member currently throws a NotImplementedException. Will be removed in version" +
-            " 6.0.0.", true)]
+        [System.ObsoleteAttribute("Use `RabbitMQTransportSettingsExtensions.UseCustomRoutingTopology(TransportExtens" +
+            "ions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)` inst" +
+            "ead. The member currently throws a NotImplementedException. Will be removed in v" +
+            "ersion 6.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology<T>(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions)
             where T : NServiceBus.Transport.RabbitMQ.IRoutingTopology, new () { }
     }
