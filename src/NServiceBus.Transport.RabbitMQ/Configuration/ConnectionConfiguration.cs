@@ -129,25 +129,7 @@
                     .OfType<KeyValuePair<string, object>>()
                     .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
-                if (dictionary.ContainsKey("dequeuetimeout"))
-                {
-                    invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
-                }
-
-                if (dictionary.ContainsKey("maxwaittimeforconfirms"))
-                {
-                    invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information.");
-                }
-
-                if (dictionary.ContainsKey("prefetchcount"))
-                {
-                    invalidOptionsMessage.AppendLine("The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.");
-                }
-
-                if (dictionary.ContainsKey("usepublisherconfirms"))
-                {
-                    invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
-                }
+                RegisterDeprecatedSettingsAsInvalidOptions(dictionary, invalidOptionsMessage);
 
                 if (dictionary.TryGetValue("port", out var portValue) && !int.TryParse(portValue, out port))
                 {
@@ -233,9 +215,37 @@
                 host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
         }
 
+        static void RegisterDeprecatedSettingsAsInvalidOptions(Dictionary<string, string> dictionary, StringBuilder invalidOptionsMessage)
+        {
+            if (dictionary.ContainsKey("dequeuetimeout"))
+            {
+                invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
+            }
+
+            if (dictionary.ContainsKey("maxwaittimeforconfirms"))
+            {
+                invalidOptionsMessage.AppendLine("The 'MaxWaitTimeForConfirms' connection string option has been removed. Consult the documentation for further information.");
+            }
+
+            if (dictionary.ContainsKey("prefetchcount"))
+            {
+                invalidOptionsMessage.AppendLine("The 'PrefetchCount' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().PrefetchCount' instead.");
+            }
+
+            if (dictionary.ContainsKey("usepublisherconfirms"))
+            {
+                invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
+            }
+        }
+
         static string GetValue(Dictionary<string, string> dictionary, string key, string defaultValue)
         {
             return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
+        }
+
+        static string UriDecode(string value)
+        {
+            return Uri.UnescapeDataString(value.Replace("+", "%2B"));
         }
 
         static T GetValue<T>(Dictionary<string, string> dictionary, string key, Convert<T> convert, T defaultValue, StringBuilder invalidOptionsMessage)
@@ -252,10 +262,5 @@
         }
 
         delegate bool Convert<T>(string input, out T output);
-
-        static string UriDecode(string value)
-        {
-            return Uri.UnescapeDataString(value.Replace("+", "%2B"));
-        }
     }
 }
