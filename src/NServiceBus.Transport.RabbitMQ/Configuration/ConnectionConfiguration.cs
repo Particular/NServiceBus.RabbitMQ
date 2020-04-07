@@ -74,106 +74,19 @@
         {
             Dictionary<string, string> dictionary;
             var invalidOptionsMessage = new StringBuilder();
-            var host = default(string);
-            int port;
 
             if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
-                dictionary = new Dictionary<string, string>();
-
-                var uri = new Uri(connectionString);
-
-                var usingTls = string.Equals("amqps", uri.Scheme, StringComparison.OrdinalIgnoreCase) ? bool.TrueString : bool.FalseString;
-                dictionary.Add("useTls", usingTls);
-
-                if (!string.IsNullOrEmpty(uri.Host))
-                {
-                    host = uri.Host;
-                }
-
-                if (!uri.IsDefaultPort)
-                {
-                    dictionary.Add("port", uri.Port.ToString());
-                }
-
-                if (!string.IsNullOrEmpty(uri.UserInfo))
-                {
-                    var userPass = uri.UserInfo.Split(':');
-                    if (userPass.Length > 2)
-                    {
-                        invalidOptionsMessage.AppendLine($"Bad user info in AMQP URI: {uri.UserInfo}");
-                    }
-                    else
-                    {
-                        dictionary.Add("userName", UriDecode(userPass[0]));
-
-                        if (userPass.Length == 2)
-                        {
-                            dictionary.Add("password", UriDecode(userPass[1]));
-                        }
-                    }
-                }
-
-                if (uri.Segments.Length > 2)
-                {
-                    invalidOptionsMessage.AppendLine($"Multiple segments in path of AMQP URI: {string.Join(", ", uri.Segments)}");
-                }
-                else if (uri.Segments.Length == 2)
-                {
-                    dictionary.Add("virtualHost", UriDecode(uri.Segments[1]));
-                }
+                dictionary = ParseAmqpConnectionString(connectionString, invalidOptionsMessage);
             }
-            else // non-AMQP connection string
+            else
             {
-                dictionary = new DbConnectionStringBuilder {ConnectionString = connectionString}
-                    .OfType<KeyValuePair<string, object>>()
-                    .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
-                RegisterDeprecatedSettingsAsInvalidOptions(dictionary, invalidOptionsMessage);
-
-                if (dictionary.TryGetValue("port", out var portValue) && !int.TryParse(portValue, out port))
-                {
-                    invalidOptionsMessage.AppendLine($"'{portValue}' is not a valid Int32 value for the 'port' connection string option.");
-                }
-
-                if (dictionary.TryGetValue("host", out var value))
-                {
-                    var hostsAndPorts = value.Split(',');
-
-                    if (hostsAndPorts.Length > 1)
-                    {
-                        invalidOptionsMessage.AppendLine("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.");
-                    }
-
-                    var parts = hostsAndPorts[0].Split(':');
-                    host = parts.ElementAt(0);
-
-                    if (host.Length == 0)
-                    {
-                        invalidOptionsMessage.AppendLine("Empty host name in 'host' connection string option.");
-                    }
-
-                    if (parts.Length > 1)
-                    {
-                        if (!int.TryParse(parts[1], out port))
-                        {
-                            invalidOptionsMessage.AppendLine($"'{parts[1]}' is not a valid Int32 value for the port in the 'host' connection string option.");
-                        }
-                        else
-                        {
-                            // Override the port with the value provided via host ("host=hostname:portnumber")
-                            dictionary["port"] = port.ToString();
-                        }
-                    }
-                }
-                else
-                {
-                    invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
-                }
+                dictionary = ParseNServiceBusConnectionString(connectionString, invalidOptionsMessage);
             }
 
+            var host = GetValue(dictionary, "host", default);
             var useTls = GetValue(dictionary, "useTls", bool.TryParse, defaultUseTls, invalidOptionsMessage);
-            port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
+            var port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
             var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);
             var userName = GetValue(dictionary, "userName", defaultUserName);
             var password = GetValue(dictionary, "password", defaultPassword);
@@ -215,8 +128,110 @@
                 host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
         }
 
+        private static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
+        {
+            var dictionary = new Dictionary<string, string>();
+            var uri = new Uri(connectionString);
+
+            var usingTls = string.Equals("amqps", uri.Scheme, StringComparison.OrdinalIgnoreCase) ? bool.TrueString : bool.FalseString;
+            dictionary.Add("useTls", usingTls);
+
+            dictionary.Add("host", uri.Host);
+
+            if (!uri.IsDefaultPort)
+            {
+                dictionary.Add("port", uri.Port.ToString());
+            }
+
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                var userPass = uri.UserInfo.Split(':');
+
+                if (userPass.Length > 2)
+                {
+                    invalidOptionsMessage.AppendLine($"Bad user info in AMQP URI: {uri.UserInfo}");
+                }
+                else
+                {
+                    dictionary.Add("userName", UriDecode(userPass[0]));
+
+                    if (userPass.Length == 2)
+                    {
+                        dictionary.Add("password", UriDecode(userPass[1]));
+                    }
+                }
+            }
+
+            if (uri.Segments.Length > 2)
+            {
+                invalidOptionsMessage.AppendLine($"Multiple segments in path of AMQP URI: {string.Join(", ", uri.Segments)}");
+            }
+            else if (uri.Segments.Length == 2)
+            {
+                dictionary.Add("virtualHost", UriDecode(uri.Segments[1]));
+            }
+
+            return dictionary;
+        }
+
+        private static Dictionary<string, string> ParseNServiceBusConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
+        {
+            var dictionary = new DbConnectionStringBuilder { ConnectionString = connectionString }
+                .OfType<KeyValuePair<string, object>>()
+                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+
+            RegisterDeprecatedSettingsAsInvalidOptions(dictionary, invalidOptionsMessage);
+
+            if (dictionary.TryGetValue("port", out var portValue) && !int.TryParse(portValue, out var port))
+            {
+                invalidOptionsMessage.AppendLine($"'{portValue}' is not a valid Int32 value for the 'port' connection string option.");
+            }
+
+            if (dictionary.TryGetValue("host", out var value))
+            {
+                var firstHostAndPort = value.Split(',')[0];
+                var parts = firstHostAndPort.Split(':');
+                var host = parts.ElementAt(0);
+
+                if (host.Length == 0)
+                {
+                    invalidOptionsMessage.AppendLine("Empty host name in 'host' connection string option.");
+                }
+
+                dictionary["host"] = host;
+
+                if (parts.Length > 1)
+                {
+                    if (!int.TryParse(parts[1], out port))
+                    {
+                        invalidOptionsMessage.AppendLine($"'{parts[1]}' is not a valid Int32 value for the port in the 'host' connection string option.");
+                    }
+                    else
+                    {
+                        dictionary["port"] = port.ToString();
+                    }
+                }
+            }
+            else
+            {
+                invalidOptionsMessage.AppendLine("Invalid connection string. 'host' value must be supplied. e.g: \"host=myServer\"");
+            }
+
+            return dictionary;
+        }
+
         static void RegisterDeprecatedSettingsAsInvalidOptions(Dictionary<string, string> dictionary, StringBuilder invalidOptionsMessage)
         {
+            if (dictionary.TryGetValue("host", out var value))
+            {
+                var hostsAndPorts = value.Split(',');
+
+                if (hostsAndPorts.Length > 1)
+                {
+                    invalidOptionsMessage.AppendLine("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.");
+                }
+            }
+
             if (dictionary.ContainsKey("dequeuetimeout"))
             {
                 invalidOptionsMessage.AppendLine("The 'DequeueTimeout' connection string option has been removed. Consult the documentation for further information.");
