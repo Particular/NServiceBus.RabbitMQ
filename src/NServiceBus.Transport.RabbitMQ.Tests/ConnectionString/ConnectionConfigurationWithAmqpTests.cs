@@ -25,6 +25,12 @@
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
         }
 
+        [Test]
+        public void Should_fail_if_host_is_not_present()
+        {
+            Assert.Throws<UriFormatException>(() => ConnectionConfiguration.Create("amqp://:1234/", endpointName));
+        }
+
         [TestCase("amqp", (uint)5672, false)]
         [TestCase("amqps", (uint)5671, true)]
         public void Should_determine_if_tls_should_be_used_from_connection_string(string scheme, uint port, bool useTls)
