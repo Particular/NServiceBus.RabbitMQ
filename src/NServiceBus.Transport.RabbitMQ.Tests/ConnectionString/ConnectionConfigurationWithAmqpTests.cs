@@ -58,16 +58,6 @@
         }
 
         [Test]
-        public void Should_throw_on_missing_host()
-        {
-            var connectionString = "amqp://:5762/";
-
-            var exception = Assert.Throws<UriFormatException>(() => ConnectionConfiguration.Create(connectionString, endpointName));
-
-            Assert.That(exception.Message, Does.Contain("Invalid URI: The hostname could not be parsed."));
-        }
-
-        [Test]
         public void Should_throw_on_invalid_port()
         {
             var connectionString = "amqp://localhost:notaport/";
