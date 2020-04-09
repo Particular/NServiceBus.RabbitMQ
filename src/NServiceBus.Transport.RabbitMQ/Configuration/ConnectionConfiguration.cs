@@ -260,7 +260,7 @@
 
         static string UriDecode(string value)
         {
-            return Uri.UnescapeDataString(value.Replace("+", "%2B"));
+            return Uri.UnescapeDataString(value);
         }
 
         static T GetValue<T>(Dictionary<string, string> dictionary, string key, Convert<T> convert, T defaultValue, StringBuilder invalidOptionsMessage)
