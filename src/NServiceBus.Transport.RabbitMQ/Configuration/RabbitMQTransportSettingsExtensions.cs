@@ -157,7 +157,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="clientCertificates">The collection of certificates to use for client authentication.</param>
         /// <returns></returns>
-        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", Message = "", ReplacementTypeOrMember = "SetClientCertificate(X509Certificate2 clientCertificate)")]
+        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.SetClientCertificate(this TransportExtensions<RabbitMQTransport> transportExtensions, X509CertificateCollection clientCertificates)")]
         public static TransportExtensions<RabbitMQTransport> SetClientCertificates(this TransportExtensions<RabbitMQTransport> transportExtensions, X509CertificateCollection clientCertificates)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
