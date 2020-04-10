@@ -260,6 +260,36 @@
             return transportExtensions;
         }
 
+        /// <summary>
+        /// Set the interval for the heartbeats between the client and the server.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="heartbeatInterval">The time interval to be used.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> SetHeartbeatInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan heartbeatInterval)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNegativeAndZero(nameof(heartbeatInterval), heartbeatInterval);
 
+            transportExtensions.GetSettings().Set(SettingsKeys.HeartbeatInterval, heartbeatInterval);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Set the time to wait between attempts to reconnect to the broker if the connection is lost.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="reconnectionAttemptInterval">The time interval to be used.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> SetReconnectionAttemptInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan reconnectionAttemptInterval)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNegativeAndZero(nameof(reconnectionAttemptInterval), reconnectionAttemptInterval);
+
+            transportExtensions.GetSettings().Set(SettingsKeys.ReconnectionAttemptInterval, reconnectionAttemptInterval);
+
+            return transportExtensions;
+        }
     }
 }
