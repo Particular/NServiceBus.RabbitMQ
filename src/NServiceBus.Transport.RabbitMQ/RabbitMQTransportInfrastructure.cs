@@ -29,8 +29,13 @@
             settings.TryGet(SettingsKeys.ClientCertificates, out X509CertificateCollection clientCertificates);
             settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);
             settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
+            settings.TryGet(SettingsKeys.ClientCertificatePath, out string clientCertificatePath);
+            settings.TryGet(SettingsKeys.ClientCertificatePassPhrase, out string clientCertificatePassPhrase);
+            settings.TryGet(SettingsKeys.HeartbeatInterval, out TimeSpan heartbeatInterval);
+            settings.TryGet(SettingsKeys.ReconnectionAttemptInterval, out TimeSpan reconnectionAttemptInterval);
 
-            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism);
+            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism,
+                clientCertificatePath, clientCertificatePassPhrase, heartbeatInterval, reconnectionAttemptInterval);
 
             routingTopology = CreateRoutingTopology();
 
