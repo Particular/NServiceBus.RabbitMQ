@@ -185,6 +185,27 @@
         }
 
         /// <summary>
+        /// Specifies the file-based certificate to use for client authentication when connecting to the broker via TLS.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="path">The file path to the client authentication certificate when using TLS.</param>
+        /// <param name="passPhrase">The password for the client authentication certificate specified in <paramref name="path"/>.</param>
+        /// <returns></returns>
+        public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transportExtensions, string path, string passPhrase)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNullAndEmpty(nameof(path), path);
+            Guard.AgainstNullAndEmpty(nameof(passPhrase), passPhrase);
+
+            var settings = transportExtensions.GetSettings();
+
+            settings.Set(SettingsKeys.ClientCertificatePath, path);
+            settings.Set(SettingsKeys.ClientCertificatePassPhrase, passPhrase);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Disables all remote certificate validation when connecting to the broker via TLS.
         /// </summary>
         /// <param name="transportExtensions"></param>
