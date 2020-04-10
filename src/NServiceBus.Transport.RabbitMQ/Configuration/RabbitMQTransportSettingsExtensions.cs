@@ -280,14 +280,14 @@
         /// Set the time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="reconnectionAttemptInterval">The time interval to be used.</param>
+        /// <param name="networkRecoveryInterval">The time interval to be used.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> SetReconnectionAttemptInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan reconnectionAttemptInterval)
+        public static TransportExtensions<RabbitMQTransport> SetNetworkRecoveryInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan networkRecoveryInterval)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-            Guard.AgainstNegativeAndZero(nameof(reconnectionAttemptInterval), reconnectionAttemptInterval);
+            Guard.AgainstNegativeAndZero(nameof(networkRecoveryInterval), networkRecoveryInterval);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.ReconnectionAttemptInterval, reconnectionAttemptInterval);
+            transportExtensions.GetSettings().Set(SettingsKeys.NetworkRecoveryInterval, networkRecoveryInterval);
 
             return transportExtensions;
         }

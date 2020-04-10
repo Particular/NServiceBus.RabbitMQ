@@ -32,10 +32,10 @@
             settings.TryGet(SettingsKeys.ClientCertificatePath, out string clientCertificatePath);
             settings.TryGet(SettingsKeys.ClientCertificatePassPhrase, out string clientCertificatePassPhrase);
             settings.TryGet(SettingsKeys.HeartbeatInterval, out TimeSpan heartbeatInterval);
-            settings.TryGet(SettingsKeys.ReconnectionAttemptInterval, out TimeSpan reconnectionAttemptInterval);
+            settings.TryGet(SettingsKeys.NetworkRecoveryInterval, out TimeSpan networkRecoveryInterval);
 
             connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism,
-                clientCertificatePath, clientCertificatePassPhrase, heartbeatInterval, reconnectionAttemptInterval);
+                clientCertificatePath, clientCertificatePassPhrase, heartbeatInterval, networkRecoveryInterval);
 
             routingTopology = CreateRoutingTopology();
 
