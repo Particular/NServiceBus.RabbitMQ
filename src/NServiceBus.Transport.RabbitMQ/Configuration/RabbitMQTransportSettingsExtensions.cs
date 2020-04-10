@@ -152,7 +152,7 @@
         }
 
         /// <summary>
-        /// Specifies the certificates to use for client authentication when connecting to the broker via TLS.
+        /// Set the certificates to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="clientCertificates">The collection of certificates to use for client authentication.</param>
@@ -169,7 +169,7 @@
         }
 
         /// <summary>
-        /// Specifies the certificate to use for client authentication when connecting to the broker via TLS.
+        /// Set the certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="clientCertificate">The collection of certificates to use for client authentication.</param>
@@ -185,7 +185,7 @@
         }
 
         /// <summary>
-        /// Specifies the file-based certificate to use for client authentication when connecting to the broker via TLS.
+        /// Set the file-based certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="path">The file path to the client authentication certificate when using TLS.</param>
@@ -259,5 +259,7 @@
 
             return transportExtensions;
         }
+
+
     }
 }
