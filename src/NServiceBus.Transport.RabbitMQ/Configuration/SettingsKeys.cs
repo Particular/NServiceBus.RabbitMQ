@@ -7,9 +7,7 @@
         public const string UsePublisherConfirms = "RabbitMQ.UsePublisherConfirms";
         public const string PrefetchMultiplier = "RabbitMQ.PrefetchMultiplier";
         public const string PrefetchCount = "RabbitMQ.PrefetchCount";
-        public const string ClientCertificates = "RabbitMQ.ClientCertificates";
-        public const string ClientCertificatePath = "RabbitMQ.ClientCertificatePath";
-        public const string ClientCertificatePassPhrase = "RabbitMQ.ClientCertificatePassPhrase";
+        public const string ClientCertificateCollection = "RabbitMQ.ClientCertificateCollection";
         public const string DisableRemoteCertificateValidation = "RabbitMQ.DisableRemoteCertificateValidation";
         public const string UseExternalAuthMechanism = "RabbitMQ.UseExternalAuthMechanism";
         public const string EnableTimeoutManager = "NServiceBus.TimeoutManager.EnableMigrationMode";

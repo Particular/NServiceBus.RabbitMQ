@@ -26,16 +26,14 @@
 
             var endpointName = settings.EndpointName();
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString, endpointName);
-            settings.TryGet(SettingsKeys.ClientCertificates, out X509CertificateCollection clientCertificates);
+
+            settings.TryGet(SettingsKeys.ClientCertificateCollection, out X509Certificate2Collection clientCertificateCollection);
             settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);
             settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
-            settings.TryGet(SettingsKeys.ClientCertificatePath, out string clientCertificatePath);
-            settings.TryGet(SettingsKeys.ClientCertificatePassPhrase, out string clientCertificatePassPhrase);
-            settings.TryGet(SettingsKeys.HeartbeatInterval, out TimeSpan heartbeatInterval);
-            settings.TryGet(SettingsKeys.NetworkRecoveryInterval, out TimeSpan networkRecoveryInterval);
+            settings.TryGet(SettingsKeys.HeartbeatInterval, out ushort? heartbeatInterval);
+            settings.TryGet(SettingsKeys.NetworkRecoveryInterval, out TimeSpan? networkRecoveryInterval);
 
-            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificates, disableRemoteCertificateValidation, useExternalAuthMechanism,
-                clientCertificatePath, clientCertificatePassPhrase, heartbeatInterval, networkRecoveryInterval);
+            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificateCollection, disableRemoteCertificateValidation, useExternalAuthMechanism, heartbeatInterval, networkRecoveryInterval);
 
             routingTopology = CreateRoutingTopology();
 

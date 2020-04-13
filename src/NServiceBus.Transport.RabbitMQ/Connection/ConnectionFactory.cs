@@ -15,16 +15,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(
-            string endpointName,
-            ConnectionConfiguration connectionConfiguration,
-            X509CertificateCollection clientCertificates,
-            bool disableRemoteCertificateValidation,
-            bool useExternalAuthMechanism,
-            string clientCertificatePath,
-            string clientCertificatePassPhrase,
-            TimeSpan heartbeatInterval,
-            TimeSpan networkRecoveryInterval)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, ushort? heartbeatInterval, TimeSpan? networkRecoveryInterval)
         {
             if (endpointName is null)
             {
@@ -48,12 +39,6 @@
                 throw new ArgumentException("The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
             }
 
-            var requestedHeartbeatToUse = heartbeatInterval != default ? Convert.ToUInt16(heartbeatInterval.TotalSeconds) : connectionConfiguration.RequestedHeartbeat;
-            var networkRecoveryIntervalToUse = networkRecoveryInterval != default ? networkRecoveryInterval : connectionConfiguration.RetryDelay;
-            var sslCertPathToUse = !string.IsNullOrEmpty(clientCertificatePath) ? clientCertificatePath : connectionConfiguration.CertPath;
-            var sslCertPassPhraseToUse = !string.IsNullOrEmpty(clientCertificatePassPhrase) ? clientCertificatePassPhrase : connectionConfiguration.CertPassphrase;
-
-
             connectionFactory = new global::RabbitMQ.Client.ConnectionFactory
             {
                 HostName = connectionConfiguration.Host,
@@ -61,15 +46,15 @@
                 VirtualHost = connectionConfiguration.VirtualHost,
                 UserName = connectionConfiguration.UserName,
                 Password = connectionConfiguration.Password,
-                RequestedHeartbeat = requestedHeartbeatToUse,
-                NetworkRecoveryInterval = networkRecoveryIntervalToUse,
+                RequestedHeartbeat = heartbeatInterval ?? connectionConfiguration.RequestedHeartbeat,
+                NetworkRecoveryInterval = networkRecoveryInterval ?? connectionConfiguration.RetryDelay,
                 UseBackgroundThreadsForIO = true
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
-            connectionFactory.Ssl.Certs = clientCertificates;
-            connectionFactory.Ssl.CertPath = sslCertPathToUse;
-            connectionFactory.Ssl.CertPassphrase = sslCertPassPhraseToUse;
+            connectionFactory.Ssl.Certs = clientCertificateCollection;
+            connectionFactory.Ssl.CertPath = connectionConfiguration.CertPath;
+            connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;
             connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
 
