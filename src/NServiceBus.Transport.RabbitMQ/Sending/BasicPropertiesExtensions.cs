@@ -12,7 +12,7 @@
 
     static class BasicPropertiesExtensions
     {
-        public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints, out string destination)
+        public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints)
         {
             if (message.MessageId != null)
             {
@@ -23,7 +23,7 @@
 
             var messageHeaders = message.Headers ?? new Dictionary<string, string>();
 
-            var delayed = CalculateDelay(deliveryConstraints, out var delay, out destination);
+            var delayed = CalculateDelay(deliveryConstraints, out var delay);
 
             properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
@@ -77,10 +77,8 @@
             }
         }
 
-        static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, out long delay, out string destination)
+        static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, out long delay)
         {
-            destination = null;
-
             delay = 0;
             var delayed = false;
 

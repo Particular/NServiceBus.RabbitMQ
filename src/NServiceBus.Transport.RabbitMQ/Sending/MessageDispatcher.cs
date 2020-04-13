@@ -50,9 +50,9 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints, out var destination);
+            properties.Fill(message, transportOperation.DeliveryConstraints);
 
-            return channel.SendMessage(destination ?? transportOperation.Destination, message, properties);
+            return channel.SendMessage(transportOperation.Destination, message, properties);
         }
 
         Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel)
@@ -60,7 +60,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints, out _);
+            properties.Fill(message, transportOperation.DeliveryConstraints);
 
             return channel.PublishMessage(transportOperation.MessageType, message, properties);
         }
