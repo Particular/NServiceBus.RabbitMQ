@@ -15,7 +15,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509CertificateCollection clientCertificates, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, ushort? heartbeatInterval, TimeSpan? networkRecoveryInterval)
         {
             if (endpointName is null)
             {
@@ -46,13 +46,13 @@
                 VirtualHost = connectionConfiguration.VirtualHost,
                 UserName = connectionConfiguration.UserName,
                 Password = connectionConfiguration.Password,
-                RequestedHeartbeat = connectionConfiguration.RequestedHeartbeat,
-                NetworkRecoveryInterval = connectionConfiguration.RetryDelay,
+                RequestedHeartbeat = heartbeatInterval ?? connectionConfiguration.RequestedHeartbeat,
+                NetworkRecoveryInterval = networkRecoveryInterval ?? connectionConfiguration.RetryDelay,
                 UseBackgroundThreadsForIO = true
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
-            connectionFactory.Ssl.Certs = clientCertificates;
+            connectionFactory.Ssl.Certs = clientCertificateCollection;
             connectionFactory.Ssl.CertPath = connectionConfiguration.CertPath;
             connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;
