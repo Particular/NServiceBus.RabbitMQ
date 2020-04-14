@@ -20,6 +20,6 @@
         /// <summary>
         /// Gets an example connection string to use when reporting the lack of a configured connection string to the user.
         /// </summary>
-        public override string ExampleConnectionStringForErrorMessage => "host=localhost";
+        public override string ExampleConnectionStringForErrorMessage => "amqp://localhost";
     }
 }
