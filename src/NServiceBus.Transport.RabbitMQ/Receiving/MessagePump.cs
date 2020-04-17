@@ -247,6 +247,7 @@
                     {
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
+
                         var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
@@ -256,7 +257,10 @@
                     {
                         ++numberOfDeliveryAttempts;
                         headers = messageConverter.RetrieveHeaders(message);
-                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts);
+                        var contextBag = new ContextBag();
+                        contextBag.Set(message);
+
+                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {
