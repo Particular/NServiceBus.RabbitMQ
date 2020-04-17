@@ -30,7 +30,7 @@
             settings.TryGet(SettingsKeys.ClientCertificateCollection, out X509Certificate2Collection clientCertificateCollection);
             settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);
             settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
-            settings.TryGet(SettingsKeys.HeartbeatInterval, out ushort? heartbeatInterval);
+            settings.TryGet(SettingsKeys.HeartbeatInterval, out TimeSpan? heartbeatInterval);
             settings.TryGet(SettingsKeys.NetworkRecoveryInterval, out TimeSpan? networkRecoveryInterval);
 
             connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificateCollection, disableRemoteCertificateValidation, useExternalAuthMechanism, heartbeatInterval, networkRecoveryInterval);

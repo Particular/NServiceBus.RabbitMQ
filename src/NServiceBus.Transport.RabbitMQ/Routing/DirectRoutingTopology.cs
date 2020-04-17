@@ -37,7 +37,7 @@
             channel.BasicPublish(string.Empty, address, true, properties, message.Body);
         }
 
-        public void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties)
+        public void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
         {
             channel.BasicPublish(string.Empty, address, true, properties, body);
         }
