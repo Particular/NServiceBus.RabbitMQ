@@ -94,7 +94,7 @@
         [Test]
         public void Should_set_default_requested_heartbeat()
         {
-            Assert.AreEqual(defaults.RequestedHeartbeat, 60);
+            Assert.AreEqual(defaults.RequestedHeartbeat, TimeSpan.FromSeconds(60));
         }
 
         [Test]
