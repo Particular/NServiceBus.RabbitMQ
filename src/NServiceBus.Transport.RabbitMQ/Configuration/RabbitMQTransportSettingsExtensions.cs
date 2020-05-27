@@ -268,15 +268,7 @@
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNegativeAndZero(nameof(heartbeatInterval), heartbeatInterval);
 
-            try
-            {
-                var result = Convert.ToUInt16(heartbeatInterval.TotalSeconds);
-                transportExtensions.GetSettings().Set(SettingsKeys.HeartbeatInterval, result);
-            }
-            catch(OverflowException)
-            {
-                throw new ArgumentOutOfRangeException(nameof(heartbeatInterval), $"Heartbeat interval cannot exceed {ushort.MaxValue} seconds.");
-            }
+            transportExtensions.GetSettings().Set(SettingsKeys.HeartbeatInterval, heartbeatInterval);
 
             return transportExtensions;
         }
