@@ -17,7 +17,7 @@
         const string defaultVirtualHost = "/";
         const string defaultUserName = "guest";
         const string defaultPassword = "guest";
-        static readonly TimeSpan defaultRequestedHeartbeat = TimeSpan.FromSeconds(60);
+        const ushort defaultRequestedHeartbeat = 60;
         static readonly TimeSpan defaultRetryDelay = TimeSpan.FromSeconds(10);
         const string defaultCertPath = "";
         const string defaultCertPassphrase = null;
@@ -90,7 +90,10 @@
             var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);
             var userName = GetValue(dictionary, "userName", defaultUserName);
             var password = GetValue(dictionary, "password", defaultPassword);
-            var requestedHeartbeat = GetValue(dictionary, "requestedHeartbeat", TimeSpan.TryParse, defaultRequestedHeartbeat, invalidOptionsMessage);
+
+            var requestedHeartbeatSeconds = GetValue(dictionary, "requestedHeartbeat", ushort.TryParse, defaultRequestedHeartbeat, invalidOptionsMessage);
+            var requestedHeartbeat = TimeSpan.FromSeconds(requestedHeartbeatSeconds);
+
             var retryDelay = GetValue(dictionary, "retryDelay", TimeSpan.TryParse, defaultRetryDelay, invalidOptionsMessage);
             var certPath = GetValue(dictionary, "certPath", defaultCertPath);
             var certPassPhrase = GetValue(dictionary, "certPassphrase", defaultCertPassphrase);
