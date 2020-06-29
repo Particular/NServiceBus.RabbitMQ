@@ -4,7 +4,6 @@ The [NServiceBus.RabbitMQ NuGet package](https://www.nuget.org/packages/NService
 
 For more information, see the [documentation](https://docs.particular.net/nservicebus/rabbitmq/).
 
-
 ## Running tests locally
 
 All tests expects a connection string to be set via the `RabbitMQTransport_ConnectionString` environment variable.
