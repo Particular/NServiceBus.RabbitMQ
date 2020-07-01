@@ -157,6 +157,8 @@
         {
             var eventRaisingThreadId = Thread.CurrentThread.ManagedThreadId;
 
+            var messageBody = eventArgs.Body.ToArray();
+
             try
             {
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
@@ -192,7 +194,7 @@
                     await Task.Yield();
                 }
 
-                await Process(eventArgs).ConfigureAwait(false);
+                await Process(eventArgs, messageBody).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -205,7 +207,7 @@
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message)
+        async Task Process(BasicDeliverEventArgs message, byte[] messageBody)
         {
             Dictionary<string, string> headers;
 
@@ -216,7 +218,7 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(message, messageBody, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -230,7 +232,7 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(message, messageBody, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -248,7 +250,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, message.Body.ToArray(), transportTransaction, tokenSource, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? new byte[0], transportTransaction, tokenSource, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
@@ -260,7 +262,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body.ToArray(), transportTransaction, numberOfDeliveryAttempts, contextBag);
+                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {
@@ -299,7 +301,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue)
+        async Task MovePoisonMessage(BasicDeliverEventArgs message, byte[] messageBody, string queue)
         {
             try
             {
@@ -307,7 +309,7 @@
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, message.Body.ToArray(), message.BasicProperties).ConfigureAwait(false);
+                    await channel.RawSendInCaseOfFailure(queue, messageBody, message.BasicProperties).ConfigureAwait(false);
                 }
                 finally
                 {
