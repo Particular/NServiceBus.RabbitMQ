@@ -85,7 +85,7 @@ namespace NServiceBus.Transport.RabbitMQ
             return task;
         }
 
-        public Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
+        public Task RawSendInCaseOfFailure(string address, byte[] body, IBasicProperties properties)
         {
             Task task;
 

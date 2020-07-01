@@ -50,7 +50,7 @@
         /// <param name="address">The address of the destination endpoint.</param>
         /// <param name="body">The raw message body to send.</param>
         /// <param name="properties">The RabbitMQ properties of the message to send.</param>
-        void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties);
+        void RawSendInCaseOfFailure(IModel channel, string address, byte[] body, IBasicProperties properties);
 
         /// <summary>
         /// Declares queues and performs any other initialization logic needed (e.g. creating exchanges and bindings).

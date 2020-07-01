@@ -307,7 +307,7 @@
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties).ConfigureAwait(false);
+                    await channel.RawSendInCaseOfFailure(queue, message.Body.ToArray(), message.BasicProperties).ConfigureAwait(false);
                 }
                 finally
                 {
