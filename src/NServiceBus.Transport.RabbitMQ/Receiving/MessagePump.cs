@@ -159,6 +159,17 @@
 
             var messageBody = eventArgs.Body.ToArray();
 
+            // Is here until upgraded to 6.2 , required later for `RetrieveMessageId`.
+            eventArgs = new BasicDeliverEventArgs(
+                consumerTag: eventArgs.ConsumerTag,
+                deliveryTag: eventArgs.DeliveryTag,
+                redelivered: eventArgs.Redelivered,
+                exchange: eventArgs.Exchange,
+                routingKey: eventArgs.RoutingKey,
+                properties: eventArgs.BasicProperties,
+                body: messageBody
+            );
+
             try
             {
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
