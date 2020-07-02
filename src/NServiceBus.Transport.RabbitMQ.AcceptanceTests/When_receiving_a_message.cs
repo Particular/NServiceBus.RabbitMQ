@@ -36,7 +36,7 @@
                     Context.HandlerHasAccessToBasicDeliverEventArgs = context.Extensions.TryGet<BasicDeliverEventArgs>(out _);
                     Context.MessageReceived = true;
 
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }

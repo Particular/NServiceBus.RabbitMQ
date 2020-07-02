@@ -28,7 +28,7 @@
                 }
             }
 
-            return TaskEx.CompletedTask;
+            return Task.CompletedTask;
         }
     }
 }

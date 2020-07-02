@@ -58,7 +58,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
                 {
                     Context.RepliedToWrongQueue = true;
                     Context.Done = true;
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }
@@ -77,7 +77,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
                     Context.Done = true;
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }

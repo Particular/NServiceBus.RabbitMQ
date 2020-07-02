@@ -48,7 +48,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
             else
             {
-                task = TaskEx.CompletedTask;
+                task = Task.CompletedTask;
             }
 
             if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
@@ -77,7 +77,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
             else
             {
-                task = TaskEx.CompletedTask;
+                task = Task.CompletedTask;
             }
 
             routingTopology.Publish(channel, type, message, properties);
@@ -102,7 +102,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
             else
             {
-                task = TaskEx.CompletedTask;
+                task = Task.CompletedTask;
             }
 
             routingTopology.RawSendInCaseOfFailure(channel, address, body, properties);

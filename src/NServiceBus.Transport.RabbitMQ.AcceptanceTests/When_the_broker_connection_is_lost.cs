@@ -64,7 +64,7 @@
                         await session.SendLocal(new MyRequest { MessageId = context.MessageId });
                     }
 
-                    protected override Task OnStop(IMessageSession session) => TaskEx.CompletedTask;
+                    protected override Task OnStop(IMessageSession session) => Task.CompletedTask;
 
                     async Task BreakConnectionBySendingInvalidMessage()
                     {
@@ -102,7 +102,7 @@
                         myContext.GotTheMessage = true;
                     }
 
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }

@@ -70,7 +70,7 @@
                 queuePurger.Purge(settings.InputQueue);
             }
 
-            return TaskEx.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public void Start(PushRuntimeSettings limitations)

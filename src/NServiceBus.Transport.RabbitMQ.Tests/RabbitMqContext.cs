@@ -44,10 +44,10 @@
             messagePump.Init(messageContext =>
             {
                 receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers, messageContext.Body));
-                return TaskEx.CompletedTask;
+                return Task.CompletedTask;
             },
                 ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
-                new CriticalError(_ => TaskEx.CompletedTask),
+                new CriticalError(_ => Task.CompletedTask),
                 new PushSettings(ReceiverQueue, ErrorQueue, true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
 
