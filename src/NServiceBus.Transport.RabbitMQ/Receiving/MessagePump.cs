@@ -159,8 +159,7 @@
 
             var messageBody = eventArgs.Body.ToArray();
 
-            // Is here until upgraded to 6.2 , required later for `RetrieveMessageId`.
-            eventArgs = new BasicDeliverEventArgs(
+            var eventArgsCopy = new BasicDeliverEventArgs(
                 consumerTag: eventArgs.ConsumerTag,
                 deliveryTag: eventArgs.DeliveryTag,
                 redelivered: eventArgs.Redelivered,
@@ -205,7 +204,7 @@
                     await Task.Yield();
                 }
 
-                await Process(eventArgs, messageBody).ConfigureAwait(false);
+                await Process(eventArgsCopy, messageBody).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
