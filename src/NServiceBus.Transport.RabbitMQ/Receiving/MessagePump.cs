@@ -228,7 +228,7 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, messageBody, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -242,7 +242,7 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, messageBody, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -311,7 +311,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, byte[] messageBody, string queue)
+        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue)
         {
             try
             {
@@ -319,7 +319,7 @@
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, messageBody, message.BasicProperties).ConfigureAwait(false);
+                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties).ConfigureAwait(false);
                 }
                 finally
                 {
