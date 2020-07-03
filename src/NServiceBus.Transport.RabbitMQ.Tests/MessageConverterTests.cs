@@ -29,98 +29,98 @@
             public string Type { get; set; }
             public string UserId { get; set; }
 
-            public ushort ProtocolClassId => throw new NotImplementedException();
+            public ushort ProtocolClassId => throw new NotSupportedException();
 
-            public string ProtocolClassName => throw new NotImplementedException();
+            public string ProtocolClassName => throw new NotSupportedException();
 
             public void ClearAppId()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearClusterId()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearContentEncoding()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearContentType()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearCorrelationId()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearDeliveryMode()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearExpiration()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearHeaders()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearMessageId()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearPriority()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearReplyTo()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearTimestamp()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearType()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public void ClearUserId()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsAppIdPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsClusterIdPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsContentEncodingPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsContentTypePresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsCorrelationIdPresent() => !string.IsNullOrEmpty(CorrelationId);
@@ -129,33 +129,33 @@
 
             public bool IsExpirationPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsHeadersPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsMessageIdPresent() => !string.IsNullOrEmpty(MessageId);
 
             public bool IsPriorityPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsReplyToPresent() => !string.IsNullOrEmpty(ReplyTo);
 
             public bool IsTimestampPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public bool IsTypePresent() => !string.IsNullOrEmpty(Type);
 
             public bool IsUserIdPresent()
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
         }
 
