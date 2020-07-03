@@ -64,7 +64,7 @@
                 {
                     myContext.GotTheMessage = true;
 
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }

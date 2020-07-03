@@ -74,7 +74,7 @@
                         return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
                     }
 
-                    protected override Task OnStop(IMessageSession session) => TaskEx.CompletedTask;
+                    protected override Task OnStop(IMessageSession session) => Task.CompletedTask;
 
                     readonly IDispatchMessages dispatchMessages;
                     readonly ReadOnlySettings settings;
@@ -95,7 +95,7 @@
                     myContext.GotTheMessage = true;
                     myContext.ReceivedMessageId = context.MessageId;
 
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }

@@ -25,7 +25,7 @@
             Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
-            Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, 3);
+            Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, TimeSpan.FromSeconds(3));
             Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
             Assert.AreEqual(connectionConfiguration.UseTls, true);
             Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
@@ -94,7 +94,7 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;requestedHeartbeat=5", endpointName);
 
-            Assert.AreEqual(5, connectionConfiguration.RequestedHeartbeat);
+            Assert.AreEqual(TimeSpan.FromSeconds(5), connectionConfiguration.RequestedHeartbeat);
         }
 
         [Test]
@@ -210,7 +210,7 @@
         [Test]
         public void Should_set_default_requested_heartbeat()
         {
-            Assert.AreEqual(defaults.RequestedHeartbeat, 60);
+            Assert.AreEqual(defaults.RequestedHeartbeat, TimeSpan.FromSeconds(60));
         }
 
         [Test]

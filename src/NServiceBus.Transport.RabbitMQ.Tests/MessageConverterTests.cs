@@ -3,13 +3,162 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using global::RabbitMQ.Client.Framing;
     using NUnit.Framework;
 
     [TestFixture]
     class MessageConverterTests
     {
+        class TestingBasicProperties : IBasicProperties
+        {
+            public string AppId { get; set; }
+            public string ClusterId { get; set; }
+            public string ContentEncoding { get; set; }
+            public string ContentType { get; set; }
+            public string CorrelationId { get; set; }
+            public byte DeliveryMode { get; set; }
+            public string Expiration { get; set; }
+            public IDictionary<string, object> Headers { get; set; }
+            public string MessageId { get; set; }
+            public bool Persistent { get; set; }
+            public byte Priority { get; set; }
+            public string ReplyTo { get; set; }
+            public PublicationAddress ReplyToAddress { get; set; }
+            public AmqpTimestamp Timestamp { get; set; }
+            public string Type { get; set; }
+            public string UserId { get; set; }
+
+            public ushort ProtocolClassId => throw new NotSupportedException();
+
+            public string ProtocolClassName => throw new NotSupportedException();
+
+            public void ClearAppId()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearClusterId()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearContentEncoding()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearContentType()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearCorrelationId()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearDeliveryMode()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearExpiration()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearHeaders()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearMessageId()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearPriority()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearReplyTo()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearTimestamp()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearType()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void ClearUserId()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsAppIdPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsClusterIdPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsContentEncodingPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsContentTypePresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsCorrelationIdPresent() => !string.IsNullOrEmpty(CorrelationId);
+
+            public bool IsDeliveryModePresent() => DeliveryMode != 0;
+
+            public bool IsExpirationPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsHeadersPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsMessageIdPresent() => !string.IsNullOrEmpty(MessageId);
+
+            public bool IsPriorityPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsReplyToPresent() => !string.IsNullOrEmpty(ReplyTo);
+
+            public bool IsTimestampPresent()
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool IsTypePresent() => !string.IsNullOrEmpty(Type);
+
+            public bool IsUserIdPresent()
+            {
+                throw new NotSupportedException();
+            }
+        }
+
         MessageConverter converter = new MessageConverter();
 
         [Test]
@@ -17,7 +166,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah"
                 }
@@ -35,7 +184,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties()
+                BasicProperties = new TestingBasicProperties()
             };
 
             var headers = new Dictionary<string, string>();
@@ -50,7 +199,7 @@
 
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties()
+                BasicProperties = new TestingBasicProperties()
             };
 
             var headers = new Dictionary<string, string>();
@@ -65,10 +214,10 @@
 
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties()
+                BasicProperties = new TestingBasicProperties()
             };
 
-            var headers = new Dictionary<string, string> { { Headers.MessageId, "Blah" } };
+            var headers = new Dictionary<string, string> { { NServiceBus.Headers.MessageId, "Blah" } };
 
             var messageId = customConverter.RetrieveMessageId(message, headers);
 
@@ -80,7 +229,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
@@ -101,7 +250,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     ReplyTo = "myaddress",
                     MessageId = "Blah"
@@ -111,7 +260,7 @@
             var headers = converter.RetrieveHeaders(message);
 
             Assert.NotNull(headers);
-            Assert.AreEqual("myaddress", headers[Headers.ReplyToAddress]);
+            Assert.AreEqual("myaddress", headers[NServiceBus.Headers.ReplyToAddress]);
         }
 
         [Test]
@@ -119,13 +268,13 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     ReplyTo = "myaddress",
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
                     {
-                        {Headers.ReplyToAddress, Encoding.UTF8.GetBytes("nsb set address")}
+                        {NServiceBus.Headers.ReplyToAddress, Encoding.UTF8.GetBytes("nsb set address")}
                     }
                 }
             };
@@ -133,7 +282,7 @@
             var headers = converter.RetrieveHeaders(message);
 
             Assert.NotNull(headers);
-            Assert.AreEqual("myaddress", headers[Headers.ReplyToAddress]);
+            Assert.AreEqual("myaddress", headers[NServiceBus.Headers.ReplyToAddress]);
         }
 
         [Test]
@@ -141,7 +290,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
@@ -176,7 +325,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
@@ -197,7 +346,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
@@ -218,7 +367,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
@@ -239,7 +388,7 @@
         {
             var message = new BasicDeliverEventArgs
             {
-                BasicProperties = new BasicProperties
+                BasicProperties = new TestingBasicProperties
                 {
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>

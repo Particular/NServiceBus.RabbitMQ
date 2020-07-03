@@ -41,7 +41,7 @@
 
             public class MyMessageHandler : IHandleMessages<MyMessage>
             {
-                public Task Handle(MyMessage message, IMessageHandlerContext context) => TaskEx.CompletedTask;
+                public Task Handle(MyMessage message, IMessageHandlerContext context) => Task.CompletedTask;
             }
         }
 

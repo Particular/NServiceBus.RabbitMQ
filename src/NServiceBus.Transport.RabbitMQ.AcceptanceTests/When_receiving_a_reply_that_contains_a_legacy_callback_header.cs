@@ -59,7 +59,7 @@
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }
@@ -90,7 +90,7 @@
                 {
                     Context.IncorrectHandlerInvoked = true;
 
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }
@@ -110,7 +110,7 @@
                 {
                     Context.AuditMessageReceived = true;
 
-                    return TaskEx.CompletedTask;
+                    return Task.CompletedTask;
                 }
             }
         }

@@ -31,14 +31,14 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
 
-        return TaskEx.CompletedTask;
+        return Task.CompletedTask;
     }
 
     public Task Cleanup()
     {
         PurgeQueues();
 
-        return TaskEx.CompletedTask;
+        return Task.CompletedTask;
     }
 
     void PurgeQueues()

@@ -27,22 +27,6 @@
         }
 
         /// <summary>
-        /// Registers a custom routing topology.
-        /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
-        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.UseCustomRoutingTopology(TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)")]
-        public static TransportExtensions<RabbitMQTransport> UseRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
-        {
-            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-            Guard.AgainstNull(nameof(topologyFactory), topologyFactory);
-
-            transportExtensions.GetSettings().Set(topologyFactory);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Uses the conventional routing topology.
         /// </summary>
         /// <param name="transportExtensions"></param>
@@ -152,23 +136,6 @@
         }
 
         /// <summary>
-        /// Specifies the certificates to use for client authentication when connecting to the broker via TLS.
-        /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <param name="clientCertificates">The collection of certificates to use for client authentication.</param>
-        /// <returns></returns>
-        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.SetClientCertificate(TransportExtensions<RabbitMQTransport> transportExtensions, X509Certificate2 clientCertificate)")]
-        public static TransportExtensions<RabbitMQTransport> SetClientCertificates(this TransportExtensions<RabbitMQTransport> transportExtensions, X509CertificateCollection clientCertificates)
-        {
-            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-            Guard.AgainstNull(nameof(clientCertificates), clientCertificates);
-
-            transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificateCollection, clientCertificates);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Specifies the certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         /// <param name="transportExtensions"></param>
@@ -268,15 +235,7 @@
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNegativeAndZero(nameof(heartbeatInterval), heartbeatInterval);
 
-            try
-            {
-                var result = Convert.ToUInt16(heartbeatInterval.TotalSeconds);
-                transportExtensions.GetSettings().Set(SettingsKeys.HeartbeatInterval, result);
-            }
-            catch(OverflowException)
-            {
-                throw new ArgumentOutOfRangeException(nameof(heartbeatInterval), $"Heartbeat interval cannot exceed {ushort.MaxValue} seconds.");
-            }
+            transportExtensions.GetSettings().Set(SettingsKeys.HeartbeatInterval, heartbeatInterval);
 
             return transportExtensions;
         }

@@ -70,7 +70,7 @@
                 queuePurger.Purge(settings.InputQueue);
             }
 
-            return TaskEx.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -157,6 +157,18 @@
         {
             var eventRaisingThreadId = Thread.CurrentThread.ManagedThreadId;
 
+            var messageBody = eventArgs.Body.ToArray();
+
+            var eventArgsCopy = new BasicDeliverEventArgs(
+                consumerTag: eventArgs.ConsumerTag,
+                deliveryTag: eventArgs.DeliveryTag,
+                redelivered: eventArgs.Redelivered,
+                exchange: eventArgs.Exchange,
+                routingKey: eventArgs.RoutingKey,
+                properties: eventArgs.BasicProperties,
+                body: messageBody
+            );
+
             try
             {
                 await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
@@ -192,7 +204,7 @@
                     await Task.Yield();
                 }
 
-                await Process(eventArgs).ConfigureAwait(false);
+                await Process(eventArgsCopy, messageBody).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -205,7 +217,7 @@
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message)
+        async Task Process(BasicDeliverEventArgs message, byte[] messageBody)
         {
             Dictionary<string, string> headers;
 
@@ -248,7 +260,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, message.Body ?? new byte[0], transportTransaction, tokenSource, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? new byte[0], transportTransaction, tokenSource, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
@@ -260,7 +272,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
+                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {
