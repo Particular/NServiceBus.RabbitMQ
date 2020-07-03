@@ -111,11 +111,6 @@
 
             if (!settings.TryGet(SettingsKeys.UseDurableExchangesAndQueues, out bool useDurableExchangesAndQueues))
             {
-                if (!settings.DurableMessagesEnabled())
-                {
-                    throw new Exception("When durable messages are disabled, 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseDurableExchangesAndQueues()' must also be called to specify exchange and queue durability settings.");
-                }
-
                 useDurableExchangesAndQueues = true;
             }
 
