@@ -210,16 +210,15 @@
         }
 
         /// <summary>
-        /// Specifies whether exchanges and queues should be declared as durable or not.
+        /// Configures the transport to create and use non-durable exchanges and queues.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="useDurableExchangesAndQueues">Specifies whether exchanges and queues should be declared as durable or not.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> UseDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues)
+        public static TransportExtensions<RabbitMQTransport> DisableDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.UseDurableExchangesAndQueues, useDurableExchangesAndQueues);
+            transportExtensions.GetSettings().Set(SettingsKeys.UseDurableExchangesAndQueues, false);
 
             return transportExtensions;
         }
