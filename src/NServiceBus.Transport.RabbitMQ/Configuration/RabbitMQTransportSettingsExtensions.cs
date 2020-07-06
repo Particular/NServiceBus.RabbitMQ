@@ -210,7 +210,7 @@
         }
 
         /// <summary>
-        /// Configures the transport to create and use non-durable exchanges and queues.
+        /// Specifies that exchanges and queues should be declared as non-durable.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
