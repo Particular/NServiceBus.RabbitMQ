@@ -68,16 +68,7 @@
                 return;
             }
 
-            try
-            {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
-            }
-            // ReSharper disable EmptyGeneralCatchClause
-            catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
-            {
-
-            }
+            channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
         }
 
         string GetRoutingKeyForPublish(Type eventType) => conventions.RoutingKey(eventType);

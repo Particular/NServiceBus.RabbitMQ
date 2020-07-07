@@ -43,17 +43,8 @@
         }
 
         public void TeardownSubscription(IModel channel, Type type, string subscriberName)
-        {
-            try
-            {
-                channel.ExchangeUnbind(subscriberName, ExchangeName(type), string.Empty, null);
-            }
-            // ReSharper disable EmptyGeneralCatchClause
-            catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
-            {
-                // TODO: Any better way to make this idempotent?
-            }
+        { 
+            channel.ExchangeUnbind(subscriberName, ExchangeName(type), string.Empty, null);
         }
 
         public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
@@ -132,16 +123,7 @@
         {
             NameValidator.ThrowIfNameIsTooLong(exchangeName);
 
-            try
-            {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
-            }
-            // ReSharper disable EmptyGeneralCatchClause
-            catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
-            {
-                // TODO: Any better way to make this idempotent?
-            }
+            channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
         }
 
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
