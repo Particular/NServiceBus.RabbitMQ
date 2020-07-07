@@ -14,6 +14,12 @@ namespace NServiceBus
             throw new NotImplementedException();
         }
 
+        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.DisableDurableExchangesAndQueues(TransportExtensions<RabbitMQTransport> transportExtensions)")]
+        public static TransportExtensions<RabbitMQTransport> UseDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues)
+        {
+            throw new NotImplementedException();
+        }
+
         [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", ReplacementTypeOrMember = "RabbitMQTransportSettingsExtensions.SetClientCertificate(TransportExtensions<RabbitMQTransport> transportExtensions, X509Certificate2 clientCertificate)")]
         public static TransportExtensions<RabbitMQTransport> SetClientCertificates(this TransportExtensions<RabbitMQTransport> transportExtensions, X509CertificateCollection clientCertificates)
         {
