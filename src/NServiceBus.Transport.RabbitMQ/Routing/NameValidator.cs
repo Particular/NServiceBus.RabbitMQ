@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (Encoding.UTF8.GetByteCount(name) > 255)
             {
-                throw new Exception($"{name} exceeds 255 bytes which is maximal length for a queue or an exchange.");
+                throw new ArgumentOutOfRangeException(nameof(name), name, "Value exceeds the maximum allowed length of 255 bytes.");
             }
         }
     }
