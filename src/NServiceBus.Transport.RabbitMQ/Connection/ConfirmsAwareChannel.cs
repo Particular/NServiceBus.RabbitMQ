@@ -13,15 +13,14 @@ namespace NServiceBus.Transport.RabbitMQ
         public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology)
         {
             channel = connection.CreateModel();
+            channel.BasicAcks += Channel_BasicAcks;
+            channel.BasicNacks += Channel_BasicNacks;
             channel.BasicReturn += Channel_BasicReturn;
-
-            this.routingTopology = routingTopology;
+            channel.ModelShutdown += Channel_ModelShutdown;
 
             channel.ConfirmSelect();
 
-            channel.BasicAcks += Channel_BasicAcks;
-            channel.BasicNacks += Channel_BasicNacks;
-            channel.ModelShutdown += Channel_ModelShutdown;
+            this.routingTopology = routingTopology;
 
             messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
         }

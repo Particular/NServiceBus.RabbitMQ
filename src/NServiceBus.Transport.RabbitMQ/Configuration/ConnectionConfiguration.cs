@@ -252,7 +252,7 @@
 
             if (dictionary.ContainsKey("usepublisherconfirms"))
             {
-                invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UsePublisherConfirms' instead.");
+                invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Consult the documentation for further information.");
             }
         }
 
