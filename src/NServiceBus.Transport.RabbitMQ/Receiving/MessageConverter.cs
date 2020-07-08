@@ -13,7 +13,7 @@
             messageIdStrategy = DefaultMessageIdStrategy;
         }
 
-        public MessageConverter(Func<BasicDeliverEventArgs, string> messageIdStrategy)
+        public MessageConverter(GetMessageId messageIdStrategy)
         {
             this.messageIdStrategy = messageIdStrategy;
         }
@@ -157,7 +157,7 @@
             return value?.ToString();
         }
 
-        readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
+        readonly GetMessageId messageIdStrategy;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
 

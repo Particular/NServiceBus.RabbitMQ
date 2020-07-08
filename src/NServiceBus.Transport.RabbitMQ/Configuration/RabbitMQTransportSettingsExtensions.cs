@@ -16,7 +16,7 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
-        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
+        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, CreateTopologyFactory topologyFactory)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(topologyFactory), topologyFactory);
@@ -43,7 +43,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, GenerateRoutingKey routingKeyConvention = null, GetExchangeName exchangeNameConvention = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -66,7 +66,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="customIdStrategy">The user-defined strategy for giving the message a unique ID.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs, string> customIdStrategy)
+        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, GetMessageId customIdStrategy)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(customIdStrategy), customIdStrategy);
@@ -256,4 +256,27 @@
             return transportExtensions;
         }
     }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public delegate string GenerateRoutingKey(Type type);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public delegate string GetExchangeName();
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    public delegate string GetMessageId(BasicDeliverEventArgs message);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="useDurableExchangesAndQueues"></param>
+    /// <returns></returns>
+    public delegate IRoutingTopology CreateTopologyFactory(bool useDurableExchangesAndQueues);
 }

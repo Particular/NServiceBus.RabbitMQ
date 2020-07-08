@@ -95,15 +95,15 @@
 
         public class Conventions
         {
-            public Conventions(Func<string> exchangeName, Func<Type, string> routingKey)
+            public Conventions(GetExchangeName exchangeName, GenerateRoutingKey routingKey)
             {
                 ExchangeName = exchangeName;
                 RoutingKey = routingKey;
             }
 
-            public Func<string> ExchangeName { get; }
+            public GetExchangeName ExchangeName { get; }
 
-            public Func<Type, string> RoutingKey { get; }
+            public GenerateRoutingKey RoutingKey { get; }
         }
     }
 }

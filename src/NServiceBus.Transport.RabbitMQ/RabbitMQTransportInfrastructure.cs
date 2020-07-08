@@ -104,7 +104,7 @@
 
         IRoutingTopology CreateRoutingTopology()
         {
-            if (!settings.TryGet(out Func<bool, IRoutingTopology> topologyFactory))
+            if (!settings.TryGet(out CreateTopologyFactory topologyFactory))
             {
                 throw new InvalidOperationException("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
             }
@@ -128,7 +128,7 @@
 
             if (settings.HasSetting(SettingsKeys.CustomMessageIdStrategy))
             {
-                messageConverter = new MessageConverter(settings.Get<Func<BasicDeliverEventArgs, string>>(SettingsKeys.CustomMessageIdStrategy));
+                messageConverter = new MessageConverter(settings.Get<GetMessageId>(SettingsKeys.CustomMessageIdStrategy));
             }
             else
             {
