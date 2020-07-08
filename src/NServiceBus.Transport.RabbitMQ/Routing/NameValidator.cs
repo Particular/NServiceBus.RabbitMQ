@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace NServiceBus.Transport.RabbitMQ
 {
@@ -6,9 +7,9 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public static void ThrowIfNameIsTooLong(string name)
         {
-            if (name.Length > 255)
+            if (Encoding.UTF8.GetByteCount(name) > 255)
             {
-                throw new Exception($"{name} exceeds 255 characters which is maximal length for a queue or an exchange.");
+                throw new Exception($"{name} exceeds 255 bytes which is maximal length for a queue or an exchange.");
             }
         }
     }
