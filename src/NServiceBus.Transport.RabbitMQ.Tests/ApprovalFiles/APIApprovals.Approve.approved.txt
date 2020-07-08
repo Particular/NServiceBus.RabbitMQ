@@ -31,7 +31,6 @@ namespace NServiceBus
             "tly throws a NotImplementedException. Will be removed in version 7.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDurableExchangesAndQueues(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UsePublisherConfirms(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool usePublisherConfirms) { }
         [System.ObsoleteAttribute("Use `RabbitMQTransportSettingsExtensions.UseCustomRoutingTopology(TransportExtens" +
             "ions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)` inst" +
             "ead. The member currently throws a NotImplementedException. Will be removed in v" +
