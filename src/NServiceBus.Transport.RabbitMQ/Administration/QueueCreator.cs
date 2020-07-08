@@ -16,7 +16,7 @@
         public Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using (var channel = new ModelWithValidation(connection.CreateModel()))
             {
                 DelayInfrastructure.Build(channel);
 

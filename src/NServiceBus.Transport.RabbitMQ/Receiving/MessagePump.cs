@@ -81,7 +81,7 @@
 
             connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
 
-            var channel = connection.CreateModel();
+            var channel = new ModelWithValidation(connection.CreateModel());
 
             long prefetchCount;
 

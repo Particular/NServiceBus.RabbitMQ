@@ -12,7 +12,7 @@ namespace NServiceBus.Transport.RabbitMQ
         public void Purge(string queue)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using (var channel = new ModelWithValidation(connection.CreateModel()))
             {
                 channel.QueuePurge(queue);
             }

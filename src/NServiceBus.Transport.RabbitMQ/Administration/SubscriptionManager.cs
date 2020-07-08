@@ -20,7 +20,7 @@
         public Task Subscribe(Type eventType, ContextBag context)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using (var channel = new ModelWithValidation(connection.CreateModel()))
             {
                 routingTopology.SetupSubscription(channel, eventType, localQueue);
             }
@@ -31,7 +31,7 @@
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using (var channel = new ModelWithValidation(connection.CreateModel()))
             {
                 routingTopology.TeardownSubscription(channel, eventType, localQueue);
             }
