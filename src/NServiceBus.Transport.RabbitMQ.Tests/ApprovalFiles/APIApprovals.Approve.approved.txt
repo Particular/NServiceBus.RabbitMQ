@@ -10,7 +10,7 @@ namespace NServiceBus
     }
     public class static RabbitMQTransportSettingsExtensions
     {
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.Transport.RabbitMQ.GetMessageId customIdStrategy) { }
         public static NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableRemoteCertificateValidation(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
@@ -23,24 +23,28 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetNetworkRecoveryInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan networkRecoveryInterval) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.Transport.RabbitMQ.CreateTopologyFactory topologyFactory) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.Transport.RabbitMQ.GenerateRoutingKey routingKeyConvention = null, NServiceBus.Transport.RabbitMQ.GetExchangeName exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDurableExchangesAndQueues(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UsePublisherConfirms(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, bool usePublisherConfirms) { }
         [System.ObsoleteAttribute("Use `RabbitMQTransportSettingsExtensions.UseCustomRoutingTopology(TransportExtens" +
-            "ions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology>)` inst" +
-            "ead. The member currently throws a NotImplementedException. Will be removed in v" +
-            "ersion 7.0.0.", true)]
+            "ions<RabbitMQTransport> transportExtensions, CreateTopologyFactory)` instead. Th" +
+            "e member currently throws a NotImplementedException. Will be removed in version " +
+            "7.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
     }
 }
 namespace NServiceBus.Transport.RabbitMQ
 {
+    public delegate NServiceBus.Transport.RabbitMQ.IRoutingTopology CreateTopologyFactory(bool useDurableExchangesAndQueues);
     public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
         public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings EnableTimeoutManager() { }
     }
+    public delegate string GenerateRoutingKey(System.Type type);
+    public delegate string GetExchangeName();
+    public delegate string GetMessageId(RabbitMQ.Client.Events.BasicDeliverEventArgs message);
     public interface IRoutingTopology
     {
         void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey);

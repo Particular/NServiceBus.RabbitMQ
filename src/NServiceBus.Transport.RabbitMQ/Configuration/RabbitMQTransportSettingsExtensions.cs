@@ -16,7 +16,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
-        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, CreateTopologyFactory topologyFactory)
+        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, CreateTopologyFactory topologyFactory)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(topologyFactory), topologyFactory);
@@ -30,7 +31,8 @@
         /// Uses the conventional routing topology.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(
+            this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -43,7 +45,9 @@
         /// <param name="transportExtensions"></param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, GenerateRoutingKey routingKeyConvention = null, GetExchangeName exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(
+            this TransportExtensions<RabbitMQTransport> transportExtensions,
+            GenerateRoutingKey routingKeyConvention = null, GetExchangeName exchangeNameConvention = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -57,7 +61,9 @@
                 exchangeNameConvention = () => "amq.topic";
             }
 
-            return transportExtensions.UseCustomRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
+            return transportExtensions.UseCustomRoutingTopology(durable =>
+                new DirectRoutingTopology(
+                    new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
         }
 
         /// <summary>
@@ -66,7 +72,8 @@
         /// <param name="transportExtensions"></param>
         /// <param name="customIdStrategy">The user-defined strategy for giving the message a unique ID.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, GetMessageId customIdStrategy)
+        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, GetMessageId customIdStrategy)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(customIdStrategy), customIdStrategy);
@@ -81,7 +88,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="waitTime">The time to wait before triggering the circuit breaker.</param>
-        public static TransportExtensions<RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan waitTime)
+        public static TransportExtensions<RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan waitTime)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
@@ -97,7 +105,8 @@
         /// <param name="transportExtensions"></param>
         /// <param name="usePublisherConfirms">Specifies whether publisher confirms should be used when sending messages.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool usePublisherConfirms)
+        public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, bool usePublisherConfirms)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -111,7 +120,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
-        public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
+        public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNegativeAndZero(nameof(prefetchMultiplier), prefetchMultiplier);
@@ -126,7 +136,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="prefetchCount">The prefetch count to use.</param>
-        public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
+        public static TransportExtensions<RabbitMQTransport> PrefetchCount(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -141,12 +152,14 @@
         /// <param name="transportExtensions"></param>
         /// <param name="clientCertificate">The certificate to use for client authentication.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transportExtensions, X509Certificate2 clientCertificate)
+        public static TransportExtensions<RabbitMQTransport> SetClientCertificate(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, X509Certificate2 clientCertificate)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(clientCertificate), clientCertificate);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificateCollection, new X509Certificate2Collection(clientCertificate));
+            transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificateCollection,
+                new X509Certificate2Collection(clientCertificate));
 
             return transportExtensions;
         }
@@ -158,13 +171,15 @@
         /// <param name="path">The path to the certificate file.</param>
         /// <param name="password">The password for the certificate specified in <paramref name="path"/>.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transportExtensions, string path, string password)
+        public static TransportExtensions<RabbitMQTransport> SetClientCertificate(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, string path, string password)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNullAndEmpty(nameof(path), path);
             Guard.AgainstNullAndEmpty(nameof(password), password);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificateCollection, new X509Certificate2Collection(new X509Certificate2(path, password)));
+            transportExtensions.GetSettings().Set(SettingsKeys.ClientCertificateCollection,
+                new X509Certificate2Collection(new X509Certificate2(path, password)));
 
             return transportExtensions;
         }
@@ -174,7 +189,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> DisableRemoteCertificateValidation(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static TransportExtensions<RabbitMQTransport> DisableRemoteCertificateValidation(
+            this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -188,7 +204,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> UseExternalAuthMechanism(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static TransportExtensions<RabbitMQTransport> UseExternalAuthMechanism(
+            this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -202,7 +219,8 @@
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <returns></returns>
-        public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static DelayedDeliverySettings DelayedDelivery(
+            this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -215,11 +233,13 @@
         /// <param name="transportExtensions"></param>
         /// <param name="useDurableExchangesAndQueues">Specifies whether exchanges and queues should be declared as durable or not.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> UseDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues)
+        public static TransportExtensions<RabbitMQTransport> UseDurableExchangesAndQueues(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, bool useDurableExchangesAndQueues)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.UseDurableExchangesAndQueues, useDurableExchangesAndQueues);
+            transportExtensions.GetSettings()
+                .Set(SettingsKeys.UseDurableExchangesAndQueues, useDurableExchangesAndQueues);
 
             return transportExtensions;
         }
@@ -230,7 +250,8 @@
         /// <param name="transportExtensions"></param>
         /// <param name="heartbeatInterval">The time interval to use.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> SetHeartbeatInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan heartbeatInterval)
+        public static TransportExtensions<RabbitMQTransport> SetHeartbeatInterval(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan heartbeatInterval)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNegativeAndZero(nameof(heartbeatInterval), heartbeatInterval);
@@ -246,7 +267,8 @@
         /// <param name="transportExtensions"></param>
         /// <param name="networkRecoveryInterval">The time interval to use.</param>
         /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> SetNetworkRecoveryInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan networkRecoveryInterval)
+        public static TransportExtensions<RabbitMQTransport> SetNetworkRecoveryInterval(
+            this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan networkRecoveryInterval)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNegativeAndZero(nameof(networkRecoveryInterval), networkRecoveryInterval);
@@ -256,27 +278,34 @@
             return transportExtensions;
         }
     }
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public delegate string GenerateRoutingKey(Type type);
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public delegate string GetExchangeName();
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    public delegate string GetMessageId(BasicDeliverEventArgs message);
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="useDurableExchangesAndQueues"></param>
-    /// <returns></returns>
-    public delegate IRoutingTopology CreateTopologyFactory(bool useDurableExchangesAndQueues);
+    
+    namespace Transport.RabbitMQ
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public delegate string GenerateRoutingKey(Type type);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public delegate string GetExchangeName();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public delegate string GetMessageId(BasicDeliverEventArgs message);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="useDurableExchangesAndQueues"></param>
+        /// <returns></returns>
+        public delegate IRoutingTopology CreateTopologyFactory(bool useDurableExchangesAndQueues);
+    }
 }
