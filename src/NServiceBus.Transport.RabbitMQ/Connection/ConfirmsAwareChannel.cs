@@ -12,7 +12,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
         {
-            channel = connection.CreateModel();
+            channel = new ModelWithValidation(connection.CreateModel());
             channel.BasicReturn += Channel_BasicReturn;
 
             this.routingTopology = routingTopology;

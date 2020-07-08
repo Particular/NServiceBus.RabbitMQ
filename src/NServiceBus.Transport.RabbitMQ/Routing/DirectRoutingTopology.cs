@@ -46,8 +46,6 @@
         {
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                NameValidator.ThrowIfNameIsTooLong(address);
-
                 channel.QueueDeclare(address, useDurableExchanges, false, false, null);
             }
         }
@@ -61,8 +59,6 @@
 
         void CreateExchange(IModel channel, string exchangeName)
         {
-            NameValidator.ThrowIfNameIsTooLong(exchangeName);
-
             if (exchangeName == AmqpTopicExchange)
             {
                 return;
