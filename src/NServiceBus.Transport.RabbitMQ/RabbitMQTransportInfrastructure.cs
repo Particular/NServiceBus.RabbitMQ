@@ -37,12 +37,7 @@
 
             routingTopology = CreateRoutingTopology();
 
-            if (!settings.TryGet(SettingsKeys.UsePublisherConfirms, out bool usePublisherConfirms))
-            {
-                usePublisherConfirms = true;
-            }
-
-            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology, usePublisherConfirms);
+            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology);
         }
 
         public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };

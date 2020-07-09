@@ -10,25 +10,19 @@ namespace NServiceBus.Transport.RabbitMQ
 
     sealed class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, bool usePublisherConfirms)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology)
         {
             channel = connection.CreateModel();
+            channel.BasicAcks += Channel_BasicAcks;
+            channel.BasicNacks += Channel_BasicNacks;
             channel.BasicReturn += Channel_BasicReturn;
+            channel.ModelShutdown += Channel_ModelShutdown;
+
+            channel.ConfirmSelect();
 
             this.routingTopology = routingTopology;
 
-            this.usePublisherConfirms = usePublisherConfirms;
-
-            if (usePublisherConfirms)
-            {
-                channel.ConfirmSelect();
-
-                channel.BasicAcks += Channel_BasicAcks;
-                channel.BasicNacks += Channel_BasicNacks;
-                channel.ModelShutdown += Channel_ModelShutdown;
-
-                messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
-            }
+            messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
         }
 
         public IBasicProperties CreateBasicProperties() => channel.CreateBasicProperties();
@@ -39,17 +33,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
         {
-            Task task;
-
-            if (usePublisherConfirms)
-            {
-                task = GetConfirmationTask();
-                properties.SetConfirmationId(channel.NextPublishSeqNo);
-            }
-            else
-            {
-                task = Task.CompletedTask;
-            }
+            var task = GetConfirmationTask();
+            properties.SetConfirmationId(channel.NextPublishSeqNo);
 
             if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
             {
@@ -68,17 +53,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties)
         {
-            Task task;
-
-            if (usePublisherConfirms)
-            {
-                task = GetConfirmationTask();
-                properties.SetConfirmationId(channel.NextPublishSeqNo);
-            }
-            else
-            {
-                task = Task.CompletedTask;
-            }
+            var task = GetConfirmationTask();
+            properties.SetConfirmationId(channel.NextPublishSeqNo);
 
             routingTopology.Publish(channel, type, message, properties);
 
@@ -87,23 +63,14 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
         {
-            Task task;
+            var task = GetConfirmationTask();
 
-            if (usePublisherConfirms)
+            if (properties.Headers == null)
             {
-                task = GetConfirmationTask();
-
-                if (properties.Headers == null)
-                {
-                    properties.Headers = new Dictionary<string, object>();
-                }
-
-                properties.SetConfirmationId(channel.NextPublishSeqNo);
+                properties.Headers = new Dictionary<string, object>();
             }
-            else
-            {
-                task = Task.CompletedTask;
-            }
+
+            properties.SetConfirmationId(channel.NextPublishSeqNo);
 
             routingTopology.RawSendInCaseOfFailure(channel, address, body, properties);
 
@@ -208,7 +175,6 @@ namespace NServiceBus.Transport.RabbitMQ
         IModel channel;
 
         readonly IRoutingTopology routingTopology;
-        readonly bool usePublisherConfirms;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConfirmsAwareChannel));

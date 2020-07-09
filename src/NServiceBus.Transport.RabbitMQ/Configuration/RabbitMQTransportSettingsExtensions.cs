@@ -92,21 +92,6 @@
         }
 
         /// <summary>
-        /// Specifies whether publisher confirms should be used when sending messages.
-        /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <param name="usePublisherConfirms">Specifies whether publisher confirms should be used when sending messages.</param>
-        /// <returns></returns>
-        public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool usePublisherConfirms)
-        {
-            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-
-            transportExtensions.GetSettings().Set(SettingsKeys.UsePublisherConfirms, usePublisherConfirms);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
         /// </summary>
         /// <param name="transportExtensions"></param>
