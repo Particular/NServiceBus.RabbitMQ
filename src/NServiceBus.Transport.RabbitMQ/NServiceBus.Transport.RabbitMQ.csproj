@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fody" Version="6.2.0" PrivateAssets="All" />
+    <PackageReference Include="Fody" Version="6.2.1" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.2.3, 8.0.0)" />
     <PackageReference Include="Obsolete.Fody" Version="5.2.1" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.3.0" PrivateAssets="All" />
