@@ -77,11 +77,16 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                public MyContext Context { get; set; }
+                private MyContext _testContext;
+
+                public ReplyHandler(MyContext testContext)
+                {
+                    _testContext = testContext;
+                }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    Context.Done = true;
+                    _testContext.Done = true;
                     return Task.CompletedTask;
                 }
             }
