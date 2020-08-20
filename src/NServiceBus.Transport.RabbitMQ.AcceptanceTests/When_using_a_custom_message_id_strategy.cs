@@ -6,6 +6,7 @@
     using AcceptanceTesting;
     using Extensibility;
     using Features;
+    using Microsoft.Extensions.DependencyInjection;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -45,7 +46,7 @@
                 protected override void Setup(FeatureConfigurationContext context)
                 {
                     context.Container.ConfigureComponent<Starter>(DependencyLifecycle.InstancePerCall);
-                    context.RegisterStartupTask(b => b.Build<Starter>());
+                    context.RegisterStartupTask(b => b.GetService<Starter>());
                 }
 
                 class Starter : FeatureStartupTask
