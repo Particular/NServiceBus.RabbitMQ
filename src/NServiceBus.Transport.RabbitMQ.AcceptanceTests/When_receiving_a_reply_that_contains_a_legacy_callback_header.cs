@@ -114,11 +114,16 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                public MyContext Context { get; set; }
+                private MyContext _testContext;
+
+                public ReplyHandler(MyContext testContext)
+                {
+                    _testContext = testContext;
+                }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    Context.AuditMessageReceived = true;
+                    _testContext.AuditMessageReceived = true;
 
                     return Task.CompletedTask;
                 }
