@@ -76,17 +76,22 @@
 
             class MyResponseHandler : IHandleMessages<MyResponse>
             {
-                public ReadOnlySettings Settings { get; set; }
+                private ReadOnlySettings _settings;
+                private Context _testContext;
 
-                public Context Context { get; set; }
+                public MyResponseHandler(ReadOnlySettings settings, Context testContext)
+                {
+                    _settings = settings;
+                    _testContext = testContext;
+                }
 
                 public Task Handle(MyResponse message, IMessageHandlerContext context)
                 {
-                    if (Settings.Get<string>("Client") != message.Client)
+                    if (_settings.Get<string>("Client") != message.Client)
                     {
                         throw new Exception("Wrong endpoint got the response.");
                     }
-                    Context.ReplyReceived();
+                    _testContext.ReplyReceived();
                     return Task.CompletedTask;
                 }
             }
