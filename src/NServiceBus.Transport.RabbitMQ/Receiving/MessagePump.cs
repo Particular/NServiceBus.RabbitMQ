@@ -260,7 +260,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? new byte[0], transportTransaction, tokenSource, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), transportTransaction, tokenSource, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
@@ -272,7 +272,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
+                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), transportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {
