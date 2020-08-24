@@ -117,7 +117,7 @@
             confirmationId = 0;
 
             return properties.Headers.TryGetValue(ConfirmationIdHeader, out var value) &&
-                ulong.TryParse(Encoding.UTF8.GetString(value as byte[] ?? new byte[0]), out confirmationId);
+                ulong.TryParse(Encoding.UTF8.GetString(value as byte[] ?? Array.Empty<byte>()), out confirmationId);
         }
 
         static bool TryGet<T>(this List<DeliveryConstraint> list, out T constraint) where T : DeliveryConstraint =>
