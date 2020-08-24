@@ -13,7 +13,7 @@
             public ulong DeliveryTag { get; set; }
         }
 
-        public static Task BasicAckSingle(this IModel channel, ulong deliveryTag, TaskScheduler scheduler) =>
+        public static Task BasicAckSingle(this IModel channel, ulong deliveryTag) =>
             TaskEx.StartNew(
                 new MessageState { Channel = channel, DeliveryTag = deliveryTag },
                 state =>
@@ -21,9 +21,9 @@
                     var messageState = (MessageState)state;
                     messageState.Channel.BasicAck(messageState.DeliveryTag, false);
                 },
-                scheduler);
+                TaskScheduler.Default);
 
-        public static Task BasicRejectAndRequeueIfOpen(this IModel channel, ulong deliveryTag, TaskScheduler scheduler) =>
+        public static Task BasicRejectAndRequeueIfOpen(this IModel channel, ulong deliveryTag) =>
             TaskEx.StartNew(
                 new MessageState { Channel = channel, DeliveryTag = deliveryTag },
                 state =>
@@ -41,6 +41,6 @@
                         }
                     }
                 },
-                scheduler);
+                TaskScheduler.Default);
     }
 }
