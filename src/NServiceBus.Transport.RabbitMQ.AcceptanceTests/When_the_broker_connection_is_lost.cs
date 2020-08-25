@@ -7,6 +7,7 @@
     using DeliveryConstraints;
     using Extensibility;
     using Features;
+    using Microsoft.Extensions.DependencyInjection;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -45,7 +46,7 @@
                 protected override void Setup(FeatureConfigurationContext context)
                 {
                     context.Container.ConfigureComponent<ConnectionKiller>(DependencyLifecycle.InstancePerCall);
-                    context.RegisterStartupTask(b => b.Build<ConnectionKiller>());
+                    context.RegisterStartupTask(b => b.GetRequiredService<ConnectionKiller>());
                 }
 
                 class ConnectionKiller : FeatureStartupTask
