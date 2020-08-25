@@ -33,7 +33,7 @@
 
         // Start
         int maxConcurrency;
-        long numberOfExecutingReceives;
+        long numberOfMessagesBeingProcessed;
         CancellationTokenSource messageProcessing;
         IConnection connection;
         AsyncEventingBasicConsumer consumer;
@@ -113,7 +113,7 @@
             consumer.Received -= Consumer_Received;
             messageProcessing.Cancel();
 
-            while (Interlocked.Read(ref numberOfExecutingReceives) > 0)
+            while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
             {
                 await Task.Delay(50).ConfigureAwait(false);
             }
@@ -157,7 +157,7 @@
                 return;
             }
 
-            Interlocked.Increment(ref numberOfExecutingReceives);
+            Interlocked.Increment(ref numberOfMessagesBeingProcessed);
 
             try
             {
@@ -170,7 +170,7 @@
             }
             finally
             {
-                Interlocked.Decrement(ref numberOfExecutingReceives);
+                Interlocked.Decrement(ref numberOfMessagesBeingProcessed);
             }
         }
 
