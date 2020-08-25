@@ -209,6 +209,7 @@
                 var processed = false;
                 var errorHandled = false;
                 var numberOfDeliveryAttempts = 0;
+                var messageBody = message.Body.ToArray();
 
                 while (!processed && !errorHandled)
                 {
@@ -217,7 +218,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, message.Body.ToArray() ?? Array.Empty<byte>(), transportTransaction, tokenSource, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), transportTransaction, tokenSource, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
@@ -229,7 +230,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body.ToArray() ?? Array.Empty<byte>(), transportTransaction, numberOfDeliveryAttempts, contextBag);
+                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), transportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {
