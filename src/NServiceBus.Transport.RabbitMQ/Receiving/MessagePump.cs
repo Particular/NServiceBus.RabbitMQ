@@ -159,22 +159,9 @@
 
             Interlocked.Increment(ref numberOfExecutingReceives);
 
-            // technically we don't need this anymore
-            var messageBody = eventArgs.Body.ToArray();
-
-            var eventArgsCopy = new BasicDeliverEventArgs(
-                consumerTag: eventArgs.ConsumerTag,
-                deliveryTag: eventArgs.DeliveryTag,
-                redelivered: eventArgs.Redelivered,
-                exchange: eventArgs.Exchange,
-                routingKey: eventArgs.RoutingKey,
-                properties: eventArgs.BasicProperties,
-                body: messageBody
-            );
-
             try
             {
-                await Process(eventArgsCopy, messageBody).ConfigureAwait(false);
+                await Process(eventArgs).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -187,7 +174,7 @@
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message, byte[] messageBody)
+        async Task Process(BasicDeliverEventArgs message)
         {
             Dictionary<string, string> headers;
 
@@ -230,7 +217,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), transportTransaction, tokenSource, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, message.Body.ToArray() ?? Array.Empty<byte>(), transportTransaction, tokenSource, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
@@ -242,7 +229,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), transportTransaction, numberOfDeliveryAttempts, contextBag);
+                        var errorContext = new ErrorContext(exception, headers, messageId, message.Body.ToArray() ?? Array.Empty<byte>(), transportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {
