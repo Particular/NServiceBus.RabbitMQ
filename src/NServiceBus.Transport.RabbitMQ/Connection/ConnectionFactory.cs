@@ -89,7 +89,6 @@
             {
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
-                // it is OK to modify as long as we are under a lock
                 connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
                 var connection = connectionFactory.CreateConnection(connectionName);
