@@ -48,7 +48,8 @@
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = heartbeatInterval ?? connectionConfiguration.RequestedHeartbeat,
                 NetworkRecoveryInterval = networkRecoveryInterval ?? connectionConfiguration.RetryDelay,
-                UseBackgroundThreadsForIO = true
+                UseBackgroundThreadsForIO = true,
+                DispatchConsumersAsync = true
             };
 
             connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
@@ -82,12 +83,13 @@
 
         public IConnection CreateAdministrationConnection() => CreateConnection($"{endpointName} Administration", false);
 
-        public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true)
+        public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1)
         {
             lock (lockObject)
             {
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
+                connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
                 var connection = connectionFactory.CreateConnection(connectionName);
 

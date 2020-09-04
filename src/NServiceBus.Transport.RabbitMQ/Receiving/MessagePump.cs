@@ -30,14 +30,13 @@
         PushSettings settings;
         CriticalError criticalError;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
-        TaskScheduler exclusiveScheduler;
 
         // Start
         int maxConcurrency;
-        SemaphoreSlim semaphore;
+        long numberOfMessagesBeingProcessed;
         CancellationTokenSource messageProcessing;
         IConnection connection;
-        EventingBasicConsumer consumer;
+        AsyncEventingBasicConsumer consumer;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -63,8 +62,6 @@
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
-            exclusiveScheduler = new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
-
             if (settings.PurgeOnStartup)
             {
                 queuePurger.Purge(settings.InputQueue);
@@ -76,10 +73,9 @@
         public void Start(PushRuntimeSettings limitations)
         {
             maxConcurrency = limitations.MaxConcurrency;
-            semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
             messageProcessing = new CancellationTokenSource();
 
-            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
+            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump", consumerDispatchConcurrency: maxConcurrency);
 
             var channel = connection.CreateModel();
 
@@ -102,7 +98,7 @@
 
             channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
 
-            consumer = new EventingBasicConsumer(channel);
+            consumer = new AsyncEventingBasicConsumer(channel);
 
             consumer.Registered += Consumer_Registered;
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
@@ -117,7 +113,7 @@
             consumer.Received -= Consumer_Received;
             messageProcessing.Cancel();
 
-            while (semaphore.CurrentCount != maxConcurrency)
+            while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
             {
                 await Task.Delay(50).ConfigureAwait(false);
             }
@@ -136,9 +132,11 @@
             await connectionShutdownCompleted.Task.ConfigureAwait(false);
         }
 
-        void Consumer_Registered(object sender, ConsumerEventArgs e)
+        Task Consumer_Registered(object sender, ConsumerEventArgs e)
         {
             circuitBreaker.Success();
+
+            return Task.CompletedTask;
         }
 
         void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
@@ -153,71 +151,31 @@
             }
         }
 
-        async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
+        async Task Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            var eventRaisingThreadId = Thread.CurrentThread.ManagedThreadId;
-
-            var messageBody = eventArgs.Body.ToArray();
-
-            var eventArgsCopy = new BasicDeliverEventArgs(
-                consumerTag: eventArgs.ConsumerTag,
-                deliveryTag: eventArgs.DeliveryTag,
-                redelivered: eventArgs.Redelivered,
-                exchange: eventArgs.Exchange,
-                routingKey: eventArgs.RoutingKey,
-                properties: eventArgs.BasicProperties,
-                body: messageBody
-            );
-
-            try
-            {
-                await semaphore.WaitAsync(messageProcessing.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
+            if (messageProcessing.Token.IsCancellationRequested)
             {
                 return;
             }
 
+            Interlocked.Increment(ref numberOfMessagesBeingProcessed);
+
             try
             {
-                // The current thread will be the event-raising thread if either:
-                //
-                // a) the semaphore was entered synchronously (did not have to wait).
-                // b) the event was raised on a thread pool thread,
-                //    and the semaphore was entered asynchronously (had to wait),
-                //    and the continuation happened to be scheduled back onto the same thread.
-                if (Thread.CurrentThread.ManagedThreadId == eventRaisingThreadId)
-                {
-                    // In RabbitMQ.Client 4.1.0, the event is raised by reusing a single, explicitly created thread,
-                    // so we are in scenario (a) described above.
-                    // We must yield to allow the thread to raise more events while we handle this one,
-                    // otherwise we will never process messages concurrently.
-                    //
-                    // If a future version of RabbitMQ.Client changes its threading model, then either:
-                    //
-                    // 1) we are in scenario (a), but we *may not* need to yield.
-                    //    E.g. the client may raise the event on a new, explicitly created thread each time.
-                    // 2) we cannot tell whether we are in scenario (a) or scenario (b).
-                    //    E.g. the client may raise the event on a thread pool thread.
-                    //
-                    // In both cases, we cannot tell whether we need to yield or not, so we must yield.
-                    await Task.Yield();
-                }
-
-                await Process(eventArgsCopy, messageBody).ConfigureAwait(false);
+                await Process(eventArgs).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Logger.Warn("Failed to process message. Returning message to queue...", ex);
-                await consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                await consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag).ConfigureAwait(false);
             }
             finally
             {
-                semaphore.Release();
+                Interlocked.Decrement(ref numberOfMessagesBeingProcessed);
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message, byte[] messageBody)
+        async Task Process(BasicDeliverEventArgs message)
         {
             Dictionary<string, string> headers;
 
@@ -252,6 +210,7 @@
                 var processed = false;
                 var errorHandled = false;
                 var numberOfDeliveryAttempts = 0;
+                var messageBody = message.Body.ToArray();
 
                 while (!processed && !errorHandled)
                 {
@@ -286,7 +245,7 @@
                         catch (Exception ex)
                         {
                             criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
-                            await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                            await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
 
                             return;
                         }
@@ -295,13 +254,13 @@
 
                 if (processed && tokenSource.IsCancellationRequested)
                 {
-                    await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                    await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
                 }
                 else
                 {
                     try
                     {
-                        await consumer.Model.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                        await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
                     }
                     catch (AlreadyClosedException ex)
                     {
@@ -329,14 +288,14 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
-                await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
 
                 return;
             }
 
             try
             {
-                await consumer.Model.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
             }
             catch (AlreadyClosedException ex)
             {
@@ -347,7 +306,6 @@
         public void Dispose()
         {
             circuitBreaker?.Dispose();
-            semaphore?.Dispose();
             messageProcessing?.Dispose();
             connection?.Dispose();
         }
