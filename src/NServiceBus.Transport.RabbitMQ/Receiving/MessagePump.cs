@@ -135,6 +135,7 @@
         Task Consumer_Registered(object sender, ConsumerEventArgs e)
         {
             circuitBreaker.Success();
+
             return Task.CompletedTask;
         }
 
