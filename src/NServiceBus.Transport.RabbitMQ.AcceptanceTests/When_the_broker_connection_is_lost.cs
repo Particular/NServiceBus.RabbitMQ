@@ -45,7 +45,7 @@
             {
                 protected override void Setup(FeatureConfigurationContext context)
                 {
-                    context.Container.ConfigureComponent<ConnectionKiller>(DependencyLifecycle.InstancePerCall);
+                    context.Services.AddTransient<ConnectionKiller>();
                     context.RegisterStartupTask(b => b.GetRequiredService<ConnectionKiller>());
                 }
 
