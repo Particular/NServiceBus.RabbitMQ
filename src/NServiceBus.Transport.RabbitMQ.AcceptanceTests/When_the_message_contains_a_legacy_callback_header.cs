@@ -52,17 +52,17 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private MyContext _testContext;
+                private MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {
-                    _testContext = testContext;
+                    this.testContext = testContext;
                 }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    _testContext.RepliedToWrongQueue = true;
-                    _testContext.Done = true;
+                    testContext.RepliedToWrongQueue = true;
+                    testContext.Done = true;
                     return Task.CompletedTask;
                 }
             }
@@ -77,16 +77,16 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private MyContext _testContext;
+                private MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {
-                    _testContext = testContext;
+                    this.testContext = testContext;
                 }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    _testContext.Done = true;
+                    testContext.Done = true;
                     return Task.CompletedTask;
                 }
             }

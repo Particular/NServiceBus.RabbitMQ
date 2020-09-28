@@ -29,17 +29,17 @@
 
             class MyEventHandler : IHandleMessages<Message>
             {
-                private Context _testContext;
+                private Context testContext;
 
                 public MyEventHandler(Context testContext)
                 {
-                    _testContext = testContext;
+                    this.testContext = testContext;
                 }
 
                 public Task Handle(Message message, IMessageHandlerContext context)
                 {
-                    _testContext.HandlerHasAccessToBasicDeliverEventArgs = context.Extensions.TryGet<BasicDeliverEventArgs>(out _);
-                    _testContext.MessageReceived = true;
+                    testContext.HandlerHasAccessToBasicDeliverEventArgs = context.Extensions.TryGet<BasicDeliverEventArgs>(out _);
+                    testContext.MessageReceived = true;
 
                     return Task.CompletedTask;
                 }

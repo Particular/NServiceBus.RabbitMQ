@@ -48,9 +48,7 @@
             {
                 channel.ExchangeUnbind(subscriberName, ExchangeName(type), string.Empty, null);
             }
-            // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
             {
                 // TODO: Any better way to make this idempotent?
             }
@@ -59,17 +57,17 @@
         public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
             SetupTypeSubscriptions(channel, type);
-            channel.BasicPublish(ExchangeName(type), String.Empty, false, properties, message.Body);
+            channel.BasicPublish(ExchangeName(type), string.Empty, false, properties, message.Body);
         }
 
         public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, properties, message.Body);
+            channel.BasicPublish(address, string.Empty, true, properties, message.Body);
         }
 
         public void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, properties, body);
+            channel.BasicPublish(address, string.Empty, true, properties, body);
         }
 
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
@@ -91,7 +89,7 @@
 
         void SetupTypeSubscriptions(IModel channel, Type type)
         {
-            if (type == typeof(Object) || IsTypeTopologyKnownConfigured(type))
+            if (type == typeof(object) || IsTypeTopologyKnownConfigured(type))
             {
                 return;
             }
@@ -132,9 +130,7 @@
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
             }
-            // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
-            // ReSharper restore EmptyGeneralCatchClause
             {
                 // TODO: Any better way to make this idempotent?
             }

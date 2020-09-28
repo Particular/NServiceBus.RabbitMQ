@@ -372,7 +372,7 @@
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
                     {
-                        {"Foo", new List<object>{"Bing"}}
+                        {"Foo", new List<object> {"Bing"}}
                     }
                 }
             };
@@ -393,7 +393,7 @@
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
                 {
-                    {"Foo", new List<object>{new Dictionary<string, object>{{"key1", Encoding.UTF8.GetBytes("value1")}, {"key2", Encoding.UTF8.GetBytes("value2")}}}}
+                    {"Foo", new List<object> {new Dictionary<string, object> {{"key1", Encoding.UTF8.GetBytes("value1")}, {"key2", Encoding.UTF8.GetBytes("value2")}}}}
                 }
                 }
             };

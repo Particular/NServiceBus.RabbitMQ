@@ -55,11 +55,11 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                MyContext _testContext;
+                MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {
-                    _testContext = testContext;
+                    this.testContext = testContext;
                 }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
@@ -89,16 +89,16 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                MyContext _testContext;
+                MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {
-                    _testContext = testContext;
+                    this.testContext = testContext;
                 }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    _testContext.IncorrectHandlerInvoked = true;
+                    testContext.IncorrectHandlerInvoked = true;
 
                     return Task.CompletedTask;
                 }
@@ -114,16 +114,16 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private MyContext _testContext;
+                private MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {
-                    _testContext = testContext;
+                    this.testContext = testContext;
                 }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    _testContext.AuditMessageReceived = true;
+                    testContext.AuditMessageReceived = true;
 
                     return Task.CompletedTask;
                 }

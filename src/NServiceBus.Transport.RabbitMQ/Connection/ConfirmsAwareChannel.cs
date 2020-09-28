@@ -148,7 +148,8 @@ namespace NServiceBus.Transport.RabbitMQ
                 {
                     SetException(message.Key, $"Channel has been closed: {e}");
                 }
-            } while (!messages.IsEmpty);
+            } 
+            while (!messages.IsEmpty);
         }
 
         void SetResult(ulong key)
