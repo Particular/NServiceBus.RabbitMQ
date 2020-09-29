@@ -49,7 +49,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                     Logger.Info("Connection to the broker reestablished successfully.");
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Logger.Info("Reconnecting to the broker failed.", e);
                 }

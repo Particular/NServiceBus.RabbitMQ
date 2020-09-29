@@ -14,7 +14,7 @@
         /// <summary>
         /// Registers a custom routing topology.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
         public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
         {
@@ -29,7 +29,7 @@
         /// <summary>
         /// Uses the conventional routing topology.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -40,7 +40,7 @@
         /// <summary>
         /// Uses the direct routing topology with the specified conventions.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
         public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
@@ -63,9 +63,8 @@
         /// <summary>
         /// Allows the user to control how the message ID is determined. Mostly useful when doing native integration with non-NSB endpoints.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="customIdStrategy">The user-defined strategy for giving the message a unique ID.</param>
-        /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<BasicDeliverEventArgs, string> customIdStrategy)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -79,7 +78,7 @@
         /// <summary>
         /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure when the message pump's connection to the broker is lost and cannot be recovered.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="waitTime">The time to wait before triggering the circuit breaker.</param>
         public static TransportExtensions<RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan waitTime)
         {
@@ -94,7 +93,7 @@
         /// <summary>
         /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
         public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
         {
@@ -109,7 +108,7 @@
         /// <summary>
         /// Overrides the default prefetch count calculation with the specified value.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="prefetchCount">The prefetch count to use.</param>
         public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transportExtensions, ushort prefetchCount)
         {
@@ -123,9 +122,8 @@
         /// <summary>
         /// Specifies the certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="clientCertificate">The certificate to use for client authentication.</param>
-        /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transportExtensions, X509Certificate2 clientCertificate)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -139,10 +137,9 @@
         /// <summary>
         /// Specifies the certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="path">The path to the certificate file.</param>
         /// <param name="password">The password for the certificate specified in <paramref name="path"/>.</param>
-        /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transportExtensions, string path, string password)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -157,8 +154,7 @@
         /// <summary>
         /// Disables all remote certificate validation when connecting to the broker via TLS.
         /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <returns></returns>
+        /// <param name="transportExtensions">The transport configuration object</param>
         public static TransportExtensions<RabbitMQTransport> DisableRemoteCertificateValidation(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -171,8 +167,7 @@
         /// <summary>
         /// Specifies that an external authentication mechanism should be used for client authentication.
         /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <returns></returns>
+        /// <param name="transportExtensions">The transport configuration object</param>
         public static TransportExtensions<RabbitMQTransport> UseExternalAuthMechanism(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -185,8 +180,7 @@
         /// <summary>
         /// Gets the delayed delivery settings.
         /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <returns></returns>
+        /// <param name="transportExtensions">The transport configuration object</param>
         public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -197,8 +191,7 @@
         /// <summary>
         /// Specifies that exchanges and queues should be declared as non-durable.
         /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <returns></returns>
+        /// <param name="transportExtensions">The transport configuration object</param>
         public static TransportExtensions<RabbitMQTransport> DisableDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -211,9 +204,8 @@
         /// <summary>
         /// Sets the interval for heartbeats between the endpoint and the broker.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="heartbeatInterval">The time interval to use.</param>
-        /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> SetHeartbeatInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan heartbeatInterval)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -227,9 +219,8 @@
         /// <summary>
         /// Sets the time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
-        /// <param name="transportExtensions"></param>
+        /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="networkRecoveryInterval">The time interval to use.</param>
-        /// <returns></returns>
         public static TransportExtensions<RabbitMQTransport> SetNetworkRecoveryInterval(this TransportExtensions<RabbitMQTransport> transportExtensions, TimeSpan networkRecoveryInterval)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);

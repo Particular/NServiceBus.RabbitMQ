@@ -109,4 +109,3 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     TransportTransactionMode requestedTransactionMode;
     bool isTransportInitialized;
 }
-

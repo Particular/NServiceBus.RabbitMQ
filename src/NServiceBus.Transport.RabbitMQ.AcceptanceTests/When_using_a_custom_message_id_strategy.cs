@@ -60,7 +60,6 @@
                     protected override Task OnStart(IMessageSession session)
                     {
                         //Use feature to send message that has no message id
-
                         var messageBody = "<MyRequest></MyRequest>";
 
                         var message = new OutgoingMessage(

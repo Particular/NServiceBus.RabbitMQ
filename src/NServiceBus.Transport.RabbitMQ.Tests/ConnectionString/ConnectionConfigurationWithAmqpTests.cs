@@ -31,8 +31,8 @@
             Assert.Throws<UriFormatException>(() => ConnectionConfiguration.Create("amqp://:1234/", endpointName));
         }
 
-        [TestCase("amqp", (uint)5672, false)]
-        [TestCase("amqps", (uint)5671, true)]
+        [TestCase("amqp", 5672U, false)]
+        [TestCase("amqps", 5671U, true)]
         public void Should_determine_if_tls_should_be_used_from_connection_string(string scheme, uint port, bool useTls)
         {
             var connectionConfiguration = ConnectionConfiguration.Create($"{scheme}://guest:guest@localhost/", endpointName);

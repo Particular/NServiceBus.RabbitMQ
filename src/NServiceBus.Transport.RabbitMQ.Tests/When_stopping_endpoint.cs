@@ -6,7 +6,8 @@
     [TestFixture]
     class When_stopping_endpoint : RabbitMqContext
     {
-        [Test, Explicit]
+        [Test]
+        [Explicit]
         public async Task Should_gracefully_shutdown()
         {
             await messagePump.Stop();
