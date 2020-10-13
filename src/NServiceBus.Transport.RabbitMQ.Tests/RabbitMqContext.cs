@@ -35,7 +35,7 @@
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, (_, __) => {});
 
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
@@ -47,7 +47,6 @@
                 return Task.CompletedTask;
             },
                 ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
-                new CriticalError(_ => Task.CompletedTask),
                 new PushSettings(ReceiverQueue, ErrorQueue, true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
 

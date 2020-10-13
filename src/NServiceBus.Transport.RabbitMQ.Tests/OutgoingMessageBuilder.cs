@@ -24,12 +24,12 @@
             {
                 if (eventType != null)
                 {
-                    transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), dispatchConsistency, constraints));
+                    transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), properties, dispatchConsistency));
                 }
 
                 if (!string.IsNullOrEmpty(destination))
                 {
-                    transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), dispatchConsistency, constraints));
+                    transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), properties, dispatchConsistency));
                 }
             }
 
@@ -56,7 +56,8 @@
 
         public OutgoingMessageBuilder TimeToBeReceived(TimeSpan timeToBeReceived)
         {
-            constraints.Add(new DiscardIfNotReceivedBefore(timeToBeReceived));
+            //TODO set correct property values
+            //constraints.Add(new DiscardIfNotReceivedBefore(timeToBeReceived));
             return this;
         }
 
@@ -72,7 +73,8 @@
 
         public OutgoingMessageBuilder NonDurable()
         {
-            constraints.Add(new NonDurableDelivery());
+            //TODO set correct property values
+            //constraints.Add(new NonDurableDelivery());
             return this;
         }
 
@@ -86,7 +88,7 @@
         string messageId = Guid.NewGuid().ToString();
         byte[] body;
         Dictionary<string, string> headers = new Dictionary<string, string>();
-        List<DeliveryConstraint> constraints = new List<DeliveryConstraint>();
+        Dictionary<string, string> properties = new Dictionary<string, string>();
         DispatchConsistency dispatchConsistency = DispatchConsistency.Default;
     }
 }

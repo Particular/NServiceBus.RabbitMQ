@@ -16,13 +16,12 @@
         /// </summary>
         /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
-        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
+        public static RabbitMQTransport UseCustomRoutingTopology(this RabbitMQTransport transportExtensions, Func<bool, IRoutingTopology> topologyFactory)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(topologyFactory), topologyFactory);
 
-            transportExtensions.GetSettings().Set(topologyFactory);
-
+            transportExtensions.TopologyFactory = topologyFactory;
             return transportExtensions;
         }
 
@@ -30,7 +29,7 @@
         /// Uses the conventional routing topology.
         /// </summary>
         /// <param name="transportExtensions">The transport configuration object</param>
-        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static RabbitMQTransport UseConventionalRoutingTopology(this RabbitMQTransport transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -43,7 +42,7 @@
         /// <param name="transportExtensions">The transport configuration object</param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static RabbitMQTransport UseDirectRoutingTopology(this RabbitMQTransport transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 

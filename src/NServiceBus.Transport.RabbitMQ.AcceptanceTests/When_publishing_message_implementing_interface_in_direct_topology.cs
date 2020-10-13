@@ -36,8 +36,10 @@
         {
             public Publisher()
             {
-                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
-                    .UseDirectRoutingTopology());
+                //TODO currently not possible
+                //EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
+                //    .UseDirectRoutingTopology());
+                EndpointSetup<DefaultServer>();
             }
         }
 
@@ -47,7 +49,8 @@
             {
                 EndpointSetup<DefaultServer>(builder =>
                 {
-                    builder.UseTransport<RabbitMQTransport>().UseDirectRoutingTopology();
+                    //TODO currently not possible
+                    //builder.UseTransport<RabbitMQTransport>().UseDirectRoutingTopology();
                     builder.DisableFeature<AutoSubscribe>();
                 }, metadata => metadata.RegisterPublisherFor<IMyRequest>(typeof(Publisher)));
             }

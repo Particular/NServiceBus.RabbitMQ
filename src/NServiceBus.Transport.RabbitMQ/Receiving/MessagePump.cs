@@ -28,7 +28,7 @@
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
         PushSettings settings;
-        CriticalError criticalError;
+        Action<string, Exception> criticalError;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
         // Start
@@ -41,7 +41,7 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount, Action<string, Exception> criticalError)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -51,14 +51,14 @@
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchMultiplier = prefetchMultiplier;
             this.overriddenPrefetchCount = overriddenPrefetchCount;
+            this.criticalError = criticalError;
         }
 
-        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
+        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, PushSettings settings)
         {
             this.onMessage = onMessage;
             this.onError = onError;
             this.settings = settings;
-            this.criticalError = criticalError;
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
@@ -244,7 +244,7 @@
                         }
                         catch (Exception ex)
                         {
-                            criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
+                            criticalError($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
                             await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
 
                             return;

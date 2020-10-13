@@ -100,7 +100,7 @@
         {
             var operations = builder.SendTo(queueToReceiveOn).Build();
 
-            await messageDispatcher.Dispatch(operations, new TransportTransaction(), new ContextBag());
+            await messageDispatcher.Dispatch(operations, new TransportTransaction());
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 

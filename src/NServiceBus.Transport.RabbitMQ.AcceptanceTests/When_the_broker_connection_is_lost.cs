@@ -71,9 +71,12 @@
                     {
                         try
                         {
+                            //TODO configure delivery constraints on properties
+                            //deliveryConstraints: new List<DeliveryConstraint> { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) }
                             var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
-                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), deliveryConstraints: new List<DeliveryConstraint> { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
-                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), new ContextBag());
+                            Dictionary<string, string> properties = new Dictionary<string, string>();
+                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), properties);
+                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction());
                         }
                         catch (Exception)
                         {

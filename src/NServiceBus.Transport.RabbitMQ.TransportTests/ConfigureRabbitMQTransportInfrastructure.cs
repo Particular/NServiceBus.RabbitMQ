@@ -10,10 +10,9 @@ using RabbitMQ.Client;
 
 class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
 {
-    public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transactionMode)
+    public TransportConfigurationResult Configure(TransportSettings transportSettings)
     {
         var result = new TransportConfigurationResult();
-        var transport = new RabbitMQTransport();
 
         var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
 
@@ -23,26 +22,27 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         }
 
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+        
+        var transport = new RabbitMQTransport(connectionStringBuilder.ConnectionString);
+        transport.UseConventionalRoutingTopology();
+        
+        ////queueBindings = settings.Get<QueueBindings>();
 
-        queueBindings = settings.Get<QueueBindings>();
+        result.TransportInfrastructure = transport.Initialize(transportSettings);
 
-        new TransportExtensions<RabbitMQTransport>(settings).UseConventionalRoutingTopology();
-        result.TransportInfrastructure = transport.Initialize(settings, connectionStringBuilder.ConnectionString);
         isTransportInitialized = true;
         result.PurgeInputQueueOnStartup = true;
-
-        transportTransactionMode = result.TransportInfrastructure.TransactionMode;
-        requestedTransactionMode = transactionMode;
 
         return result;
     }
 
     public Task Cleanup()
     {
-        if (isTransportInitialized && transportTransactionMode >= requestedTransactionMode)
-        {
-            PurgeQueues(connectionStringBuilder, queueBindings);
-        }
+        //TODO what is this cleanup logic regarding transaction modes?
+        ////if (isTransportInitialized && transportTransactionMode >= requestedTransactionMode)
+        ////{
+        ////    PurgeQueues(connectionStringBuilder, queueBindings);
+        ////}
 
         return Task.FromResult(0);
     }
@@ -104,8 +104,10 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     }
 
     DbConnectionStringBuilder connectionStringBuilder;
-    QueueBindings queueBindings;
-    TransportTransactionMode transportTransactionMode;
-    TransportTransactionMode requestedTransactionMode;
+    ////QueueBindings queueBindings;
+    ////TransportTransactionMode transportTransactionMode;
+    ////TransportTransactionMode requestedTransactionMode;
+#pragma warning disable 0414
     bool isTransportInitialized;
+#pragma warning restore 0414
 }

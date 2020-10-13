@@ -6,7 +6,6 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
-using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 using RabbitMQ.Client;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
@@ -25,9 +24,9 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        var transport = configuration.UseTransport<RabbitMQTransport>();
-        transport.ConnectionString(connectionStringBuilder.ConnectionString);
-        transport.UseConventionalRoutingTopology();
+        var rabbitTransport = new RabbitMQTransport(connectionStringBuilder.ConnectionString);
+        rabbitTransport.UseConventionalRoutingTopology();
+        configuration.UseTransport(rabbitTransport);
 
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
 

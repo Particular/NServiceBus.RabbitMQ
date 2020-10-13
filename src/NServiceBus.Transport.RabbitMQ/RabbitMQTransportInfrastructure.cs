@@ -1,85 +1,71 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections.Generic;
-    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
-    using DelayedDelivery;
-    using global::RabbitMQ.Client.Events;
-    using Performance.TimeToBeReceived;
-    using Routing;
-    using Settings;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
-        const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
-
-        readonly SettingsHolder settings;
+        readonly TransportSettings settings;
+        private readonly RabbitMQTransport rabbitSettings;
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
-        IRoutingTopology routingTopology;
+        readonly IRoutingTopology routingTopology;
 
-        public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
+        public RabbitMQTransportInfrastructure(TransportSettings settings, RabbitMQTransport rabbitSettings)
         {
             this.settings = settings;
+            this.rabbitSettings = rabbitSettings;
 
-            var endpointName = settings.EndpointName();
-            var connectionConfiguration = ConnectionConfiguration.Create(connectionString, endpointName);
+            var endpointName = this.settings.EndpointName.Name;
+            var connectionConfiguration = ConnectionConfiguration.Create(rabbitSettings.ConnectionString, endpointName);
 
-            settings.TryGet(SettingsKeys.ClientCertificateCollection, out X509Certificate2Collection clientCertificateCollection);
-            settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);
-            settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
-            settings.TryGet(SettingsKeys.HeartbeatInterval, out TimeSpan? heartbeatInterval);
-            settings.TryGet(SettingsKeys.NetworkRecoveryInterval, out TimeSpan? networkRecoveryInterval);
-
-            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificateCollection, disableRemoteCertificateValidation, useExternalAuthMechanism, heartbeatInterval, networkRecoveryInterval);
+            connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, rabbitSettings.X509Certificate2Collection, rabbitSettings.DisableRemoteCertificateValidation, rabbitSettings.UseExternalAuthMechanism, rabbitSettings.HeartbeatInterval, rabbitSettings.NetworkRecoveryInterval);
 
             routingTopology = CreateRoutingTopology();
 
             channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology);
         }
 
-        public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };
-
-        public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
-
         public override TransportTransactionMode TransactionMode => TransportTransactionMode.ReceiveOnly;
 
-        public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance) => instance;
-
-        public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
+        public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure(ReceiveSettings receiveSettings)
         {
             return new TransportReceiveInfrastructure(
-                    () => CreateMessagePump(),
-                    () => new QueueCreator(connectionFactory, routingTopology),
-                    () => Task.FromResult(StartupCheckResult.Success));
+                () => CreateMessagePump(),
+                () => new QueueCreator(connectionFactory, routingTopology),
+                () => Task.FromResult(StartupCheckResult.Success));
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(channelProvider),
-                () => Task.FromResult(DelayInfrastructure.CheckForInvalidSettings(settings)));
+                () => Task.FromResult(StartupCheckResult.Success));
         }
 
-        public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
+        public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure(SubscriptionSettings subscriptionSettings)
         {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, routingTopology, settings.LocalAddress()));
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(connectionFactory, routingTopology, subscriptionSettings.LocalAddress));
         }
 
-        public override string ToTransportAddress(LogicalAddress logicalAddress)
+        public override EndpointAddress BuildLocalAddress(string queueName)
         {
-            var queue = new StringBuilder(logicalAddress.EndpointInstance.Endpoint);
+            throw new NotImplementedException();
+        }
 
-            if (logicalAddress.EndpointInstance.Discriminator != null)
+        public override string ToTransportAddress(EndpointAddress endpointAddress)
+        {
+            var queue = new StringBuilder(endpointAddress.Endpoint);
+
+            if (endpointAddress.Discriminator != null)
             {
-                queue.Append("-" + logicalAddress.EndpointInstance.Discriminator);
+                queue.Append("-" + endpointAddress.Discriminator);
             }
 
-            if (logicalAddress.Qualifier != null)
+            if (endpointAddress.Qualifier != null)
             {
-                queue.Append("." + logicalAddress.Qualifier);
+                queue.Append("." + endpointAddress.Qualifier);
             }
 
             return queue.ToString();
@@ -97,59 +83,36 @@
             return base.Stop();
         }
 
+        public override bool SupportsTTBR { get; } = true;
+
         IRoutingTopology CreateRoutingTopology()
         {
-            if (!settings.TryGet(out Func<bool, IRoutingTopology> topologyFactory))
+            if (rabbitSettings.TopologyFactory == null)
             {
                 throw new InvalidOperationException("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
             }
 
-            if (!settings.TryGet(SettingsKeys.UseDurableExchangesAndQueues, out bool useDurableExchangesAndQueues))
-            {
-                useDurableExchangesAndQueues = true;
-            }
-
-            return topologyFactory(useDurableExchangesAndQueues);
+            return rabbitSettings.TopologyFactory(rabbitSettings.UseDurableExchangesAndQueues);
         }
 
         IPushMessages CreateMessagePump()
         {
             MessageConverter messageConverter;
 
-            if (settings.HasSetting(SettingsKeys.CustomMessageIdStrategy))
+            if (rabbitSettings.CustomMessageIdStrategy != null)
             {
-                messageConverter = new MessageConverter(settings.Get<Func<BasicDeliverEventArgs, string>>(SettingsKeys.CustomMessageIdStrategy));
+                messageConverter = new MessageConverter(rabbitSettings.CustomMessageIdStrategy);
             }
             else
             {
                 messageConverter = new MessageConverter();
             }
 
-            if (!settings.TryGet(coreHostInformationDisplayNameKey, out string hostDisplayName))
-            {
-                hostDisplayName = Support.RuntimeEnvironment.MachineName;
-            }
-
-            var consumerTag = $"{hostDisplayName} - {settings.EndpointName()}";
+            var consumerTag = $"{settings.EndpointName.HostDisplayName}";
 
             var queuePurger = new QueuePurger(connectionFactory);
 
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggeringCircuitBreaker, out TimeSpan timeToWaitBeforeTriggeringCircuitBreaker))
-            {
-                timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
-            }
-
-            if (!settings.TryGet(SettingsKeys.PrefetchMultiplier, out int prefetchMultiplier))
-            {
-                prefetchMultiplier = 3;
-            }
-
-            if (!settings.TryGet(SettingsKeys.PrefetchCount, out ushort prefetchCount))
-            {
-                prefetchCount = 0;
-            }
-
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, rabbitSettings.TimeToWaitBeforeTriggeringCircuitBreaker, rabbitSettings.PrefetchMultiplier, rabbitSettings.PrefetchCount, settings.CriticalErrorAction);
         }
     }
 }

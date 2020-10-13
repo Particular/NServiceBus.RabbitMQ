@@ -141,7 +141,7 @@
             var type = typeof(T);
             var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build();
 
-            return messageDispatcher.Dispatch(message, new TransportTransaction(), new ContextBag());
+            return messageDispatcher.Dispatch(message, new TransportTransaction());
         }
 
         void AssertReceived<T>()

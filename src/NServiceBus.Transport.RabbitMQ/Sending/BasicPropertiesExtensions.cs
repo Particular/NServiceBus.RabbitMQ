@@ -12,69 +12,71 @@
 
     static class BasicPropertiesExtensions
     {
-        public static void Fill(this IBasicProperties properties, OutgoingMessage message, List<DeliveryConstraint> deliveryConstraints)
+        public static void Fill(this IBasicProperties properties, OutgoingMessage message, Dictionary<string, string> transportProperties)
         {
             if (message.MessageId != null)
             {
                 properties.MessageId = message.MessageId;
             }
 
-            properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
+            //TODO make this work
 
-            var messageHeaders = message.Headers ?? new Dictionary<string, string>();
+            ////properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
 
-            var delayed = CalculateDelay(deliveryConstraints, out var delay);
+            ////var messageHeaders = message.Headers ?? new Dictionary<string, string>();
 
-            properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
+            ////var delayed = CalculateDelay(deliveryConstraints, out var delay);
 
-            if (delayed)
-            {
-                properties.Headers[DelayInfrastructure.DelayHeader] = Convert.ToInt32(delay);
-            }
+            ////properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
-            if (deliveryConstraints.TryGet(out DiscardIfNotReceivedBefore timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
-            {
-                // align with TimeoutManager behavior
-                if (delayed)
-                {
-                    throw new Exception("Postponed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to postpone messages of this type.");
-                }
+            ////if (delayed)
+            ////{
+            ////    properties.Headers[DelayInfrastructure.DelayHeader] = Convert.ToInt32(delay);
+            ////}
 
-                properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
-            }
+            ////if (deliveryConstraints.TryGet(out DiscardIfNotReceivedBefore timeToBeReceived) && timeToBeReceived.MaxTime < TimeSpan.MaxValue)
+            ////{
+            ////    // align with TimeoutManager behavior
+            ////    if (delayed)
+            ////    {
+            ////        throw new Exception("Postponed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to postpone messages of this type.");
+            ////    }
 
-            if (messageHeaders.TryGetValue(NServiceBus.Headers.CorrelationId, out var correlationId) && correlationId != null)
-            {
-                properties.CorrelationId = correlationId;
-            }
+            ////    properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
+            ////}
 
-            if (messageHeaders.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out var enclosedMessageTypes) && enclosedMessageTypes != null)
-            {
-                var index = enclosedMessageTypes.IndexOf(',');
+            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.CorrelationId, out var correlationId) && correlationId != null)
+            ////{
+            ////    properties.CorrelationId = correlationId;
+            ////}
 
-                if (index > -1)
-                {
-                    properties.Type = enclosedMessageTypes.Substring(0, index);
-                }
-                else
-                {
-                    properties.Type = enclosedMessageTypes;
-                }
-            }
+            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out var enclosedMessageTypes) && enclosedMessageTypes != null)
+            ////{
+            ////    var index = enclosedMessageTypes.IndexOf(',');
 
-            if (messageHeaders.TryGetValue(NServiceBus.Headers.ContentType, out var contentType) && contentType != null)
-            {
-                properties.ContentType = contentType;
-            }
-            else
-            {
-                properties.ContentType = "application/octet-stream";
-            }
+            ////    if (index > -1)
+            ////    {
+            ////        properties.Type = enclosedMessageTypes.Substring(0, index);
+            ////    }
+            ////    else
+            ////    {
+            ////        properties.Type = enclosedMessageTypes;
+            ////    }
+            ////}
 
-            if (messageHeaders.TryGetValue(NServiceBus.Headers.ReplyToAddress, out var replyToAddress) && replyToAddress != null)
-            {
-                properties.ReplyTo = replyToAddress;
-            }
+            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.ContentType, out var contentType) && contentType != null)
+            ////{
+            ////    properties.ContentType = contentType;
+            ////}
+            ////else
+            ////{
+            ////    properties.ContentType = "application/octet-stream";
+            ////}
+
+            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.ReplyToAddress, out var replyToAddress) && replyToAddress != null)
+            ////{
+            ////    properties.ReplyTo = replyToAddress;
+            ////}
         }
 
         static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, out long delay)

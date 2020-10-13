@@ -24,7 +24,7 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>());
+                //EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>());
             }
 
             class MyEventHandler : IHandleMessages<Message>

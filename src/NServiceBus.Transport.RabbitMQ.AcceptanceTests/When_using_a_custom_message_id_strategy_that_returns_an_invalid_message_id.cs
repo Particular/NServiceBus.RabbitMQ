@@ -25,8 +25,9 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<RabbitMQTransport>()
-                        .CustomMessageIdStrategy(m => "");
+                    //TODO
+                    //c.UseTransport<RabbitMQTransport>()
+                    //    .CustomMessageIdStrategy(m => "");
                 });
             }
 

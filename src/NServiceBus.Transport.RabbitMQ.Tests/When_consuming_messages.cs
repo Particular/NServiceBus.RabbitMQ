@@ -14,9 +14,9 @@
         public async Task Should_block_until_a_message_is_available()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-            var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue)));
+            var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue), new Dictionary<string, string>()));
 
-            await messageDispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
+            await messageDispatcher.Dispatch(transportOperations, new TransportTransaction());
 
             var receivedMessage = ReceiveMessage();
 

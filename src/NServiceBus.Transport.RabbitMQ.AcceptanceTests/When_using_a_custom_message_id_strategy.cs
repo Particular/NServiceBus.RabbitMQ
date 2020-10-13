@@ -36,8 +36,9 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.EnableFeature<StarterFeature>();
-                    c.UseTransport<RabbitMQTransport>()
-                        .CustomMessageIdStrategy(m => customMessageId);
+                    ////TODO
+                    ////c.UseTransport<RabbitMQTransport>()
+                    ////    .CustomMessageIdStrategy(m => customMessageId);
                 });
             }
 
@@ -70,8 +71,8 @@
                             },
                             Encoding.UTF8.GetBytes(messageBody));
 
-                        var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
-                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
+                        var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()), new Dictionary<string, string>());
+                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction());
                     }
 
                     protected override Task OnStop(IMessageSession session) => Task.CompletedTask;
