@@ -37,7 +37,7 @@
         {
             Guard.AgainstNull(nameof(options), options);
 
-            options.SetHeader(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader, true.ToString());
+            options.SetHeader(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader, bool.TrueString);
         }
     }
 }
