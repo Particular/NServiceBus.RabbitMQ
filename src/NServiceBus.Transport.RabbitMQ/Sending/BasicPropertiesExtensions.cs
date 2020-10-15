@@ -23,16 +23,7 @@
 
             var delayed = CalculateDelay(deliveryConstraints, out var delay);
 
-            if (messageHeaders.ContainsKey(UseNonPersistentDeliveryHeader))
-            {
-                properties.Persistent = !bool.Parse(messageHeaders[UseNonPersistentDeliveryHeader]);
-
-                messageHeaders.Remove(UseNonPersistentDeliveryHeader);
-            }
-            else
-            {
-                properties.Persistent = true;
-            }
+            properties.Persistent = !messageHeaders.ContainsKey(UseNonPersistentDeliveryHeader);
 
             properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 

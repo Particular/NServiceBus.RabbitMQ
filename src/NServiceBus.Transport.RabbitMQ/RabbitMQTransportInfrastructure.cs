@@ -40,7 +40,7 @@
             channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology);
         }
 
-        public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };
+        public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };
 
         public override OutboundRoutingPolicy OutboundRoutingPolicy => new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
