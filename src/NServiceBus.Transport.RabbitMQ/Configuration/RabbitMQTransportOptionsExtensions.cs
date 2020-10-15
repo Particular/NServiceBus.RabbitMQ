@@ -3,12 +3,12 @@
     using Transport.RabbitMQ;
 
     /// <summary>
-    ///
+    /// Adds access to the RabbitMQ transport config to varios options for outgoing operations.
     /// </summary>
     public static class RabbitMQTransportOptionsExtensions
     {
         /// <summary>
-        ///
+        /// Requests the message to be delivered with delivery mode set to non-persistent.
         /// </summary>
         /// <param name="options">Options being extended.</param>
         public static void UseNonPersistentDeliveryMode(this SendOptions options)
@@ -19,7 +19,7 @@
         }
 
         /// <summary>
-        ///
+        /// Requests the message to be delivered with delivery mode set to non-persistent.
         /// </summary>
         /// <param name="options">Options being extended.</param>
         public static void UseNonPersistentDeliveryMode(this PublishOptions options)
@@ -30,7 +30,7 @@
         }
 
         /// <summary>
-        ///
+        /// Requests the message to be delivered with delivery mode set to non-persistent.
         /// </summary>
         /// <param name="options">Options being extended.</param>
         public static void UseNonPersistentDeliveryMode(this ReplyOptions options)

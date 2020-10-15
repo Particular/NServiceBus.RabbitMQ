@@ -8,6 +8,12 @@ namespace NServiceBus
         public override string ExampleConnectionStringForErrorMessage { get; }
         public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
     }
+    public class static RabbitMQTransportOptionsExtensions
+    {
+        public static void UseNonPersistentDeliveryMode(this NServiceBus.SendOptions options) { }
+        public static void UseNonPersistentDeliveryMode(this NServiceBus.PublishOptions options) { }
+        public static void UseNonPersistentDeliveryMode(this NServiceBus.ReplyOptions options) { }
+    }
     public class static RabbitMQTransportSettingsExtensions
     {
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
