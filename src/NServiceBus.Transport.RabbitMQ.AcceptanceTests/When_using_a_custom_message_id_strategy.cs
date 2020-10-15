@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿using NServiceBus.Settings;
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Collections.Generic;
     using System.Text;
@@ -11,7 +13,6 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Routing;
-    using Settings;
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {

@@ -23,13 +23,11 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly int prefetchMultiplier;
         readonly ushort overriddenPrefetchCount;
+        readonly PushSettings settings;
+        readonly Action<string, Exception> criticalError;
+        readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
+        
 
-        // Init
-        Func<MessageContext, Task> onMessage;
-        Func<ErrorContext, Task<ErrorHandleResult>> onError;
-        PushSettings settings;
-        Action<string, Exception> criticalError;
-        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
         // Start
         int maxConcurrency;
@@ -37,11 +35,16 @@
         CancellationTokenSource messageProcessing;
         IConnection connection;
         AsyncEventingBasicConsumer consumer;
+        Func<MessageContext, Task> onMessage;
+        Func<ErrorContext, Task<ErrorHandleResult>> onError;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount, Action<string, Exception> criticalError)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag,
+            ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
+            int prefetchMultiplier, ushort overriddenPrefetchCount, Action<string, Exception> criticalError,
+            IManageSubscriptions subscriptionManager, PushSettings pushSettings)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -52,26 +55,22 @@
             this.prefetchMultiplier = prefetchMultiplier;
             this.overriddenPrefetchCount = overriddenPrefetchCount;
             this.criticalError = criticalError;
+            this.settings = pushSettings;
+            Subscriptions = subscriptionManager;
+
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
         }
 
-        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, PushSettings settings)
+        public void Start(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError)
         {
             this.onMessage = onMessage;
             this.onError = onError;
-            this.settings = settings;
-
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
             if (settings.PurgeOnStartup)
             {
                 queuePurger.Purge(settings.InputQueue);
             }
 
-            return Task.CompletedTask;
-        }
-
-        public void Start(PushRuntimeSettings limitations)
-        {
             maxConcurrency = limitations.MaxConcurrency;
             messageProcessing = new CancellationTokenSource();
 
@@ -131,6 +130,8 @@
 
             await connectionShutdownCompleted.Task.ConfigureAwait(false);
         }
+
+        public IManageSubscriptions Subscriptions { get; }
 
         Task Consumer_Registered(object sender, ConsumerEventArgs e)
         {

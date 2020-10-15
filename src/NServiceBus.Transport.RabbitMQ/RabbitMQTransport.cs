@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using RabbitMQ.Client.Events;
 
 namespace NServiceBus
@@ -81,9 +82,9 @@ namespace NServiceBus
         /// <summary>
         /// Initializes all the factories and supported features for the transport.
         /// </summary>
-        public override TransportInfrastructure Initialize(TransportSettings settings)
+        public override Task<TransportInfrastructure> Initialize(Transport.Settings settings)
         {
-            return new RabbitMQTransportInfrastructure(settings, this);
+            return Task.FromResult<TransportInfrastructure>(new RabbitMQTransportInfrastructure(settings, this));
         }
     }
 }

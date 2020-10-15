@@ -6,7 +6,6 @@
     using System.Text;
     using Features;
     using global::RabbitMQ.Client;
-    using Settings;
 
     static class DelayInfrastructure
     {

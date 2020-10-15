@@ -15,7 +15,7 @@
             var operations = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build(10000);
             await messageDispatcher.Dispatch(operations, new TransportTransaction());
 
-            messagePump.Start(new PushRuntimeSettings(50));
+            messagePump.Start(new PushRuntimeSettings(50), context => Task.CompletedTask, context => Task.FromResult(ErrorHandleResult.Handled));
             await Task.Delay(500);
             await messagePump.Stop();
         }

@@ -35,22 +35,16 @@
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, (_, __) => {});
+            subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, (_, __) => {}, subscriptionManager, new PushSettings(ReceiverQueue, ErrorQueue, true, TransportTransactionMode.ReceiveOnly));
 
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
-            subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
-
-            messagePump.Init(messageContext =>
+            messagePump.Start(new PushRuntimeSettings(MaximumConcurrency), messageContext =>
             {
                 receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers, messageContext.Body));
                 return Task.CompletedTask;
-            },
-                ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
-                new PushSettings(ReceiverQueue, ErrorQueue, true, TransportTransactionMode.ReceiveOnly)
-            ).GetAwaiter().GetResult();
-
-            messagePump.Start(new PushRuntimeSettings(MaximumConcurrency));
+            }, ErrorContext => Task.FromResult(ErrorHandleResult.Handled));
         }
 
         [TearDown]

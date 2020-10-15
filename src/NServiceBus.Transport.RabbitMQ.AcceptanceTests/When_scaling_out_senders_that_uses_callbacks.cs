@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿using NServiceBus.Settings;
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
     using System.Threading;
@@ -9,7 +11,6 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Settings;
 
     public class When_scaling_out_senders_that_uses_callbacks : NServiceBusAcceptanceTest
     {

@@ -1,19 +1,17 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿using NServiceBus.Settings;
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using DeliveryConstraints;
-    using Extensibility;
     using Features;
     using Microsoft.Extensions.DependencyInjection;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Performance.TimeToBeReceived;
     using Routing;
-    using Settings;
 
     public class When_the_broker_connection_is_lost : NServiceBusAcceptanceTest
     {

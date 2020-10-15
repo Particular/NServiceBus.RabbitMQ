@@ -10,7 +10,7 @@ using RabbitMQ.Client;
 
 class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
 {
-    public TransportConfigurationResult Configure(TransportSettings transportSettings)
+    public async Task<TransportConfigurationResult> Configure(Settings settings)
     {
         var result = new TransportConfigurationResult();
 
@@ -28,13 +28,14 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         
         ////queueBindings = settings.Get<QueueBindings>();
 
-        result.TransportInfrastructure = transport.Initialize(transportSettings);
+        result.TransportInfrastructure = await transport.Initialize(settings);
 
         isTransportInitialized = true;
         result.PurgeInputQueueOnStartup = true;
 
         return result;
     }
+
 
     public Task Cleanup()
     {

@@ -20,15 +20,16 @@
             }
 
             //TODO make this work
-
             ////properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
 
-            ////var messageHeaders = message.Headers ?? new Dictionary<string, string>();
+            var messageHeaders = message.Headers ?? new Dictionary<string, string>();
 
+            //TODO make this work
             ////var delayed = CalculateDelay(deliveryConstraints, out var delay);
 
-            ////properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
+            properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
+            //TODO make this work
             ////if (delayed)
             ////{
             ////    properties.Headers[DelayInfrastructure.DelayHeader] = Convert.ToInt32(delay);
@@ -45,38 +46,38 @@
             ////    properties.Expiration = timeToBeReceived.MaxTime.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
             ////}
 
-            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.CorrelationId, out var correlationId) && correlationId != null)
-            ////{
-            ////    properties.CorrelationId = correlationId;
-            ////}
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.CorrelationId, out var correlationId) && correlationId != null)
+            {
+                properties.CorrelationId = correlationId;
+            }
 
-            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out var enclosedMessageTypes) && enclosedMessageTypes != null)
-            ////{
-            ////    var index = enclosedMessageTypes.IndexOf(',');
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.EnclosedMessageTypes, out var enclosedMessageTypes) && enclosedMessageTypes != null)
+            {
+                var index = enclosedMessageTypes.IndexOf(',');
 
-            ////    if (index > -1)
-            ////    {
-            ////        properties.Type = enclosedMessageTypes.Substring(0, index);
-            ////    }
-            ////    else
-            ////    {
-            ////        properties.Type = enclosedMessageTypes;
-            ////    }
-            ////}
+                if (index > -1)
+                {
+                    properties.Type = enclosedMessageTypes.Substring(0, index);
+                }
+                else
+                {
+                    properties.Type = enclosedMessageTypes;
+                }
+            }
 
-            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.ContentType, out var contentType) && contentType != null)
-            ////{
-            ////    properties.ContentType = contentType;
-            ////}
-            ////else
-            ////{
-            ////    properties.ContentType = "application/octet-stream";
-            ////}
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.ContentType, out var contentType) && contentType != null)
+            {
+                properties.ContentType = contentType;
+            }
+            else
+            {
+                properties.ContentType = "application/octet-stream";
+            }
 
-            ////if (messageHeaders.TryGetValue(NServiceBus.Headers.ReplyToAddress, out var replyToAddress) && replyToAddress != null)
-            ////{
-            ////    properties.ReplyTo = replyToAddress;
-            ////}
+            if (messageHeaders.TryGetValue(NServiceBus.Headers.ReplyToAddress, out var replyToAddress) && replyToAddress != null)
+            {
+                properties.ReplyTo = replyToAddress;
+            }
         }
 
         static bool CalculateDelay(List<DeliveryConstraint> deliveryConstraints, out long delay)
