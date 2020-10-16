@@ -70,12 +70,6 @@
             return WithHeader(Headers.CorrelationId, correlationId);
         }
 
-        public OutgoingMessageBuilder NonDurable()
-        {
-            constraints.Add(new NonDurableDelivery());
-            return this;
-        }
-
         public OutgoingMessageBuilder WithIntent(MessageIntentEnum intent)
         {
             return WithHeader(Headers.MessageIntent, intent.ToString());

@@ -19,11 +19,11 @@
                 properties.MessageId = message.MessageId;
             }
 
-            properties.Persistent = !deliveryConstraints.Any(c => c is NonDurableDelivery);
-
             var messageHeaders = message.Headers ?? new Dictionary<string, string>();
 
             var delayed = CalculateDelay(deliveryConstraints, out var delay);
+
+            properties.Persistent = !messageHeaders.ContainsKey(UseNonPersistentDeliveryHeader);
 
             properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 
@@ -124,5 +124,6 @@
             (constraint = list.OfType<T>().FirstOrDefault()) != null;
 
         public const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
+        public const string UseNonPersistentDeliveryHeader = "NServiceBus.Transport.RabbitMQ.UseNonPersistentDelivery";
     }
 }

@@ -64,11 +64,6 @@
                 deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type;
             }
 
-            if (properties.IsDeliveryModePresent())
-            {
-                deserializedHeaders[Headers.NonDurableMessage] = (properties.DeliveryMode == 1).ToString();
-            }
-
             if (deserializedHeaders.ContainsKey("NServiceBus.RabbitMQ.CallbackQueue"))
             {
                 deserializedHeaders[Headers.ReplyToAddress] = deserializedHeaders["NServiceBus.RabbitMQ.CallbackQueue"];

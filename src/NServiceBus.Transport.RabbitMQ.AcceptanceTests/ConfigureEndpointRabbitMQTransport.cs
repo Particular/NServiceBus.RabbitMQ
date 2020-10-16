@@ -6,7 +6,6 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
-using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 using RabbitMQ.Client;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
