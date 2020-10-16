@@ -82,12 +82,6 @@
         }
 
         [Test]
-        public Task Should_preserve_the_recoverable_setting_if_set_to_durable()
-        {
-            return Verify(new OutgoingMessageBuilder(), result => Assert.True(result.Headers[Headers.NonDurableMessage] == bool.FalseString));
-        }
-
-        [Test]
         public Task Should_transmit_all_transportMessage_headers()
         {
             return Verify(new OutgoingMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
