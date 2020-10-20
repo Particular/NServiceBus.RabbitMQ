@@ -23,7 +23,7 @@
 
             var delayed = CalculateDelay(deliveryConstraints, out var delay);
 
-            properties.Persistent = !messageHeaders.ContainsKey(UseNonPersistentDeliveryHeader);
+            properties.Persistent = !messageHeaders.Remove(UseNonPersistentDeliveryHeader);
 
             properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
 

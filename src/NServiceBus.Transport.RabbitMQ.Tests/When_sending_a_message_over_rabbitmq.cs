@@ -77,6 +77,7 @@
             return Verify(new OutgoingMessageBuilder().WithHeader(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader, true.ToString()), (message, basicDeliverEventArgs) =>
             {
                 Assert.False(basicDeliverEventArgs.BasicProperties.Persistent);
+                Assert.False(basicDeliverEventArgs.BasicProperties.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), "Temp header should not be visible on the wire");
                 Assert.True(message.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), "Temp header should not removed to make sure that retries keeps the setting");
             });
         }

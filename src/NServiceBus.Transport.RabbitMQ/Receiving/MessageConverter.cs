@@ -58,6 +58,11 @@
                 deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId;
             }
 
+            if (properties.IsDeliveryModePresent() && properties.DeliveryMode == 1)
+            {
+                deserializedHeaders[BasicPropertiesExtensions.UseNonPersistentDeliveryHeader] = bool.TrueString;
+            }
+
             //When doing native interop we only require the type to be set the "fullName" of the message
             if (!deserializedHeaders.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
