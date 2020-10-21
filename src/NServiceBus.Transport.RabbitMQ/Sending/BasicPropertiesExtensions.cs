@@ -85,7 +85,7 @@
             if (deliveryConstraints.TryGet(out DoNotDeliverBefore doNotDeliverBefore))
             {
                 delayed = true;
-                delay = Convert.ToInt64(Math.Ceiling((doNotDeliverBefore.At - DateTime.UtcNow).TotalSeconds));
+                delay = Convert.ToInt64(Math.Ceiling((doNotDeliverBefore.At - DateTimeOffset.UtcNow).TotalSeconds));
 
                 if (delay > DelayInfrastructure.MaxDelayInSeconds)
                 {

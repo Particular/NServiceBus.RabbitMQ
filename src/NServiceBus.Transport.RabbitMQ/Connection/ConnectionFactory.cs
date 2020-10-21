@@ -88,7 +88,6 @@
             lock (lockObject)
             {
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
-                connectionFactory.ClientProperties["connected"] = DateTime.Now.ToString("G");
                 connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
                 var connection = connectionFactory.CreateConnection(connectionName);

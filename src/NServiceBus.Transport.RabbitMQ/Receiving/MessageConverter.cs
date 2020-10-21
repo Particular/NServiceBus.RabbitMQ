@@ -146,7 +146,7 @@
 
             if (value is global::RabbitMQ.Client.AmqpTimestamp timestamp)
             {
-                return DateTimeExtensions.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.UnixTime));
+                return DateTimeOffsetHelper.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.UnixTime));
             }
 
             return value?.ToString();
@@ -154,8 +154,6 @@
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
 
-        static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
-
-        static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
     }
 }
