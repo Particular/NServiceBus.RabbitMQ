@@ -3,14 +3,13 @@
     using Transport.RabbitMQ;
 
     /// <summary>
-    /// Adds access to the RabbitMQ transport config to varios options for outgoing operations.
+    /// Adds extension methods for the relevant ExtendableOptions classes.
     /// </summary>
     public static class RabbitMQTransportOptionsExtensions
     {
         /// <summary>
-        /// Requests the message to be delivered with delivery mode set to non-persistent.
+        /// Uses the non-persistent delivery mode to send the message.
         /// </summary>
-        /// <param name="options">Options being extended.</param>
         public static void UseNonPersistentDeliveryMode(this SendOptions options)
         {
             Guard.AgainstNull(nameof(options), options);
@@ -19,9 +18,8 @@
         }
 
         /// <summary>
-        /// Requests the message to be delivered with delivery mode set to non-persistent.
+        /// Uses the non-persistent delivery mode to publish the message.
         /// </summary>
-        /// <param name="options">Options being extended.</param>
         public static void UseNonPersistentDeliveryMode(this PublishOptions options)
         {
             Guard.AgainstNull(nameof(options), options);
@@ -30,9 +28,8 @@
         }
 
         /// <summary>
-        /// Requests the message to be delivered with delivery mode set to non-persistent.
+        /// Uses the non-persistent delivery mode to send the reply.
         /// </summary>
-        /// <param name="options">Options being extended.</param>
         public static void UseNonPersistentDeliveryMode(this ReplyOptions options)
         {
             Guard.AgainstNull(nameof(options), options);
