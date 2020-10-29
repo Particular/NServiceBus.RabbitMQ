@@ -17,6 +17,9 @@ namespace NServiceBus
     public class static RabbitMQTransportSettingsExtensions
     {
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
+        [System.ObsoleteAttribute("The timeout manager has been removed, so there are no delayed delivery configurat" +
+            "ion options now. The member currently throws a NotImplementedException. Will be " +
+            "removed in version 8.0.0.", true)]
         public static NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableDurableExchangesAndQueues(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableRemoteCertificateValidation(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
@@ -35,6 +38,8 @@ namespace NServiceBus
 }
 namespace NServiceBus.Transport.RabbitMQ
 {
+    [System.ObsoleteAttribute("The timeout manager has been removed, so it is no longer possible to consume lega" +
+        "cy delayed messages from timeout storage. Will be removed in version 8.0.0.", true)]
     public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
         public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings EnableTimeoutManager() { }

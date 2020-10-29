@@ -4,9 +4,7 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Text;
-    using Features;
     using global::RabbitMQ.Client;
-    using Settings;
 
     static class DelayInfrastructure
     {
@@ -76,20 +74,6 @@
                 channel.QueueDelete(name);
                 channel.ExchangeDelete(name);
             }
-        }
-
-        public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
-        {
-            var timeoutManagerShouldBeEnabled = settings.GetOrDefault<bool>(SettingsKeys.EnableTimeoutManager);
-            var timeoutManagerFeatureActive = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
-
-            if (timeoutManagerShouldBeEnabled && !timeoutManagerFeatureActive)
-            {
-                return StartupCheckResult.Failed("The transport has been configured to enable the timeout manager, but the timeout manager is not active." +
-                    "Ensure that the timeout manager is active or remove the call to 'EndpointConfiguration.UseTransport<RabbitMQTransport>().DelayedDelivery().EnableTimeoutManager()'.");
-            }
-
-            return StartupCheckResult.Success;
         }
 
         public static string CalculateRoutingKey(int delayInSeconds, string address, out int startingDelayLevel)
