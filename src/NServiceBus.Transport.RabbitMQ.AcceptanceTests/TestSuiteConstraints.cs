@@ -10,7 +10,7 @@
 
         public bool SupportsNativePubSub => true;
 
-        public bool SupportsNativeDeferral => true;
+        public bool SupportsDelayedDelivery => true;
 
         public bool SupportsOutbox => true;
 

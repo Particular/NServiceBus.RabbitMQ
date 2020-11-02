@@ -177,16 +177,6 @@
             return transportExtensions;
         }
 
-        /// <summary>
-        /// Gets the delayed delivery settings.
-        /// </summary>
-        /// <param name="transportExtensions">The transport configuration object</param>
-        public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions)
-        {
-            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-
-            return new DelayedDeliverySettings(transportExtensions.GetSettings());
-        }
 
         /// <summary>
         /// Specifies that exchanges and queues should be declared as non-durable.
