@@ -24,6 +24,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
     <PackageReference Include="Particular.CodeRules" Version="0.7.0" PrivateAssets="All" />
     <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
+	<PackageReference Include="GitHubActionsTestLogger" Version="1.1.2" />
   </ItemGroup>
 
 </Project>
