@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Fody" Version="6.3.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="NServiceBus" Version="[8.0.0-alpha.644, 9.0.0)" />
     <PackageReference Include="Obsolete.Fody" Version="5.2.1" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.7.0" PrivateAssets="All" />
