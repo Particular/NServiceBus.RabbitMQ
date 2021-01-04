@@ -79,7 +79,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         Task GetConfirmationTask()
         {
-            var tcs = new TaskCompletionSource<bool>();
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
             if (!added)
@@ -148,7 +148,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 {
                     SetException(message.Key, $"Channel has been closed: {e}");
                 }
-            } 
+            }
             while (!messages.IsEmpty);
         }
 
@@ -156,7 +156,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (messages.TryRemove(key, out var tcs))
             {
-                TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetResult(true)).Ignore();
+                tcs.SetResult(true);
             }
         }
 
@@ -164,7 +164,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (messages.TryRemove(key, out var tcs))
             {
-                TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetException(new Exception(exceptionMessage))).Ignore();
+                tcs.SetException(new Exception(exceptionMessage));
             }
         }
 
