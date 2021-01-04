@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                Task.Run(Reconnect).Ignore();
+                _ = Task.Run(Reconnect);
             }
         }
 
