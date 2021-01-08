@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
     <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-alpha.644" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit" Version="3.13.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
     <PackageReference Include="Particular.CodeRules" Version="0.7.0" PrivateAssets="All" />
     <PackageReference Include="RabbitMQ.Client" Version="6.2.1" />
