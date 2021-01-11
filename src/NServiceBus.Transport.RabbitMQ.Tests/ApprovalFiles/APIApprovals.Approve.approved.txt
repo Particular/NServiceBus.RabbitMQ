@@ -5,8 +5,25 @@ namespace NServiceBus
     public class RabbitMQTransport : NServiceBus.Transport.TransportDefinition
     {
         public RabbitMQTransport() { }
-        public override string ExampleConnectionStringForErrorMessage { get; }
-        public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
+        public RabbitMQTransport(string connectionString) { }
+        public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
+        public System.TimeSpan HeartbeatInterval { get; set; }
+        public string Host { get; set; }
+        public System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> MessageIdStrategy { get; set; }
+        public System.TimeSpan NetworkRecoveryInterval { get; set; }
+        public string Password { get; set; }
+        public int? Port { get; set; }
+        public System.Func<int, int> PrefetchCountCalculation { get; set; }
+        public NServiceBus.Transport.RabbitMQ.IRoutingTopology RoutingTopology { get; set; }
+        public System.TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; }
+        public bool UseExternalAuthMechanism { get; set; }
+        public bool UseTLS { get; set; }
+        public string UserName { get; set; }
+        public string VHost { get; set; }
+        public bool ValidateRemoteCertificate { get; set; }
+        public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
+        public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses) { }
+        public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
     public static class RabbitMQTransportOptionsExtensions
     {
@@ -16,33 +33,86 @@ namespace NServiceBus
     }
     public static class RabbitMQTransportSettingsExtensions
     {
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.MessageIdStrategy` instead. The member currently throws a NotImplementedExcep" +
+            "tion. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
-        [System.Obsolete("The timeout manager has been removed, so there are no delayed delivery configurat" +
-            "ion options now. The member currently throws a NotImplementedException. Will be " +
-            "removed in version 8.0.0.", true)]
-        public static NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        [System.Obsolete("The configuration has been moved to the topology implementations. The member curr" +
+            "ently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableDurableExchangesAndQueues(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.ValidateRemoteCertificate` instead. The member currently throws a NotImplemen" +
+            "tedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableRemoteCertificateValidation(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.PrefetchCountCalculation` instead. The member currently throws a NotImplement" +
+            "edException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.PrefetchCountCalculation` instead. The member currently throws a NotImplement" +
+            "edException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchMultiplier(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int prefetchMultiplier) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.ClientCertificate` instead. The member currently throws a NotImplementedExcep" +
+            "tion. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificate(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Security.Cryptography.X509Certificates.X509Certificate2 clientCertificate) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.ClientCertificate` instead. The member currently throws a NotImplementedExcep" +
+            "tion. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificate(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string path, string password) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.HeartbeatInterval` instead. The member currently throws a NotImplementedExcep" +
+            "tion. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetHeartbeatInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan heartbeatInterval) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.NetworkRecoveryInterval` instead. The member currently throws a NotImplemente" +
+            "dException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetNetworkRecoveryInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan networkRecoveryInterval) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.TimeToWaitBeforeTriggeringCircuitBreaker` instead. The member currently throw" +
+            "s a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.RoutingTopology` instead. The member currently throws a NotImplementedExcepti" +
+            "on. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.RoutingTopology` instead. The member currently throws a NotImplementedExcepti" +
+            "on. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.RoutingTopology` instead. The member currently throws a NotImplementedExcepti" +
+            "on. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
+            "rt.UseExternalAuthMechanism` instead. The member currently throws a NotImplement" +
+            "edException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
     }
 }
 namespace NServiceBus.Transport.RabbitMQ
 {
-    [System.Obsolete("The timeout manager has been removed, so it is no longer possible to consume lega" +
-        "cy delayed messages from timeout storage. Will be removed in version 8.0.0.", true)]
-    public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
+    public class ConventionalRoutingTopology : NServiceBus.Transport.RabbitMQ.IRoutingTopology
     {
-        public NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings EnableTimeoutManager() { }
+        public ConventionalRoutingTopology(bool useDurableExchanges, System.Func<System.Type, string> exchangeNameConvention = null) { }
+        public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
+        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses) { }
+        public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
+        public void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties) { }
+        public void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
+        public void SetupSubscription(RabbitMQ.Client.IModel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName) { }
+        public void TeardownSubscription(RabbitMQ.Client.IModel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName) { }
+    }
+    public class DirectRoutingTopology : NServiceBus.Transport.RabbitMQ.IRoutingTopology
+    {
+        public DirectRoutingTopology(bool useDurableExchanges, System.Func<string> exchangeNameConvention = null, System.Func<System.Type, string> routingKeyConvention = null) { }
+        public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
+        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses) { }
+        public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
+        public void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties) { }
+        public void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
+        public void SetupSubscription(RabbitMQ.Client.IModel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName) { }
+        public void TeardownSubscription(RabbitMQ.Client.IModel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName) { }
     }
     public interface IRoutingTopology
     {
@@ -51,7 +121,7 @@ namespace NServiceBus.Transport.RabbitMQ
         void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
         void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties);
         void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
-        void SetupSubscription(RabbitMQ.Client.IModel channel, System.Type type, string subscriberName);
-        void TeardownSubscription(RabbitMQ.Client.IModel channel, System.Type type, string subscriberName);
+        void SetupSubscription(RabbitMQ.Client.IModel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName);
+        void TeardownSubscription(RabbitMQ.Client.IModel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName);
     }
 }

@@ -28,7 +28,7 @@
                 .Run());
 
             Assert.That(exception, Is.Not.Null);
-            Assert.IsTrue(exception.Message.StartsWith("Message cannot be sent with"));
+            StringAssert.StartsWith("Message cannot be delayed by", exception.Message);
         }
 
         public class Endpoint : EndpointConfigurationBuilder

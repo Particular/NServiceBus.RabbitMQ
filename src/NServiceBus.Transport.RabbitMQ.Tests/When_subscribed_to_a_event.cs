@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.Tests
+﻿using NServiceBus.Unicast.Messages;
+
+namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.Threading.Tasks;
     using Extensibility;
@@ -126,7 +128,7 @@
         {
             await Subscribe<MyEvent>();
 
-            await subscriptionManager.Unsubscribe(typeof(MyEvent), new ContextBag());
+            await subscriptionManager.Unsubscribe(new MessageMetadata(typeof(MyEvent)), new ContextBag());
 
             //publish a event that that this publisher isn't subscribed to
             await Publish<MyEvent>();
@@ -134,14 +136,31 @@
             AssertNoEventReceived();
         }
 
-        Task Subscribe<T>() => subscriptionManager.Subscribe(typeof(T), new ContextBag());
+        [SetUp]
+        public async Task Prepare()
+        {
+            await Unsubscribe<IEvent>();
+            await Unsubscribe<object>();
+            await Unsubscribe<MyOtherEvent>();
+            await Unsubscribe<MyEvent>();
+            await Unsubscribe<EventBase>();
+            await Unsubscribe<SubEvent1>();
+            await Unsubscribe<SubEvent2>();
+            await Unsubscribe<IMyEvent>();
+            await Unsubscribe<MyEvent1>();
+            await Unsubscribe<MyEvent2>();
+            await Unsubscribe<CombinedClassAndInterface>();
+        }
+
+        Task Subscribe<T>() => subscriptionManager.SubscribeAll(new[] { new MessageMetadata(typeof(T))}, new ContextBag());
+        Task Unsubscribe<T>() => subscriptionManager.Unsubscribe(new MessageMetadata(typeof(T)), new ContextBag());
 
         Task Publish<T>()
         {
             var type = typeof(T);
             var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build();
 
-            return messageDispatcher.Dispatch(message, new TransportTransaction(), new ContextBag());
+            return messageDispatcher.Dispatch(message, new TransportTransaction());
         }
 
         void AssertReceived<T>()

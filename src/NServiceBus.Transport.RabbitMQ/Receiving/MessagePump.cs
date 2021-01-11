@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿using NServiceBus.Unicast.Messages;
+
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -10,7 +12,7 @@
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
 
-    sealed class MessagePump : IPushMessages, IDisposable
+    sealed class MessagePump : IMessageReceiver, IDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new TransportTransaction();
@@ -20,18 +22,13 @@
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
         readonly QueuePurger queuePurger;
-        readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
-        readonly int prefetchMultiplier;
-        readonly ushort overriddenPrefetchCount;
+        readonly Func<int, int> prefetchCountCalculation;
+        readonly ReceiveSettings settings;
+        readonly Action<string, Exception> criticalErrorAction;
+        readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
-        // Init
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
-        PushSettings settings;
-        CriticalError criticalError;
-        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
-
-        // Start
         int maxConcurrency;
         long numberOfMessagesBeingProcessed;
         CancellationTokenSource messageProcessing;
@@ -41,59 +38,60 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, MessageConverter messageConverter, string consumerTag,
+            ChannelProvider channelProvider, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
+            Func<int, int> prefetchCountCalculation, ReceiveSettings settings,
+            Action<string, Exception> criticalErrorAction)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
-            this.queuePurger = queuePurger;
-            this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
-            this.prefetchMultiplier = prefetchMultiplier;
-            this.overriddenPrefetchCount = overriddenPrefetchCount;
+            this.prefetchCountCalculation = prefetchCountCalculation;
+            this.settings = settings;
+            this.criticalErrorAction = criticalErrorAction;
+
+            if (settings.UsePublishSubscribe)
+            {
+                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, settings.ReceiveAddress);
+            }
+
+            queuePurger = new QueuePurger(connectionFactory);
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.ReceiveAddress} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalErrorAction);
         }
 
-        public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
+        public ISubscriptionManager Subscriptions { get; }
+        public string Id => settings.Id;
+
+        public Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError)
         {
             this.onMessage = onMessage;
             this.onError = onError;
-            this.settings = settings;
-            this.criticalError = criticalError;
+            maxConcurrency = limitations.MaxConcurrency;
 
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
             if (settings.PurgeOnStartup)
             {
-                queuePurger.Purge(settings.InputQueue);
+                queuePurger.Purge(settings.ReceiveAddress);
             }
 
             return Task.CompletedTask;
         }
 
-        public void Start(PushRuntimeSettings limitations)
+        public Task StartReceive()
         {
-            maxConcurrency = limitations.MaxConcurrency;
             messageProcessing = new CancellationTokenSource();
 
-            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump", consumerDispatchConcurrency: maxConcurrency);
+            connection = connectionFactory.CreateConnection($"{settings.ReceiveAddress} MessagePump", consumerDispatchConcurrency: maxConcurrency);
 
             var channel = connection.CreateModel();
 
-            long prefetchCount;
+            var prefetchCount = prefetchCountCalculation(maxConcurrency);
 
-            if (overriddenPrefetchCount > 0)
+            if (prefetchCount < maxConcurrency)
             {
-                prefetchCount = overriddenPrefetchCount;
-
-                if (prefetchCount < maxConcurrency)
-                {
-                    Logger.Warn($"The specified prefetch count '{prefetchCount}' is smaller than the specified maximum concurrency '{maxConcurrency}'. The maximum concurrency value will be used as the prefetch count instead.");
-                    prefetchCount = maxConcurrency;
-                }
-            }
-            else
-            {
-                prefetchCount = (long)maxConcurrency * prefetchMultiplier;
+                Logger.Warn($"The specified prefetch count '{prefetchCount}' is smaller than the specified maximum concurrency '{maxConcurrency}'. The maximum concurrency value will be used as the prefetch count instead.");
+                prefetchCount = maxConcurrency;
             }
 
             channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
@@ -105,10 +103,12 @@
 
             consumer.Received += Consumer_Received;
 
-            channel.BasicConsume(settings.InputQueue, false, consumerTag, consumer);
+            channel.BasicConsume(settings.ReceiveAddress, false, consumerTag, consumer);
+
+            return Task.CompletedTask;
         }
 
-        public async Task Stop()
+        public async Task StopReceive()
         {
             consumer.Received -= Consumer_Received;
             messageProcessing.Cancel();
@@ -244,7 +244,7 @@
                         }
                         catch (Exception ex)
                         {
-                            criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
+                            criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
                             await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
 
                             return;
@@ -309,5 +309,7 @@
             messageProcessing?.Dispose();
             connection?.Dispose();
         }
+
+
     }
 }

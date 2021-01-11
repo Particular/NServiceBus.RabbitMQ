@@ -1,10 +1,12 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿using NServiceBus.Unicast.Messages;
+
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Threading.Tasks;
     using Extensibility;
 
-    class SubscriptionManager : IManageSubscriptions
+    class SubscriptionManager : ISubscriptionManager
     {
         readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
@@ -17,18 +19,20 @@
             this.localQueue = localQueue;
         }
 
-        public Task Subscribe(Type eventType, ContextBag context)
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
-                routingTopology.SetupSubscription(channel, eventType, localQueue);
+                foreach (var eventType in eventTypes)
+                {
+                    routingTopology.SetupSubscription(channel, eventType, localQueue);
+                }
             }
-
             return Task.CompletedTask;
         }
 
-        public Task Unsubscribe(Type eventType, ContextBag context)
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())

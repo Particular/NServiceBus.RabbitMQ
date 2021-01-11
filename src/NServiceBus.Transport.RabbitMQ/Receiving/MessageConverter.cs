@@ -4,14 +4,8 @@
     using System.Collections.Generic;
     using System.Text;
     using global::RabbitMQ.Client.Events;
-
     class MessageConverter
     {
-        public MessageConverter()
-        {
-            messageIdStrategy = DefaultMessageIdStrategy;
-        }
-
         public MessageConverter(Func<BasicDeliverEventArgs, string> messageIdStrategy)
         {
             this.messageIdStrategy = messageIdStrategy;
@@ -76,7 +70,7 @@
             return deserializedHeaders;
         }
 
-        string DefaultMessageIdStrategy(BasicDeliverEventArgs message)
+        public static string DefaultMessageIdStrategy(BasicDeliverEventArgs message)
         {
             var properties = message.BasicProperties;
 

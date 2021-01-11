@@ -159,7 +159,7 @@
             }
         }
 
-        MessageConverter converter = new MessageConverter();
+        MessageConverter converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
 
         [Test]
         public void TestCanHandleNoInterestingProperties()

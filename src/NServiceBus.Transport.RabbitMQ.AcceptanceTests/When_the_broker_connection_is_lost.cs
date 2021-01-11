@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using DeliveryConstraints;
     using Extensibility;
     using Features;
     using Microsoft.Extensions.DependencyInjection;
@@ -51,7 +50,7 @@
 
                 class ConnectionKiller : FeatureStartupTask
                 {
-                    public ConnectionKiller(IDispatchMessages sender, ReadOnlySettings settings, MyContext context)
+                    public ConnectionKiller(IMessageDispatcher sender, ReadOnlySettings settings, MyContext context)
                     {
                         this.context = context;
                         this.sender = sender;
@@ -72,8 +71,13 @@
                         try
                         {
                             var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
-                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), deliveryConstraints: new List<DeliveryConstraint> { new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1)) });
-                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), new ContextBag());
+                            var props = new DispatchProperties
+                            {
+                                DiscardIfNotReceivedBefore =
+                                    new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1))
+                            };
+                            var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), props);
+                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction());
                         }
                         catch (Exception)
                         {
@@ -82,7 +86,7 @@
                     }
 
                     readonly MyContext context;
-                    readonly IDispatchMessages sender;
+                    readonly IMessageDispatcher sender;
                     readonly ReadOnlySettings settings;
                 }
             }
