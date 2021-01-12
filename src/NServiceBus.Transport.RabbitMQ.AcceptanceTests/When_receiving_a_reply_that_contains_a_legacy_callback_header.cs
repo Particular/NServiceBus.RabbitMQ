@@ -55,13 +55,6 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                MyContext testContext;
-
-                public ReplyHandler(MyContext testContext)
-                {
-                    this.testContext = testContext;
-                }
-
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
                     return Task.CompletedTask;
@@ -114,7 +107,7 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private MyContext testContext;
+                MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {

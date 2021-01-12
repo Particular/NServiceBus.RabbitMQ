@@ -3,7 +3,7 @@ using System.Data.Common;
 using System.Net;
 using System.Text;
 
-internal class Broker
+class Broker
 {
     public static void DeleteVirtualHost()
     {

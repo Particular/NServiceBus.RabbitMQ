@@ -29,7 +29,7 @@
 
             class MyEventHandler : IHandleMessages<Message>
             {
-                private Context testContext;
+                Context testContext;
 
                 public MyEventHandler(Context testContext)
                 {

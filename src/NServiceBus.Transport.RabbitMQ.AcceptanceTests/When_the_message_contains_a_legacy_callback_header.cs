@@ -52,7 +52,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private MyContext testContext;
+                MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {
@@ -77,7 +77,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private MyContext testContext;
+                MyContext testContext;
 
                 public ReplyHandler(MyContext testContext)
                 {

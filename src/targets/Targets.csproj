@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="Bullseye" Version="3.6.0" />
-    <PackageReference Include="Particular.CodeRules" Version="0.7.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
