@@ -131,7 +131,7 @@
                 host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
         }
 
-        private static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
+        static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
         {
             var dictionary = new Dictionary<string, string>();
             var uri = new Uri(connectionString);
@@ -177,7 +177,7 @@
             return dictionary;
         }
 
-        private static Dictionary<string, string> ParseNServiceBusConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
+        static Dictionary<string, string> ParseNServiceBusConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
         {
             var dictionary = new DbConnectionStringBuilder { ConnectionString = connectionString }
                 .OfType<KeyValuePair<string, object>>()

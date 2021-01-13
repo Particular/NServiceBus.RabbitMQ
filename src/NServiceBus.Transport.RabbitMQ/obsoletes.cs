@@ -26,7 +26,7 @@ namespace NServiceBus
             throw new NotImplementedException();
         }
 
-        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", Message ="Publisher confirms are always enabled, so this method is no longer available.")]
+        [ObsoleteEx(RemoveInVersion = "7.0", TreatAsErrorFromVersion = "6.0", Message = "Publisher confirms are always enabled, so this method is no longer available.")]
         public static TransportExtensions<RabbitMQTransport> UsePublisherConfirms(this TransportExtensions<RabbitMQTransport> transportExtensions, bool usePublisherConfirms)
         {
             throw new NotImplementedException();

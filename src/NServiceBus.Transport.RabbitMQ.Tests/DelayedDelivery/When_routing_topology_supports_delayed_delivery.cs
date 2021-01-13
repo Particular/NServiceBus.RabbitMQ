@@ -7,8 +7,6 @@
     [TestFixture]
     class When_routing_topology_supports_delayed_delivery
     {
-        const string coreExternalTimeoutManagerAddressKey = "NServiceBus.ExternalTimeoutManagerAddress";
-
         SettingsHolder settings;
 
         [SetUp]
