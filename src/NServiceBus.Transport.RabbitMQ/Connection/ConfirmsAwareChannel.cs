@@ -155,7 +155,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (messages.TryRemove(key, out var tcs))
             {
-                TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetResult(true)).Ignore();
+                _ = TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetResult(true));
             }
         }
 
@@ -163,7 +163,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (messages.TryRemove(key, out var tcs))
             {
-                TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetException(new Exception(exceptionMessage))).Ignore();
+                _ = TaskEx.StartNew(tcs, state => ((TaskCompletionSource<bool>)state).SetException(new Exception(exceptionMessage)));
             }
         }
 

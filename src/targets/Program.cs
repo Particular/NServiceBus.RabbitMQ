@@ -1,11 +1,7 @@
-using System;
-using System.IO;
 using static Bullseye.Targets;
 
-internal static class Program
+static class Program
 {
-    private static readonly string testPackageBaseOutput = Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof(Program).Assembly.CodeBase).Path));
-
     public static void Main(string[] args)
     {
         Target("delete-virtual-host", () => Broker.DeleteVirtualHost());
