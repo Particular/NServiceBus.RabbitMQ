@@ -76,8 +76,8 @@
 
             class MyResponseHandler : IHandleMessages<MyResponse>
             {
-                private ReadOnlySettings settings;
-                private Context testContext;
+                ReadOnlySettings settings;
+                Context testContext;
 
                 public MyResponseHandler(ReadOnlySettings settings, Context testContext)
                 {

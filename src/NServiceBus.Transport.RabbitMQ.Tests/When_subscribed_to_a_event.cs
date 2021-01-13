@@ -44,17 +44,17 @@
         {
             await Subscribe<IMyEvent>();
 
-            await Publish<MyEvent1>();
-            await Publish<MyEvent2>();
+            await Publish<IMyEvent1>();
+            await Publish<IMyEvent2>();
 
-            AssertReceived<MyEvent1>();
-            AssertReceived<MyEvent2>();
+            AssertReceived<IMyEvent1>();
+            AssertReceived<IMyEvent2>();
         }
 
         [Test]
         public async Task Should_not_receive_the_event_if_subscribed_to_specific_interface()
         {
-            await Subscribe<MyEvent1>();
+            await Subscribe<IMyEvent1>();
 
             await Publish<IMyEvent>();
 
@@ -192,12 +192,12 @@
 
     }
 
-    public interface MyEvent1 : IMyEvent
+    public interface IMyEvent1 : IMyEvent
     {
 
     }
 
-    public interface MyEvent2 : IMyEvent
+    public interface IMyEvent2 : IMyEvent
     {
 
     }

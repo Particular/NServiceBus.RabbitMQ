@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Text;
     using global::RabbitMQ.Client.Events;
-    using Logging;
 
     class MessageConverter
     {
