@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Text;
     using global::RabbitMQ.Client.Events;
-    using Logging;
 
     class MessageConverter
     {
@@ -158,8 +157,6 @@
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
-
-        static ILog Logger = LogManager.GetLogger(typeof(MessageConverter));
 
         static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     }
