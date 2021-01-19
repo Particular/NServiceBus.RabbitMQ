@@ -273,7 +273,7 @@
                 var result = Convert.ToUInt16(heartbeatInterval.TotalSeconds);
                 transportExtensions.GetSettings().Set(SettingsKeys.HeartbeatInterval, result);
             }
-            catch(OverflowException)
+            catch (OverflowException)
             {
                 throw new ArgumentOutOfRangeException(nameof(heartbeatInterval), $"Heartbeat interval cannot exceed {ushort.MaxValue} seconds.");
             }

@@ -45,7 +45,8 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(builder => {
+                EndpointSetup<DefaultServer>(builder =>
+                {
                     builder.UseTransport<RabbitMQTransport>().UseDirectRoutingTopology();
                     builder.DisableFeature<AutoSubscribe>();
                 }, metadata => metadata.RegisterPublisherFor<IMyRequest>(typeof(Publisher)));
@@ -77,7 +78,7 @@
         {
         }
 
-        public interface IOtherRequest: IEvent
+        public interface IOtherRequest : IEvent
         {
         }
 

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace NServiceBus.Transport.RabbitMQ.Tests.Support
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests.Support
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
     static class ConventionalRoutingTopologyExtensions
     {
         public static void Reset(

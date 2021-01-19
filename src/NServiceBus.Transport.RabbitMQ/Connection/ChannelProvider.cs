@@ -29,7 +29,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                Task.Run(Reconnect).Ignore();
+                _ = Task.Run(Reconnect);
             }
         }
 
@@ -50,7 +50,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                     Logger.Info("Connection to the broker reestablished successfully.");
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Logger.Info("Reconnecting to the broker failed.", e);
                 }
