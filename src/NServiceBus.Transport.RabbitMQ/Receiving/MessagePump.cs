@@ -25,6 +25,7 @@
         readonly Action<string, Exception> criticalErrorAction;
         readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
+        bool disposed;
         OnMessage onMessage;
         OnError onError;
         int maxConcurrency;
@@ -303,11 +304,14 @@
 
         public void Dispose()
         {
+            if (disposed)
+            {
+                return;
+            }
             circuitBreaker?.Dispose();
             messageProcessing?.Dispose();
             connection?.Dispose();
+            disposed = true;
         }
-
-
     }
 }

@@ -31,6 +31,11 @@
 
         public override Task DisposeAsync()
         {
+            foreach (IMessageReceiver receiver in Receivers)
+            {
+                ((MessagePump)receiver).Dispose();
+            }
+
             channelProvider.Dispose();
             return Task.CompletedTask;
         }
