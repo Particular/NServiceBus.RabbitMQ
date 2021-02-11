@@ -1,8 +1,7 @@
-﻿using NServiceBus.Unicast.Messages;
-
+﻿
 namespace NServiceBus.Transport.RabbitMQ
 {
-    using System;
+    using Unicast.Messages;
     using System.Threading.Tasks;
     using Extensibility;
 

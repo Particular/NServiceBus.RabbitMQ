@@ -1,10 +1,10 @@
-﻿using NServiceBus.Unicast.Messages;
-
+﻿
 namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
+    using Unicast.Messages;
 
     [TestFixture]
     class When_subscribed_to_a_event : RabbitMqContext
@@ -147,12 +147,12 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             await Unsubscribe<SubEvent1>();
             await Unsubscribe<SubEvent2>();
             await Unsubscribe<IMyEvent>();
-            await Unsubscribe<MyEvent1>();
-            await Unsubscribe<MyEvent2>();
+            await Unsubscribe<IMyEvent1>();
+            await Unsubscribe<IMyEvent2>();
             await Unsubscribe<CombinedClassAndInterface>();
         }
 
-        Task Subscribe<T>() => subscriptionManager.SubscribeAll(new[] { new MessageMetadata(typeof(T))}, new ContextBag());
+        Task Subscribe<T>() => subscriptionManager.SubscribeAll(new[] { new MessageMetadata(typeof(T)) }, new ContextBag());
         Task Unsubscribe<T>() => subscriptionManager.Unsubscribe(new MessageMetadata(typeof(T)), new ContextBag());
 
         Task Publish<T>()

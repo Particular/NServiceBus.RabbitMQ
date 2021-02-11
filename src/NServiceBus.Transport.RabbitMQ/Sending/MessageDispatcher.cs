@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace NServiceBus.Transport.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;

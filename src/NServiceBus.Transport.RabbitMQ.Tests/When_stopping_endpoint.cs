@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace NServiceBus.Transport.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System.Threading.Tasks;
     using NUnit.Framework;

@@ -1,5 +1,4 @@
-﻿using NServiceBus.Unicast.Messages;
-
+﻿
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
@@ -7,6 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Generic;
     using System.Linq;
     using global::RabbitMQ.Client;
+    using Unicast.Messages;
 
     /// <summary>
     /// Implements the RabbitMQ routing topology as described at http://codebetter.com/drusellers/2011/05/08/brain-dump-conventional-routing-in-rabbitmq/

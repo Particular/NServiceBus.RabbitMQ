@@ -86,7 +86,7 @@
 
                 if (delay > DelayInfrastructure.MaxDelayInSeconds)
                 {
-                    throw new Exception($"Message cannot set to be delivered at '{dispatchProperties.DoNotDeliverBefore.At}' because the delay exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
+                    throw new Exception($"Message cannot set to be delivered at '{dispatchProperties.DoNotDeliverBefore.At}' because the delay specified via {nameof(DelayedDeliveryOptionExtensions.DoNotDeliverBefore)} exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
                 }
 
             }
@@ -97,7 +97,7 @@
 
                 if (delay > DelayInfrastructure.MaxDelayInSeconds)
                 {
-                    throw new Exception($"Message cannot be delayed by '{dispatchProperties.DelayDeliveryWith.Delay}' because it exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
+                    throw new Exception($"Message cannot be delayed by '{dispatchProperties.DelayDeliveryWith.Delay}' because the delay specified via {nameof(DelayedDeliveryOptionExtensions.DelayDeliveryWith)} exceeds the maximum delay value '{TimeSpan.FromSeconds(DelayInfrastructure.MaxDelayInSeconds)}'.");
                 }
             }
 

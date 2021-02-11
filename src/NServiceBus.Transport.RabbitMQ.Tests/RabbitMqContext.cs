@@ -1,8 +1,4 @@
-﻿using System.Data.Common;
-using System.Threading;
-using NServiceBus.Unicast.Messages;
-
-namespace NServiceBus.Transport.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Concurrent;
@@ -36,7 +32,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
                 (msg, ex) => { }, true), new[]
             {
-                new ReceiveSettings(ReceiverQueue, ReceiverQueue, true, true, "error") 
+                new ReceiveSettings(ReceiverQueue, ReceiverQueue, true, true, "error")
             }, AdditionalReceiverQueues.ToArray());
 
             messageDispatcher = infra.Dispatcher;

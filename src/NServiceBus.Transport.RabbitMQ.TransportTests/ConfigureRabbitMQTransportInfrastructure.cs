@@ -35,7 +35,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             true,
             true, errorQueueName);
 
-        return transportDefinition.Initialize(hostSettings, new[] {mainReceiverSettings}, new[] {errorQueueName});
+        return transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName });
     }
 
     public Task Cleanup()

@@ -1,11 +1,12 @@
-﻿using NServiceBus.Unicast.Messages;
-
+﻿
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using global::RabbitMQ.Client;
+    using Unicast.Messages;
+
 
     /// <summary>
     /// Route using a static routing convention for routing messages from publishers to subscribers using routing keys.
@@ -20,7 +21,7 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="routingKeyConvention">Routing key convention.</param>
         public DirectRoutingTopology(bool useDurableExchanges, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
         {
-            this.conventions = new Conventions(
+            conventions = new Conventions(
                 exchangeNameConvention ?? DefaultExchangeNameConvention,
                 routingKeyConvention ?? DefaultRoutingKeyConvention.GenerateRoutingKey);
             this.useDurableExchanges = useDurableExchanges;

@@ -1,16 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using NServiceBus.Logging;
-using NServiceBus.Support;
-
-namespace NServiceBus.Transport.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Diagnostics;
+    using System.IO;
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
+    using Logging;
+    using Support;
 
     class ConnectionFactory
     {

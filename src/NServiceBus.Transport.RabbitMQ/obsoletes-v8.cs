@@ -1,10 +1,10 @@
-﻿using System;
-
-#pragma warning disable 1591
+﻿#pragma warning disable 1591
+#pragma warning disable 618
 
 namespace NServiceBus
 {
-#pragma warning disable 618
+    using System;
+
     public static class RabbitMQTransportSettingsExtensions
     {
         [ObsoleteEx(
@@ -137,7 +137,7 @@ namespace NServiceBus
             RemoveInVersion = "8")]
         public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(
             this TransportExtensions<RabbitMQTransport> transportExtensions,
-            Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory)
+            Func<bool, Transport.RabbitMQ.IRoutingTopology> topologyFactory)
         {
             throw new NotImplementedException();
         }
@@ -165,7 +165,6 @@ namespace NServiceBus
             throw new NotImplementedException();
         }
     }
-#pragma warning restore 618
 }
-
+#pragma warning restore 618
 #pragma warning restore 1591

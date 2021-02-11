@@ -101,7 +101,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(string connectionString) 
+        public TestRabbitMQTransport(string connectionString)
             : base(connectionString)
         {
         }

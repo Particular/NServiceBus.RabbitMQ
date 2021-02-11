@@ -26,7 +26,6 @@
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, Func<int, int> prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
-            
             return new MessagePump(connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, settings, hostSettings.CriticalErrorAction);
         }
 

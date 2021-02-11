@@ -1,10 +1,11 @@
-﻿using NServiceBus.Unicast.Messages;
-
+﻿
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
     using global::RabbitMQ.Client;
+    using Unicast.Messages;
+
 
     /// <summary>
     /// Topology for routing messages on the transport.

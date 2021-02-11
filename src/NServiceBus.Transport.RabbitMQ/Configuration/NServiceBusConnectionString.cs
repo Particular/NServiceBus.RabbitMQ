@@ -33,7 +33,7 @@
                 {
                     if (host.Contains(":"))
                     {
-                        var hostAndPort = host.Split(new[] {':'}, StringSplitOptions.RemoveEmptyEntries);
+                        var hostAndPort = host.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
                         if (hostAndPort.Length > 2)
                         {
                             throw new Exception($"'{host}' is not a valid value for the 'host' connection string option.");

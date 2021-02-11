@@ -5,6 +5,6 @@ static class ConfigurationHelpers
 {
     public static RabbitMQTransport ConfigureRabbitMQTransport(this EndpointConfiguration configuration)
     {
-        return (RabbitMQTransport) configuration.ConfigureTransport();
+        return (RabbitMQTransport)configuration.ConfigureTransport();
     }
 }

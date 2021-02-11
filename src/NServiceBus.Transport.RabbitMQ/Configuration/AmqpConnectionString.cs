@@ -1,7 +1,8 @@
-﻿using System;
-
+﻿
 namespace NServiceBus.Transport.RabbitMQ
 {
+    using System;
+
     class AmqpConnectionString
     {
         public static Action<RabbitMQTransport> Parse(string connectionString)
