@@ -25,8 +25,8 @@
         readonly Action<string, Exception> criticalErrorAction;
         readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
-        Func<MessageContext, Task> onMessage;
-        Func<ErrorContext, Task<ErrorHandleResult>> onError;
+        OnMessage onMessage;
+        OnError onError;
         int maxConcurrency;
         long numberOfMessagesBeingProcessed;
         CancellationTokenSource messageProcessing;
@@ -61,7 +61,7 @@
         public ISubscriptionManager Subscriptions { get; }
         public string Id => settings.Id;
 
-        public Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError)
+        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError)
         {
             this.onMessage = onMessage;
             this.onError = onError;
@@ -217,7 +217,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), transportTransaction, tokenSource, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), transportTransaction, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
