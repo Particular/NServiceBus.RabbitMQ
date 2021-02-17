@@ -33,7 +33,7 @@
                 (msg, ex) => { }, true), new[]
             {
                 new ReceiveSettings(ReceiverQueue, ReceiverQueue, true, true, "error")
-            }, AdditionalReceiverQueues.ToArray());
+            }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray());
 
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
