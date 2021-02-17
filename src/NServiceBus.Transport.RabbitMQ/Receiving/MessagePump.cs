@@ -13,14 +13,14 @@
     sealed class MessagePump : IMessageReceiver, IDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
-        static readonly TransportTransaction transportTransaction = new TransportTransaction();
+        static readonly TransportTransaction TransportTransaction = new TransportTransaction();
 
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
         readonly QueuePurger queuePurger;
-        readonly Func<int, int> prefetchCountCalculation;
+        readonly PrefetchCountCalculation prefetchCountCalculation;
         readonly ReceiveSettings settings;
         readonly Action<string, Exception> criticalErrorAction;
         readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
@@ -39,7 +39,7 @@
 
         public MessagePump(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, MessageConverter messageConverter, string consumerTag,
             ChannelProvider channelProvider, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
-            Func<int, int> prefetchCountCalculation, ReceiveSettings settings,
+            PrefetchCountCalculation prefetchCountCalculation, ReceiveSettings settings,
             Action<string, Exception> criticalErrorAction)
         {
             this.connectionFactory = connectionFactory;
@@ -218,7 +218,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), transportTransaction, contextBag);
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, contextBag);
 
                         await onMessage(messageContext).ConfigureAwait(false);
                         processed = true;
@@ -230,7 +230,7 @@
                         var contextBag = new ContextBag();
                         contextBag.Set(message);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), transportTransaction, numberOfDeliveryAttempts, contextBag);
+                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, contextBag);
 
                         try
                         {

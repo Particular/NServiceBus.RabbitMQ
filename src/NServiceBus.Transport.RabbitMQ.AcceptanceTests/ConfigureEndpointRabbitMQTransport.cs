@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Transport;
-using NServiceBus.Transport.RabbitMQ;
 using RabbitMQ.Client;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
@@ -27,10 +26,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         //For cleanup
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        transport = new TestRabbitMQTransport(connectionString)
-        {
-            RoutingTopology = new ConventionalRoutingTopology(true, t => t.FullName)
-        };
+        transport = new TestRabbitMQTransport(Topology.Conventional, connectionString);
         configuration.UseTransport(transport);
 
         return Task.CompletedTask;
@@ -101,8 +97,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(string connectionString)
-            : base(connectionString)
+        public TestRabbitMQTransport(Topology topology, string connectionString)
+            : base(topology, connectionString)
         {
         }
 

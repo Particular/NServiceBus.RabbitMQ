@@ -23,7 +23,7 @@
                 throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
             }
 
-            var transport = new RabbitMQTransport(connectionString);
+            var transport = new RabbitMQTransport(Topology.Conventional, connectionString);
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, transport.Host, transport.Port ?? 5672,
                 transport.VHost, transport.UserName, transport.Password, false, null, false,
@@ -36,7 +36,7 @@
             }, AdditionalReceiverQueues.ToArray());
 
             messageDispatcher = infra.Dispatcher;
-            messagePump = infra.GetReceiver(ReceiverQueue);
+            messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
 
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
@@ -61,7 +61,7 @@
 
             if (infra != null)
             {
-                await infra.DisposeAsync();
+                await infra.Shutdown();
             }
         }
 

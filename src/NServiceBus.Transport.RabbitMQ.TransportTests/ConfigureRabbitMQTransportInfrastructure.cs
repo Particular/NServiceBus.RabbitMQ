@@ -19,7 +19,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
 
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        var transport = new RabbitMQTransport(connectionString);
+        var transport = new RabbitMQTransport(Topology.Conventional, connectionString);
 
         return transport;
     }

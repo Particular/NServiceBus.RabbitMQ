@@ -17,7 +17,7 @@
     /// </summary>
     public class RabbitMQTransport : TransportDefinition
     {
-        static readonly TransportTransactionMode[] supportedTransactionModes =
+        static readonly TransportTransactionMode[] SupportedTransactionModes =
         {
             TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly
         };
@@ -26,17 +26,39 @@
         string host;
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
-        Func<int, int> prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
-        IRoutingTopology routingTopology = new ConventionalRoutingTopology(true);
+        PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
 
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
 
         /// <summary>
         ///     Creates new instance of the RabbitMQ transport.
         /// </summary>
-        public RabbitMQTransport(string connectionString)
+        /// <param name="topology">The built-in topology to use.</param>
+        /// <param name="connectionString">Connection string.</param>
+        public RabbitMQTransport(Topology topology, string connectionString)
+            : this(GetBuiltInTopology(topology), connectionString)
+        {
+        }
+
+        static IRoutingTopology GetBuiltInTopology(Topology topology)
+        {
+            return topology == Topology.Conventional
+                ? (IRoutingTopology)new ConventionalRoutingTopology(true)
+                : new DirectRoutingTopology(true);
+        }
+
+        /// <summary>
+        ///     Creates new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="topology">The custom topology to use.</param>
+        /// <param name="connectionString">Connection string.</param>
+        public RabbitMQTransport(IRoutingTopology topology, string connectionString)
             : base(TransportTransactionMode.ReceiveOnly, true, true, true)
         {
+            Guard.AgainstNull(nameof(topology), topology);
+            Guard.AgainstNull(nameof(connectionString), connectionString);
+
+            RoutingTopology = topology;
             if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
                 AmqpConnectionString.Parse(connectionString)(this);
@@ -45,14 +67,6 @@
             {
                 NServiceBusConnectionString.Parse(connectionString)(this);
             }
-        }
-
-        /// <summary>
-        ///     Creates new instance of the RabbitMQ transport.
-        /// </summary>
-        public RabbitMQTransport()
-            : base(TransportTransactionMode.ReceiveOnly, true, true, true)
-        {
         }
 
         /// <summary>
@@ -93,15 +107,7 @@
         ///     The routing topology to use. If not set the conventional routing topology will be used
         ///     <seealso cref="ConventionalRoutingTopology" />.
         /// </summary>
-        public IRoutingTopology RoutingTopology
-        {
-            get => routingTopology;
-            set
-            {
-                Guard.AgainstNull("value", value);
-                routingTopology = value;
-            }
-        }
+        public IRoutingTopology RoutingTopology { get; set; }
 
         /// <summary>
         ///     The strategy for deriving the message ID from the raw RabbitMQ message. Override in case of native integration when
@@ -136,7 +142,7 @@
         ///     The calculation method for prefetch count. By default 3 times the maximum concurrency value.
         ///     The argument for the callback is the maximum concurrency. The result needs to be a positive integer value.
         /// </summary>
-        public Func<int, int> PrefetchCountCalculation
+        public PrefetchCountCalculation PrefetchCountCalculation
         {
             get => prefetchCountCalculation;
             set
@@ -215,7 +221,7 @@
                 VHost, UserName, Password, UseTLS, certCollection, ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval);
 
-            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, routingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             channelProvider.CreateConnection();
 
             var converter = new MessageConverter(MessageIdStrategy);
@@ -228,7 +234,7 @@
             }
 
             return new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
-                routingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
+                RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation);
         }
 
@@ -239,11 +245,11 @@
             {
                 DelayInfrastructure.Build(channel);
 
-                routingTopology.Initialize(channel, receivingQueues, sendingQueues);
+                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues);
 
                 foreach (string receivingAddress in receivingQueues)
                 {
-                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
+                    RoutingTopology.BindToDelayInfrastructure(channel, receivingAddress,
                         DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
                 }
             }
@@ -276,6 +282,6 @@
         ///     Returns a list of all supported transaction modes of this transport.
         /// </summary>
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
-            supportedTransactionModes;
+            SupportedTransactionModes;
     }
 }

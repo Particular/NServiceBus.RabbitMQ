@@ -2,10 +2,11 @@
 [assembly: System.Runtime.InteropServices.ComVisible(false)]
 namespace NServiceBus
 {
+    public delegate int PrefetchCountCalculation(int maximumConcurrency);
     public class RabbitMQTransport : NServiceBus.Transport.TransportDefinition
     {
-        public RabbitMQTransport() { }
-        public RabbitMQTransport(string connectionString) { }
+        public RabbitMQTransport(NServiceBus.Topology topology, string connectionString) { }
+        public RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString) { }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
         public string Host { get; set; }
@@ -13,7 +14,7 @@ namespace NServiceBus
         public System.TimeSpan NetworkRecoveryInterval { get; set; }
         public string Password { get; set; }
         public int? Port { get; set; }
-        public System.Func<int, int> PrefetchCountCalculation { get; set; }
+        public NServiceBus.PrefetchCountCalculation PrefetchCountCalculation { get; set; }
         public NServiceBus.Transport.RabbitMQ.IRoutingTopology RoutingTopology { get; set; }
         public System.TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; }
         public bool UseExternalAuthMechanism { get; set; }
@@ -88,6 +89,11 @@ namespace NServiceBus
             "rt.UseExternalAuthMechanism` instead. The member currently throws a NotImplement" +
             "edException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+    }
+    public enum Topology
+    {
+        Conventional = 0,
+        Direct = 1,
     }
 }
 namespace NServiceBus.Transport.RabbitMQ
