@@ -29,11 +29,10 @@ namespace NServiceBus.Transport.RabbitMQ
         /// Creates a new instance of conventional routing topology.
         /// </summary>
         /// <param name="useDurableExchanges">Indicates whether exchanges and queues declared by the routing topology should be durable.</param>
-        /// <param name="exchangeNameConvention">The convention to use when naming exchanges.</param>
-        public ConventionalRoutingTopology(bool useDurableExchanges, Func<Type, string> exchangeNameConvention = null)
+        public ConventionalRoutingTopology(bool useDurableExchanges)
         {
             this.useDurableExchanges = useDurableExchanges;
-            this.exchangeNameConvention = exchangeNameConvention ?? DefaultExchangeNameConvention;
+            exchangeNameConvention = DefaultExchangeNameConvention;
         }
 
         static string DefaultExchangeNameConvention(Type type) => type.Namespace + ":" + type.Name;
