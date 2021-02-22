@@ -100,7 +100,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     public class ConventionalRoutingTopology : NServiceBus.Transport.RabbitMQ.IRoutingTopology
     {
-        public ConventionalRoutingTopology(bool useDurableExchanges, System.Func<System.Type, string> exchangeNameConvention = null) { }
+        public ConventionalRoutingTopology(bool useDurableExchanges) { }
         public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
         public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses) { }
         public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
