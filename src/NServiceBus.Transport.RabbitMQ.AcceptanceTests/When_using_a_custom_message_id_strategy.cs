@@ -36,8 +36,7 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.EnableFeature<StarterFeature>();
-                    c.UseTransport<RabbitMQTransport>()
-                        .CustomMessageIdStrategy(m => customMessageId);
+                    c.ConfigureRabbitMQTransport().MessageIdStrategy = m => customMessageId;
                 });
             }
 
@@ -51,7 +50,7 @@
 
                 class Starter : FeatureStartupTask
                 {
-                    public Starter(IDispatchMessages dispatchMessages, ReadOnlySettings settings)
+                    public Starter(IMessageDispatcher dispatchMessages, ReadOnlySettings settings)
                     {
                         this.dispatchMessages = dispatchMessages;
                         this.settings = settings;
@@ -71,12 +70,12 @@
                             Encoding.UTF8.GetBytes(messageBody));
 
                         var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
-                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), new ContextBag());
+                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction());
                     }
 
                     protected override Task OnStop(IMessageSession session) => Task.CompletedTask;
 
-                    readonly IDispatchMessages dispatchMessages;
+                    readonly IMessageDispatcher dispatchMessages;
                     readonly ReadOnlySettings settings;
                 }
             }

@@ -1,8 +1,11 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
     using global::RabbitMQ.Client;
+    using Unicast.Messages;
+
 
     /// <summary>
     /// Topology for routing messages on the transport.
@@ -15,7 +18,7 @@
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
         /// <param name="type">The type to subscribe to.</param>
         /// <param name="subscriberName">The name of the subscriber.</param>
-        void SetupSubscription(IModel channel, Type type, string subscriberName);
+        void SetupSubscription(IModel channel, MessageMetadata type, string subscriberName);
 
         /// <summary>
         /// Removes a subscription for the subscriber to the specified type.
@@ -23,7 +26,7 @@
         /// <param name="channel">The RabbitMQ channel to operate on.</param>
         /// <param name="type">The type to unsubscribe from.</param>
         /// <param name="subscriberName">The name of the subscriber.</param>
-        void TeardownSubscription(IModel channel, Type type, string subscriberName);
+        void TeardownSubscription(IModel channel, MessageMetadata type, string subscriberName);
 
         /// <summary>
         /// Publishes a message of the specified type.

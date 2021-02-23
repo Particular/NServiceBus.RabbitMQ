@@ -2,9 +2,8 @@
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Extensibility;
 
-    class MessageDispatcher : IDispatchMessages
+    class MessageDispatcher : IMessageDispatcher
     {
         readonly ChannelProvider channelProvider;
 
@@ -13,7 +12,7 @@
             this.channelProvider = channelProvider;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, ContextBag context)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction)
         {
             var channel = channelProvider.GetPublishChannel();
 
@@ -50,7 +49,7 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints);
+            properties.Fill(message, transportOperation.Properties);
 
             return channel.SendMessage(transportOperation.Destination, message, properties);
         }
@@ -60,9 +59,10 @@
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
-            properties.Fill(message, transportOperation.DeliveryConstraints);
+            properties.Fill(message, transportOperation.Properties);
 
             return channel.PublishMessage(transportOperation.MessageType, message, properties);
         }
+
     }
 }

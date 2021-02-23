@@ -1,11 +1,14 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Diagnostics;
+    using System.IO;
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
     using Logging;
+    using Support;
 
     class ConnectionFactory
     {
@@ -15,7 +18,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan? heartbeatInterval, TimeSpan? networkRecoveryInterval)
+        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval)
         {
             if (endpointName is null)
             {
@@ -29,37 +32,25 @@
 
             this.endpointName = endpointName;
 
-            if (connectionConfiguration == null)
-            {
-                throw new ArgumentNullException(nameof(connectionConfiguration));
-            }
-
-            if (connectionConfiguration.Host == null)
-            {
-                throw new ArgumentException("The connectionConfiguration has a null Host.", nameof(connectionConfiguration));
-            }
-
             connectionFactory = new global::RabbitMQ.Client.ConnectionFactory
             {
-                HostName = connectionConfiguration.Host,
-                Port = connectionConfiguration.Port,
-                VirtualHost = connectionConfiguration.VirtualHost,
-                UserName = connectionConfiguration.UserName,
-                Password = connectionConfiguration.Password,
-                RequestedHeartbeat = heartbeatInterval ?? connectionConfiguration.RequestedHeartbeat,
-                NetworkRecoveryInterval = networkRecoveryInterval ?? connectionConfiguration.RetryDelay,
+                HostName = host,
+                Port = port,
+                VirtualHost = vhost,
+                UserName = userName,
+                Password = password,
+                RequestedHeartbeat = heartbeatInterval,
+                NetworkRecoveryInterval = networkRecoveryInterval,
                 UseBackgroundThreadsForIO = true,
                 DispatchConsumersAsync = true
             };
 
-            connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
+            connectionFactory.Ssl.ServerName = host;
             connectionFactory.Ssl.Certs = clientCertificateCollection;
-            connectionFactory.Ssl.CertPath = connectionConfiguration.CertPath;
-            connectionFactory.Ssl.CertPassphrase = connectionConfiguration.CertPassphrase;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;
-            connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
+            connectionFactory.Ssl.Enabled = useTls;
 
-            if (disableRemoteCertificateValidation)
+            if (!validateRemoteCertificate)
             {
                 connectionFactory.Ssl.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateChainErrors |
                                                                SslPolicyErrors.RemoteCertificateNameMismatch |
@@ -71,12 +62,34 @@
                 connectionFactory.AuthMechanisms = new[] { new ExternalMechanismFactory() };
             }
 
+            SetClientProperties(endpointName, userName);
+        }
+
+        void SetClientProperties(string endpointName, string userName)
+        {
             connectionFactory.ClientProperties.Clear();
 
-            foreach (var item in connectionConfiguration.ClientProperties)
-            {
-                connectionFactory.ClientProperties.Add(item.Key, item.Value);
-            }
+            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
+            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
+
+            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionFactory).Assembly.Location);
+            var rabbitMQFileVersion =
+                $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
+
+            var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
+            var applicationName = Path.GetFileName(applicationNameAndPath);
+            var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
+
+            var hostname = RuntimeEnvironment.MachineName;
+
+            connectionFactory.ClientProperties.Add("client_api", "NServiceBus");
+            connectionFactory.ClientProperties.Add("nservicebus_version", nsbFileVersion);
+            connectionFactory.ClientProperties.Add("nservicebus.rabbitmq_version", rabbitMQFileVersion);
+            connectionFactory.ClientProperties.Add("application", applicationName);
+            connectionFactory.ClientProperties.Add("application_location", applicationPath);
+            connectionFactory.ClientProperties.Add("machine_name", hostname);
+            connectionFactory.ClientProperties.Add("user", userName);
+            connectionFactory.ClientProperties.Add("endpoint_name", endpointName);
         }
 
         public IConnection CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);

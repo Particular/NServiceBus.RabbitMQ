@@ -48,7 +48,7 @@
             {
                 EndpointSetup<DefaultServer>(config =>
                 {
-                    config.ConfigureTransport().Routing().RouteToEndpoint(typeof(Request), typeof(ReceivingEndpoint));
+                    config.ConfigureRouting().RouteToEndpoint(typeof(Request), typeof(ReceivingEndpoint));
                     config.AuditProcessedMessagesTo<AuditSpyEndpoint>();
                 });
             }

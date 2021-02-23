@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using DeliveryConstraints;
     using Performance.TimeToBeReceived;
     using Routing;
 
@@ -24,12 +23,12 @@
             {
                 if (eventType != null)
                 {
-                    transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), dispatchConsistency, constraints));
+                    transportOperations.Add(new TransportOperation(message, new MulticastAddressTag(eventType), constraints, dispatchConsistency));
                 }
 
                 if (!string.IsNullOrEmpty(destination))
                 {
-                    transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), dispatchConsistency, constraints));
+                    transportOperations.Add(new TransportOperation(message, new UnicastAddressTag(destination), constraints, dispatchConsistency));
                 }
             }
 
@@ -56,7 +55,7 @@
 
         public OutgoingMessageBuilder TimeToBeReceived(TimeSpan timeToBeReceived)
         {
-            constraints.Add(new DiscardIfNotReceivedBefore(timeToBeReceived));
+            constraints.DiscardIfNotReceivedBefore = new DiscardIfNotReceivedBefore(timeToBeReceived);
             return this;
         }
 
@@ -80,7 +79,7 @@
         string messageId = Guid.NewGuid().ToString();
         byte[] body;
         Dictionary<string, string> headers = new Dictionary<string, string>();
-        List<DeliveryConstraint> constraints = new List<DeliveryConstraint>();
+        DispatchProperties constraints = new DispatchProperties();
         DispatchConsistency dispatchConsistency = DispatchConsistency.Default;
     }
 }

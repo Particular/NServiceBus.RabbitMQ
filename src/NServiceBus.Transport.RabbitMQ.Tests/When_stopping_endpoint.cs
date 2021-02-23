@@ -10,14 +10,14 @@
         [Explicit]
         public async Task Should_gracefully_shutdown()
         {
-            await messagePump.Stop();
+            await messagePump.StopReceive();
 
             var operations = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build(10000);
-            await messageDispatcher.Dispatch(operations, new TransportTransaction(), new Extensibility.ContextBag());
+            await messageDispatcher.Dispatch(operations, new TransportTransaction());
 
-            messagePump.Start(new PushRuntimeSettings(50));
+            await messagePump.StartReceive();
             await Task.Delay(500);
-            await messagePump.Stop();
+            await messagePump.StopReceive();
         }
     }
 }

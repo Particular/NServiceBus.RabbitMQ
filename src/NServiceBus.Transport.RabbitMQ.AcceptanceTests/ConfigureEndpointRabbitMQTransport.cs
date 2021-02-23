@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
 using RabbitMQ.Client;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     DbConnectionStringBuilder connectionStringBuilder;
-    QueueBindings queueBindings;
+    TestRabbitMQTransport transport;
+
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
@@ -22,13 +23,11 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
         }
 
+        //For cleanup
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        var transport = configuration.UseTransport<RabbitMQTransport>();
-        transport.ConnectionString(connectionStringBuilder.ConnectionString);
-        transport.UseConventionalRoutingTopology();
-
-        queueBindings = configuration.GetSettings().Get<QueueBindings>();
+        transport = new TestRabbitMQTransport(Topology.Conventional, connectionString);
+        configuration.UseTransport(transport);
 
         return Task.CompletedTask;
     }
@@ -42,7 +41,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     void PurgeQueues()
     {
-        if (connectionStringBuilder == null)
+        if (connectionStringBuilder == null || transport == null)
         {
             return;
         }
@@ -77,7 +76,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
 
-        var queues = queueBindings.ReceivingAddresses.Concat(queueBindings.SendingAddresses);
+        var queues = transport.QueuesToCleanup.Distinct().ToArray();
 
         using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
@@ -94,5 +93,21 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
                 }
             }
         }
+    }
+
+    class TestRabbitMQTransport : RabbitMQTransport
+    {
+        public TestRabbitMQTransport(Topology topology, string connectionString)
+            : base(topology, connectionString)
+        {
+        }
+
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
+        {
+            QueuesToCleanup.AddRange(receivers.Select(x => x.ReceiveAddress).Concat(sendingAddresses).Distinct());
+            return base.Initialize(hostSettings, receivers, sendingAddresses);
+        }
+
+        public List<string> QueuesToCleanup { get; } = new List<string>();
     }
 }

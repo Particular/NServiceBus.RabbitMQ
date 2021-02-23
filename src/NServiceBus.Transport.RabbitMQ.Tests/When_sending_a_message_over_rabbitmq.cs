@@ -99,13 +99,13 @@
         {
             var operations = builder.SendTo(queueToReceiveOn).Build();
 
-            await messageDispatcher.Dispatch(operations, new TransportTransaction(), new ContextBag());
+            await messageDispatcher.Dispatch(operations, new TransportTransaction());
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
             var result = Consume(messageId, queueToReceiveOn);
 
-            var converter = new MessageConverter();
+            var converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
             var convertedHeaders = converter.RetrieveHeaders(result);
             var convertedMessageId = converter.RetrieveMessageId(result, convertedHeaders);
 
