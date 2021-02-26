@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     sealed class MessagePumpConnectionFailedCircuitBreaker : IDisposable
     {
-        public MessagePumpConnectionFailedCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<string, Exception> criticalErrorAction)
+        public MessagePumpConnectionFailedCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<string, Exception, CancellationToken> criticalErrorAction)
         {
             this.name = name;
             this.criticalErrorAction = criticalErrorAction;
@@ -50,7 +50,7 @@ namespace NServiceBus.Transport.RabbitMQ
             if (Interlocked.Read(ref failureCount) > 0)
             {
                 Logger.WarnFormat("The circuit breaker for {0} will now be triggered", name);
-                criticalErrorAction($"{name} connection to the broker has failed.", lastException);
+                criticalErrorAction($"{name} connection to the broker has failed.", lastException, CancellationToken.None);
             }
         }
 
@@ -59,7 +59,7 @@ namespace NServiceBus.Transport.RabbitMQ
         string name;
         TimeSpan timeToWaitBeforeTriggering;
         Timer timer;
-        Action<string, Exception> criticalErrorAction;
+        Action<string, Exception, CancellationToken> criticalErrorAction;
         long failureCount;
         Exception lastException;
     }

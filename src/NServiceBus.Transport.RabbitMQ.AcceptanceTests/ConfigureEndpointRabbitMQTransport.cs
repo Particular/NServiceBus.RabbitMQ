@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Transport;
-using RabbitMQ.Client;
+using NServiceBus.Transport.RabbitMQ;
+using ConnectionFactory = RabbitMQ.Client.ConnectionFactory;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
@@ -26,7 +28,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         //For cleanup
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        transport = new TestRabbitMQTransport(Topology.Conventional, connectionString);
+        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString);
         configuration.UseTransport(transport);
 
         return Task.CompletedTask;
@@ -102,10 +104,15 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         {
         }
 
-        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
+        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString)
+            : base(topology, connectionString)
+        {
+        }
+
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken)
         {
             QueuesToCleanup.AddRange(receivers.Select(x => x.ReceiveAddress).Concat(sendingAddresses).Distinct());
-            return base.Initialize(hostSettings, receivers, sendingAddresses);
+            return base.Initialize(hostSettings, receivers, sendingAddresses, cancellationToken);
         }
 
         public List<string> QueuesToCleanup { get; } = new List<string>();

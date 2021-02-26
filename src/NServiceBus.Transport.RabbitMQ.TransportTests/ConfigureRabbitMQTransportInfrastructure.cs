@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Transport;
@@ -25,7 +26,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     }
 
     public Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName,
-        string errorQueueName)
+        string errorQueueName, CancellationToken cancellationToken)
     {
         queuesToCleanUp = new[] { inputQueueName, errorQueueName };
 
@@ -35,10 +36,10 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             true,
             true, errorQueueName);
 
-        return transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName });
+        return transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName }, cancellationToken);
     }
 
-    public Task Cleanup()
+    public Task Cleanup(CancellationToken cancellationToken)
     {
         PurgeQueues(connectionStringBuilder, queuesToCleanUp);
         return Task.FromResult(0);

@@ -2,6 +2,7 @@
 {
     using System.Linq;
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
@@ -30,7 +31,7 @@
             return new MessagePump(connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, settings, hostSettings.CriticalErrorAction);
         }
 
-        public override Task Shutdown()
+        public override Task Shutdown(CancellationToken cancellationToken)
         {
             foreach (IMessageReceiver receiver in Receivers.Values)
             {
