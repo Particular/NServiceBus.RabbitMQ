@@ -35,6 +35,12 @@ namespace NServiceBus.Transport.RabbitMQ
             exchangeNameConvention = DefaultExchangeNameConvention;
         }
 
+        internal ConventionalRoutingTopology(bool useDurableExchanges, Func<Type, string> exchangeNameConvention)
+        {
+            this.useDurableExchanges = useDurableExchanges;
+            this.exchangeNameConvention = exchangeNameConvention;
+        }
+
         static string DefaultExchangeNameConvention(Type type) => type.Namespace + ":" + type.Name;
 
         /// <summary>

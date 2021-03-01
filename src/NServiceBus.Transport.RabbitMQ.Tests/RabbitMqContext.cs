@@ -4,6 +4,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
 
@@ -30,25 +31,26 @@
                 false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval);
 
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
-                (msg, ex) => { }, true), new[]
+                (msg, ex, ct) => { }, true), new[]
             {
                 new ReceiveSettings(ReceiverQueue, ReceiverQueue, true, true, "error")
-            }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray());
+            }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray(), CancellationToken.None);
 
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
 
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
-                messageContext =>
+                (messageContext, ct) =>
                 {
                     receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers,
-                        messageContext.Body));
+                        messageContext.Body), ct);
                     return Task.CompletedTask;
-                }, ErrorContext => Task.FromResult(ErrorHandleResult.Handled)
+                }, (errorContext, ct) => Task.FromResult(ErrorHandleResult.Handled),
+                CancellationToken.None
             );
 
-            await messagePump.StartReceive();
+            await messagePump.StartReceive(CancellationToken.None);
         }
 
         [TearDown]
@@ -56,22 +58,22 @@
         {
             if (messagePump != null)
             {
-                await messagePump.StopReceive();
+                await messagePump.StopReceive(CancellationToken.None);
             }
 
             if (infra != null)
             {
-                await infra.Shutdown();
+                await infra.Shutdown(CancellationToken.None);
             }
         }
 
-        protected bool TryWaitForMessageReceipt() => TryReceiveMessage(out var _, incomingMessageTimeout);
+        protected bool TryWaitForMessageReceipt() => TryReceiveMessage(out var _, IncomingMessageTimeout);
 
         protected IncomingMessage ReceiveMessage()
         {
-            if (!TryReceiveMessage(out var message, incomingMessageTimeout))
+            if (!TryReceiveMessage(out var message, IncomingMessageTimeout))
             {
-                throw new TimeoutException($"The message did not arrive within {incomingMessageTimeout.TotalSeconds} seconds.");
+                throw new TimeoutException($"The message did not arrive within {IncomingMessageTimeout.TotalSeconds} seconds.");
             }
 
             return message;
@@ -91,7 +93,7 @@
 
         BlockingCollection<IncomingMessage> receivedMessages;
 
-        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(1);
+        static readonly TimeSpan IncomingMessageTimeout = TimeSpan.FromSeconds(1);
         TransportInfrastructure infra;
     }
 }

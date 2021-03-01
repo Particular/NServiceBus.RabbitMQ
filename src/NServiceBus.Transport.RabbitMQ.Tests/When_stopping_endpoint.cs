@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
 
@@ -10,14 +11,14 @@
         [Explicit]
         public async Task Should_gracefully_shutdown()
         {
-            await messagePump.StopReceive();
+            await messagePump.StopReceive(CancellationToken.None);
 
             var operations = new OutgoingMessageBuilder().WithBody(new byte[1]).SendTo(ReceiverQueue).Build(10000);
-            await messageDispatcher.Dispatch(operations, new TransportTransaction());
+            await messageDispatcher.Dispatch(operations, new TransportTransaction(), CancellationToken.None);
 
-            await messagePump.StartReceive();
+            await messagePump.StartReceive(CancellationToken.None);
             await Task.Delay(500);
-            await messagePump.StopReceive();
+            await messagePump.StopReceive(CancellationToken.None);
         }
     }
 }

@@ -22,7 +22,7 @@
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
         readonly ReceiveSettings settings;
-        readonly Action<string, Exception> criticalErrorAction;
+        readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
         bool disposed;
@@ -40,7 +40,7 @@
         public MessagePump(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, MessageConverter messageConverter, string consumerTag,
             ChannelProvider channelProvider, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation, ReceiveSettings settings,
-            Action<string, Exception> criticalErrorAction)
+            Action<string, Exception, CancellationToken> criticalErrorAction)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -62,7 +62,7 @@
         public ISubscriptionManager Subscriptions { get; }
         public string Id => settings.Id;
 
-        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError)
+        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken)
         {
             this.onMessage = onMessage;
             this.onError = onError;
@@ -77,7 +77,7 @@
             return Task.CompletedTask;
         }
 
-        public Task StartReceive()
+        public Task StartReceive(CancellationToken cancellationToken)
         {
             messageProcessing = new CancellationTokenSource();
 
@@ -107,14 +107,14 @@
             return Task.CompletedTask;
         }
 
-        public async Task StopReceive()
+        public async Task StopReceive(CancellationToken cancellationToken)
         {
             consumer.Received -= Consumer_Received;
             messageProcessing.Cancel();
 
             while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
             {
-                await Task.Delay(50).ConfigureAwait(false);
+                await Task.Delay(50, cancellationToken).ConfigureAwait(false);
             }
 
             connectionShutdownCompleted = new TaskCompletionSource<bool>();
@@ -220,7 +220,7 @@
 
                         var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, contextBag);
 
-                        await onMessage(messageContext).ConfigureAwait(false);
+                        await onMessage(messageContext, CancellationToken.None).ConfigureAwait(false);
                         processed = true;
                     }
                     catch (Exception exception)
@@ -234,7 +234,7 @@
 
                         try
                         {
-                            errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                            errorHandled = await onError(errorContext, CancellationToken.None).ConfigureAwait(false) == ErrorHandleResult.Handled;
 
                             if (!errorHandled)
                             {
@@ -243,7 +243,7 @@
                         }
                         catch (Exception ex)
                         {
-                            criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
+                            criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, CancellationToken.None);
                             await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
 
                             return;

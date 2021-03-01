@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
@@ -209,7 +210,7 @@
         ///     provide information anymore at this stage).
         /// </summary>
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings,
-            ReceiveSettings[] receivers, string[] sendingAddresses)
+            ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken)
         {
             X509Certificate2Collection certCollection = null;
             if (ClientCertificate != null)

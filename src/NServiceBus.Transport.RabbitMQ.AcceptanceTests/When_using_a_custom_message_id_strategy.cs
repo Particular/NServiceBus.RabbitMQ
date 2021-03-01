@@ -2,9 +2,9 @@
 {
     using System.Collections.Generic;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using Extensibility;
     using Features;
     using Microsoft.Extensions.DependencyInjection;
     using NServiceBus.AcceptanceTests;
@@ -15,7 +15,7 @@
 
     public class When_using_a_custom_message_id_strategy : NServiceBusAcceptanceTest
     {
-        const string customMessageId = "CustomMessageId";
+        const string CustomMessageId = "CustomMessageId";
 
         [Test]
         public async Task Should_use_custom_strategy_to_set_message_id_on_message_with_no_id()
@@ -26,7 +26,7 @@
                    .Run();
 
             Assert.True(context.GotTheMessage, "Should receive the message");
-            Assert.AreEqual(context.ReceivedMessageId, customMessageId, "Message id should equal custom id value");
+            Assert.AreEqual(context.ReceivedMessageId, CustomMessageId, "Message id should equal custom id value");
         }
 
         public class Receiver : EndpointConfigurationBuilder
@@ -36,7 +36,7 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.EnableFeature<StarterFeature>();
-                    c.ConfigureRabbitMQTransport().MessageIdStrategy = m => customMessageId;
+                    c.ConfigureRabbitMQTransport().MessageIdStrategy = m => CustomMessageId;
                 });
             }
 
@@ -56,7 +56,7 @@
                         this.settings = settings;
                     }
 
-                    protected override Task OnStart(IMessageSession session)
+                    protected override Task OnStart(IMessageSession session, CancellationToken cancellationToken)
                     {
                         //Use feature to send message that has no message id
                         var messageBody = "<MyRequest></MyRequest>";
@@ -70,10 +70,10 @@
                             Encoding.UTF8.GetBytes(messageBody));
 
                         var transportOperation = new TransportOperation(message, new UnicastAddressTag(settings.EndpointName()));
-                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction());
+                        return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), cancellationToken);
                     }
 
-                    protected override Task OnStop(IMessageSession session) => Task.CompletedTask;
+                    protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken) => Task.CompletedTask;
 
                     readonly IMessageDispatcher dispatchMessages;
                     readonly ReadOnlySettings settings;

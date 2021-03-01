@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class MessageDispatcher : IMessageDispatcher
@@ -12,7 +13,7 @@
             this.channelProvider = channelProvider;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken)
         {
             var channel = channelProvider.GetPublishChannel();
 

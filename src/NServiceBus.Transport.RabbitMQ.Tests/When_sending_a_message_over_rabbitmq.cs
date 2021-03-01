@@ -4,15 +4,15 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
-    using Extensibility;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
 
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
-        const string queueToReceiveOn = "testEndPoint";
+        const string QueueToReceiveOn = "testEndPoint";
 
         [Test]
         public Task Should_populate_the_body()
@@ -93,17 +93,17 @@
                 });
         }
 
-        protected override IEnumerable<string> AdditionalReceiverQueues => new[] { queueToReceiveOn };
+        protected override IEnumerable<string> AdditionalReceiverQueues => new[] { QueueToReceiveOn };
 
         async Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion)
         {
-            var operations = builder.SendTo(queueToReceiveOn).Build();
+            var operations = builder.SendTo(QueueToReceiveOn).Build();
 
-            await messageDispatcher.Dispatch(operations, new TransportTransaction());
+            await messageDispatcher.Dispatch(operations, new TransportTransaction(), CancellationToken.None);
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
-            var result = Consume(messageId, queueToReceiveOn);
+            var result = Consume(messageId, QueueToReceiveOn);
 
             var converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
             var convertedHeaders = converter.RetrieveHeaders(result);

@@ -2,9 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using Extensibility;
     using Features;
     using Microsoft.Extensions.DependencyInjection;
     using NServiceBus.AcceptanceTests;
@@ -57,14 +57,14 @@
                         this.settings = settings;
                     }
 
-                    protected override async Task OnStart(IMessageSession session)
+                    protected override async Task OnStart(IMessageSession session, CancellationToken cancellationToken)
                     {
                         await BreakConnectionBySendingInvalidMessage();
 
-                        await session.SendLocal(new MyRequest { MessageId = context.MessageId });
+                        await session.SendLocal(new MyRequest { MessageId = context.MessageId }, cancellationToken);
                     }
 
-                    protected override Task OnStop(IMessageSession session) => Task.CompletedTask;
+                    protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken) => Task.CompletedTask;
 
                     async Task BreakConnectionBySendingInvalidMessage()
                     {
@@ -77,7 +77,7 @@
                                     new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1))
                             };
                             var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), props);
-                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction());
+                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), CancellationToken.None);
                         }
                         catch (Exception)
                         {
