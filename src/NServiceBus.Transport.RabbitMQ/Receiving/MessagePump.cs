@@ -287,20 +287,13 @@
                 }
             }
 
-            if (processed)
+            try
             {
-                await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+                await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
             }
-            else
+            catch (AlreadyClosedException ex)
             {
-                try
-                {
-                    await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
-                }
-                catch (AlreadyClosedException ex)
-                {
-                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
-                }
+                Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
             }
         }
 
