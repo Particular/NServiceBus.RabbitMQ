@@ -57,16 +57,16 @@
                         this.settings = settings;
                     }
 
-                    protected override async Task OnStart(IMessageSession session, CancellationToken cancellationToken)
+                    protected override async Task OnStart(IMessageSession session, CancellationToken cancellationToken = default)
                     {
-                        await BreakConnectionBySendingInvalidMessage();
+                        await BreakConnectionBySendingInvalidMessage(cancellationToken);
 
                         await session.SendLocal(new MyRequest { MessageId = context.MessageId }, cancellationToken);
                     }
 
-                    protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken) => Task.CompletedTask;
+                    protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-                    async Task BreakConnectionBySendingInvalidMessage()
+                    async Task BreakConnectionBySendingInvalidMessage(CancellationToken cancellationToken = default)
                     {
                         try
                         {
@@ -77,7 +77,7 @@
                                     new DiscardIfNotReceivedBefore(TimeSpan.FromMilliseconds(-1))
                             };
                             var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), props);
-                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), CancellationToken.None);
+                            await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), cancellationToken);
                         }
                         catch (Exception)
                         {

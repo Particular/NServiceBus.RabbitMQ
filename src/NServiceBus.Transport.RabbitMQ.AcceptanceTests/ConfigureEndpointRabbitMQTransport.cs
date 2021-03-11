@@ -109,7 +109,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         {
         }
 
-        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken)
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             QueuesToCleanup.AddRange(receivers.Select(x => x.ReceiveAddress).Concat(sendingAddresses).Distinct());
             return base.Initialize(hostSettings, receivers, sendingAddresses, cancellationToken);

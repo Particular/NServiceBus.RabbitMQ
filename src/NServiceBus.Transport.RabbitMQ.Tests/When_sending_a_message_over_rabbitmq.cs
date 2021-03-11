@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
@@ -99,7 +98,7 @@
         {
             var operations = builder.SendTo(QueueToReceiveOn).Build();
 
-            await messageDispatcher.Dispatch(operations, new TransportTransaction(), CancellationToken.None);
+            await messageDispatcher.Dispatch(operations, new TransportTransaction());
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
