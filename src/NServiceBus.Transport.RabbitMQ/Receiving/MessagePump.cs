@@ -19,18 +19,20 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
+        readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
         readonly ReceiveSettings settings;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
-        readonly MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
 
+        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         bool disposed;
         OnMessage onMessage;
         OnError onError;
         int maxConcurrency;
         long numberOfMessagesBeingProcessed;
-        CancellationTokenSource messageProcessing;
+        CancellationTokenSource messagePumpCancellationTokenSource;
+        CancellationTokenSource messageProcessingCancellationTokenSource;
         IConnection connection;
         AsyncEventingBasicConsumer consumer;
 
@@ -46,6 +48,7 @@
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
+            this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.settings = settings;
             this.criticalErrorAction = criticalErrorAction;
@@ -56,7 +59,6 @@
             }
 
             queuePurger = new QueuePurger(connectionFactory);
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.ReceiveAddress} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalErrorAction);
         }
 
         public ISubscriptionManager Subscriptions { get; }
@@ -68,6 +70,14 @@
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
 
+            messagePumpCancellationTokenSource = new CancellationTokenSource();
+            messageProcessingCancellationTokenSource = new CancellationTokenSource();
+
+            var connectionName = $"'{settings.ReceiveAddress} MessagePump'";
+
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(connectionName,
+                timeToWaitBeforeTriggeringCircuitBreaker,
+                exception => criticalErrorAction($"{connectionName} connection to the broker has failed.", exception, messageProcessingCancellationTokenSource.Token));
 
             if (settings.PurgeOnStartup)
             {
@@ -79,8 +89,6 @@
 
         public Task StartReceive(CancellationToken cancellationToken)
         {
-            messageProcessing = new CancellationTokenSource();
-
             connection = connectionFactory.CreateConnection($"{settings.ReceiveAddress} MessagePump", consumerDispatchConcurrency: maxConcurrency);
 
             var channel = connection.CreateModel();
@@ -110,11 +118,27 @@
         public async Task StopReceive(CancellationToken cancellationToken)
         {
             consumer.Received -= Consumer_Received;
-            messageProcessing.Cancel();
+
+            messagePumpCancellationTokenSource.Cancel();
+
+            cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
 
             while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
             {
-                await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+                // We are deliberately not forwarding the cancellation token here because
+                // this loop is our way of waiting for all pending messaging operations
+                // to participate in cooperative cancellation or not.
+                // We do not want to rudely abort them because the cancellation token has been cancelled.
+                // This allows us to preserve the same behaviour in v8 as in v7 in that,
+                // if CancellationToken.None is passed to this method,
+                // the method will only return when all in flight messages have been processed.
+                // If, on the other hand, a non-default CancellationToken is passed,
+                // all message processing operations have the opportunity to
+                // participate in cooperative cancellation.
+                // If we ever require a method of stopping the endpoint such that
+                // all message processing is cancelled immediately,
+                // we can provide that as a separate feature.
+                await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
             }
 
             connectionShutdownCompleted = new TaskCompletionSource<bool>();
@@ -152,7 +176,7 @@
 
         async Task Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            if (messageProcessing.Token.IsCancellationRequested)
+            if (messagePumpCancellationTokenSource.Token.IsCancellationRequested)
             {
                 return;
             }
@@ -204,67 +228,78 @@
                 return;
             }
 
-            using (var tokenSource = new CancellationTokenSource())
+            var processed = false;
+            var errorHandled = false;
+            var numberOfDeliveryAttempts = 0;
+            var messageBody = message.Body.ToArray();
+
+            while (!processed && !errorHandled)
             {
-                var processed = false;
-                var errorHandled = false;
-                var numberOfDeliveryAttempts = 0;
-                var messageBody = message.Body.ToArray();
+                var processingContext = new ContextBag();
 
-                while (!processed && !errorHandled)
+                processingContext.Set(message);
+
+                try
                 {
-                    try
-                    {
-                        var contextBag = new ContextBag();
-                        contextBag.Set(message);
 
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, contextBag);
+                    var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, processingContext);
 
-                        await onMessage(messageContext, CancellationToken.None).ConfigureAwait(false);
-                        processed = true;
-                    }
-                    catch (Exception exception)
-                    {
-                        ++numberOfDeliveryAttempts;
-                        headers = messageConverter.RetrieveHeaders(message);
-                        var contextBag = new ContextBag();
-                        contextBag.Set(message);
-
-                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, contextBag);
-
-                        try
-                        {
-                            errorHandled = await onError(errorContext, CancellationToken.None).ConfigureAwait(false) == ErrorHandleResult.Handled;
-
-                            if (!errorHandled)
-                            {
-                                headers = messageConverter.RetrieveHeaders(message);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, CancellationToken.None);
-                            await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
-
-                            return;
-                        }
-                    }
+                    await onMessage(messageContext, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                    processed = true;
                 }
-
-                if (processed && tokenSource.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (messageProcessingCancellationTokenSource.IsCancellationRequested)
                 {
+                    Logger.Info("Message processing cancelled.", ex);
                     await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+
+                    return;
                 }
-                else
+                catch (Exception exception)
                 {
+                    ++numberOfDeliveryAttempts;
+                    headers = messageConverter.RetrieveHeaders(message);
+
+                    var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, processingContext);
+
                     try
                     {
-                        await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
+                        errorHandled = await onError(errorContext, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false) == ErrorHandleResult.Handled;
+
+                        if (!errorHandled)
+                        {
+                            headers = messageConverter.RetrieveHeaders(message);
+                        }
                     }
-                    catch (AlreadyClosedException ex)
+                    catch (OperationCanceledException ex) when (messageProcessingCancellationTokenSource.IsCancellationRequested)
                     {
-                        Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                        Logger.Info("Message processing cancelled.", ex);
+                        await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+
+                        return;
                     }
+                    catch (Exception ex)
+                    {
+                        criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationTokenSource.Token);
+                        await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+
+                        return;
+                    }
+                }
+            }
+
+            if (processed)
+            {
+                await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+            }
+            else
+            {
+                try
+                {
+                    await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
+                }
+                catch (AlreadyClosedException ex)
+                {
+                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
                 }
             }
         }
@@ -309,7 +344,11 @@
                 return;
             }
             circuitBreaker?.Dispose();
-            messageProcessing?.Dispose();
+            messagePumpCancellationTokenSource?.Dispose();
+            messageProcessingCancellationTokenSource?.Cancel();
+
+            messageProcessingCancellationTokenSource = null; // to prevent ObjectDisposedException should the user passed token passed to StopReceive() be canceled after this method returns
+
             connection?.Dispose();
             disposed = true;
         }

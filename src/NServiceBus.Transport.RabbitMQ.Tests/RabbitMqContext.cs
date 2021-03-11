@@ -43,7 +43,7 @@
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
                 (messageContext, ct) =>
                 {
-                    receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers,
+                    receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
                         messageContext.Body), ct);
                     return Task.CompletedTask;
                 }, (errorContext, ct) => Task.FromResult(ErrorHandleResult.Handled),
