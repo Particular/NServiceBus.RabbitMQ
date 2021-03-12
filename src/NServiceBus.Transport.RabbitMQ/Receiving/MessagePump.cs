@@ -246,9 +246,8 @@
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
                 }
-                catch (OperationCanceledException ex) when (messageProcessingCancellationToken.IsCancellationRequested)
+                catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
                 {
-                    Logger.Info("Message processing cancelled.", ex);
                     consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                     return;
@@ -269,9 +268,8 @@
                             headers = messageConverter.RetrieveHeaders(message);
                         }
                     }
-                    catch (OperationCanceledException ex) when (messageProcessingCancellationToken.IsCancellationRequested)
+                    catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
                     {
-                        Logger.Info("Message processing cancelled.", ex);
                         consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                         return;
