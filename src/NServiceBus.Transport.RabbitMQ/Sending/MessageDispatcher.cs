@@ -13,7 +13,7 @@
             this.channelProvider = channelProvider;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken)
+        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default)
         {
             var channel = channelProvider.GetPublishChannel();
 

@@ -4,7 +4,6 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
 
@@ -31,26 +30,25 @@
                 false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval);
 
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
-                (msg, ex, ct) => { }, true), new[]
+                (_, __, ___) => { }, true), new[]
             {
                 new ReceiveSettings(ReceiverQueue, ReceiverQueue, true, true, "error")
-            }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray(), CancellationToken.None);
+            }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray());
 
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
 
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
-                (messageContext, ct) =>
+                (messageContext, cancellationToken) =>
                 {
-                    receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers,
-                        messageContext.Body), ct);
+                    receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
+                        messageContext.Body), cancellationToken);
                     return Task.CompletedTask;
-                }, (errorContext, ct) => Task.FromResult(ErrorHandleResult.Handled),
-                CancellationToken.None
+                }, (_, __) => Task.FromResult(ErrorHandleResult.Handled)
             );
 
-            await messagePump.StartReceive(CancellationToken.None);
+            await messagePump.StartReceive();
         }
 
         [TearDown]
@@ -58,12 +56,12 @@
         {
             if (messagePump != null)
             {
-                await messagePump.StopReceive(CancellationToken.None);
+                await messagePump.StopReceive();
             }
 
             if (infra != null)
             {
-                await infra.Shutdown(CancellationToken.None);
+                await infra.Shutdown();
             }
         }
 
