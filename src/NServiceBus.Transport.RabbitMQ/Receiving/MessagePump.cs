@@ -25,7 +25,6 @@
         readonly ReceiveSettings settings;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
 
-        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         bool disposed;
         OnMessage onMessage;
         OnError onError;
@@ -33,6 +32,7 @@
         long numberOfMessagesBeingProcessed;
         CancellationTokenSource messagePumpCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
+        MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection connection;
         AsyncEventingBasicConsumer consumer;
 
@@ -64,20 +64,11 @@
         public ISubscriptionManager Subscriptions { get; }
         public string Id => settings.Id;
 
-        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken)
+        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
             this.onMessage = onMessage;
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
-
-            messagePumpCancellationTokenSource = new CancellationTokenSource();
-            messageProcessingCancellationTokenSource = new CancellationTokenSource();
-
-            var connectionName = $"'{settings.ReceiveAddress} MessagePump'";
-
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(connectionName,
-                timeToWaitBeforeTriggeringCircuitBreaker,
-                exception => criticalErrorAction($"{connectionName} connection to the broker has failed.", exception, messageProcessingCancellationTokenSource.Token));
 
             if (settings.PurgeOnStartup)
             {
@@ -87,8 +78,16 @@
             return Task.CompletedTask;
         }
 
-        public Task StartReceive(CancellationToken cancellationToken)
+        public Task StartReceive(CancellationToken cancellationToken = default)
         {
+            messagePumpCancellationTokenSource = new CancellationTokenSource();
+            messageProcessingCancellationTokenSource = new CancellationTokenSource();
+
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(
+                $"'{settings.ReceiveAddress} MessagePump'",
+                timeToWaitBeforeTriggeringCircuitBreaker,
+                (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
+
             connection = connectionFactory.CreateConnection($"{settings.ReceiveAddress} MessagePump", consumerDispatchConcurrency: maxConcurrency);
 
             var channel = connection.CreateModel();
@@ -115,11 +114,11 @@
             return Task.CompletedTask;
         }
 
-        public async Task StopReceive(CancellationToken cancellationToken)
+        public async Task StopReceive(CancellationToken cancellationToken = default)
         {
             consumer.Received -= Consumer_Received;
 
-            messagePumpCancellationTokenSource.Cancel();
+            messagePumpCancellationTokenSource?.Cancel();
 
             cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
 
@@ -176,7 +175,7 @@
 
         async Task Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
-            if (messagePumpCancellationTokenSource.Token.IsCancellationRequested)
+            if (messagePumpCancellationTokenSource.IsCancellationRequested)
             {
                 return;
             }
@@ -185,12 +184,12 @@
 
             try
             {
-                await Process(eventArgs).ConfigureAwait(false);
+                await Process(eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Logger.Warn("Failed to process message. Returning message to queue...", ex);
-                await consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag).ConfigureAwait(false);
+                consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag);
             }
             finally
             {
@@ -198,7 +197,7 @@
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message)
+        async Task Process(BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
         {
             Dictionary<string, string> headers;
 
@@ -244,13 +243,13 @@
 
                     var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, processingContext);
 
-                    await onMessage(messageContext, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                    await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
                 }
-                catch (OperationCanceledException ex) when (messageProcessingCancellationTokenSource.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (messageProcessingCancellationToken.IsCancellationRequested)
                 {
                     Logger.Info("Message processing cancelled.", ex);
-                    await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                     return;
                 }
@@ -263,24 +262,24 @@
 
                     try
                     {
-                        errorHandled = await onError(errorContext, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                        errorHandled = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) == ErrorHandleResult.Handled;
 
                         if (!errorHandled)
                         {
                             headers = messageConverter.RetrieveHeaders(message);
                         }
                     }
-                    catch (OperationCanceledException ex) when (messageProcessingCancellationTokenSource.IsCancellationRequested)
+                    catch (OperationCanceledException ex) when (messageProcessingCancellationToken.IsCancellationRequested)
                     {
                         Logger.Info("Message processing cancelled.", ex);
-                        await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                         return;
                     }
                     catch (Exception ex)
                     {
-                        criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationTokenSource.Token);
-                        await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+                        criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationToken);
+                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                         return;
                     }
@@ -289,7 +288,7 @@
 
             try
             {
-                await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
+                consumer.Model.BasicAckSingle(message.DeliveryTag);
             }
             catch (AlreadyClosedException ex)
             {
@@ -315,14 +314,14 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
-                await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag).ConfigureAwait(false);
+                consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                 return;
             }
 
             try
             {
-                await consumer.Model.BasicAckSingle(message.DeliveryTag).ConfigureAwait(false);
+                consumer.Model.BasicAckSingle(message.DeliveryTag);
             }
             catch (AlreadyClosedException ex)
             {
@@ -338,7 +337,7 @@
             }
             circuitBreaker?.Dispose();
             messagePumpCancellationTokenSource?.Dispose();
-            messageProcessingCancellationTokenSource?.Cancel();
+            messageProcessingCancellationTokenSource?.Dispose();
 
             messageProcessingCancellationTokenSource = null; // to prevent ObjectDisposedException should the user passed token passed to StopReceive() be canceled after this method returns
 

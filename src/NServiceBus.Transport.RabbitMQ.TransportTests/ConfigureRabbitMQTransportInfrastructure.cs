@@ -26,7 +26,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     }
 
     public Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName,
-        string errorQueueName, CancellationToken cancellationToken)
+        string errorQueueName, CancellationToken cancellationToken = default)
     {
         queuesToCleanUp = new[] { inputQueueName, errorQueueName };
 
@@ -39,7 +39,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         return transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName }, cancellationToken);
     }
 
-    public Task Cleanup(CancellationToken cancellationToken)
+    public Task Cleanup(CancellationToken cancellationToken = default)
     {
         PurgeQueues(connectionStringBuilder, queuesToCleanUp);
         return Task.FromResult(0);

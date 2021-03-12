@@ -209,8 +209,8 @@
         ///     cannot
         ///     provide information anymore at this stage).
         /// </summary>
-        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings,
-            ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken)
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings,
+            ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             X509Certificate2Collection certCollection = null;
             if (ClientCertificate != null)
@@ -230,16 +230,17 @@
             if (hostSettings.SetupInfrastructure)
             {
                 string[] receivingAddresses = receivers.Select(x => x.ReceiveAddress).ToArray();
-                await SetupInfrastructure(receivingAddresses, sendingAddresses, connectionFactory)
-                    .ConfigureAwait(false);
+                SetupInfrastructure(receivingAddresses, sendingAddresses, connectionFactory);
             }
 
-            return new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
+            var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation);
+
+            return Task.FromResult<TransportInfrastructure>(infra);
         }
 
-        Task SetupInfrastructure(string[] receivingQueues, string[] sendingQueues, ConnectionFactory connectionFactory)
+        void SetupInfrastructure(string[] receivingQueues, string[] sendingQueues, ConnectionFactory connectionFactory)
         {
             using (IConnection connection = connectionFactory.CreateAdministrationConnection())
             using (IModel channel = connection.CreateModel())
@@ -254,8 +255,6 @@
                         DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
                 }
             }
-
-            return Task.CompletedTask;
         }
 
 

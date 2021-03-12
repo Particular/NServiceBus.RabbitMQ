@@ -56,7 +56,7 @@
                         this.settings = settings;
                     }
 
-                    protected override Task OnStart(IMessageSession session, CancellationToken cancellationToken)
+                    protected override Task OnStart(IMessageSession session, CancellationToken cancellationToken = default)
                     {
                         //Use feature to send message that has no message id
                         var messageBody = "<MyRequest></MyRequest>";
@@ -73,7 +73,7 @@
                         return dispatchMessages.Dispatch(new TransportOperations(transportOperation), new TransportTransaction(), cancellationToken);
                     }
 
-                    protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken) => Task.CompletedTask;
+                    protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
                     readonly IMessageDispatcher dispatchMessages;
                     readonly ReadOnlySettings settings;

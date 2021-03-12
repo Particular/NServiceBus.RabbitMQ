@@ -16,7 +16,8 @@
             var messageRetries = new TaskCompletionSource<MessageContext>();
             var firstInvocation = true;
 
-            await StartPump((context, ct) =>
+            await StartPump(
+                (context, _) =>
                 {
                     if (firstInvocation)
                     {
@@ -28,7 +29,7 @@
                     messageRetries.SetResult(context);
                     return Task.FromResult(0);
                 },
-                (context, ct) => Task.FromResult(ErrorHandleResult.RetryRequired),
+                (_, __) => Task.FromResult(ErrorHandleResult.RetryRequired),
                 transactionMode);
 
             await SendMessage(InputQueueName, new Dictionary<string, string>
@@ -49,12 +50,13 @@
         {
             var errorHandled = new TaskCompletionSource<ErrorContext>();
 
-            await StartPump((context, ct) =>
+            await StartPump(
+                (context, _) =>
                 {
                     context.Headers["test-header"] = "modified";
                     throw new Exception();
                 },
-                (context, ct) =>
+                (context, _) =>
                 {
                     errorHandled.SetResult(context);
                     return Task.FromResult(ErrorHandleResult.Handled);
@@ -79,7 +81,8 @@
             var messageRetries = new TaskCompletionSource<MessageContext>();
             var firstInvocation = true;
 
-            await StartPump((context, ct) =>
+            await StartPump(
+                (context, _) =>
                 {
                     if (firstInvocation)
                     {
@@ -90,7 +93,7 @@
                     messageRetries.SetResult(context);
                     return Task.FromResult(0);
                 },
-                (context, ct) =>
+                (context, _) =>
                 {
                     context.Message.Headers["test-header"] = "modified";
                     return Task.FromResult(ErrorHandleResult.RetryRequired);

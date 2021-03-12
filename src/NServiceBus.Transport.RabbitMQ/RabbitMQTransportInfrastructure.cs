@@ -31,7 +31,7 @@
             return new MessagePump(connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, settings, hostSettings.CriticalErrorAction);
         }
 
-        public override Task Shutdown(CancellationToken cancellationToken)
+        public override Task Shutdown(CancellationToken cancellationToken = default)
         {
             foreach (IMessageReceiver receiver in Receivers.Values)
             {

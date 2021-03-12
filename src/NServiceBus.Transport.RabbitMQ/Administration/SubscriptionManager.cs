@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.RabbitMQ
             this.localQueue = localQueue;
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken)
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
@@ -32,7 +32,7 @@ namespace NServiceBus.Transport.RabbitMQ
             return Task.CompletedTask;
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken)
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
