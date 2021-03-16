@@ -120,38 +120,40 @@
 
             messagePumpCancellationTokenSource?.Cancel();
 
-            cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
-
-            while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
+            using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
-                // We are deliberately not forwarding the cancellation token here because
-                // this loop is our way of waiting for all pending messaging operations
-                // to participate in cooperative cancellation or not.
-                // We do not want to rudely abort them because the cancellation token has been cancelled.
-                // This allows us to preserve the same behaviour in v8 as in v7 in that,
-                // if CancellationToken.None is passed to this method,
-                // the method will only return when all in flight messages have been processed.
-                // If, on the other hand, a non-default CancellationToken is passed,
-                // all message processing operations have the opportunity to
-                // participate in cooperative cancellation.
-                // If we ever require a method of stopping the endpoint such that
-                // all message processing is cancelled immediately,
-                // we can provide that as a separate feature.
-                await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
-            }
 
-            connectionShutdownCompleted = new TaskCompletionSource<bool>();
+                while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
+                {
+                    // We are deliberately not forwarding the cancellation token here because
+                    // this loop is our way of waiting for all pending messaging operations
+                    // to participate in cooperative cancellation or not.
+                    // We do not want to rudely abort them because the cancellation token has been cancelled.
+                    // This allows us to preserve the same behaviour in v8 as in v7 in that,
+                    // if CancellationToken.None is passed to this method,
+                    // the method will only return when all in flight messages have been processed.
+                    // If, on the other hand, a non-default CancellationToken is passed,
+                    // all message processing operations have the opportunity to
+                    // participate in cooperative cancellation.
+                    // If we ever require a method of stopping the endpoint such that
+                    // all message processing is cancelled immediately,
+                    // we can provide that as a separate feature.
+                    await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
+                }
 
-            if (connection.IsOpen)
-            {
-                connection.Close();
-            }
-            else
-            {
-                connectionShutdownCompleted.SetResult(true);
-            }
+                connectionShutdownCompleted = new TaskCompletionSource<bool>();
 
-            await connectionShutdownCompleted.Task.ConfigureAwait(false);
+                if (connection.IsOpen)
+                {
+                    connection.Close();
+                }
+                else
+                {
+                    connectionShutdownCompleted.SetResult(true);
+                }
+
+                await connectionShutdownCompleted.Task.ConfigureAwait(false);
+            }
         }
 
         Task Consumer_Registered(object sender, ConsumerEventArgs e)
@@ -336,8 +338,6 @@
             circuitBreaker?.Dispose();
             messagePumpCancellationTokenSource?.Dispose();
             messageProcessingCancellationTokenSource?.Dispose();
-
-            messageProcessingCancellationTokenSource = null; // to prevent ObjectDisposedException should the user passed token passed to StopReceive() be canceled after this method returns
 
             connection?.Dispose();
             disposed = true;
