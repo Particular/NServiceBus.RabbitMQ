@@ -131,7 +131,7 @@ namespace NServiceBus.Transport.RabbitMQ
             IDictionary<string, object> queueArguments = null;
             if (isEndpointQuorum)
             {
-                queueArguments = new Dictionary<string, object>() { { "x-queue-type", "quorum" } };
+                queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             }
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))

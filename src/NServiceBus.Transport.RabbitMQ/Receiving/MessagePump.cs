@@ -210,7 +210,9 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
+                Logger.Error(
+                    $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
+                    ex);
                 await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
@@ -224,43 +226,74 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
+                Logger.Error(
+                    $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
+                    ex);
                 await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
 
-            var ttbrExpired = false;
-
-            if (headers.ContainsKey(NServiceBus.Headers.TimeSent) && headers.ContainsKey(NServiceBus.Headers.TimeToBeReceived))
+            if (headers.ContainsKey(NServiceBus.Headers.TimeSent) &&
+                headers.ContainsKey(NServiceBus.Headers.TimeToBeReceived))
             {
-                var maxTimeToBeReceived = DateTime.ParseExact(headers[NServiceBus.Headers.TimeSent], "yyyy-MM-dd HH:mm:ss:ffffff Z",
-                    CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
+                var maxTimeToBeReceived = DateTime.ParseExact(headers[NServiceBus.Headers.TimeSent],
+                        "yyyy-MM-dd HH:mm:ss:ffffff Z",
+                        CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
                     .Add(TimeSpan.Parse(headers[NServiceBus.Headers.TimeToBeReceived]));
 
-                ttbrExpired = maxTimeToBeReceived < DateTime.UtcNow;
+                if (maxTimeToBeReceived < DateTime.UtcNow)
+                {
+                    AckMessage();
+                    return;
+                }
             }
 
-            if (!ttbrExpired)
+            var processed = false;
+            var errorHandled = false;
+            var numberOfDeliveryAttempts = 0;
+            var messageBody = message.Body.ToArray();
+
+            while (!processed && !errorHandled)
             {
-                var processed = false;
-                var errorHandled = false;
-                var numberOfDeliveryAttempts = 0;
-                var messageBody = message.Body.ToArray();
+                var processingContext = new ContextBag();
 
-                while (!processed && !errorHandled)
+                processingContext.Set(message);
+
+                try
                 {
-                    var processingContext = new ContextBag();
 
-                    processingContext.Set(message);
+                    var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(),
+                        TransportTransaction, processingContext);
+
+                    await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
+                    processed = true;
+                }
+                catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
+                {
+                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+
+                    return;
+                }
+                catch (Exception exception)
+                {
+                    ++numberOfDeliveryAttempts;
+                    headers = messageConverter.RetrieveHeaders(message);
+
+                    var errorContext = new ErrorContext(exception, headers, messageId,
+                        messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts,
+                        processingContext);
 
                     try
                     {
+                        errorHandled =
+                            await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) ==
+                            ErrorHandleResult.Handled;
 
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, processingContext);
-
-                        await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
-                        processed = true;
+                        if (!errorHandled)
+                        {
+                            headers = messageConverter.RetrieveHeaders(message);
+                        }
                     }
                     catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
                     {
@@ -268,46 +301,32 @@
 
                         return;
                     }
-                    catch (Exception exception)
+                    catch (Exception ex)
                     {
-                        ++numberOfDeliveryAttempts;
-                        headers = messageConverter.RetrieveHeaders(message);
+                        criticalErrorAction(
+                            $"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex,
+                            messageProcessingCancellationToken);
+                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
-                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, processingContext);
-
-                        try
-                        {
-                            errorHandled = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) == ErrorHandleResult.Handled;
-
-                            if (!errorHandled)
-                            {
-                                headers = messageConverter.RetrieveHeaders(message);
-                            }
-                        }
-                        catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
-                        {
-                            consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
-                            return;
-                        }
-                        catch (Exception ex)
-                        {
-                            criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationToken);
-                            consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
-                            return;
-                        }
+                        return;
                     }
                 }
             }
 
-            try
+            AckMessage();
+
+            void AckMessage()
             {
-                consumer.Model.BasicAckSingle(message.DeliveryTag);
-            }
-            catch (AlreadyClosedException ex)
-            {
-                Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                try
+                {
+                    consumer.Model.BasicAckSingle(message.DeliveryTag);
+                }
+                catch (AlreadyClosedException ex)
+                {
+                    Logger.Warn(
+                        $"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.",
+                        ex);
+                }
             }
         }
 
