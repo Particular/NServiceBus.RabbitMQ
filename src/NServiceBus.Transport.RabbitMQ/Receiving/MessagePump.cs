@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -229,46 +230,37 @@
                 return;
             }
 
-            var processed = false;
-            var errorHandled = false;
-            var numberOfDeliveryAttempts = 0;
-            var messageBody = message.Body.ToArray();
+            var ttbrExpired = false;
 
-            while (!processed && !errorHandled)
+            if (headers.ContainsKey(NServiceBus.Headers.TimeSent) && headers.ContainsKey(NServiceBus.Headers.TimeToBeReceived))
             {
-                var processingContext = new ContextBag();
+                var maxTimeToBeReceived = DateTime.ParseExact(headers[NServiceBus.Headers.TimeSent], "yyyy-MM-dd HH:mm:ss:ffffff Z",
+                    CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
+                    .Add(TimeSpan.Parse(headers[NServiceBus.Headers.TimeToBeReceived]));
 
-                processingContext.Set(message);
+                ttbrExpired = maxTimeToBeReceived < DateTime.UtcNow;
+            }
 
-                try
+            if (!ttbrExpired)
+            {
+                var processed = false;
+                var errorHandled = false;
+                var numberOfDeliveryAttempts = 0;
+                var messageBody = message.Body.ToArray();
+
+                while (!processed && !errorHandled)
                 {
+                    var processingContext = new ContextBag();
 
-                    var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, processingContext);
-
-                    await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
-                    processed = true;
-                }
-                catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
-                {
-                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    ++numberOfDeliveryAttempts;
-                    headers = messageConverter.RetrieveHeaders(message);
-
-                    var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, processingContext);
+                    processingContext.Set(message);
 
                     try
                     {
-                        errorHandled = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) == ErrorHandleResult.Handled;
 
-                        if (!errorHandled)
-                        {
-                            headers = messageConverter.RetrieveHeaders(message);
-                        }
+                        var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, processingContext);
+
+                        await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
+                        processed = true;
                     }
                     catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
                     {
@@ -276,12 +268,35 @@
 
                         return;
                     }
-                    catch (Exception ex)
+                    catch (Exception exception)
                     {
-                        criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationToken);
-                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                        ++numberOfDeliveryAttempts;
+                        headers = messageConverter.RetrieveHeaders(message);
 
-                        return;
+                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, processingContext);
+
+                        try
+                        {
+                            errorHandled = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) == ErrorHandleResult.Handled;
+
+                            if (!errorHandled)
+                            {
+                                headers = messageConverter.RetrieveHeaders(message);
+                            }
+                        }
+                        catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
+                        {
+                            consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationToken);
+                            consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+
+                            return;
+                        }
                     }
                 }
             }
