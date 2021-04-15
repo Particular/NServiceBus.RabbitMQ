@@ -65,7 +65,10 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="sendingAddresses">
         /// The addresses of the queues to declare and perform initialization for, that this endpoint is sending to.
         /// </param>
-        void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses);
+        /// <param name="isEndpointQuorum">
+        /// Should the queues that this endpoint receieves from be created as quorum queues.
+        /// </param>
+        void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool isEndpointQuorum);
 
         /// <summary>
         /// Binds an address to the delay infrastructure's delivery exchange.

@@ -11,6 +11,7 @@ namespace NServiceBus
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
         public string Host { get; set; }
+        public bool IsEndpointQuorum { get; set; }
         public System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> MessageIdStrategy { get; set; }
         public System.TimeSpan NetworkRecoveryInterval { get; set; }
         public string Password { get; set; }
@@ -103,7 +104,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public ConventionalRoutingTopology(bool useDurableExchanges) { }
         public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
-        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses) { }
+        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool isEndpointQuorum) { }
         public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
         public void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties) { }
         public void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
@@ -114,7 +115,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public DirectRoutingTopology(bool useDurableExchanges, System.Func<string> exchangeNameConvention = null, System.Func<System.Type, string> routingKeyConvention = null) { }
         public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
-        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses) { }
+        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool isEndpointQuorum) { }
         public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
         public void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties) { }
         public void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
@@ -124,7 +125,7 @@ namespace NServiceBus.Transport.RabbitMQ
     public interface IRoutingTopology
     {
         void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey);
-        void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses);
+        void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool isEndpointQuorum);
         void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
         void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties);
         void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);

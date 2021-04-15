@@ -9,7 +9,8 @@
             this ConventionalRoutingTopology routingTopology,
             ConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
-            IEnumerable<string> sendingAddresses)
+            IEnumerable<string> sendingAddresses,
+            bool isEndpointQuorum)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
@@ -23,7 +24,7 @@
                 DelayInfrastructure.TearDown(channel);
                 DelayInfrastructure.Build(channel);
 
-                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, isEndpointQuorum);
             }
         }
     }

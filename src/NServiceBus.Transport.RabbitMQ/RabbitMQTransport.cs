@@ -199,6 +199,11 @@
             }
         }
 
+        /// <summary>
+        /// Should this endpoint's incoming queue be created as a quorum queue.
+        /// </summary>
+        public bool IsEndpointQuorum { get; set; } = true;
+
         int DefaultPort => UseTLS ? 5671 : 5672;
 
         /// <summary>
@@ -247,7 +252,7 @@
             {
                 DelayInfrastructure.Build(channel);
 
-                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues);
+                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues, IsEndpointQuorum);
 
                 foreach (string receivingAddress in receivingQueues)
                 {
