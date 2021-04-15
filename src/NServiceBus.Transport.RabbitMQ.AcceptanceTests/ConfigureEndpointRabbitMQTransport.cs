@@ -14,7 +14,12 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     DbConnectionStringBuilder connectionStringBuilder;
     TestRabbitMQTransport transport;
+    readonly bool useQuorumQueue;
 
+    public ConfigureEndpointRabbitMQTransport(bool useQuorumQueue = false)
+    {
+        this.useQuorumQueue = useQuorumQueue;
+    }
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
@@ -28,7 +33,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         //For cleanup
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString);
+        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString, useQuorumQueue);
         configuration.UseTransport(transport);
 
         return Task.CompletedTask;
@@ -48,6 +53,28 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             return;
         }
 
+        var connectionFactory = CreateConnectionFactory();
+        var queues = transport.QueuesToCleanup.Distinct().ToArray();
+
+        using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
+        using (var channel = connection.CreateModel())
+        {
+            foreach (var queue in queues)
+            {
+                try
+                {
+                    channel.QueuePurge(queue);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
+                }
+            }
+        }
+    }
+
+    internal ConnectionFactory CreateConnectionFactory()
+    {
         var connectionFactory = new ConnectionFactory
         {
             AutomaticRecoveryEnabled = true,
@@ -78,34 +105,13 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
 
-        var queues = transport.QueuesToCleanup.Distinct().ToArray();
-
-        using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
-        using (var channel = connection.CreateModel())
-        {
-            foreach (var queue in queues)
-            {
-                try
-                {
-                    channel.QueuePurge(queue);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
-                }
-            }
-        }
+        return connectionFactory;
     }
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(Topology topology, string connectionString)
-            : base(topology, connectionString)
-        {
-        }
-
-        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString)
-            : base(topology, connectionString)
+        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, bool useQuorumQueue)
+            : base(topology, connectionString, useQuorumQueue)
         {
         }
 
