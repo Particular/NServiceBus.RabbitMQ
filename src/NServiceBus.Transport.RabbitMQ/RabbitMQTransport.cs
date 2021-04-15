@@ -200,7 +200,7 @@
         }
 
         /// <summary>
-        /// Should this endpoint's incoming queue be created as a quorum queue.
+        /// Should this endpoint's incoming queues be created as quorum queues.
         /// </summary>
         public bool IsEndpointQuorum { get; set; } = true;
 
