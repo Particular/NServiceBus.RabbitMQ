@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -27,7 +28,7 @@
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
                 await Scenario.Define<ScenarioContext>()
-                    .WithEndpoint<EndpointWithQuorumQueue>(e => e.When((session, ctx) =>
+                    .WithEndpoint<EndpointWithQuorumQueue>(e => e.When(session =>
                     {
                         var sendOptions = new SendOptions();
                         sendOptions.RouteToThisEndpoint();
@@ -41,7 +42,24 @@
             StringAssert.Contains("Cannot delay delivery of messages when there is no infrastructure support for delayed messages", exception.Message);
         }
 
+        [Test]
+        public async Task Should_not_allow_saga_timeouts()
+        {
+            var context = await Scenario.Define<SagaTimeoutContext>()
+                .WithEndpoint<EndpointWithQuorumQueue>(e => e.When(session => session.SendLocal(new StartSagaMessage())))
+                .Done(c => c.SagaTimeoutException != null)
+                .Run();
+
+            Assert.NotNull(context.SagaTimeoutException);
+            StringAssert.Contains("Cannot delay delivery of messages when there is no infrastructure support for delayed messages", context.SagaTimeoutException.Message);
+        }
+
         //TODO: when using saga timeouts
+
+        public class SagaTimeoutContext : ScenarioContext
+        {
+            public Exception SagaTimeoutException { get; set; }
+        }
 
         public class EndpointWithQuorumQueue : EndpointConfigurationBuilder
         {
@@ -61,9 +79,57 @@
                     },
                     _ => { });
             }
+
+            public class SagaWithTimeout : Saga<SagaWithTimeout.SagaData>,
+                IAmStartedByMessages<StartSagaMessage>,
+                IHandleTimeouts<SagaTimeout>
+            {
+                SagaTimeoutContext testContext;
+
+                public SagaWithTimeout(SagaTimeoutContext testContext)
+                {
+                    this.testContext = testContext;
+                }
+
+                protected override void ConfigureHowToFindSaga(SagaPropertyMapper<SagaData> mapper) =>
+                    mapper.MapSaga(s => s.CorrelationProperty)
+                        .ToMessage<StartSagaMessage>(m => m.CorrelationProperty);
+
+                public async Task Handle(StartSagaMessage message, IMessageHandlerContext context)
+                {
+                    try
+                    {
+                        await RequestTimeout<SagaTimeout>(context, TimeSpan.FromMinutes(1));
+                    }
+                    catch (Exception e)
+                    {
+                        testContext.SagaTimeoutException = e;
+                    }
+                }
+
+                public Task Timeout(SagaTimeout message, IMessageHandlerContext context)
+                {
+                    // should not be called.
+                    return Task.CompletedTask;
+                }
+
+                public class SagaData : ContainSagaData
+                {
+                    public Guid CorrelationProperty { get; set; }
+                }
+            }
         }
 
         class TestMessage : IMessage
+        {
+        }
+
+        public class StartSagaMessage : IMessage
+        {
+            public Guid CorrelationProperty { get; set; }
+        }
+
+        public class SagaTimeout : IMessage
         {
         }
     }
