@@ -21,7 +21,26 @@
             StringAssert.Contains("Delayed retries are not supported when the transport does not support delayed delivery.", exception.Message);
         }
 
-        //TODO: when using delayed sends
+        [Test]
+        public void Should_not_allow_delayed_sends()
+        {
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await Scenario.Define<ScenarioContext>()
+                    .WithEndpoint<EndpointWithQuorumQueue>(e => e.When((session, ctx) =>
+                    {
+                        var sendOptions = new SendOptions();
+                        sendOptions.RouteToThisEndpoint();
+                        sendOptions.DelayDeliveryWith(TimeSpan.FromMinutes(1));
+                        return session.Send(new TestMessage(), sendOptions);
+                    }))
+                    .Done(c => c.EndpointsStarted)
+                    .Run();
+            });
+
+            StringAssert.Contains("Cannot delay delivery of messages when there is no infrastructure support for delayed messages", exception.Message);
+        }
+
         //TODO: when using saga timeouts
 
         public class EndpointWithQuorumQueue : EndpointConfigurationBuilder
@@ -42,6 +61,10 @@
                     },
                     _ => { });
             }
+        }
+
+        class TestMessage : IMessage
+        {
         }
     }
 }
