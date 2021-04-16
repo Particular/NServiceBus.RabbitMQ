@@ -7,7 +7,6 @@
     using Features;
     using global::RabbitMQ.Client.Exceptions;
     using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_using_quorum_queues : NServiceBusAcceptanceTest
@@ -21,8 +20,7 @@
                 .Run();
 
             // try to declare the same queue as a non-quorum queue, which should fail:
-            var connectionFactory = context.TransportConfiguration.CreateConnectionFactory();
-            using (var connection = connectionFactory.CreateConnection())
+            using (var connection = context.TransportConfiguration.CreateConnection())
             {
                 using (var channel = connection.CreateModel())
                 {
@@ -47,18 +45,14 @@
 
         class Context : ScenarioContext
         {
-            public ConfigureEndpointRabbitMQTransport TransportConfiguration { get; set; }
+            public ClusterEndpoint TransportConfiguration { get; set; }
         }
 
         public class EndpointWithQuorumQueue : EndpointConfigurationBuilder
         {
             public EndpointWithQuorumQueue()
             {
-                var transportConfiguration = new ConfigureEndpointRabbitMQTransport(QueueMode.Quorum);
-                var defaultServer = new DefaultServer
-                {
-                    TransportConfiguration = transportConfiguration
-                };
+                var defaultServer = new ClusterEndpoint(QueueMode.Quorum);
                 EndpointSetup(
                     defaultServer,
                     (configuration, r) =>
@@ -72,7 +66,7 @@
                         // also test satellite receivers
                         configuration.EnableFeature<SatelliteFeature>();
 
-                        ((Context)r.ScenarioContext).TransportConfiguration = transportConfiguration;
+                        ((Context)r.ScenarioContext).TransportConfiguration = defaultServer;
                     },
                     _ => { });
             }

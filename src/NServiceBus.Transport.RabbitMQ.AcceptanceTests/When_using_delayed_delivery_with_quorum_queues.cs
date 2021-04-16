@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_using_delayed_delivery_with_quorum_queues : NServiceBusAcceptanceTest
@@ -65,11 +64,7 @@
         {
             public EndpointWithQuorumQueue()
             {
-                var transportConfiguration = new ConfigureEndpointRabbitMQTransport(QueueMode.Quorum);
-                var defaultServer = new DefaultServer
-                {
-                    TransportConfiguration = transportConfiguration
-                };
+                var defaultServer = new ClusterEndpoint(QueueMode.Quorum);
                 EndpointSetup(
                     defaultServer,
                     (configuration, r) =>
