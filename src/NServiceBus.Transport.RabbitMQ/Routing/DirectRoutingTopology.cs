@@ -98,13 +98,13 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="sendingAddresses">
         /// The addresses of the queues to declare and perform initialization for, that this endpoint is sending to.
         /// </param>
-        /// <param name="isEndpointQuorum">
+        /// <param name="useQuorumQueues">
         /// Should the queues that this endpoint receieves from be created as quorum queues.
         /// </param>
-        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool isEndpointQuorum)
+        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
         {
             IDictionary<string, object> queueArguments = null;
-            if (isEndpointQuorum)
+            if (useQuorumQueues)
             {
                 queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             }

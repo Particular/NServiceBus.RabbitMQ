@@ -28,7 +28,7 @@
         {
             public EndpointWithQuorumQueue()
             {
-                var transportConfiguration = new ConfigureEndpointRabbitMQTransport(useQuorumQueue: true);
+                var transportConfiguration = new ConfigureEndpointRabbitMQTransport(QueueMode.Quorum);
                 var defaultServer = new DefaultServer
                 {
                     TransportConfiguration = transportConfiguration

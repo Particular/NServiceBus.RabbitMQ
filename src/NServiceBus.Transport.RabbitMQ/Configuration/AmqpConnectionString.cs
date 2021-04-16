@@ -1,5 +1,4 @@
-﻿
-namespace NServiceBus.Transport.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
 

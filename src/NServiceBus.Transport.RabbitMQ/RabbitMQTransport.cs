@@ -14,7 +14,7 @@
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
     /// <summary>
-    ///     Transport definition for RabbitMQ.
+    /// Transport definition for RabbitMQ.
     /// </summary>
     public class RabbitMQTransport : TransportDefinition
     {
@@ -36,9 +36,8 @@
         /// </summary>
         /// <param name="topology">The built-in topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="useQuorumQueue">Whether this endpoint consumes messages from quorum queues or classic queues.</param>
-        public RabbitMQTransport(Topology topology, string connectionString, bool useQuorumQueue = false)
-            : this(GetBuiltInTopology(topology), connectionString, useQuorumQueue)
+        public RabbitMQTransport(Topology topology, string connectionString)
+            : this(GetBuiltInTopology(topology), connectionString)
         {
         }
 
@@ -47,14 +46,25 @@
         /// </summary>
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="useQuorumQueue">Whether this endpoint consumes messages from quorum queues or classic queues.</param>
-        public RabbitMQTransport(IRoutingTopology topology, string connectionString, bool useQuorumQueue = false)
-            : base(TransportTransactionMode.ReceiveOnly, !useQuorumQueue, true, true) //TODO what about SupportsTTBR?
+        public RabbitMQTransport(IRoutingTopology topology, string connectionString)
+            : this(topology, connectionString, QueueMode.Classic)
+        {
+        }
+
+        /// <summary>
+        /// Creates new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="topology">The custom topology to use.</param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="queueMode">The queue mode for receiving queues.</param>
+        protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
+            : base(TransportTransactionMode.ReceiveOnly, queueMode != QueueMode.Quorum, true, true)
+        //TODO what about SupportsTTBR?
         {
             Guard.AgainstNull(nameof(topology), topology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
-            UseQuorumQueue = useQuorumQueue;
+            QueueMode = queueMode;
             RoutingTopology = topology;
             if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
@@ -195,10 +205,7 @@
             }
         }
 
-        /// <summary>
-        /// Should this endpoint's incoming queues be created as quorum queues.
-        /// </summary>
-        internal bool UseQuorumQueue { get; private set; }
+        internal QueueMode QueueMode { get; }
 
         int DefaultPort => UseTLS ? 5671 : 5672;
 
@@ -247,14 +254,14 @@
             using (IModel channel = connection.CreateModel())
             {
                 // Delayed delivery currently not supported with quorum queues
-                if (!UseQuorumQueue)
+                if (QueueMode != QueueMode.Quorum)
                 {
                     DelayInfrastructure.Build(channel);
                 }
 
-                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues, UseQuorumQueue);
+                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic);
 
-                if (!UseQuorumQueue)
+                if (QueueMode != QueueMode.Quorum)
                 {
                     foreach (string receivingAddress in receivingQueues)
                     {
@@ -292,7 +299,10 @@
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
             SupportedTransactionModes;
 
-        static IRoutingTopology GetBuiltInTopology(Topology topology)
+        /// <summary>
+        /// Returns an instance implementing <see cref="IRoutingTopology"/> based on the provided <see cref="Topology"/>.
+        /// </summary>
+        protected static IRoutingTopology GetBuiltInTopology(Topology topology)
         {
             return topology == Topology.Conventional
                 ? (IRoutingTopology)new ConventionalRoutingTopology(true)

@@ -14,11 +14,11 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     DbConnectionStringBuilder connectionStringBuilder;
     TestRabbitMQTransport transport;
-    readonly bool useQuorumQueue;
+    readonly QueueMode queueMode;
 
-    public ConfigureEndpointRabbitMQTransport(bool useQuorumQueue = false)
+    public ConfigureEndpointRabbitMQTransport(QueueMode queueMode = QueueMode.Classic)
     {
-        this.useQuorumQueue = useQuorumQueue;
+        this.queueMode = queueMode;
     }
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
@@ -33,7 +33,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         //For cleanup
         connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString, useQuorumQueue);
+        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString, queueMode);
         configuration.UseTransport(transport);
 
         return Task.CompletedTask;
@@ -110,8 +110,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, bool useQuorumQueue)
-            : base(topology, connectionString, useQuorumQueue)
+        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode = QueueMode.Classic)
+            : base(topology, connectionString, queueMode)
         {
         }
 
