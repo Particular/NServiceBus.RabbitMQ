@@ -53,8 +53,6 @@
             StringAssert.Contains("Cannot delay delivery of messages when there is no infrastructure support for delayed messages", context.SagaTimeoutException.Message);
         }
 
-        //TODO: when using saga timeouts
-
         public class SagaTimeoutContext : ScenarioContext
         {
             public Exception SagaTimeoutException { get; set; }
