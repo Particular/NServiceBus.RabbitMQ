@@ -9,7 +9,7 @@
     using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
 
-    public class When_using_quorum_queues : NServiceBusAcceptanceTest
+    public class When_starting_endpoint_using_quorum_queues : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_create_receiving_queues_as_quorum_queues()
