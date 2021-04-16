@@ -7,7 +7,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_quorum_endpoints_uses_classic_error_queue : NServiceBusAcceptanceTest
+    public class When_quorum_endpoint_uses_classic_error_queue : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_fail_endpoint_startup()
