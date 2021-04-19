@@ -85,7 +85,7 @@ class Broker
     {
         var request = WebRequest.CreateHttp(uriString);
 
-        var encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(this.UserName + ":" + this.Password));
+        var encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(UserName + ":" + Password));
         request.Headers.Add("Authorization", "Basic " + encoded);
         request.ContentType = "application/json";
         request.Method = method;
