@@ -259,7 +259,7 @@
                     DelayInfrastructure.Build(channel);
                 }
 
-                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic);
+                RoutingTopology.Initialize(connection, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic);
 
                 if (QueueMode != QueueMode.Quorum)
                 {

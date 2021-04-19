@@ -24,7 +24,7 @@
                 DelayInfrastructure.TearDown(channel);
                 DelayInfrastructure.Build(channel);
 
-                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, isEndpointQuorum);
+                routingTopology.Initialize(connection, receivingAddresses, sendingAddresses, isEndpointQuorum);
             }
         }
     }

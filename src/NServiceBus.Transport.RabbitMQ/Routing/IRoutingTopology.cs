@@ -68,7 +68,7 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="useQuorumQueues">
         /// Should the queues that this endpoint receieves from be created as quorum queues.
         /// </param>
-        void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues);
+        void Initialize(IConnection channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues);
 
         /// <summary>
         /// Binds an address to the delay infrastructure's delivery exchange.

@@ -3,8 +3,8 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Exceptions;
     using Unicast.Messages;
 
 
@@ -91,7 +91,7 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <summary>
         /// Declares queues and performs any other initialization logic needed (e.g. creating exchanges and bindings).
         /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
+        /// <param name="connection">The RabbitMQ connection to operate on.</param>
         /// <param name="receivingAddresses">
         /// The addresses of the queues to declare and perform initialization for, that this endpoint is receiving from.
         /// </param>
@@ -101,7 +101,7 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="useQuorumQueues">
         /// Should the queues that this endpoint receieves from be created as quorum queues.
         /// </param>
-        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
+        public void Initialize(IConnection connection, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
         {
             IDictionary<string, object> queueArguments = null;
             if (useQuorumQueues)
@@ -109,9 +109,30 @@ namespace NServiceBus.Transport.RabbitMQ
                 queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             }
 
-            foreach (var address in receivingAddresses.Concat(sendingAddresses))
+            using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
+                foreach (var address in receivingAddresses)
+                {
+                    channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
+                }
+
+                foreach (var sendingAddress in sendingAddresses)
+                {
+                    try
+                    {
+                        // create temporary channel as the channel will be faulted if the queue does not exist.
+                        using (var tempChannel = connection.CreateModel())
+                        {
+                            // check queue existence via DeclarePassive to allow the destination queue to be either a quorum or a classic queue without failing the operation.
+                            tempChannel.QueueDeclarePassive(sendingAddress);
+                        }
+                    }
+                    catch (OperationInterruptedException e) when (e.ShutdownReason.ReplyCode == 404)
+                    {
+                        // queue does not exist, create
+                        channel.QueueDeclare(sendingAddress, useDurableExchanges, false, false, queueArguments);
+                    }
+                }
             }
         }
 
@@ -142,7 +163,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
             catch (Exception)
             {
-
+                // TODO: Any better way to make this idempotent?
             }
         }
 
