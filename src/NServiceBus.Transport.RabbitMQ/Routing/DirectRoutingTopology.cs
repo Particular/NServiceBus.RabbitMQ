@@ -4,7 +4,6 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Generic;
     using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Exceptions;
     using Unicast.Messages;
 
 
@@ -16,15 +15,15 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <summary>
         /// Creates a new instance of DirectRoutingTopology,
         /// </summary>
-        /// <param name="useDurableExchanges">Indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        /// <param name="useDurableEntities">Indicates whether exchanges and queues declared by the routing topology should be durable.</param>
         /// <param name="exchangeNameConvention">Exchange name convention.</param>
         /// <param name="routingKeyConvention">Routing key convention.</param>
-        public DirectRoutingTopology(bool useDurableExchanges, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
+        public DirectRoutingTopology(bool useDurableEntities, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
         {
             conventions = new Conventions(
                 exchangeNameConvention ?? DefaultExchangeNameConvention,
                 routingKeyConvention ?? DefaultRoutingKeyConvention.GenerateRoutingKey);
-            this.useDurableExchanges = useDurableExchanges;
+            this.useDurableEntities = useDurableEntities;
         }
 
         string DefaultExchangeNameConvention() => "amq.topic";
@@ -116,44 +115,17 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 foreach (var address in receivingAddresses)
                 {
-                    if (allowInputQueueConfigurationMismatch)
+                    if (!allowInputQueueConfigurationMismatch || !QueueHelper.QueueExists(connection, address))
                     {
-                        try
-                        {
-                            // create temporary channel as the channel will be faulted if the queue does not exist.
-                            using (var tempChannel = connection.CreateModel())
-                            {
-                                // check queue existence via DeclarePassive to allow the destination queue to be either a quorum or a classic queue without failing the operation.
-                                tempChannel.QueueDeclarePassive(address);
-                            }
-                        }
-                        catch (OperationInterruptedException e) when (e.ShutdownReason.ReplyCode == 404)
-                        {
-                            // queue does not exist, create
-                            channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
-                        }
-                    }
-                    else
-                    {
-                        channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
+                        channel.QueueDeclare(address, useDurableEntities, false, false, queueArguments);
                     }
                 }
 
                 foreach (var sendingAddress in sendingAddresses)
                 {
-                    try
+                    if (!QueueHelper.QueueExists(connection, sendingAddress))
                     {
-                        // create temporary channel as the channel will be faulted if the queue does not exist.
-                        using (var tempChannel = connection.CreateModel())
-                        {
-                            // check queue existence via DeclarePassive to allow the destination queue to be either a quorum or a classic queue without failing the operation.
-                            tempChannel.QueueDeclarePassive(sendingAddress);
-                        }
-                    }
-                    catch (OperationInterruptedException e) when (e.ShutdownReason.ReplyCode == 404)
-                    {
-                        // queue does not exist, create
-                        channel.QueueDeclare(sendingAddress, useDurableExchanges, false, false, queueArguments);
+                        channel.QueueDeclare(sendingAddress, useDurableEntities, false, false, queueArguments);
                     }
                 }
             }
@@ -182,7 +154,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableEntities);
             }
             catch (Exception)
             {
@@ -205,7 +177,7 @@ namespace NServiceBus.Transport.RabbitMQ
         const string AmqpTopicExchange = "amq.topic";
 
         readonly Conventions conventions;
-        readonly bool useDurableExchanges;
+        readonly bool useDurableEntities;
 
         class Conventions
         {
