@@ -101,7 +101,10 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="useQuorumQueues">
         /// Should the queues that this endpoint receieves from be created as quorum queues.
         /// </param>
-        public void Initialize(IConnection connection, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
+        /// <param name="allowInputQueueConfigurationMismatch">
+        /// If the defined receiving queues already exists, the endpoint should fail if the existing queues are configured with different settings unless <paramref name="allowInputQueueConfigurationMismatch"/> is set to <code>true</code>.
+        /// </param>
+        public void Initialize(IConnection connection, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues, bool allowInputQueueConfigurationMismatch)
         {
             IDictionary<string, object> queueArguments = null;
             if (useQuorumQueues)
@@ -113,7 +116,27 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 foreach (var address in receivingAddresses)
                 {
-                    channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
+                    if (allowInputQueueConfigurationMismatch)
+                    {
+                        try
+                        {
+                            // create temporary channel as the channel will be faulted if the queue does not exist.
+                            using (var tempChannel = connection.CreateModel())
+                            {
+                                // check queue existence via DeclarePassive to allow the destination queue to be either a quorum or a classic queue without failing the operation.
+                                tempChannel.QueueDeclarePassive(address);
+                            }
+                        }
+                        catch (OperationInterruptedException e) when (e.ShutdownReason.ReplyCode == 404)
+                        {
+                            // queue does not exist, create
+                            channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
+                        }
+                    }
+                    else
+                    {
+                        channel.QueueDeclare(address, useDurableExchanges, false, false, queueArguments);
+                    }
                 }
 
                 foreach (var sendingAddress in sendingAddresses)

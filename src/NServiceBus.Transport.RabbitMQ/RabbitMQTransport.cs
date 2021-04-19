@@ -205,6 +205,13 @@
             }
         }
 
+        /// <summary>
+        /// Specifies whether the endpoint should ignore failures to declare the incoming queues because the queue already exists with a different configuration (e.g. arguments).
+        /// This is set to <code>false</code> by default which will make the endpoint fail to start when the queue configuration does not match an existing queue.
+        /// This option has no effect if installers have been disabled.
+        /// </summary>
+        public bool AllowInputQueueConfigurationMismatch { get; set; } = false;
+
         internal QueueMode QueueMode { get; }
 
         int DefaultPort => UseTLS ? 5671 : 5672;
@@ -259,7 +266,7 @@
                     DelayInfrastructure.Build(channel);
                 }
 
-                RoutingTopology.Initialize(connection, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic);
+                RoutingTopology.Initialize(connection, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic, AllowInputQueueConfigurationMismatch);
 
                 if (QueueMode != QueueMode.Quorum)
                 {
