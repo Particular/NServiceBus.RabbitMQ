@@ -29,24 +29,23 @@ class Broker
             throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
         }
 
-        var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+        var connectionStringParser = new RabbitMqConnectionStringParser(connectionString);
 
-        string hostName;
+        string hostName = connectionStringParser.HostName;
+        string username = connectionStringParser.UserName ?? "guest";
+        string password = connectionStringParser.Password ?? "guest";
+        string virtualHost = connectionStringParser.VirtualHost ?? "/";
 
-        if (connectionStringBuilder.TryGetValue("host", out var value))
-        {
-            hostName = value.ToString();
-        }
-        else
+        if (string.IsNullOrWhiteSpace(hostName))
         {
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
 
         return new Broker
         {
-            UserName = connectionStringBuilder.GetOrDefault("username", "guest"),
-            Password = connectionStringBuilder.GetOrDefault("password", "guest"),
-            VirtualHost = connectionStringBuilder.GetOrDefault("virtualhost", "/"),
+            UserName = username,
+            Password = password,
+            VirtualHost = virtualHost,
             HostName = hostName,
             Port = 15672,
         };
