@@ -66,7 +66,12 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         connectionFactory.UserName = connectionStringParser.UserName;
         connectionFactory.Password = connectionStringParser.Password;
         connectionFactory.HostName = connectionStringParser.HostName;
-        connectionFactory.Port = connectionStringParser.Port;
+        connectionFactory.VirtualHost = "/";
+
+        if (connectionStringParser.Port > 0)
+        {
+            connectionFactory.Port = connectionStringParser.Port;
+        }
 
         if (!string.IsNullOrWhiteSpace(connectionStringParser.VirtualHost))
         {
