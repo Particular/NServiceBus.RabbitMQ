@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
@@ -14,38 +13,46 @@
         [Test]
         public async Task Should_create_receiving_queues_as_quorum_queues()
         {
-            var context = await Scenario.Define<Context>()
+            string endpointInputQueue = Conventions.EndpointNamingConvention(typeof(EndpointWithQuorumQueue));
+
+            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueueDelete(endpointInputQueue, false, false);
+                channel.QueueDelete(endpointInputQueue + "-disc", false, false);
+                channel.QueueDelete("QuorumQueueSatelliteReceiver", false, false);
+            }
+
+            await Scenario.Define<ScenarioContext>()
                 .WithEndpoint<EndpointWithQuorumQueue>()
                 .Done(c => c.EndpointsStarted)
                 .Run();
 
             // try to declare the same queue as a non-quorum queue, which should fail:
-            using (var connection = context.TransportConfiguration.CreateConnection())
+            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
             {
                 using (var channel = connection.CreateModel())
                 {
-                    var mainQueueException = Assert.Catch<RabbitMQClientException>(() => channel.QueueDeclare(Conventions.EndpointNamingConvention(typeof(EndpointWithQuorumQueue)), true, false, false, new Dictionary<string, object>(0)));
+                    var mainQueueException = Assert.Catch<RabbitMQClientException>(() =>
+                        channel.DeclareClassicQueue(endpointInputQueue));
                     StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'", mainQueueException.Message);
                 }
 
                 using (var channel = connection.CreateModel())
                 {
-                    var instanceSpecificQueueException = Assert.Catch<RabbitMQClientException>(() => channel.QueueDeclare(Conventions.EndpointNamingConvention(typeof(EndpointWithQuorumQueue)) + "-disc", true, false, false, new Dictionary<string, object>(0)));
+                    var instanceSpecificQueueException = Assert.Catch<RabbitMQClientException>(() =>
+                        channel.DeclareClassicQueue(endpointInputQueue + "-disc"));
                     StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'",
                         instanceSpecificQueueException.Message);
                 }
 
                 using (var channel = connection.CreateModel())
                 {
-                    var satelliteReceiver = Assert.Catch<RabbitMQClientException>(() => channel.QueueDeclare("QuorumQueueSatelliteReceiver", true, false, false, new Dictionary<string, object>(0)));
+                    var satelliteReceiver = Assert.Catch<RabbitMQClientException>(() =>
+                        channel.DeclareClassicQueue("QuorumQueueSatelliteReceiver"));
                     StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'", satelliteReceiver.Message);
                 }
             }
-        }
-
-        class Context : ScenarioContext
-        {
-            public ClusterEndpoint TransportConfiguration { get; set; }
         }
 
         public class EndpointWithQuorumQueue : EndpointConfigurationBuilder
@@ -65,8 +72,6 @@
 
                         // also test satellite receivers
                         configuration.EnableFeature<SatelliteFeature>();
-
-                        ((Context)r.ScenarioContext).TransportConfiguration = defaultServer;
                     },
                     _ => { });
             }

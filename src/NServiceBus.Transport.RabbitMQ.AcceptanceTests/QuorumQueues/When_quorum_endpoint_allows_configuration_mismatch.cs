@@ -26,6 +26,12 @@
                 .Run();
 
             Assert.IsTrue(context.ReceivedMessage);
+            // Verify input queue is not a quorum queue:
+            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.DeclareClassicQueue(Conventions.EndpointNamingConvention(typeof(QuorumQueueEndpoint)));
+            }
         }
 
         class Context : ScenarioContext

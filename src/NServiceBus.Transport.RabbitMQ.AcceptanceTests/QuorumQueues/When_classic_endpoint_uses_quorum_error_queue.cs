@@ -21,8 +21,13 @@
                 .Done(c => c.EndpointsStarted)
                 .Run();
 
-            // verify error queue is quorum error
             Assert.IsTrue(context.EndpointsStarted);
+            // Verify error queue is indeed a quorum queue:
+            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.DeclareQuorumQueue("rabbitmq.transport.tests.quorum-error");
+            }
         }
 
         class ClassicQueueEndpoint : EndpointConfigurationBuilder

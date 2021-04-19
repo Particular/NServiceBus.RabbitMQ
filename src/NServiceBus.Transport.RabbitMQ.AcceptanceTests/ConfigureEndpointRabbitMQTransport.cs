@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,11 +7,10 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Transport;
 using NServiceBus.Transport.RabbitMQ;
-using ConnectionFactory = RabbitMQ.Client.ConnectionFactory;
+using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
-    DbConnectionStringBuilder connectionStringBuilder;
     TestRabbitMQTransport transport;
     readonly QueueMode queueMode;
 
@@ -23,17 +21,10 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
-        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-        }
-
-        //For cleanup
-        connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
-
-        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString, queueMode);
+        transport = new TestRabbitMQTransport(
+            new ConventionalRoutingTopology(true, type => type.FullName),
+            ConnectionHelper.ConnectionString,
+            queueMode);
         configuration.UseTransport(transport);
 
         return Task.CompletedTask;
@@ -48,15 +39,14 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     void PurgeQueues()
     {
-        if (connectionStringBuilder == null || transport == null)
+        if (transport == null)
         {
             return;
         }
 
-        var connectionFactory = CreateConnectionFactory();
         var queues = transport.QueuesToCleanup.Distinct().ToArray();
 
-        using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
+        using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
         {
             foreach (var queue in queues)
@@ -71,41 +61,6 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
                 }
             }
         }
-    }
-
-    internal ConnectionFactory CreateConnectionFactory()
-    {
-        var connectionFactory = new ConnectionFactory
-        {
-            AutomaticRecoveryEnabled = true,
-            UseBackgroundThreadsForIO = true
-        };
-
-        if (connectionStringBuilder.TryGetValue("username", out var value))
-        {
-            connectionFactory.UserName = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("password", out value))
-        {
-            connectionFactory.Password = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("virtualhost", out value))
-        {
-            connectionFactory.VirtualHost = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("host", out value))
-        {
-            connectionFactory.HostName = value.ToString();
-        }
-        else
-        {
-            throw new Exception("The connection string doesn't contain a value for 'host'.");
-        }
-
-        return connectionFactory;
     }
 
     class TestRabbitMQTransport : RabbitMQTransport
