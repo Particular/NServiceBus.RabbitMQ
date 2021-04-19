@@ -35,6 +35,7 @@ class Broker
         string username = connectionStringParser.UserName ?? "guest";
         string password = connectionStringParser.Password ?? "guest";
         string virtualHost = connectionStringParser.VirtualHost ?? "/";
+        int port = connectionStringParser.IsTls ? 443 : 15672;
 
         if (string.IsNullOrWhiteSpace(hostName))
         {
@@ -47,16 +48,16 @@ class Broker
             Password = password,
             VirtualHost = virtualHost,
             HostName = hostName,
-            Port = 15672,
+            Port = port,
         };
     }
 
     public HttpWebRequest CreateVirtualHostRequest(string method) =>
-        CreateHttpWebRequest($"http://{this.HostName}:{this.Port}/api/vhosts/{Uri.EscapeDataString(this.VirtualHost)}", method);
+        CreateHttpWebRequest($"http{(Port == 443 ? "s" : string.Empty)}://{HostName}:{Port}/api/vhosts/{Uri.EscapeDataString(VirtualHost)}", method);
 
     public HttpWebRequest CreateUserPermissionRequest(string method)
     {
-        var uriString = $"http://{this.HostName}:{this.Port}/api/permissions/{Uri.EscapeDataString(this.VirtualHost)}/{Uri.EscapeDataString(this.UserName)}";
+        var uriString = $"http{(Port == 443 ? "s" : string.Empty)}://{HostName}:{Port}/api/permissions/{Uri.EscapeDataString(VirtualHost)}/{Uri.EscapeDataString(UserName)}";
 
         var request = CreateHttpWebRequest(uriString, method);
 
