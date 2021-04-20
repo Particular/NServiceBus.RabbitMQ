@@ -23,7 +23,8 @@
                 .Done(c => c.EndpointsStarted)
                 .Run());
 
-            StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type' for queue 'ClassicEndpointUsesQuorumQueue.ClassicQueueEndpoint' in vhost '/': received none but current is the value 'quorum'", exception.Message);
+            StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type' for queue 'ClassicEndpointUsesQuorumQueue.ClassicQueueEndpoint'", exception.Message);
+            StringAssert.Contains("received none but current is the value 'quorum'", exception.Message);
         }
 
         class ClassicQueueEndpoint : EndpointConfigurationBuilder
