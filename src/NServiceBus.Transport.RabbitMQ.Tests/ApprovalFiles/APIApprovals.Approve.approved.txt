@@ -9,6 +9,7 @@ namespace NServiceBus
         public RabbitMQTransport(NServiceBus.Topology topology, string connectionString) { }
         public RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString) { }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
+        public string DelayDeliveryPrefix { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
         public string Host { get; set; }
         public System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> MessageIdStrategy { get; set; }
