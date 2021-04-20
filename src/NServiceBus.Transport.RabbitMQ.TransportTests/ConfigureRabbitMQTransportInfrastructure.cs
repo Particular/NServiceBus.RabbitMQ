@@ -7,6 +7,11 @@ using NServiceBus.Transport;
 using NServiceBus.TransportTests;
 using RabbitMQ.Client;
 
+// Workaround to prevent errors because scanning expects this type to exist
+class ConfigureRabbitMQClusterTransportInfrastructure : ConfigureRabbitMQTransportInfrastructure
+{
+}
+
 class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructure
 {
     public TransportDefinition CreateTransportDefinition()
