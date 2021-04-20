@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     sealed class ConfirmsAwareChannel : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology)
+        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology, string delayPrefix)
         {
             channel = connection.CreateModel();
             channel.BasicAcks += Channel_BasicAcks;
@@ -21,6 +21,7 @@ namespace NServiceBus.Transport.RabbitMQ
             channel.ConfirmSelect();
 
             this.routingTopology = routingTopology;
+            this.delayPrefix = delayPrefix;
 
             messages = new ConcurrentDictionary<ulong, TaskCompletionSource<bool>>();
         }
@@ -41,7 +42,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
                 routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
-                channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body);
+                channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel, delayPrefix), routingKey, true, properties, message.Body);
             }
             else
             {
@@ -176,6 +177,7 @@ namespace NServiceBus.Transport.RabbitMQ
         IModel channel;
 
         readonly IRoutingTopology routingTopology;
+        readonly string delayPrefix;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConfirmsAwareChannel));

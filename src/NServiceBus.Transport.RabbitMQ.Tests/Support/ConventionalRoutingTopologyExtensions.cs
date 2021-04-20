@@ -9,7 +9,8 @@
             this ConventionalRoutingTopology routingTopology,
             ConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
-            IEnumerable<string> sendingAddresses)
+            IEnumerable<string> sendingAddresses,
+            string delayPrefix = null)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
@@ -20,8 +21,8 @@
                     channel.ExchangeDelete(address, false);
                 }
 
-                DelayInfrastructure.TearDown(channel);
-                DelayInfrastructure.Build(channel);
+                DelayInfrastructure.TearDown(channel, delayPrefix);
+                DelayInfrastructure.Build(channel, delayPrefix);
 
                 routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
             }

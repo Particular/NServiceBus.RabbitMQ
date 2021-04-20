@@ -8,10 +8,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
     sealed class ChannelProvider : IDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
+        public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, string delayPrefix)
         {
             this.connectionFactory = connectionFactory;
             this.retryDelay = retryDelay;
+            this.delayPrefix = delayPrefix;
 
             this.routingTopology = routingTopology;
 
@@ -62,7 +63,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 channel?.Dispose();
 
-                channel = new ConfirmsAwareChannel(connection, routingTopology);
+                channel = new ConfirmsAwareChannel(connection, routingTopology, delayPrefix);
             }
 
             return channel;
@@ -95,6 +96,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         readonly ConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
+        readonly string delayPrefix;
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         IConnection connection;

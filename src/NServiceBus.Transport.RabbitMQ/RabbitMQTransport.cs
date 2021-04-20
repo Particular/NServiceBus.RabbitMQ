@@ -105,6 +105,11 @@
         public string Password { get; set; } = "guest";
 
         /// <summary>
+        ///     The prefix to use for the delayed delivery queues and exchanges.
+        /// </summary>
+        public string DelayDeliveryPrefix { get; set; }
+
+        /// <summary>
         ///     The routing topology to use. If not set the conventional routing topology will be used
         ///     <seealso cref="ConventionalRoutingTopology" />.
         /// </summary>
@@ -222,7 +227,7 @@
                 VHost, UserName, Password, UseTLS, certCollection, ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval);
 
-            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology, DelayDeliveryPrefix);
             channelProvider.CreateConnection();
 
             var converter = new MessageConverter(MessageIdStrategy);
@@ -245,7 +250,7 @@
             using (IConnection connection = connectionFactory.CreateAdministrationConnection())
             using (IModel channel = connection.CreateModel())
             {
-                DelayInfrastructure.Build(channel);
+                DelayInfrastructure.Build(channel, DelayDeliveryPrefix);
 
                 RoutingTopology.Initialize(channel, receivingQueues, sendingQueues);
 

@@ -19,26 +19,26 @@
         public const string XFirstDeathReasonHeader = "x-first-death-reason";
         public const string DeliveryExchange = "nsb.delay-delivery";
 
-        public static string LevelName(int level) => $"nsb.delay-level-{level:D2}";
+        public static string LevelName(int level, string prefix) => $"{(string.IsNullOrWhiteSpace(prefix) ? string.Empty : prefix + ".")}nsb.delay-level-{level:D2}";
+        public static string DeliveryExchangeName(string prefix) => $"{(string.IsNullOrWhiteSpace(prefix) ? DeliveryExchange : prefix + "." + DeliveryExchange)}";
 
         public static string BindingKey(string address) => $"#.{address}";
 
-        public static void Build(IModel channel)
+        public static void Build(IModel channel, string prefix)
         {
             var bindingKey = "1.#";
 
             for (var level = maxLevel; level >= 0; level--)
             {
-                var currentLevel = LevelName(level);
-                var nextLevel = LevelName(level - 1);
+                var currentLevel = LevelName(level, prefix);
+                var nextLevel = LevelName(level - 1, prefix);
 
                 channel.ExchangeDeclare(currentLevel, ExchangeType.Topic, true);
-
                 var arguments = new Dictionary<string, object>
                 {
                     { "x-queue-mode", "lazy" },
                     { "x-message-ttl", Convert.ToInt64(Math.Pow(2, level)) * 1000 },
-                    { "x-dead-letter-exchange", level > 0 ? nextLevel : DeliveryExchange }
+                    { "x-dead-letter-exchange", level > 0 ? nextLevel : DeliveryExchangeName(prefix) }
                 };
 
                 channel.QueueDeclare(currentLevel, true, false, false, arguments);
@@ -51,25 +51,25 @@
 
             for (var level = maxLevel; level >= 1; level--)
             {
-                var currentLevel = LevelName(level);
-                var nextLevel = LevelName(level - 1);
+                var currentLevel = LevelName(level, prefix);
+                var nextLevel = LevelName(level - 1, prefix);
 
                 channel.ExchangeBind(nextLevel, currentLevel, bindingKey);
 
                 bindingKey = "*." + bindingKey;
             }
 
-            channel.ExchangeDeclare(DeliveryExchange, ExchangeType.Topic, true);
-            channel.ExchangeBind(DeliveryExchange, LevelName(0), bindingKey);
+            channel.ExchangeDeclare(DeliveryExchangeName(prefix), ExchangeType.Topic, true);
+            channel.ExchangeBind(DeliveryExchangeName(prefix), LevelName(0, prefix), bindingKey);
         }
 
-        public static void TearDown(IModel channel)
+        public static void TearDown(IModel channel, string prefix)
         {
-            channel.ExchangeDelete(DeliveryExchange);
+            channel.ExchangeDelete(DeliveryExchangeName(prefix));
 
             for (var level = maxLevel; level >= 0; level--)
             {
-                var name = LevelName(level);
+                var name = LevelName(level, prefix);
 
                 channel.QueueDelete(name);
                 channel.ExchangeDelete(name);
