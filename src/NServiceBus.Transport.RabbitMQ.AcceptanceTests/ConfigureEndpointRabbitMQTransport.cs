@@ -26,6 +26,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             ConnectionHelper.ConnectionString,
             queueMode);
 
+        configuration.UseTransport(transport);
+
         return Task.CompletedTask;
     }
 
