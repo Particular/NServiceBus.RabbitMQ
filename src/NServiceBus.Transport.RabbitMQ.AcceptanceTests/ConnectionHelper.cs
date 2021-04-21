@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
-    using System.Data.Common;
+    using System.Security.Authentication;
     using global::RabbitMQ.Client;
 
     public class ConnectionHelper
@@ -20,33 +20,40 @@
 
         static Lazy<ConnectionFactory> connectionFactory = new Lazy<ConnectionFactory>(() =>
         {
-            var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = ConnectionString };
+            var connectionStringParser = new RabbitMqConnectionStringParser(ConnectionString);
 
-            var factory = new ConnectionFactory { AutomaticRecoveryEnabled = true, UseBackgroundThreadsForIO = true };
-
-            if (connectionStringBuilder.TryGetValue("username", out var value))
+            var factory = new ConnectionFactory
             {
-                factory.UserName = value.ToString();
+                AutomaticRecoveryEnabled = true,
+                UseBackgroundThreadsForIO = true
+            };
+
+            factory.UserName = connectionStringParser.UserName ?? "guest";
+            factory.Password = connectionStringParser.Password ?? "guest";
+
+            if (!string.IsNullOrEmpty(connectionStringParser.VirtualHost))
+            {
+                factory.VirtualHost = connectionStringParser.VirtualHost;
             }
 
-            if (connectionStringBuilder.TryGetValue("password", out value))
+            if (connectionStringParser.Port.HasValue)
             {
-                factory.Password = value.ToString();
+                factory.Port = connectionStringParser.Port.Value;
             }
 
-            if (connectionStringBuilder.TryGetValue("virtualhost", out value))
+            if (!string.IsNullOrEmpty(connectionStringParser.HostName))
             {
-                factory.VirtualHost = value.ToString();
-            }
-
-            if (connectionStringBuilder.TryGetValue("host", out value))
-            {
-                factory.HostName = value.ToString();
+                factory.HostName = connectionStringParser.HostName;
             }
             else
             {
                 throw new Exception("The connection string doesn't contain a value for 'host'.");
             }
+
+            factory.Ssl.ServerName = factory.HostName;
+            factory.Ssl.Certs = null;
+            factory.Ssl.Version = SslProtocols.Tls12;
+            factory.Ssl.Enabled = connectionStringParser.IsTls;
 
             return factory;
         });

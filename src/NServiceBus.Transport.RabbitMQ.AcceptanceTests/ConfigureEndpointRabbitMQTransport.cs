@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -12,7 +11,6 @@ using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
-    RabbitMqConnectionStringParser connectionStringParser;
     TestRabbitMQTransport transport;
     readonly QueueMode queueMode;
 
@@ -28,18 +26,6 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             ConnectionHelper.ConnectionString,
             queueMode);
 
-        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-        }
-
-        //For cleanup
-        connectionStringParser = new RabbitMqConnectionStringParser(connectionString);
-
-        transport = new TestRabbitMQTransport(new ConventionalRoutingTopology(true, type => type.FullName), connectionString);
-        configuration.UseTransport(transport);
-
         return Task.CompletedTask;
     }
 
@@ -52,41 +38,10 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     void PurgeQueues()
     {
-        if (connectionStringParser == null)
+        if (transport == null)
         {
             return;
         }
-
-        var connectionFactory = new RabbitMQ.Client.ConnectionFactory
-        {
-            AutomaticRecoveryEnabled = true,
-            UseBackgroundThreadsForIO = true
-        };
-
-        connectionFactory.UserName = connectionStringParser.UserName;
-        connectionFactory.Password = connectionStringParser.Password;
-        connectionFactory.HostName = connectionStringParser.HostName;
-        connectionFactory.VirtualHost = "/";
-
-        if (connectionStringParser.Port > 0)
-        {
-            connectionFactory.Port = connectionStringParser.Port;
-        }
-
-        if (!string.IsNullOrWhiteSpace(connectionStringParser.VirtualHost))
-        {
-            connectionFactory.VirtualHost = connectionStringParser.VirtualHost;
-        }
-
-        if (string.IsNullOrWhiteSpace(connectionFactory.HostName))
-        {
-            throw new Exception("The connection string doesn't contain a value for 'host'.");
-        }
-
-        connectionFactory.Ssl.ServerName = connectionFactory.HostName;
-        connectionFactory.Ssl.Certs = null;
-        connectionFactory.Ssl.Version = SslProtocols.Tls12;
-        connectionFactory.Ssl.Enabled = connectionStringParser.IsTls;
 
         var queues = transport.QueuesToCleanup.Distinct().ToArray();
 

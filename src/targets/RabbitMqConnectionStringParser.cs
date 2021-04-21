@@ -84,5 +84,5 @@ class RabbitMqConnectionStringParser
     public string VirtualHost { get; private set; }
     public string HostName { get; private set; }
     public bool IsTls { get; private set; }
-    public int Port { get; private set; }
+    public int? Port { get; private set; }
 }

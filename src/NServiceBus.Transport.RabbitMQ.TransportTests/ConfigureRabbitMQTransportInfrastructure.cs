@@ -68,9 +68,9 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         connectionFactory.HostName = connectionStringParser.HostName;
         connectionFactory.VirtualHost = "/";
 
-        if (connectionStringParser.Port > 0)
+        if (connectionStringParser.Port.HasValue)
         {
-            connectionFactory.Port = connectionStringParser.Port;
+            connectionFactory.Port = connectionStringParser.Port.Value;
         }
 
         if (!string.IsNullOrWhiteSpace(connectionStringParser.VirtualHost))
