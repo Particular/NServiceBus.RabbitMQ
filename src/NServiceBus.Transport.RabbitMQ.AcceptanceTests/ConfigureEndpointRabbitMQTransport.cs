@@ -57,7 +57,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             return;
         }
 
-        var connectionFactory = new ConnectionFactory
+        var connectionFactory = new RabbitMQ.Client.ConnectionFactory
         {
             AutomaticRecoveryEnabled = true,
             UseBackgroundThreadsForIO = true
