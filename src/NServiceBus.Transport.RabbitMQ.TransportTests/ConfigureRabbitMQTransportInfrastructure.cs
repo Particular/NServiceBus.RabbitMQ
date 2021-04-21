@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Data.Common;
+using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -23,7 +23,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
         }
 
-        connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+        connectionStringBuilder = new RabbitMqConnectionStringParser(connectionString);
 
         var transport = new RabbitMQTransport(Topology.Conventional, connectionString);
 
@@ -50,9 +50,9 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         return Task.FromResult(0);
     }
 
-    static void PurgeQueues(DbConnectionStringBuilder connectionStringBuilder, string[] queues)
+    static void PurgeQueues(RabbitMqConnectionStringParser connectionStringParser, string[] queues)
     {
-        if (connectionStringBuilder == null || queues == null)
+        if (connectionStringParser == null || queues == null)
         {
             return;
         }
@@ -63,29 +63,30 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             UseBackgroundThreadsForIO = true
         };
 
-        if (connectionStringBuilder.TryGetValue("username", out var value))
+        connectionFactory.UserName = connectionStringParser.UserName;
+        connectionFactory.Password = connectionStringParser.Password;
+        connectionFactory.HostName = connectionStringParser.HostName;
+        connectionFactory.VirtualHost = "/";
+
+        if (connectionStringParser.Port > 0)
         {
-            connectionFactory.UserName = value.ToString();
+            connectionFactory.Port = connectionStringParser.Port;
         }
 
-        if (connectionStringBuilder.TryGetValue("password", out value))
+        if (!string.IsNullOrWhiteSpace(connectionStringParser.VirtualHost))
         {
-            connectionFactory.Password = value.ToString();
+            connectionFactory.VirtualHost = connectionStringParser.VirtualHost;
         }
 
-        if (connectionStringBuilder.TryGetValue("virtualhost", out value))
-        {
-            connectionFactory.VirtualHost = value.ToString();
-        }
-
-        if (connectionStringBuilder.TryGetValue("host", out value))
-        {
-            connectionFactory.HostName = value.ToString();
-        }
-        else
+        if (string.IsNullOrWhiteSpace(connectionFactory.HostName))
         {
             throw new Exception("The connection string doesn't contain a value for 'host'.");
         }
+
+        connectionFactory.Ssl.ServerName = connectionFactory.HostName;
+        connectionFactory.Ssl.Certs = null;
+        connectionFactory.Ssl.Version = SslProtocols.Tls12;
+        connectionFactory.Ssl.Enabled = connectionStringParser.IsTls;
 
         using (var connection = connectionFactory.CreateConnection("Test Queue Purger"))
         using (var channel = connection.CreateModel())
@@ -105,5 +106,5 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     }
 
     string[] queuesToCleanUp;
-    DbConnectionStringBuilder connectionStringBuilder;
+    RabbitMqConnectionStringParser connectionStringBuilder;
 }

@@ -23,10 +23,12 @@
                 throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
             }
 
+            var useTls = connectionString.StartsWith("https", StringComparison.InvariantCultureIgnoreCase) || connectionString.StartsWith("amqps", StringComparison.InvariantCultureIgnoreCase);
+
             var transport = new RabbitMQTransport(Topology.Conventional, connectionString);
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, transport.Host, transport.Port ?? 5672,
-                transport.VHost, transport.UserName, transport.Password, false, null, false,
+                transport.VHost, transport.UserName, transport.Password, useTls, null, false,
                 false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval);
 
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
