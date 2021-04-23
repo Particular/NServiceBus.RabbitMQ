@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using Logging;
@@ -28,11 +29,11 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                _ = Task.Run(Reconnect);
+                _ = Task.Run(() => Reconnect(CancellationToken.None));
             }
         }
 
-        async Task Reconnect()
+        async Task Reconnect(CancellationToken cancellationToken)
         {
             var reconnected = false;
 
@@ -40,7 +41,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
 
-                await Task.Delay(retryDelay).ConfigureAwait(false);
+                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
 
                 try
                 {
