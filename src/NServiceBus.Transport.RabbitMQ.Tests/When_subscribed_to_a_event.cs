@@ -1,6 +1,7 @@
 ﻿
 namespace NServiceBus.Transport.RabbitMQ.Tests
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
@@ -152,15 +153,15 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             await Unsubscribe<CombinedClassAndInterface>();
         }
 
-        Task Subscribe<T>() => subscriptionManager.SubscribeAll(new[] { new MessageMetadata(typeof(T)) }, new ContextBag());
-        Task Unsubscribe<T>() => subscriptionManager.Unsubscribe(new MessageMetadata(typeof(T)), new ContextBag());
+        Task Subscribe<T>(CancellationToken cancellationToken = default) => subscriptionManager.SubscribeAll(new[] { new MessageMetadata(typeof(T)) }, new ContextBag(), cancellationToken);
+        Task Unsubscribe<T>(CancellationToken cancellationToken = default) => subscriptionManager.Unsubscribe(new MessageMetadata(typeof(T)), new ContextBag(), cancellationToken);
 
-        Task Publish<T>()
+        Task Publish<T>(CancellationToken cancellationToken = default)
         {
             var type = typeof(T);
             var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build();
 
-            return messageDispatcher.Dispatch(message, new TransportTransaction());
+            return messageDispatcher.Dispatch(message, new TransportTransaction(), cancellationToken);
         }
 
         void AssertReceived<T>()

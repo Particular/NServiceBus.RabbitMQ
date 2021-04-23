@@ -26,12 +26,12 @@
 
                 foreach (var operation in unicastTransportOperations)
                 {
-                    tasks.Add(SendMessage(operation, channel));
+                    tasks.Add(SendMessage(operation, channel, cancellationToken));
                 }
 
                 foreach (var operation in multicastTransportOperations)
                 {
-                    tasks.Add(PublishMessage(operation, channel));
+                    tasks.Add(PublishMessage(operation, channel, cancellationToken));
                 }
 
                 channelProvider.ReturnPublishChannel(channel);
@@ -45,24 +45,24 @@
             }
         }
 
-        Task SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel)
+        Task SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
         {
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.Properties);
 
-            return channel.SendMessage(transportOperation.Destination, message, properties);
+            return channel.SendMessage(transportOperation.Destination, message, properties, cancellationToken);
         }
 
-        Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel)
+        Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
         {
             var message = transportOperation.Message;
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.Properties);
 
-            return channel.PublishMessage(transportOperation.MessageType, message, properties);
+            return channel.PublishMessage(transportOperation.MessageType, message, properties, cancellationToken);
         }
 
     }
