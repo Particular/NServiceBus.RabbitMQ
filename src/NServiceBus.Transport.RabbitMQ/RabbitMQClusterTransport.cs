@@ -16,5 +16,14 @@
             : base(GetBuiltInTopology(topology), connectionString, queueMode, delayedDeliverySupportConfiguration == DelayedDeliverySupport.UnsafeEnabled)
         {
         }
+
+        /// <summary>
+        /// Adds a new cluster node
+        /// </summary>
+        /// <param name="hostName">An additional hostname of a node in the cluster.</param>
+        public void AddNode(string hostName)
+        {
+            additionalHostnames.Add(hostName);
+        }
     }
 }
