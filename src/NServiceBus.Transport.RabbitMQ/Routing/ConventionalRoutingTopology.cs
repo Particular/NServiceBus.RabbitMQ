@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -59,26 +58,37 @@
         public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
             SetupTypeSubscriptions(channel, type);
-            channel.BasicPublish(ExchangeName(type), String.Empty, false, properties, message.Body);
+            channel.BasicPublish(ExchangeName(type), string.Empty, false, properties, message.Body);
         }
 
         public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, properties, message.Body);
+            channel.BasicPublish(address, string.Empty, true, properties, message.Body);
         }
 
         public void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
         {
-            channel.BasicPublish(address, String.Empty, true, properties, body);
+            channel.BasicPublish(address, string.Empty, true, properties, body);
         }
 
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
-            foreach (var address in receivingAddresses.Concat(sendingAddresses))
+            foreach (var address in receivingAddresses)
             {
                 channel.QueueDeclare(address, useDurableExchanges, false, false, null);
                 CreateExchange(channel, address);
                 channel.QueueBind(address, address, string.Empty);
+            }
+
+            foreach (var sendingAddress in sendingAddresses)
+            {
+                if (!QueueHelper.QueueExists(QueueCreator.RoutingTopoligyInitializeConnection.Value, sendingAddress))
+                {
+                    channel.QueueDeclare(sendingAddress, useDurableExchanges, false, false, null);
+                }
+
+                CreateExchange(channel, sendingAddress);
+                channel.QueueBind(sendingAddress, sendingAddress, string.Empty);
             }
         }
 
@@ -91,7 +101,7 @@
 
         void SetupTypeSubscriptions(IModel channel, Type type)
         {
-            if (type == typeof(Object) || IsTypeTopologyKnownConfigured(type))
+            if (type == typeof(object) || IsTypeTopologyKnownConfigured(type))
             {
                 return;
             }
