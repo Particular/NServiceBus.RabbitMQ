@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using global::RabbitMQ.Client;
 
     /// <summary>
@@ -44,9 +43,17 @@
 
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
-            foreach (var address in receivingAddresses.Concat(sendingAddresses))
+            foreach (var address in receivingAddresses)
             {
                 channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+            }
+
+            foreach (var address in sendingAddresses)
+            {
+                if (!QueueHelper.QueueExists(QueueCreator.RoutingTopoligyInitializeConnection.Value, address))
+                {
+                    channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+                }
             }
         }
 
