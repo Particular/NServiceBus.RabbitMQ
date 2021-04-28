@@ -57,7 +57,7 @@
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="queueMode">The queue mode for receiving queues.</param>
-        protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
+        private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
             : base(TransportTransactionMode.ReceiveOnly, queueMode != QueueMode.Quorum, true, true)
         //TODO what about SupportsTTBR?
         {
@@ -306,10 +306,7 @@
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
             SupportedTransactionModes;
 
-        /// <summary>
-        /// Returns an instance implementing <see cref="IRoutingTopology"/> based on the provided <see cref="Topology"/>.
-        /// </summary>
-        protected static IRoutingTopology GetBuiltInTopology(Topology topology)
+        internal static IRoutingTopology GetBuiltInTopology(Topology topology)
         {
             return topology == Topology.Conventional
                 ? (IRoutingTopology)new ConventionalRoutingTopology(true)
