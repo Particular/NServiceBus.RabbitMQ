@@ -1,5 +1,4 @@
 using System;
-using System.Data.Common;
 using System.Net;
 using System.Text;
 
@@ -36,11 +35,6 @@ class Broker
         string password = connectionStringParser.Password ?? "guest";
         string virtualHost = connectionStringParser.VirtualHost ?? "/";
         int port = connectionStringParser.IsTls ? 443 : 15672;
-
-        if (string.IsNullOrWhiteSpace(hostName))
-        {
-            throw new Exception("The connection string doesn't contain a value for 'host'.");
-        }
 
         return new Broker
         {

@@ -78,11 +78,6 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             connectionFactory.VirtualHost = connectionStringParser.VirtualHost;
         }
 
-        if (string.IsNullOrWhiteSpace(connectionFactory.HostName))
-        {
-            throw new Exception("The connection string doesn't contain a value for 'host'.");
-        }
-
         connectionFactory.Ssl.ServerName = connectionFactory.HostName;
         connectionFactory.Ssl.Certs = null;
         connectionFactory.Ssl.Version = SslProtocols.Tls12;

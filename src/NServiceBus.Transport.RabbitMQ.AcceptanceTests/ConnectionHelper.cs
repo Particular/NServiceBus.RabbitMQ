@@ -28,6 +28,7 @@
                 UseBackgroundThreadsForIO = true
             };
 
+            factory.HostName = connectionStringParser.HostName;
             factory.UserName = connectionStringParser.UserName ?? "guest";
             factory.Password = connectionStringParser.Password ?? "guest";
 
@@ -39,15 +40,6 @@
             if (connectionStringParser.Port.HasValue)
             {
                 factory.Port = connectionStringParser.Port.Value;
-            }
-
-            if (!string.IsNullOrEmpty(connectionStringParser.HostName))
-            {
-                factory.HostName = connectionStringParser.HostName;
-            }
-            else
-            {
-                throw new Exception("The connection string doesn't contain a value for 'host'.");
             }
 
             factory.Ssl.ServerName = factory.HostName;

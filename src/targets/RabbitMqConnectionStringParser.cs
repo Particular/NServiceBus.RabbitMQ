@@ -38,6 +38,10 @@ class RabbitMqConnectionStringParser
         {
             HostName = value.ToString();
         }
+        else
+        {
+            throw new Exception("The connection string doesn't contain a value for 'host'.");
+        }
     }
 
     void ParseAmqpConnectionString(string connectionString)
