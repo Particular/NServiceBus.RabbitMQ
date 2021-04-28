@@ -10,7 +10,7 @@
             ConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
             IEnumerable<string> sendingAddresses,
-            bool isEndpointQuorum)
+            bool useQuorumQueues)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
@@ -24,7 +24,7 @@
                 DelayInfrastructure.TearDown(channel);
                 DelayInfrastructure.Build(channel);
 
-                routingTopology.Initialize(connection, receivingAddresses, sendingAddresses, isEndpointQuorum, false);
+                routingTopology.Initialize(connection, receivingAddresses, sendingAddresses, useQuorumQueues, false);
             }
         }
     }

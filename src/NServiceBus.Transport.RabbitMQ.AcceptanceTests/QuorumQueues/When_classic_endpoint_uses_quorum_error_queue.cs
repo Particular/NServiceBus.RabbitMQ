@@ -11,10 +11,11 @@
         [Test]
         public async Task Should_start_without_error()
         {
-            await Scenario.Define<ScenarioContext>()
-                .WithEndpoint<QuorumQueueEndpoint>()
-                .Done(c => c.EndpointsStarted)
-                .Run();
+            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.DeclareQuorumQueue("rabbitmq.transport.tests.quorum-error");
+            }
 
             var context = await Scenario.Define<ScenarioContext>()
                 .WithEndpoint<ClassicQueueEndpoint>()
@@ -22,12 +23,6 @@
                 .Run();
 
             Assert.IsTrue(context.EndpointsStarted);
-            // Verify error queue is indeed a quorum queue:
-            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.DeclareQuorumQueue("rabbitmq.transport.tests.quorum-error");
-            }
         }
 
         class ClassicQueueEndpoint : EndpointConfigurationBuilder
@@ -36,18 +31,6 @@
             {
                 EndpointSetup<DefaultServer>(c => c
                     .SendFailedMessagesTo("rabbitmq.transport.tests.quorum-error"));
-            }
-        }
-
-        class QuorumQueueEndpoint : EndpointConfigurationBuilder
-        {
-            public QuorumQueueEndpoint()
-            {
-                var clusterTemplate = new ClusterEndpoint(QueueMode.Quorum);
-                EndpointSetup(clusterTemplate, (c, __) =>
-                {
-                    c.SendFailedMessagesTo("rabbitmq.transport.tests.quorum-error");
-                }, _ => { });
             }
         }
     }

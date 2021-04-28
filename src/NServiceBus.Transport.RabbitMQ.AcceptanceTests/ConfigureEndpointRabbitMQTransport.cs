@@ -66,7 +66,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode = QueueMode.Classic)
+        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
             : base(topology, connectionString, queueMode)
         {
         }

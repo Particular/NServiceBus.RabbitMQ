@@ -4,7 +4,6 @@
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_quorum_endpoint_allows_configuration_mismatch : NServiceBusAcceptanceTest
@@ -12,10 +11,11 @@
         [Test]
         public async Task Should_allow_quorum_endpoint_to_connect_to_classic_queue()
         {
-            await Scenario.Define<ScenarioContext>()
-                .WithEndpoint<ClassicQueueEndpoint>()
-                .Done(c => c.EndpointsStarted)
-                .Run();
+            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.DeclareClassicQueue(Conventions.EndpointNamingConvention(typeof(QuorumQueueEndpoint)));
+            }
 
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<QuorumQueueEndpoint>(b => b
@@ -26,28 +26,11 @@
                 .Run();
 
             Assert.IsTrue(context.ReceivedMessage);
-            // Verify input queue is not a quorum queue:
-            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.DeclareClassicQueue(Conventions.EndpointNamingConvention(typeof(QuorumQueueEndpoint)));
-            }
         }
 
         class Context : ScenarioContext
         {
             public bool ReceivedMessage { get; set; }
-        }
-
-        class ClassicQueueEndpoint : EndpointConfigurationBuilder
-        {
-            public ClassicQueueEndpoint()
-            {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.OverrideLocalAddress(Conventions.EndpointNamingConvention(typeof(QuorumQueueEndpoint)));
-                });
-            }
         }
 
         class QuorumQueueEndpoint : EndpointConfigurationBuilder
