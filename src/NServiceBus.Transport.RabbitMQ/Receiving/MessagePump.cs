@@ -234,21 +234,6 @@
                 return;
             }
 
-            if (headers.ContainsKey(NServiceBus.Headers.TimeSent) &&
-                headers.ContainsKey(NServiceBus.Headers.TimeToBeReceived))
-            {
-                var maxTimeToBeReceived = DateTime.ParseExact(headers[NServiceBus.Headers.TimeSent],
-                        "yyyy-MM-dd HH:mm:ss:ffffff Z",
-                        CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
-                    .Add(TimeSpan.Parse(headers[NServiceBus.Headers.TimeToBeReceived]));
-
-                if (maxTimeToBeReceived < DateTime.UtcNow)
-                {
-                    AckMessage();
-                    return;
-                }
-            }
-
             var processed = false;
             var errorHandled = false;
             var numberOfDeliveryAttempts = 0;
