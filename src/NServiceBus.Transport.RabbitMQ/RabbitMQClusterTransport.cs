@@ -6,7 +6,7 @@
     public class RabbitMQClusterTransport : RabbitMQTransport
     {
         /// <summary>
-        /// Creates new instance of the RabbitMQ transport.
+        /// Creates new instance of the RabbitMQ transport to connect to a RabbitMQ cluster.
         /// </summary>
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
