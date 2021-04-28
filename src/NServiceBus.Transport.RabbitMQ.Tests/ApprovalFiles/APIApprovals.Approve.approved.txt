@@ -18,7 +18,6 @@ namespace NServiceBus
     {
         public RabbitMQTransport(NServiceBus.Topology topology, string connectionString) { }
         public RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString) { }
-        protected RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString, NServiceBus.QueueMode queueMode) { }
         public bool AllowInputQueueConfigurationMismatch { get; set; }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
@@ -38,7 +37,6 @@ namespace NServiceBus
         public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
         public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
-        protected static NServiceBus.Transport.RabbitMQ.IRoutingTopology GetBuiltInTopology(NServiceBus.Topology topology) { }
     }
     public static class RabbitMQTransportOptionsExtensions
     {
