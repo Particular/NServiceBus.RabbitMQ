@@ -58,8 +58,10 @@
         /// <param name="connectionString">Connection string.</param>
         /// <param name="queueMode">The queue mode for receiving queues.</param>
         private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
-            : base(TransportTransactionMode.ReceiveOnly, queueMode != QueueMode.Quorum, true, true)
-        //TODO what about SupportsTTBR?
+            : base(TransportTransactionMode.ReceiveOnly,
+                supportsDelayedDelivery: queueMode != QueueMode.Quorum, 
+                supportsPublishSubscribe: true,
+                supportsTTBR: queueMode == QueueMode.Classic)
         {
             Guard.AgainstNull(nameof(topology), topology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
