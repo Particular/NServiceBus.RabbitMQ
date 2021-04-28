@@ -297,20 +297,15 @@
                 }
             }
 
-            AckMessage();
-
-            void AckMessage()
+            try
             {
-                try
-                {
-                    consumer.Model.BasicAckSingle(message.DeliveryTag);
-                }
-                catch (AlreadyClosedException ex)
-                {
-                    Logger.Warn(
-                        $"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.",
-                        ex);
-                }
+                consumer.Model.BasicAckSingle(message.DeliveryTag);
+            }
+            catch (AlreadyClosedException ex1)
+            {
+                Logger.Warn(
+                    $"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.",
+                    ex1);
             }
         }
 
