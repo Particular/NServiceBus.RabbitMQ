@@ -8,11 +8,10 @@ namespace NServiceBus
     {
         Classic = 0,
         Quorum = 1,
-        QuorumWithUnsafeTimeouts = 2,
     }
     public class RabbitMQClusterTransport : NServiceBus.RabbitMQTransport
     {
-        public RabbitMQClusterTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueMode queueMode) { }
+        public RabbitMQClusterTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueMode queueMode, NServiceBus.Timeouts timeoutConfiguration) { }
     }
     public class RabbitMQTransport : NServiceBus.Transport.TransportDefinition
     {
@@ -101,6 +100,11 @@ namespace NServiceBus
             "rt.UseExternalAuthMechanism` instead. The member currently throws a NotImplement" +
             "edException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+    }
+    public enum Timeouts
+    {
+        Disabled = 0,
+        UnsafeEnabled = 1,
     }
     public enum Topology
     {
