@@ -12,7 +12,7 @@
         public async Task Should_allow_delayed_retries()
         {
             var context = await Scenario.Define<ScenarioContext>()
-                .WithEndpoint<EndpointWithUnsafeQuorumQueue>(b => b
+                .WithEndpoint<QuorumEndpointWithUnsafeTimeouts>(b => b
                     .CustomConfig(config => config
                         .Recoverability().Delayed(d => d.NumberOfRetries(3))))
                 .Done(c => c.EndpointsStarted)
@@ -25,7 +25,7 @@
         public async Task Should_allow_delayed_sends()
         {
             var context = await Scenario.Define<DelayedMessageContext>()
-                .WithEndpoint<EndpointWithUnsafeQuorumQueue>(e => e.When(session =>
+                .WithEndpoint<QuorumEndpointWithUnsafeTimeouts>(e => e.When(session =>
                 {
                     var sendOptions = new SendOptions();
                     sendOptions.RouteToThisEndpoint();
@@ -42,7 +42,7 @@
         public async Task Should_allow_saga_timeouts()
         {
             var context = await Scenario.Define<SagaTimeoutContext>()
-                .WithEndpoint<EndpointWithUnsafeQuorumQueue>(e => e.When(session => session.SendLocal(new StartSagaMessage())))
+                .WithEndpoint<QuorumEndpointWithUnsafeTimeouts>(e => e.When(session => session.SendLocal(new StartSagaMessage())))
                 .Done(c => c.SagaTimeoutReceived)
                 .Run();
 
@@ -59,11 +59,11 @@
             public bool SagaTimeoutReceived { get; set; }
         }
 
-        public class EndpointWithUnsafeQuorumQueue : EndpointConfigurationBuilder
+        public class QuorumEndpointWithUnsafeTimeouts : EndpointConfigurationBuilder
         {
-            public EndpointWithUnsafeQuorumQueue()
+            public QuorumEndpointWithUnsafeTimeouts()
             {
-                var defaultServer = new ClusterEndpoint(QueueMode.QuorumWithUnsafeTimeouts);
+                var defaultServer = new ClusterEndpoint(QueueMode.Quorum, Timeouts.UnsafeEnabled);
                 EndpointSetup(
                     defaultServer,
                     (configuration, r) =>
