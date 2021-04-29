@@ -3,6 +3,11 @@
 [assembly: System.Runtime.InteropServices.ComVisible(false)]
 namespace NServiceBus
 {
+    public enum DelayedDeliverySupport
+    {
+        Disabled = 0,
+        UnsafeEnabled = 1,
+    }
     public delegate int PrefetchCountCalculation(int maximumConcurrency);
     public enum QueueMode
     {
@@ -11,7 +16,7 @@ namespace NServiceBus
     }
     public class RabbitMQClusterTransport : NServiceBus.RabbitMQTransport
     {
-        public RabbitMQClusterTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueMode queueMode, NServiceBus.Timeouts timeoutConfiguration) { }
+        public RabbitMQClusterTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueMode queueMode, NServiceBus.DelayedDeliverySupport delayedDeliverySupportConfiguration) { }
     }
     public class RabbitMQTransport : NServiceBus.Transport.TransportDefinition
     {
@@ -100,11 +105,6 @@ namespace NServiceBus
             "rt.UseExternalAuthMechanism` instead. The member currently throws a NotImplement" +
             "edException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
-    }
-    public enum Timeouts
-    {
-        Disabled = 0,
-        UnsafeEnabled = 1,
     }
     public enum Topology
     {

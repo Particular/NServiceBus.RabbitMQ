@@ -4,9 +4,9 @@
 
     class ClusterEndpoint : DefaultServer
     {
-        public ClusterEndpoint(QueueMode queueMode, Timeouts timeoutsConfiguration)
+        public ClusterEndpoint(QueueMode queueMode, DelayedDeliverySupport delayedDeliveryConfiguration)
         {
-            var transportConfiguration = new ConfigureEndpointRabbitMQTransport(queueMode, timeoutsConfiguration == Timeouts.UnsafeEnabled);
+            var transportConfiguration = new ConfigureEndpointRabbitMQTransport(queueMode, delayedDeliveryConfiguration == DelayedDeliverySupport.UnsafeEnabled);
             TransportConfiguration = transportConfiguration;
         }
     }
