@@ -6,7 +6,7 @@
     using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
 
-    public class When_using_delayed_delivery_with_quorum_queues : NServiceBusAcceptanceTest
+    public class When_using_delayed_delivery_with_disabled_timeouts : NServiceBusAcceptanceTest
     {
         [Test]
         public void Should_not_allow_delayed_retries()
@@ -62,7 +62,7 @@
         {
             public EndpointWithQuorumQueue()
             {
-                var defaultServer = new ClusterEndpoint(QueueMode.Quorum);
+                var defaultServer = new ClusterEndpoint(QueueMode.Quorum, DelayedDeliverySupport.Disabled);
                 EndpointSetup(
                     defaultServer,
                     (configuration, r) =>

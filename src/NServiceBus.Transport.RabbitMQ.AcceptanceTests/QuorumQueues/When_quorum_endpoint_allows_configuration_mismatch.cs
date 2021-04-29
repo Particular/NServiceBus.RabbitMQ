@@ -37,7 +37,7 @@
         {
             public QuorumQueueEndpoint()
             {
-                var clusterTemplate = new ClusterEndpoint(QueueMode.Quorum);
+                var clusterTemplate = new ClusterEndpoint(QueueMode.Quorum, DelayedDeliverySupport.Disabled);
                 EndpointSetup(clusterTemplate, (c, __) =>
                 {
                     c.SendFailedMessagesTo("quorum-error");
