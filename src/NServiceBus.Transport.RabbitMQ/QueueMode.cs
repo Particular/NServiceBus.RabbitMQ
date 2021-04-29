@@ -10,12 +10,8 @@
         /// </summary>
         Classic,
         /// <summary>
-        /// Quorum queues provide additional safety and availability in RabbitMQ clusters. Quorum mode does not support delayed messages.
+        /// Quorum queues provide additional safety and availability in RabbitMQ clusters.
         /// </summary>
-        Quorum,
-        /// <summary>
-        /// Quorum queues but with the delayed delivery infrastructure (using classic queues) enabled.
-        /// </summary>
-        QuorumWithUnsafeTimeouts
+        Quorum
     }
 }
