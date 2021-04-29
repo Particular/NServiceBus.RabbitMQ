@@ -18,7 +18,7 @@
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
-        List<string> additionalHostnames;
+        List<string> hostnames;
 
         public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<string> additionalHostnames = null)
         {
@@ -66,7 +66,8 @@
 
             SetClientProperties(endpointName, userName);
 
-            this.additionalHostnames = additionalHostnames;
+            hostnames = additionalHostnames ?? new List<string>();
+            hostnames.Add(host);
         }
 
         void SetClientProperties(string endpointName, string userName)
@@ -107,15 +108,7 @@
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
-                IConnection connection = null;
-                if (additionalHostnames != null && additionalHostnames.Count > 0)
-                {
-                    connection = connectionFactory.CreateConnection(additionalHostnames, connectionName);
-                }
-                else
-                {
-                    connection = connectionFactory.CreateConnection(connectionName);
-                }
+                var connection = connectionFactory.CreateConnection(hostnames, connectionName);
 
                 connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
                 connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
