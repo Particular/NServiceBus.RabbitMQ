@@ -17,6 +17,7 @@ namespace NServiceBus
     public class RabbitMQClusterTransport : NServiceBus.RabbitMQTransport
     {
         public RabbitMQClusterTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueMode queueMode, NServiceBus.DelayedDeliverySupport delayedDeliverySupportConfiguration) { }
+        public void AddNode(string hostName) { }
     }
     public class RabbitMQTransport : NServiceBus.Transport.TransportDefinition
     {
