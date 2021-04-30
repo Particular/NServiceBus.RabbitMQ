@@ -23,7 +23,15 @@
                 DelayInfrastructure.TearDown(channel);
                 DelayInfrastructure.Build(channel);
 
-                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+                try
+                {
+                    QueueCreator.RoutingTopoligyInitializeConnection.Value = connection;
+                    routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+                }
+                finally
+                {
+                    QueueCreator.RoutingTopoligyInitializeConnection.Value = null;
+                }
             }
         }
     }

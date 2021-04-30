@@ -46,7 +46,10 @@
         {
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+                if (!QueueHelper.QueueExists(QueueCreator.RoutingTopoligyInitializeConnection.Value, address))
+                {
+                    channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+                }
             }
         }
 
