@@ -213,7 +213,9 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
+                Logger.Error(
+                    $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
+                    ex);
                 await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
@@ -227,7 +229,9 @@
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
+                Logger.Error(
+                    $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
+                    ex);
                 await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
@@ -247,7 +251,8 @@
                 try
                 {
 
-                    var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(), TransportTransaction, processingContext);
+                    var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(),
+                        TransportTransaction, processingContext);
 
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
@@ -263,11 +268,15 @@
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts, processingContext);
+                    var errorContext = new ErrorContext(exception, headers, messageId,
+                        messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts,
+                        processingContext);
 
                     try
                     {
-                        errorHandled = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) == ErrorHandleResult.Handled;
+                        errorHandled =
+                            await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) ==
+                            ErrorHandleResult.Handled;
 
                         if (!errorHandled)
                         {
@@ -282,7 +291,9 @@
                     }
                     catch (Exception ex)
                     {
-                        criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex, messageProcessingCancellationToken);
+                        criticalErrorAction(
+                            $"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex,
+                            messageProcessingCancellationToken);
                         consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                         return;
@@ -296,7 +307,9 @@
             }
             catch (AlreadyClosedException ex)
             {
-                Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                Logger.Warn(
+                    $"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.",
+                    ex);
             }
         }
 

@@ -14,7 +14,7 @@
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
     /// <summary>
-    ///     Transport definition for RabbitMQ.
+    /// Transport definition for RabbitMQ.
     /// </summary>
     public class RabbitMQTransport : TransportDefinition
     {
@@ -32,7 +32,7 @@
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
 
         /// <summary>
-        ///     Creates new instance of the RabbitMQ transport.
+        /// Creates new instance of the RabbitMQ transport.
         /// </summary>
         /// <param name="topology">The built-in topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
@@ -41,24 +41,33 @@
         {
         }
 
-        static IRoutingTopology GetBuiltInTopology(Topology topology)
-        {
-            return topology == Topology.Conventional
-                ? (IRoutingTopology)new ConventionalRoutingTopology(true)
-                : new DirectRoutingTopology(true);
-        }
-
         /// <summary>
-        ///     Creates new instance of the RabbitMQ transport.
+        /// Creates new instance of the RabbitMQ transport.
         /// </summary>
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
         public RabbitMQTransport(IRoutingTopology topology, string connectionString)
-            : base(TransportTransactionMode.ReceiveOnly, true, true, true)
+            : this(topology, connectionString, QueueMode.Classic, true)
+        {
+        }
+
+        /// <summary>
+        /// Creates new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="topology">The custom topology to use.</param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="queueMode">The queue mode for receiving queues.</param>
+        /// <param name="enableTimeouts">Whether to enable timeouts.</param>
+        private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode, bool enableTimeouts)
+            : base(TransportTransactionMode.ReceiveOnly,
+                supportsDelayedDelivery: enableTimeouts,
+                supportsPublishSubscribe: true,
+                supportsTTBR: queueMode == QueueMode.Classic)
         {
             Guard.AgainstNull(nameof(topology), topology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
+            QueueMode = queueMode;
             RoutingTopology = topology;
             if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
@@ -199,6 +208,15 @@
             }
         }
 
+        /// <summary>
+        /// Specifies whether the endpoint should ignore failures to declare the incoming queues because the queue already exists with a different configuration (e.g. arguments).
+        /// This is set to <code>false</code> by default which will make the endpoint fail to start when the queue configuration does not match an existing queue.
+        /// This option has no effect if installers have been disabled.
+        /// </summary>
+        public bool AllowInputQueueConfigurationMismatch { get; set; } = false;
+
+        internal QueueMode QueueMode { get; }
+
         int DefaultPort => UseTLS ? 5671 : 5672;
 
         /// <summary>
@@ -245,14 +263,21 @@
             using (IConnection connection = connectionFactory.CreateAdministrationConnection())
             using (IModel channel = connection.CreateModel())
             {
-                DelayInfrastructure.Build(channel);
-
-                RoutingTopology.Initialize(channel, receivingQueues, sendingQueues);
-
-                foreach (string receivingAddress in receivingQueues)
+                // Delayed delivery currently not supported with quorum queues
+                if (QueueMode != QueueMode.Quorum)
                 {
-                    RoutingTopology.BindToDelayInfrastructure(channel, receivingAddress,
-                        DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                    DelayInfrastructure.Build(channel);
+                }
+
+                RoutingTopology.Initialize(connection, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic, AllowInputQueueConfigurationMismatch);
+
+                if (QueueMode != QueueMode.Quorum)
+                {
+                    foreach (string receivingAddress in receivingQueues)
+                    {
+                        RoutingTopology.BindToDelayInfrastructure(channel, receivingAddress,
+                            DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                    }
                 }
             }
         }
@@ -283,5 +308,12 @@
         /// </summary>
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
             SupportedTransactionModes;
+
+        internal static IRoutingTopology GetBuiltInTopology(Topology topology)
+        {
+            return topology == Topology.Conventional
+                ? (IRoutingTopology)new ConventionalRoutingTopology(true)
+                : new DirectRoutingTopology(true);
+        }
     }
 }
