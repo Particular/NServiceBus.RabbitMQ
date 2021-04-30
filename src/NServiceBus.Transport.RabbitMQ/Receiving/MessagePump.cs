@@ -233,7 +233,6 @@
                     $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
                 await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
-                    ex);
 
                 return;
             }
