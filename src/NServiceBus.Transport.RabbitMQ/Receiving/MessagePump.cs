@@ -156,7 +156,9 @@
             }
         }
 
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         Task Consumer_Registered(object sender, ConsumerEventArgs e)
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
             circuitBreaker.Success();
 
@@ -175,7 +177,9 @@
             }
         }
 
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         async Task Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
             if (messagePumpCancellationTokenSource.IsCancellationRequested)
             {
@@ -212,7 +216,7 @@
                 Logger.Error(
                     $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -228,7 +232,8 @@
                 Logger.Error(
                     $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                    ex);
 
                 return;
             }
@@ -309,7 +314,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue)
+        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue, CancellationToken cancellationToken)
         {
             try
             {
@@ -317,7 +322,7 @@
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties).ConfigureAwait(false);
+                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {

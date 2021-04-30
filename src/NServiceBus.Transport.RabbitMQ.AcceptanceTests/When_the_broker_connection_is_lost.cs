@@ -66,7 +66,7 @@
 
                     protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-                    async Task BreakConnectionBySendingInvalidMessage(CancellationToken cancellationToken = default)
+                    async Task BreakConnectionBySendingInvalidMessage(CancellationToken cancellationToken)
                     {
                         try
                         {

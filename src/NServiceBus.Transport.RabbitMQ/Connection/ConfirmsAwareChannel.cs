@@ -3,6 +3,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -31,9 +32,9 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties)
+        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
-            var task = GetConfirmationTask();
+            var task = GetConfirmationTask(cancellationToken);
             properties.SetConfirmationId(channel.NextPublishSeqNo);
 
             if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
@@ -51,9 +52,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return task;
         }
 
-        public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties)
+        public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
-            var task = GetConfirmationTask();
+            var task = GetConfirmationTask(cancellationToken);
             properties.SetConfirmationId(channel.NextPublishSeqNo);
 
             routingTopology.Publish(channel, type, message, properties);
@@ -61,9 +62,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return task;
         }
 
-        public Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
+        public Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
-            var task = GetConfirmationTask();
+            var task = GetConfirmationTask(cancellationToken);
 
             if (properties.Headers == null)
             {
@@ -77,7 +78,7 @@ namespace NServiceBus.Transport.RabbitMQ
             return task;
         }
 
-        Task GetConfirmationTask()
+        Task GetConfirmationTask(CancellationToken cancellationToken)
         {
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
