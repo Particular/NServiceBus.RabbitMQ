@@ -305,11 +305,11 @@
             {
                 consumer.Model.BasicAckSingle(message.DeliveryTag);
             }
-            catch (AlreadyClosedException ex1)
+            catch (AlreadyClosedException ex)
             {
                 Logger.Warn(
                     $"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.",
-                    ex1);
+                    ex);
             }
         }
 
