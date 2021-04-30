@@ -20,8 +20,8 @@ A 3-node cluster can be set up using docker for testing or development purposes 
 
 ```
 docker run -d --hostname rabbit1 --name rabbit1 -p 5672:5672 -p 15672:15672 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
-docker run -d --hostname rabbit2 --name rabbit1 -p 5673:5672 -p 15673:15672 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
-docker run -d --hostname rabbit3 --name rabbit1 -p 5674:5672 -p 15674:15672 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
+docker run -d --hostname rabbit2 --name rabbit2 -p 5673:5672 -p 15673:15672 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
+docker run -d --hostname rabbit3 --name rabbit3 -p 5674:5672 -p 15674:15672 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
 
 docker exec rabbit2 rabbitmqctl stop_app
 docker exec rabbit2 rabbitmqctl join_cluster rabbit@rabbit1
