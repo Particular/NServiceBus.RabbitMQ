@@ -29,7 +29,7 @@
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, transport.Host, transport.Port ?? 5672,
                 transport.VHost, transport.UserName, transport.Password, useTls, null, false,
-                false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval);
+                false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);
 
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
                 (_, __, ___) => { }, true), new[]
