@@ -9,7 +9,7 @@
         /// Creates new instance of the RabbitMQ transport to connect to a RabbitMQ cluster.
         /// </summary>
         /// <param name="topology">The custom topology to use.</param>
-        /// <param name="connectionString">Connection string.</param>
+        /// <param name="connectionString">Connection string of the nodes.</param>
         /// <param name="queueMode">The queue mode for receiving queues.</param>
         /// <param name="delayedDeliverySupportConfiguration">The timeouts configuration.</param>
         public RabbitMQClusterTransport(Topology topology, string connectionString, QueueMode queueMode, DelayedDeliverySupport delayedDeliverySupportConfiguration)
@@ -18,12 +18,13 @@
         }
 
         /// <summary>
-        /// Adds a new cluster node
+        /// Adds a new node for use within a cluster.
         /// </summary>
-        /// <param name="hostName">An additional hostname of a node in the cluster.</param>
-        public void AddNode(string hostName)
+        /// <param name="host">The hostname of the node.</param>
+        /// <param name="port">The port of the node.</param>
+        public void AddClusterNode(string host, int port = 5672)
         {
-            additionalHostnames.Add(hostName);
+            additionalHostnames.Add($"{host}:{port}");
         }
     }
 }

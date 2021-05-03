@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
@@ -18,9 +19,9 @@
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
-        List<string> hostnames;
+        List<AmqpTcpEndpoint> hostnames;
 
-        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<string> additionalHostnames = null)
+        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<string> additionalHostnames)
         {
             if (endpointName is null)
             {
@@ -66,8 +67,15 @@
 
             SetClientProperties(endpointName, userName);
 
-            hostnames = additionalHostnames ?? new List<string>();
-            hostnames.Add(host);
+            hostnames = new List<AmqpTcpEndpoint>
+            {
+                AmqpTcpEndpoint.Parse($"{host}:{port}")
+            };
+
+            if (additionalHostnames?.Count > 0)
+            {
+                hostnames.AddRange(additionalHostnames.Select(AmqpTcpEndpoint.Parse));
+            }
         }
 
         void SetClientProperties(string endpointName, string userName)

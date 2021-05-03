@@ -14,10 +14,10 @@
         public void Should_track_additional_hosts()
         {
             var connectionConfiguration = CreateTransportDefinition("host=host.one:1001;port=1002");
-            connectionConfiguration.AddNode("secondhost");
+            connectionConfiguration.AddClusterNode("secondhost");
 
             Assert.AreEqual(1, connectionConfiguration.additionalHostnames.Count);
-            Assert.AreEqual("secondhost", connectionConfiguration.additionalHostnames[0]);
+            Assert.AreEqual("secondhost:5672", connectionConfiguration.additionalHostnames[0]);
         }
     }
 }

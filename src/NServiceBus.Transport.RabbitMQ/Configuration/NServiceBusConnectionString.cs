@@ -125,7 +125,7 @@
 
                 if (hostsAndPorts.Length > 1)
                 {
-                    throw new Exception("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.");
+                    throw new Exception("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, use the RabbitMQClusterTransport and the .AddConnectionString method.");
                 }
             }
 
