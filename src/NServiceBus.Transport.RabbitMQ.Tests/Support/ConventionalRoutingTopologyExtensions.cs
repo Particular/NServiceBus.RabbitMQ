@@ -25,12 +25,12 @@
 
                 try
                 {
-                    QueueCreator.RoutingTopoligyInitializeConnection.Value = connection;
+                    QueueCreator.RoutingTopologyInitializeConnection.Value = connection;
                     routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
                 }
                 finally
                 {
-                    QueueCreator.RoutingTopoligyInitializeConnection.Value = null;
+                    QueueCreator.RoutingTopologyInitializeConnection.Value = null;
                 }
             }
         }

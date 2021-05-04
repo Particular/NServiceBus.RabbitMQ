@@ -9,7 +9,7 @@
         readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
 
-        public static ThreadLocal<IConnection> RoutingTopoligyInitializeConnection = new ThreadLocal<IConnection>();
+        public static ThreadLocal<IConnection> RoutingTopologyInitializeConnection = new ThreadLocal<IConnection>();
 
         public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology)
         {
@@ -27,12 +27,12 @@
                 try
                 {
                     // workaround to make the connection available to the routing topology
-                    RoutingTopoligyInitializeConnection.Value = connection;
+                    RoutingTopologyInitializeConnection.Value = connection;
                     routingTopology.Initialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
                 }
                 finally
                 {
-                    RoutingTopoligyInitializeConnection.Value = null;
+                    RoutingTopologyInitializeConnection.Value = null;
                 }
 
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
