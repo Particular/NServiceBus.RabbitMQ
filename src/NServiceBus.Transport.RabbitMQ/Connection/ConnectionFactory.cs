@@ -1,8 +1,10 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
@@ -17,8 +19,9 @@
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly object lockObject = new object();
+        List<AmqpTcpEndpoint> hostnames;
 
-        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval)
+        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<string> additionalHostnames)
         {
             if (endpointName is null)
             {
@@ -63,6 +66,16 @@
             }
 
             SetClientProperties(endpointName, userName);
+
+            hostnames = new List<AmqpTcpEndpoint>
+            {
+                AmqpTcpEndpoint.Parse($"{host}:{port}")
+            };
+
+            if (additionalHostnames?.Count > 0)
+            {
+                hostnames.AddRange(additionalHostnames.Select(AmqpTcpEndpoint.Parse));
+            }
         }
 
         void SetClientProperties(string endpointName, string userName)
@@ -103,7 +116,7 @@
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
-                var connection = connectionFactory.CreateConnection(connectionName);
+                var connection = connectionFactory.CreateConnection(hostnames, connectionName);
 
                 connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
                 connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);

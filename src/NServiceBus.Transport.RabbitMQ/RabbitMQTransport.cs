@@ -238,7 +238,7 @@
 
             var connectionFactory = new ConnectionFactory(hostSettings.Name, Host, Port ?? DefaultPort,
                 VHost, UserName, Password, UseTLS, certCollection, ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval);
+                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHostnames);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             channelProvider.CreateConnection();
@@ -315,5 +315,7 @@
                 ? (IRoutingTopology)new ConventionalRoutingTopology(true)
                 : new DirectRoutingTopology(true);
         }
+
+        internal List<string> additionalHostnames = new List<string>();
     }
 }
