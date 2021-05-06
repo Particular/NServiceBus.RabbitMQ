@@ -22,9 +22,9 @@
         /// </summary>
         /// <param name="host">The hostname of the node.</param>
         /// <param name="port">The port of the node.</param>
-        public void AddClusterNode(string host, int port = 5672)
+        public void AddClusterNode(string host, int port = -1)
         {
-            additionalHostnames.Add($"{host}:{port}");
+            additionalHosts.Add((host, port));
         }
     }
 }
