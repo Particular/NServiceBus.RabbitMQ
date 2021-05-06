@@ -316,6 +316,6 @@
                 : new DirectRoutingTopology(true);
         }
 
-        internal List<Tuple<string, int>> additionalHosts = new List<Tuple<string, int>>();
+        internal List<(string, int)> additionalHosts = new List<(string, int)>();
     }
 }

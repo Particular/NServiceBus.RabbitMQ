@@ -18,7 +18,7 @@
 
             Assert.AreEqual(1, connectionConfiguration.additionalHosts.Count);
             Assert.AreEqual("secondhost", connectionConfiguration.additionalHosts[0].Item1);
-            Assert.AreEqual(5672, connectionConfiguration.additionalHosts[0].Item2);
+            Assert.AreEqual(-1, connectionConfiguration.additionalHosts[0].Item2);
         }
     }
 }
