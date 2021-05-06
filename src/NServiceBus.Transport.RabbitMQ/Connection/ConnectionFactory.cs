@@ -21,7 +21,7 @@
         readonly object lockObject = new object();
         List<AmqpTcpEndpoint> hostnames;
 
-        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<string> additionalHostnames)
+        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<Tuple<string, int>> additionalHostnames)
         {
             if (endpointName is null)
             {
@@ -69,12 +69,12 @@
 
             hostnames = new List<AmqpTcpEndpoint>
             {
-                AmqpTcpEndpoint.Parse($"{host}:{port}")
+                new AmqpTcpEndpoint(host, port, connectionFactory.Ssl)
             };
 
             if (additionalHostnames?.Count > 0)
             {
-                hostnames.AddRange(additionalHostnames.Select(AmqpTcpEndpoint.Parse));
+                hostnames.AddRange(additionalHostnames.Select(kv => new AmqpTcpEndpoint(kv.Item1, kv.Item2, connectionFactory.Ssl)));
             }
         }
 

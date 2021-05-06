@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus
 {
+    using System;
+
     /// <summary>
     /// Transport definition for RabbitMQ in cluster configuration.
     /// </summary>
@@ -24,7 +26,7 @@
         /// <param name="port">The port of the node.</param>
         public void AddClusterNode(string host, int port = 5672)
         {
-            additionalHostnames.Add($"{host}:{port}");
+            additionalHosts.Add(new Tuple<string, int>(host, port));
         }
     }
 }

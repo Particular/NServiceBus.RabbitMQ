@@ -238,7 +238,7 @@
 
             var connectionFactory = new ConnectionFactory(hostSettings.Name, Host, Port ?? DefaultPort,
                 VHost, UserName, Password, UseTLS, certCollection, ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHostnames);
+                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHosts);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             channelProvider.CreateConnection();
@@ -316,6 +316,6 @@
                 : new DirectRoutingTopology(true);
         }
 
-        internal List<string> additionalHostnames = new List<string>();
+        internal List<Tuple<string, int>> additionalHosts = new List<Tuple<string, int>>();
     }
 }
