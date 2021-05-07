@@ -38,10 +38,19 @@ docker exec rabbit3 rabbitmqctl join_cluster rabbit@rabbit1
 docker exec rabbit3 rabbitmqctl start_app
 ```
 
-Setup mirroring:
+Setup classic queue mirroring:
+
+Note that [mirroring of classic queues](https://www.rabbitmq.com/ha.html) will be removed in a future version of RabbitMQ. Consider using [quorum queues](https://www.rabbitmq.com/quorum-queues.html) instead.
+
 ```cmd
 docker exec rabbit1 rabbitmqctl set_policy ha-all "" '{"ha-mode":"all","ha-sync-mode":"automatic"}'
 ```
+
+Setup quorem queues:
+
+[quorum queues](https://www.rabbitmq.com/quorum-queues.html)
+
+
 
 Create `haproxy.cfg` file for configurating HAProxy:
 ```txt
