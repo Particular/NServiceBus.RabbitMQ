@@ -25,9 +25,9 @@ docker network create --driver bridge rabbitnet
 
 Setup cluster:
 ```cmd
-docker run -d --network rabbitnet --hostname rabbit1 --name rabbit1 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
-docker run -d --network rabbitnet --hostname rabbit2 --name rabbit2 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
-docker run -d --network rabbitnet --hostname rabbit3 --name rabbit3 -e RABBITMQ_ERLANG_COOKIE='asdfasdf' rabbitmq:3-management
+docker run -d --network rabbitnet --hostname rabbit1 --name rabbit1 -v rabbitmq-data:/var/lib/rabbitmq rabbitmq:3-management
+docker run -d --network rabbitnet --hostname rabbit2 --name rabbit2 -v rabbitmq-data:/var/lib/rabbitmq rabbitmq:3-management
+docker run -d --network rabbitnet --hostname rabbit3 --name rabbit3 -v rabbitmq-data:/var/lib/rabbitmq rabbitmq:3-management
 
 docker exec rabbit2 rabbitmqctl stop_app
 docker exec rabbit2 rabbitmqctl join_cluster rabbit@rabbit1
@@ -43,7 +43,7 @@ Setup classic queue mirroring:
 Note that [mirroring of classic queues](https://www.rabbitmq.com/ha.html) will be removed in a future version of RabbitMQ. Consider using [quorum queues](https://www.rabbitmq.com/quorum-queues.html) instead.
 
 ```cmd
-docker exec rabbit1 rabbitmqctl set_policy ha-all "" '{"ha-mode":"all","ha-sync-mode":"automatic"}'
+docker exec rabbit1 rabbitmqctl set_policy ha-all "\." '{"ha-mode":"exactly","ha-params":2,"ha-sync-mode":"automatic"}'
 ```
 
 
@@ -79,9 +79,9 @@ listen rabbitmq
         timeout client  3h
         timeout server  3h
         option          clitcpka
-        server          rabbitmq1 rabbitmq1:5672  check inter 5s rise 2 fall 3
-        server          rabbitmq2 rabbitmq2:5672  check inter 5s rise 2 fall 3
-        server          rabbitmq3 rabbitmq3:5672  check inter 5s rise 2 fall 3
+        server          rabbit1 rabbit1:5672  check inter 5s rise 2 fall 3
+        server          rabbit2 rabbit2:5672  check inter 5s rise 2 fall 3
+        server          rabbit3 rabbit3:5672  check inter 5s rise 2 fall 3
 
 listen mgmt
         bind *:15672
@@ -90,9 +90,9 @@ listen mgmt
         timeout client  3h
         timeout server  3h
         option          clitcpka
-        server          rabbitmq1 rabbitmq1:15672  check inter 5s rise 2 fall 3
-        server          rabbitmq2 rabbitmq2:15672  check inter 5s rise 2 fall 3
-        server          rabbitmq3 rabbitmq3:15672  check inter 5s rise 2 fall 3
+        server          rabbit1 rabbit1:15672  check inter 5s rise 2 fall 3
+        server          rabbit2 rabbit2:15672  check inter 5s rise 2 fall 3
+        server          rabbit3 rabbit3:15672  check inter 5s rise 2 fall 3
 ```
 
 Setup HAProxy container, note correct the path where `haproxy.cfg` is saved.
