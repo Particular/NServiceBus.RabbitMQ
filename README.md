@@ -46,11 +46,6 @@ Note that [mirroring of classic queues](https://www.rabbitmq.com/ha.html) will b
 docker exec rabbit1 rabbitmqctl set_policy ha-all "" '{"ha-mode":"all","ha-sync-mode":"automatic"}'
 ```
 
-Setup quorem queues:
-
-[quorum queues](https://www.rabbitmq.com/quorum-queues.html)
-
-
 
 Create `haproxy.cfg` file for configurating HAProxy:
 ```txt
@@ -104,5 +99,9 @@ Setup HAProxy container, note correct the path where `haproxy.cfg` is saved.
 ```cmd
 docker run -d --network rabbitnet --hostname rabbitha --name rabbitha -p 15672:15672 -p 5672:5672 -v ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:1.7
 ```
+
+Setup quorem queues:
+
+[quorum queues](https://www.rabbitmq.com/quorum-queues.html)
 
 After all these commands have run, a 3-node RabbitMQ cluster will be running that should be accessible via the load balancer.
