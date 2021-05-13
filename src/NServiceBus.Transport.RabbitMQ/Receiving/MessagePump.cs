@@ -257,8 +257,16 @@
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
                 }
-                catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
+                catch (OperationCanceledException ex)
                 {
+                    if (messageProcessingCancellationToken.IsCancellationRequested)
+                    {
+                        Logger.Debug("Message processing has been cancelled. Returning message to queue.", ex);
+                    }
+                    else
+                    {
+                        Logger.Warn("OperationCanceledException thrown. Returning message to queue.", ex);
+                    }
                     consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                     return;
@@ -283,8 +291,16 @@
                             headers = messageConverter.RetrieveHeaders(message);
                         }
                     }
-                    catch (OperationCanceledException) when (messageProcessingCancellationToken.IsCancellationRequested)
+                    catch (OperationCanceledException ex)
                     {
+                        if (messageProcessingCancellationToken.IsCancellationRequested)
+                        {
+                            Logger.Debug("Message processing has been cancelled. Returning message to queue.", ex);
+                        }
+                        else
+                        {
+                            Logger.Warn("OperationCanceledException thrown. Returning message to queue.", ex);
+                        }
                         consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
                         return;
