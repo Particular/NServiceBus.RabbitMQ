@@ -174,8 +174,8 @@ namespace NServiceBus
         /// Configures NServiceBus to use the given transport.
         /// </summary>
         [ObsoleteEx(
-            RemoveInVersion = "10",
-            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "9",
+            TreatAsErrorFromVersion = "8",
             ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)")]
         public static RabbitMqTransportLegacySettings UseTransport<T>(this EndpointConfiguration config)
             where T : RabbitMQTransport
