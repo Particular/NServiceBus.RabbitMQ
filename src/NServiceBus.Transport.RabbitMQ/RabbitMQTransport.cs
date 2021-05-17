@@ -16,7 +16,7 @@
     /// <summary>
     /// Transport definition for RabbitMQ.
     /// </summary>
-    public class RabbitMQTransport : TransportDefinition
+    public partial class RabbitMQTransport : TransportDefinition
     {
         static readonly TransportTransactionMode[] SupportedTransactionModes =
         {
@@ -230,6 +230,8 @@
         public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings,
             ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
+            ValidateAndApplyLegacyConfiguration();
+
             X509Certificate2Collection certCollection = null;
             if (ClientCertificate != null)
             {
@@ -281,7 +283,6 @@
                 }
             }
         }
-
 
         /// <summary>
         ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
