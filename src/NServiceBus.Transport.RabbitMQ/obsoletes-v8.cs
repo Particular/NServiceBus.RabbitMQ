@@ -193,14 +193,21 @@ namespace NServiceBus
     public partial class RabbitMQTransport
     {
         internal string LegacyApiConnectionString { get; set; }
+        bool legacyMode;
 
         internal RabbitMQTransport()
             : base(TransportTransactionMode.ReceiveOnly, true, true, true)
         {
+            legacyMode = true;
         }
 
         void ValidateAndApplyLegacyConfiguration()
         {
+            if (!legacyMode)
+            {
+                return;
+            }
+
             if (RoutingTopology == null)
             {
                 throw new Exception("When using legacy API a routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
