@@ -166,6 +166,16 @@ namespace NServiceBus
         {
             throw new NotImplementedException();
         }
+
+        [ObsoleteEx(
+            Message = "The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for details on how to use the timeout migration tool.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
+        public static void DelayedDelivery(
+            this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public static class RabbitMqTransportApiExtensions
@@ -258,6 +268,15 @@ namespace NServiceBus
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "8")]
         public RabbitMqTransportLegacySettings DisableDurableExchangesAndQueues()
+        {
+            throw new NotImplementedException();
+        }
+
+        [ObsoleteEx(
+            Message = "The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for details on how to use the timeout migration tool.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
+        public static void DelayedDelivery()
         {
             throw new NotImplementedException();
         }

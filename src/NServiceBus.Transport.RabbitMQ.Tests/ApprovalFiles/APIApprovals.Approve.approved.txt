@@ -55,6 +55,10 @@ namespace NServiceBus
             "rt.MessageIdStrategy` instead. The member currently throws a NotImplementedExcep" +
             "tion. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
+        [System.Obsolete("The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for" +
+            " details on how to use the timeout migration tool. The member currently throws a" +
+            " NotImplementedException. Will be removed in version 8.0.0.", true)]
+        public static void DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         [System.Obsolete("The configuration has been moved to the topology implementations. The member curr" +
             "ently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableDurableExchangesAndQueues(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
@@ -175,6 +179,10 @@ namespace NServiceBus
             "rt.UseExternalAuthMechanism` instead. Will be treated as an error from version 8" +
             ".0.0. Will be removed in version 9.0.0.", false)]
         public NServiceBus.RabbitMqTransportLegacySettings UseExternalAuthMechanism() { }
+        [System.Obsolete("The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for" +
+            " details on how to use the timeout migration tool. The member currently throws a" +
+            " NotImplementedException. Will be removed in version 8.0.0.", true)]
+        public static void DelayedDelivery() { }
     }
     public enum Topology
     {
