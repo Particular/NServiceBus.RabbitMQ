@@ -210,12 +210,12 @@ namespace NServiceBus
 
             if (RoutingTopology == null)
             {
-                throw new Exception("When using legacy API a routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
+                throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
             }
 
             if (string.IsNullOrEmpty(LegacyApiConnectionString))
             {
-                throw new Exception("When using legacy API a connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
+                throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
 
             if (LegacyApiConnectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
@@ -244,7 +244,7 @@ namespace NServiceBus
         }
 
         [ObsoleteEx(
-            Message = "Using custom topologies is not possible in the legacy API. Use the new API.",
+            Message = "Using custom topologies is not possible with the legacy API. A custom topology can be provided using by creating a new instance of the RabbitMqTransport class.",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "8")]
         public RabbitMqTransportLegacySettings UseCustomRoutingTopology(
@@ -254,7 +254,7 @@ namespace NServiceBus
         }
 
         [ObsoleteEx(
-            Message = "Disabling the durable exchanges is not possible in the legacy API. Use the new API and create the topology instance with appropriate arguments.",
+            Message = "Disabling the durable exchanges is not possible in the legacy API. Use the new API and create the topology instance with appropriate arguments. See the upgrade guide for further details.",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "8")]
         public RabbitMqTransportLegacySettings DisableDurableExchangesAndQueues()
@@ -266,7 +266,6 @@ namespace NServiceBus
         /// The connection string to use when connecting to the broker.
         /// </summary>
         [ObsoleteEx(
-            ReplacementTypeOrMember = "RabbitMQTransport constructor",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9")]
@@ -280,7 +279,6 @@ namespace NServiceBus
         /// Allows the user to control how the message ID is determined. Mostly useful when doing native integration with non-NSB endpoints.
         /// </summary>
         /// <param name="customIdStrategy">The user-defined strategy for giving the message a unique ID.</param>
-        /// <returns></returns>
         [ObsoleteEx(
             ReplacementTypeOrMember = "RabbitMQTransport.MessageIdStrategy",
             Message = "The configuration has been moved to RabbitMQTransport class.",
@@ -296,7 +294,6 @@ namespace NServiceBus
         /// <summary>
         /// Disables all remote certificate validation when connecting to the broker via TLS.
         /// </summary>
-        /// <returns></returns>
         [ObsoleteEx(
             ReplacementTypeOrMember = "RabbitMQTransport.ValidateRemoteCertificate",
             Message = "The configuration has been moved to RabbitMQTransport class.",
@@ -342,7 +339,6 @@ namespace NServiceBus
         /// Specifies the certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         /// <param name="clientCertificate">The certificate to use for client authentication.</param>
-        /// <returns></returns>
         [ObsoleteEx(
             ReplacementTypeOrMember = "RabbitMQTransport.ClientCertificate",
             Message = "The configuration has been moved to RabbitMQTransport class.",
@@ -359,7 +355,6 @@ namespace NServiceBus
         /// </summary>
         /// <param name="path">The path to the certificate file.</param>
         /// <param name="password">The password for the certificate specified in <paramref name="path"/>.</param>
-        /// <returns></returns>
         [ObsoleteEx(
             ReplacementTypeOrMember = "RabbitMQTransport.ClientCertificate",
             Message = "The configuration has been moved to RabbitMQTransport class.",
@@ -376,7 +371,6 @@ namespace NServiceBus
         /// Sets the interval for heartbeats between the endpoint and the broker.
         /// </summary>
         /// <param name="heartbeatInterval">The time interval to use.</param>
-        /// <returns></returns>
         [ObsoleteEx(
             ReplacementTypeOrMember = "RabbitMQTransport.HeartbeatInterval",
             Message = "The configuration has been moved to RabbitMQTransport class.",
@@ -392,7 +386,6 @@ namespace NServiceBus
         /// Sets the time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
         /// <param name="networkRecoveryInterval">The time interval to use.</param>
-        /// <returns></returns>
         [ObsoleteEx(
             ReplacementTypeOrMember = "RabbitMQTransport.NetworkRecoveryInterval",
             Message = "The configuration has been moved to RabbitMQTransport class.",
