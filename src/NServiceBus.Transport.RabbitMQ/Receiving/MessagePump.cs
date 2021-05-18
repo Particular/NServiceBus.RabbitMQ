@@ -192,6 +192,19 @@
             {
                 await Process(eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
             }
+            catch (OperationCanceledException ex)
+            {
+                if (messageProcessingCancellationTokenSource.IsCancellationRequested)
+                {
+                    Logger.Debug("Message processing has been cancelled. Returning message to queue.", ex);
+                }
+                else
+                {
+                    Logger.Warn("OperationCanceledException thrown. Returning message to queue.", ex);
+                }
+
+                consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag);
+            }
             catch (Exception ex)
             {
                 Logger.Warn("Failed to process message. Returning message to queue...", ex);
@@ -257,26 +270,12 @@
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
                 }
-                catch (OperationCanceledException ex)
-                {
-                    if (messageProcessingCancellationToken.IsCancellationRequested)
-                    {
-                        Logger.Debug("Message processing has been cancelled. Returning message to queue.", ex);
-                    }
-                    else
-                    {
-                        Logger.Warn("OperationCanceledException thrown. Returning message to queue.", ex);
-                    }
-                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
-                    return;
-                }
-                catch (Exception exception)
+                catch (Exception ex) when (!(ex is OperationCanceledException))
                 {
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(exception, headers, messageId,
+                    var errorContext = new ErrorContext(ex, headers, messageId,
                         messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts,
                         processingContext);
 
@@ -291,24 +290,10 @@
                             headers = messageConverter.RetrieveHeaders(message);
                         }
                     }
-                    catch (OperationCanceledException ex)
-                    {
-                        if (messageProcessingCancellationToken.IsCancellationRequested)
-                        {
-                            Logger.Debug("Message processing has been cancelled. Returning message to queue.", ex);
-                        }
-                        else
-                        {
-                            Logger.Warn("OperationCanceledException thrown. Returning message to queue.", ex);
-                        }
-                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
-                        return;
-                    }
-                    catch (Exception ex)
+                    catch (Exception onErrorEx) when (!(onErrorEx is OperationCanceledException))
                     {
                         criticalErrorAction(
-                            $"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex,
+                            $"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx,
                             messageProcessingCancellationToken);
                         consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
 
@@ -344,7 +329,7 @@
                     channelProvider.ReturnPublishChannel(channel);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
                 consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
