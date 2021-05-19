@@ -23,6 +23,10 @@ class RabbitMqConnectionStringParser
         {
             UserName = value.ToString();
         }
+        else if (connectionStringBuilder.TryGetValue("user", out var userValue))
+        {
+            UserName = userValue.ToString();
+        }
 
         if (connectionStringBuilder.TryGetValue("password", out value))
         {
