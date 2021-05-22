@@ -79,7 +79,7 @@
                             var operation = new TransportOperation(outgoingMessage, new UnicastAddressTag(settings.EndpointName()), props);
                             await sender.Dispatch(new TransportOperations(operation), new TransportTransaction(), cancellationToken);
                         }
-                        catch (Exception)
+                        catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                         {
                             // Don't care
                         }

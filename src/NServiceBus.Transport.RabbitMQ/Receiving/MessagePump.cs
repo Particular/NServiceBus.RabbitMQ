@@ -128,7 +128,7 @@
                     // We are deliberately not forwarding the cancellation token here because
                     // this loop is our way of waiting for all pending messaging operations
                     // to participate in cooperative cancellation or not.
-                    // We do not want to rudely abort them because the cancellation token has been cancelled.
+                    // We do not want to rudely abort them because the cancellation token has been canceled.
                     // This allows us to preserve the same behaviour in v8 as in v7 in that,
                     // if CancellationToken.None is passed to this method,
                     // the method will only return when all in flight messages have been processed.
@@ -136,7 +136,7 @@
                     // all message processing operations have the opportunity to
                     // participate in cooperative cancellation.
                     // If we ever require a method of stopping the endpoint such that
-                    // all message processing is cancelled immediately,
+                    // all message processing is canceled immediately,
                     // we can provide that as a separate feature.
                     await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
                 }
@@ -186,29 +186,35 @@
                 return;
             }
 
+            await ProcessAndSwallowExceptions(eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+        }
+
+        async Task ProcessAndSwallowExceptions(BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
+        {
             Interlocked.Increment(ref numberOfMessagesBeingProcessed);
 
             try
             {
-                await Process(eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                try
+                {
+                    await Process(message, messageProcessingCancellationToken).ConfigureAwait(false);
+                }
+#pragma warning disable PS0019 // Do not catch Exception without considering OperationCanceledException - handling is the same for OCE
+                catch (Exception ex)
+#pragma warning restore PS0019 // Do not catch Exception without considering OperationCanceledException
+                {
+                    Logger.Debug("Returning message to queue...", ex);
+                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                    throw;
+                }
             }
-            catch (OperationCanceledException ex)
+            catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationToken))
             {
-                if (messageProcessingCancellationTokenSource.IsCancellationRequested)
-                {
-                    Logger.Debug("Message processing has been cancelled. Returning message to queue.", ex);
-                }
-                else
-                {
-                    Logger.Warn("OperationCanceledException thrown. Returning message to queue.", ex);
-                }
-
-                consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag);
+                Logger.Debug("Message processing canceled.", ex);
             }
             catch (Exception ex)
             {
-                Logger.Warn("Failed to process message. Returning message to queue...", ex);
-                consumer.Model.BasicRejectAndRequeueIfOpen(eventArgs.DeliveryTag);
+                Logger.Error("Message processing failed.", ex);
             }
             finally
             {
@@ -270,7 +276,7 @@
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
                 }
-                catch (Exception ex) when (!(ex is OperationCanceledException))
+                catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
                 {
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
@@ -290,7 +296,7 @@
                             headers = messageConverter.RetrieveHeaders(message);
                         }
                     }
-                    catch (Exception onErrorEx) when (!(onErrorEx is OperationCanceledException))
+                    catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
                     {
                         criticalErrorAction(
                             $"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx,
@@ -314,7 +320,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue, CancellationToken cancellationToken)
+        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -322,14 +328,14 @@
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties, cancellationToken).ConfigureAwait(false);
+                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties, messageProcessingCancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
                     channelProvider.ReturnPublishChannel(channel);
                 }
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException))
+            catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
             {
                 Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
                 consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
