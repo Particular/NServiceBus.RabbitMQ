@@ -120,17 +120,14 @@ namespace NServiceBus
     }
     public class RabbitMqTransportLegacySettings : NServiceBus.TransportSettings<NServiceBus.RabbitMQTransport>
     {
-        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
-            "rt constructor` instead. Will be treated as an error from version 8.0.0. Will be" +
-            " removed in version 9.0.0.", false)]
+        [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Will be treated as a" +
+            "n error from version 8.0.0. Will be removed in version 9.0.0.", false)]
         public NServiceBus.RabbitMqTransportLegacySettings ConnectionString(string connectionString) { }
         [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
             "rt.MessageIdStrategy` instead. Will be treated as an error from version 8.0.0. W" +
             "ill be removed in version 9.0.0.", false)]
         public NServiceBus.RabbitMqTransportLegacySettings CustomMessageIdStrategy(System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
-        [System.Obsolete("Disabling the durable exchanges is not possible in the legacy API. Use the new AP" +
-            "I and create the topology instance with appropriate arguments. The member curren" +
-            "tly throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
+        [System.Obsolete(@"Disabling the durable exchanges is not possible in the legacy API. Use the new API and create the topology instance with appropriate arguments. See the upgrade guide for further details. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public NServiceBus.RabbitMqTransportLegacySettings DisableDurableExchangesAndQueues() { }
         [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Use `RabbitMQTranspo" +
             "rt.ValidateRemoteCertificate` instead. Will be treated as an error from version " +
@@ -168,9 +165,10 @@ namespace NServiceBus
             "rt.RoutingTopology` instead. Will be treated as an error from version 8.0.0. Wil" +
             "l be removed in version 9.0.0.", false)]
         public NServiceBus.RabbitMqTransportLegacySettings UseConventionalRoutingTopology() { }
-        [System.Obsolete("Using custom topologies is not possible in the legacy API. Use the new API. The m" +
-            "ember currently throws a NotImplementedException. Will be removed in version 8.0" +
-            ".0.", true)]
+        [System.Obsolete("Using custom topologies is not possible with the legacy API. A custom topology ca" +
+            "n be provided using by creating a new instance of the RabbitMqTransport class. T" +
+            "he member currently throws a NotImplementedException. Will be removed in version" +
+            " 8.0.0.", true)]
         public NServiceBus.RabbitMqTransportLegacySettings UseCustomRoutingTopology(System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
         [System.Obsolete("The configuration has been moved to RabbitMQTransport class. Will be treated as a" +
             "n error from version 8.0.0. Will be removed in version 9.0.0.", false)]
