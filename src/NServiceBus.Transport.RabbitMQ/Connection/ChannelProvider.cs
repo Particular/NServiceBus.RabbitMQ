@@ -29,32 +29,33 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                _ = Task.Run(() => Reconnect(CancellationToken.None));
+                // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
+                _ = Task.Run(() => ReconnectSwallowingExceptions(), CancellationToken.None);
             }
         }
 
-        async Task Reconnect(CancellationToken cancellationToken)
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        async Task ReconnectSwallowingExceptions()
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
-            var reconnected = false;
-
-            while (!reconnected)
+            while (true)
             {
                 Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
 
-                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(retryDelay).ConfigureAwait(false);
 
                 try
                 {
                     CreateConnection();
-                    reconnected = true;
-
-                    Logger.Info("Connection to the broker reestablished successfully.");
+                    break;
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Info("Reconnecting to the broker failed.", e);
+                    Logger.Info("Reconnecting to the broker failed.", ex);
                 }
             }
+
+            Logger.Info("Connection to the broker reestablished successfully.");
         }
 
         public ConfirmsAwareChannel GetPublishChannel()

@@ -94,9 +94,9 @@
                     {
                         await RequestTimeout<SagaTimeout>(context, TimeSpan.FromMinutes(1));
                     }
-                    catch (Exception e)
+                    catch (Exception ex) when (!ex.IsCausedBy(context.CancellationToken))
                     {
-                        testContext.SagaTimeoutException = e;
+                        testContext.SagaTimeoutException = ex;
                     }
                 }
 
