@@ -38,7 +38,10 @@
 
                 return tasks.Count == 1 ? tasks[0] : Task.WhenAll(tasks);
             }
+#pragma warning disable PS0019 // When catching System.Exception, cancellation needs to be properly accounted for - justification:
+            // the same action is appropriate when an operation was canceled
             catch
+#pragma warning restore PS0019 // When catching System.Exception, cancellation needs to be properly accounted for
             {
                 channel.Dispose();
                 throw;
