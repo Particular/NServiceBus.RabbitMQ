@@ -49,7 +49,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
 
             int index = type.Name.IndexOf('`');
-            string typeName = index == -1 ? type.Name : type.Name.Substring(0, index);
+            string typeName = index == -1 ? type.Name : type.Name.Remove(index);
             return $"{type.Namespace}:{typeName}--{string.Join("::", type.GetGenericArguments().Select(DefaultExchangeNameConvention))}--";
         }
 
