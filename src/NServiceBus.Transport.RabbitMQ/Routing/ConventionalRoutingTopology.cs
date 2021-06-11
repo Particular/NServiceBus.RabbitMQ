@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Linq;
     using global::RabbitMQ.Client;
     using Unicast.Messages;
 
@@ -40,7 +41,17 @@ namespace NServiceBus.Transport.RabbitMQ
             this.exchangeNameConvention = exchangeNameConvention;
         }
 
-        static string DefaultExchangeNameConvention(Type type) => type.Namespace + ":" + type.Name;
+        static string DefaultExchangeNameConvention(Type type)
+        {
+            if (!type.IsGenericType)
+            {
+                return type.Namespace + ":" + type.Name;
+            }
+
+            int index = type.Name.IndexOf('`');
+            string typeName = index == -1 ? type.Name : type.Name.Substring(0, index);
+            return $"{type.Namespace}:{typeName}--{string.Join("::", type.GetGenericArguments().Select(DefaultExchangeNameConvention))}--";
+        }
 
         /// <summary>
         /// Sets up a subscription for the subscriber to the specified type.
