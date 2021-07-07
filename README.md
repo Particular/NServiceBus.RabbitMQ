@@ -16,14 +16,16 @@ With this setup, the default connection string will work.
 
 ## Setting up a docker cluster
 
-A 3-node RabbitMQ cluster with a HAProxy load balancer in front and by default mirroring all queues accross all 3 nodes can be set up using docker for testing or development purposes by running the following script:
+A 3-node RabbitMQ cluster with a HAProxy load balancer in front and by default mirroring all queues across all 3 nodes can be set up using docker for testing or development purposes by running the following script:
 
 Setup cluster network:
+
 ```cmd
 docker network create --driver bridge rabbitnet
 ```
 
 Setup cluster:
+
 ```cmd
 docker run -d --network rabbitnet --hostname rabbit1 --name rabbit1 -v rabbitmq-data:/var/lib/rabbitmq rabbitmq:3-management
 docker run -d --network rabbitnet --hostname rabbit2 --name rabbit2 -v rabbitmq-data:/var/lib/rabbitmq rabbitmq:3-management
@@ -46,8 +48,8 @@ Note that [mirroring of classic queues](https://www.rabbitmq.com/ha.html) will b
 docker exec rabbit1 rabbitmqctl set_policy ha-all "\." '{"ha-mode":"exactly","ha-params":2,"ha-sync-mode":"automatic"}'
 ```
 
+Create `haproxy.cfg` file for configuring HAProxy:
 
-Create `haproxy.cfg` file for configurating HAProxy:
 ```txt
 global
         log 127.0.0.1   local1
@@ -96,11 +98,12 @@ listen mgmt
 ```
 
 Setup HAProxy container, note correct the path where `haproxy.cfg` is saved.
+
 ```cmd
 docker run -d --network rabbitnet --hostname rabbitha --name rabbitha -p 15672:15672 -p 5672:5672 -v ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:1.7
 ```
 
-Setup quorem queues:
+Setup quorum queues:
 
 [quorum queues](https://www.rabbitmq.com/quorum-queues.html)
 
