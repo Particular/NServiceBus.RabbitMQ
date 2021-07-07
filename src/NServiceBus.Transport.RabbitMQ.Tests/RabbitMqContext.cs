@@ -16,12 +16,7 @@
         {
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-            }
+            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
             var useTls = connectionString.StartsWith("https", StringComparison.InvariantCultureIgnoreCase) || connectionString.StartsWith("amqps", StringComparison.InvariantCultureIgnoreCase);
 
