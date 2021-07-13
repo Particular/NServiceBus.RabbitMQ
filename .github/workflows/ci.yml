@@ -1,0 +1,141 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+      - release-[6-9].*
+  pull_request:
+    branches-ignore:
+      - release-[0-5].*
+  pull_request_target:
+    branches-ignore:
+      - release-[0-5].*
+  workflow_dispatch:
+env:
+  DOTNET_NOLOGO: true
+jobs:
+  build:
+    if:
+      (github.event_name == 'pull_request_target' && github.event.pull_request.user.login == 'dependabot[bot]') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]') ||
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-2019
+            name: Windows
+          - os: ubuntu-20.04
+            name: Linux
+      fail-fast: false
+    steps:
+      - name: Check for secrets
+        env:
+          SECRETS_AVAILABLE: ${{ secrets.SECRETS_AVAILABLE }}
+        shell: pwsh
+        run: exit $(If ($env:SECRETS_AVAILABLE -eq 'true') { 0 } Else { 1 })
+      - name: Checkout
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+      - name: Checkout for Dependabot
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+          fetch-depth: 0
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v1.7.2
+        with:
+          dotnet-version: 5.0.x
+      - name: Setup .NET Core 3.1 runtime
+        uses: actions/setup-dotnet@v1.7.2
+        with:
+          dotnet-version: 3.1.x
+      - name: Build
+        run: dotnet build src --configuration Release
+      - name: Upload packages
+        if: matrix.name == 'Windows'
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: NuGet packages
+          path: nugets/
+          retention-days: 7
+      - name: Azure login
+        uses: azure/login@v1.3.0
+        with:
+          creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
+      - name: Setup RabbitMQ
+        id: setup-rabbitmq
+        shell: pwsh
+        run: |
+          $hostInfo = curl -H Metadata:true "169.254.169.254/metadata/instance?api-version=2017-08-01" | ConvertFrom-Json
+          $region = $hostInfo.compute.location
+          $hostname = "psw-rabbitmq-$(Get-Random)"
+
+          echo "::set-output name=hostname::$hostname"
+          echo "Creating RabbitMQ container $hostname in $region (This can take a while.)"
+
+          $jsonResult = az container create --image rabbitmq:3-management  --name $hostname --location $region --dns-name-label $hostname --resource-group GitHubActions-RG --cpu 4 --memory 16 --ports 5672 15672 --ip-address public
+
+          if(!$jsonResult)
+          {
+            Write-Output "Failed to create RabbitMQ container"
+            exit 1;
+          }
+
+          $details = $jsonResult | ConvertFrom-Json
+
+          if (!$details.ipAddress) {
+            Write-Output "Failed to create Rabbit container $hostname in $region"
+            Write-Output $jsonResult
+            exit 1;
+          }
+
+          $ip=$details.ipAddress.ip
+
+          echo "::add-mask::$ip"
+          echo "Tagging container image"
+
+          $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
+          $ignore = az tag create --resource-id $details.id --tags Package=RabbitMQTransport RunnerOS=${{ runner.os }} $dateTag
+
+          echo "RabbitMQTransport_ConnectionString=host=$ip" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+         
+          $uri = "http://" + $ip + ":15672/api/health/checks/virtual-hosts"
+          $tries = 0
+
+          do
+          {
+            $response = curl $uri -u guest:guest | ConvertFrom-Json
+            $tries++
+
+            if(!$response.status)
+            {
+              Write-Output "No response, retrying..."
+              Start-Sleep -m 1000
+            }
+          } until (($response.status) -or ($tries -ge 3))
+
+          if($response.status -ne "ok")
+          {
+            Write-Output "Failed to connect after 3 attampts";
+            exit 1
+          }
+      - name: Run Windows tests
+        if: matrix.name == 'Windows'
+        # -m:1 parameter prevents test projects from being run in parallel.
+        run: dotnet test src --configuration Release --no-build --logger "GitHubActions;report-warnings=false" -m:1
+      - name: Run Linux tests
+        if: matrix.name == 'Linux'
+        # -m:1 parameter prevents test projects from being run in parallel.
+        run: |
+          dotnet test src --configuration Release --no-build --framework netcoreapp3.1 --logger "GitHubActions;report-warnings=false"
+          dotnet test src --configuration Release --no-build --framework net5.0 --logger "GitHubActions;report-warnings=false"
+      - name: Teardown RabbitMQ
+        if: ${{ always() }}
+        shell: pwsh
+        run: |
+          $ignore = az container delete --resource-group GitHubActions-RG --name ${{ steps.setup-rabbitmq.outputs.hostname }} --yes
