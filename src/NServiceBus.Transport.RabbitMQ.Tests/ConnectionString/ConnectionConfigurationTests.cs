@@ -7,9 +7,7 @@
     [TestFixture]
     public class ConnectionConfigurationTests
     {
-        static readonly string connectionString =
-            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            $"retryDelay=01:02:03;useTls=true;certPath=..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}myp12.p12;certPassPhrase=abc123";
+        static readonly string certPath = $"{TestContext.CurrentContext.TestDirectory}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}myp12.p12";
 
         RabbitMQTransport CreateTransportDefinition(string connectionString)
         {
@@ -19,6 +17,7 @@
         [Test]
         public void Should_correctly_parse_full_connection_string()
         {
+            var connectionString = $"virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;retryDelay=01:02:03;useTls=true;certPath={certPath};certPassPhrase=abc123";
             var connectionConfiguration = CreateTransportDefinition(connectionString);
 
             Assert.AreEqual(connectionConfiguration.Host, "192.168.1.1");
@@ -129,7 +128,7 @@
         [Test]
         public void Should_parse_the_cert_path()
         {
-            var connectionConfiguration = CreateTransportDefinition($"host=localhost;certPath=..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}myp12.p12;certPassphrase=abc123");
+            var connectionConfiguration = CreateTransportDefinition($"host=localhost;certPath={certPath};certPassphrase=abc123");
 
             Assert.AreEqual("O=Particular, S=Some-State, C=PL", connectionConfiguration.ClientCertificate.Issuer);
         }
