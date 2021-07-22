@@ -89,7 +89,7 @@ jobs:
           $details = $jsonResult | ConvertFrom-Json
 
           if (!$details.ipAddress) {
-            Write-Output "Failed to create Rabbit container $hostname in $region"
+            Write-Output "Failed to create RabbitMQ container $hostname in $region"
             Write-Output $jsonResult
             exit 1;
           }
@@ -121,7 +121,7 @@ jobs:
 
           if($response.status -ne "ok")
           {
-            Write-Output "Failed to connect after 3 attampts";
+            Write-Output "Failed to connect after 3 attempts";
             exit 1
           }
       - name: Run Windows tests
