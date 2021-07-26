@@ -53,11 +53,11 @@ class Broker
     }
 
     public HttpWebRequest CreateVirtualHostRequest(string method) =>
-        CreateHttpWebRequest($"http://{this.HostName}:{this.Port}/api/vhosts/{Uri.EscapeDataString(this.VirtualHost)}", method);
+        CreateHttpWebRequest($"http://{HostName}:{Port}/api/vhosts/{Uri.EscapeDataString(VirtualHost)}", method);
 
     public HttpWebRequest CreateUserPermissionRequest(string method)
     {
-        var uriString = $"http://{this.HostName}:{this.Port}/api/permissions/{Uri.EscapeDataString(this.VirtualHost)}/{Uri.EscapeDataString(this.UserName)}";
+        var uriString = $"http://{HostName}:{Port}/api/permissions/{Uri.EscapeDataString(VirtualHost)}/{Uri.EscapeDataString(UserName)}";
 
         var request = CreateHttpWebRequest(uriString, method);
 
@@ -85,7 +85,7 @@ class Broker
     {
         var request = WebRequest.CreateHttp(uriString);
 
-        var encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(this.UserName + ":" + this.Password));
+        var encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(UserName + ":" + Password));
         request.Headers.Add("Authorization", "Basic " + encoded);
         request.ContentType = "application/json";
         request.Method = method;
