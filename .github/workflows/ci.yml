@@ -126,22 +126,10 @@ jobs:
             Write-Output 
             exit 1
           }
-      - name: Run Windows tests
-        if: matrix.name == 'Windows'
-        # -m:1 parameter prevents test projects from being run in parallel.
-        run: |
-          dotnet test src --configuration Release --no-build --framework net461 --logger "GitHubActions;report-warnings=false" -m:1
-          dotnet run --project src/targets
-          dotnet test src --configuration Release --no-build --framework netcoreapp3.1 --logger "GitHubActions;report-warnings=false" -m:1
-          dotnet run --project src/targets
-          dotnet test src --configuration Release --no-build --framework net5.0 --logger "GitHubActions;report-warnings=false" -m:1
-      - name: Run Linux tests
-        if: matrix.name == 'Linux'
-        # -m:1 parameter prevents test projects from being run in parallel.
-        run: |
-          dotnet test src --configuration Release --no-build --framework netcoreapp3.1 --logger "GitHubActions;report-warnings=false" -m:1
-          dotnet run --project src/targets
-          dotnet test src --configuration Release --no-build --framework net5.0 --logger "GitHubActions;report-warnings=false" -m:1
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.0.0
+        with:
+          reset-script: dotnet run --project src/targets
       - name: Teardown RabbitMQ
         if: ${{ always() }}
         shell: pwsh
