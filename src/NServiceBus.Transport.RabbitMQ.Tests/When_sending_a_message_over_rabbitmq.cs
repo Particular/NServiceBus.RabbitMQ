@@ -19,7 +19,7 @@
         {
             var body = Encoding.UTF8.GetBytes("<TestMessage/>");
 
-            return Verify(new OutgoingMessageBuilder().WithBody(body), (IncomingMessage received) => Assert.AreEqual(body, received.Body));
+            return Verify(new OutgoingMessageBuilder().WithBody(body), (IncomingMessage received) => Assert.IsTrue(received.Body.Span.SequenceEqual(body)));
         }
 
         [Test]
