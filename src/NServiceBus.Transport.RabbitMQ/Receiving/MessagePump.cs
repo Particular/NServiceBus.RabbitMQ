@@ -279,7 +279,7 @@
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body.ToArray(), TransportTransaction, numberOfDeliveryAttempts, processingContext);
+                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, processingContext);
 
                     try
                     {
