@@ -50,7 +50,7 @@
 
                 class Starter : FeatureStartupTask
                 {
-                    public Starter(IMessageDispatcher dispatchMessages, ReadOnlySettings settings)
+                    public Starter(IMessageDispatcher dispatchMessages, IReadOnlySettings settings)
                     {
                         this.dispatchMessages = dispatchMessages;
                         this.settings = settings;
@@ -76,7 +76,7 @@
                     protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
                     readonly IMessageDispatcher dispatchMessages;
-                    readonly ReadOnlySettings settings;
+                    readonly IReadOnlySettings settings;
                 }
             }
 

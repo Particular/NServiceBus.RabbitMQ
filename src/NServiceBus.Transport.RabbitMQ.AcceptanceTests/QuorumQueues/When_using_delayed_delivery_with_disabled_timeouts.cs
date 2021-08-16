@@ -12,7 +12,7 @@
         public void Should_not_allow_delayed_retries()
         {
             var exception = Assert.ThrowsAsync<Exception>(async () => await Scenario.Define<ScenarioContext>()
-                .WithEndpoint<EndpointWithQuorumQueue>(b => b
+                .WithEndpoint<QuorumEndpoint>(b => b
                     .CustomConfig(config => config
                         .Recoverability().Delayed(d => d.NumberOfRetries(3))))
                 .Done(c => c.EndpointsStarted)
@@ -27,7 +27,7 @@
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
                 await Scenario.Define<ScenarioContext>()
-                    .WithEndpoint<EndpointWithQuorumQueue>(e => e.When(session =>
+                    .WithEndpoint<QuorumEndpoint>(e => e.When(session =>
                     {
                         var sendOptions = new SendOptions();
                         sendOptions.RouteToThisEndpoint();
@@ -45,7 +45,7 @@
         public async Task Should_not_allow_saga_timeouts()
         {
             var context = await Scenario.Define<SagaTimeoutContext>()
-                .WithEndpoint<EndpointWithQuorumQueue>(e => e.When(session => session.SendLocal(new StartSagaMessage())))
+                .WithEndpoint<QuorumEndpoint>(e => e.When(session => session.SendLocal(new StartSagaMessage())))
                 .Done(c => c.SagaTimeoutException != null)
                 .Run();
 
@@ -58,9 +58,9 @@
             public Exception SagaTimeoutException { get; set; }
         }
 
-        public class EndpointWithQuorumQueue : EndpointConfigurationBuilder
+        public class QuorumEndpoint : EndpointConfigurationBuilder
         {
-            public EndpointWithQuorumQueue()
+            public QuorumEndpoint()
             {
                 var defaultServer = new ClusterEndpoint(QueueMode.Quorum, DelayedDeliverySupport.Disabled);
                 EndpointSetup(

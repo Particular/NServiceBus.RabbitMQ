@@ -69,7 +69,7 @@
             return WithHeader(Headers.CorrelationId, correlationId);
         }
 
-        public OutgoingMessageBuilder WithIntent(MessageIntentEnum intent)
+        public OutgoingMessageBuilder WithIntent(MessageIntent intent)
         {
             return WithHeader(Headers.MessageIntent, intent.ToString());
         }
