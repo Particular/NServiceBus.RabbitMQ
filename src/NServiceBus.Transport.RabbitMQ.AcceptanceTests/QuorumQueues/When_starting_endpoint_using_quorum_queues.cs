@@ -13,7 +13,7 @@
         [Test]
         public async Task Should_create_receiving_queues_as_quorum_queues()
         {
-            string endpointInputQueue = Conventions.EndpointNamingConvention(typeof(EndpointWithQuorumQueue));
+            string endpointInputQueue = Conventions.EndpointNamingConvention(typeof(QuorumEndpoint));
 
             using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
             using (var channel = connection.CreateModel())
@@ -24,7 +24,7 @@
             }
 
             await Scenario.Define<ScenarioContext>()
-                .WithEndpoint<EndpointWithQuorumQueue>()
+                .WithEndpoint<QuorumEndpoint>()
                 .Done(c => c.EndpointsStarted)
                 .Run();
 
@@ -55,9 +55,9 @@
             }
         }
 
-        public class EndpointWithQuorumQueue : EndpointConfigurationBuilder
+        public class QuorumEndpoint : EndpointConfigurationBuilder
         {
-            public EndpointWithQuorumQueue()
+            public QuorumEndpoint()
             {
                 var defaultServer = new ClusterEndpoint(QueueMode.Quorum, DelayedDeliverySupport.Disabled);
                 EndpointSetup(

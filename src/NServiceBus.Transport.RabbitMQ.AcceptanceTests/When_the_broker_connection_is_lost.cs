@@ -50,7 +50,7 @@
 
                 class ConnectionKiller : FeatureStartupTask
                 {
-                    public ConnectionKiller(IMessageDispatcher sender, ReadOnlySettings settings, MyContext context)
+                    public ConnectionKiller(IMessageDispatcher sender, IReadOnlySettings settings, MyContext context)
                     {
                         this.context = context;
                         this.sender = sender;
@@ -87,7 +87,7 @@
 
                     readonly MyContext context;
                     readonly IMessageDispatcher sender;
-                    readonly ReadOnlySettings settings;
+                    readonly IReadOnlySettings settings;
                 }
             }
 

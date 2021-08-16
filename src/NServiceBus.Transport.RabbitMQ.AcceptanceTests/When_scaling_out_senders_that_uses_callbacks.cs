@@ -76,10 +76,10 @@
 
             class MyResponseHandler : IHandleMessages<MyResponse>
             {
-                ReadOnlySettings settings;
+                IReadOnlySettings settings;
                 Context testContext;
 
-                public MyResponseHandler(ReadOnlySettings settings, Context testContext)
+                public MyResponseHandler(IReadOnlySettings settings, Context testContext)
                 {
                     this.settings = settings;
                     this.testContext = testContext;
