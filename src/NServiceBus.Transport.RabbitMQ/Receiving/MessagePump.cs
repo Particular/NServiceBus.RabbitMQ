@@ -259,7 +259,6 @@
             var processed = false;
             var errorHandled = false;
             var numberOfDeliveryAttempts = 0;
-            var messageBody = message.Body.ToArray();
 
             while (!processed && !errorHandled)
             {
@@ -270,8 +269,7 @@
                 try
                 {
 
-                    var messageContext = new MessageContext(messageId, headers, messageBody ?? Array.Empty<byte>(),
-                        TransportTransaction, processingContext);
+                    var messageContext = new MessageContext(messageId, headers, message.Body, TransportTransaction, processingContext);
 
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
@@ -281,9 +279,7 @@
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(ex, headers, messageId,
-                        messageBody ?? Array.Empty<byte>(), TransportTransaction, numberOfDeliveryAttempts,
-                        processingContext);
+                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, processingContext);
 
                     try
                     {
