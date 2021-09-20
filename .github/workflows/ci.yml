@@ -67,6 +67,7 @@ jobs:
         uses: azure/login@v1.3.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
+          enable-AzPSSession: true
       - name: Setup RabbitMQ
         id: setup-rabbitmq
         shell: pwsh
