@@ -67,6 +67,7 @@ jobs:
         uses: azure/login@v1.3.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
+          enable-AzPSSession: true
       - name: Setup RabbitMQ
         id: setup-rabbitmq
         shell: pwsh
@@ -131,6 +132,7 @@ jobs:
           reset-script: dotnet run --project src/targets
       - name: Teardown RabbitMQ
         if: ${{ always() }}
-        shell: pwsh
-        run: |
-          $ignore = az container delete --resource-group GitHubActions-RG --name ${{ steps.setup-rabbitmq.outputs.hostname }} --yes
+        uses: Azure/powershell@v1
+        with:
+          inlineScript: Remove-AzContainerGroup -ResourceGroupName GitHubActions-RG -Name ${{ steps.setup-rabbitmq.outputs.hostname }}
+          azPSVersion: latest
