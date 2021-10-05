@@ -51,6 +51,7 @@ namespace NServiceBus
     }
     public static class RabbitMQTransportSettingsExtensions
     {
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.Func<string> getConnectionString) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, string connectionString) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
         [System.Obsolete("The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for" +

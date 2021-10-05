@@ -42,6 +42,19 @@
         }
 
         /// <summary>
+        /// The connection string to use when connecting to the broker.
+        /// </summary>
+        [PreObsolete(
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "9")]
+        public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transport, Func<string> getConnectionString)
+        {
+            transport.Transport.LegacyApiConnectionString = getConnectionString();
+            return transport;
+        }
+
+        /// <summary>
         /// Allows the user to control how the message ID is determined. Mostly useful when doing native integration with non-NSB endpoints.
         /// </summary>
         /// <param name="transport">The transport settings.</param>
