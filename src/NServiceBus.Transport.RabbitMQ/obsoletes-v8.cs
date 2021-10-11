@@ -1,5 +1,4 @@
 ﻿#pragma warning disable 1591
-#pragma warning disable 618
 
 namespace NServiceBus
 {
@@ -9,9 +8,9 @@ namespace NServiceBus
     public static partial class RabbitMQTransportSettingsExtensions
     {
         [ObsoleteEx(
-    Message = "Using custom topologies is not possible with the legacy API. A custom topology can be provided using by creating a new instance of the RabbitMqTransport class.",
-    TreatAsErrorFromVersion = "7",
-    RemoveInVersion = "8")]
+            Message = "To use a custom topology, create a new instance of the RabbitMQTransport class and pass it into endpointConfiguration.UseTransport(rabbitMqTransportDefinition).",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
         public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(
     this TransportExtensions<RabbitMQTransport> transport,
     Func<bool, IRoutingTopology> topologyFactory)
@@ -20,7 +19,7 @@ namespace NServiceBus
         }
 
         [ObsoleteEx(
-            Message = "Disabling the durable exchanges is not possible in the legacy API. Use the new API and create the topology instance with appropriate arguments. See the upgrade guide for further details.",
+            Message = "In order to disable durable exchanges and queues, create a new instance of the RabbitMQTransport class and set the RoutingTopology property with an implementation that passes in the desired value for the useDurableEntities parameter, then pass the RabbitMQTransport instance to endpointConfiguration.UseTransport(rabbitMqTransportDefinition). See the upgrade guide for further details.",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "8")]
         public static TransportExtensions<RabbitMQTransport> DisableDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transport)
@@ -77,5 +76,4 @@ namespace NServiceBus
         }
     }
 }
-#pragma warning restore 618
 #pragma warning restore 1591

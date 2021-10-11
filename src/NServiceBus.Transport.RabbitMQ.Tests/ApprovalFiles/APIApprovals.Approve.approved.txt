@@ -58,7 +58,7 @@ namespace NServiceBus
             " details on how to use the timeout migration tool. The member currently throws a" +
             " NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static void DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport) { }
-        [System.Obsolete(@"Disabling the durable exchanges is not possible in the legacy API. Use the new API and create the topology instance with appropriate arguments. See the upgrade guide for further details. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
+        [System.Obsolete(@"In order to disable durable exchanges and queues, create a new instance of the RabbitMQTransport class and set the RoutingTopology property with an implementation that passes in the desired value for the useDurableEntities parameter, then pass the RabbitMQTransport instance to endpointConfiguration.UseTransport(rabbitMqTransportDefinition). See the upgrade guide for further details. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableDurableExchangesAndQueues(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableRemoteCertificateValidation(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, ushort prefetchCount) { }
@@ -69,10 +69,10 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetNetworkRecoveryInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.TimeSpan networkRecoveryInterval) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.TimeSpan waitTime) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport) { }
-        [System.Obsolete("Using custom topologies is not possible with the legacy API. A custom topology ca" +
-            "n be provided using by creating a new instance of the RabbitMqTransport class. T" +
-            "he member currently throws a NotImplementedException. Will be removed in version" +
-            " 8.0.0.", true)]
+        [System.Obsolete("To use a custom topology, create a new instance of the RabbitMQTransport class an" +
+            "d pass it into endpointConfiguration.UseTransport(rabbitMqTransportDefinition). " +
+            "The member currently throws a NotImplementedException. Will be removed in versio" +
+            "n 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport) { }
