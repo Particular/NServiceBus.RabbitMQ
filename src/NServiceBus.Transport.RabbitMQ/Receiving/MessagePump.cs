@@ -88,9 +88,15 @@
                 timeToWaitBeforeTriggeringCircuitBreaker,
                 (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
 
-            connection = connectionFactory.CreateConnection($"{settings.ReceiveAddress} MessagePump", consumerDispatchConcurrency: maxConcurrency);
+            ConnectToBroker();
 
-            var channel = connection.CreateModel();
+            return Task.CompletedTask;
+        }
+
+        void ConnectToBroker()
+        {
+            connection = connectionFactory.CreateConnection($"{settings.ReceiveAddress} MessagePump", false, maxConcurrency);
+            connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
 
@@ -100,18 +106,16 @@
                 prefetchCount = maxConcurrency;
             }
 
+            var channel = connection.CreateModel();
+            channel.ModelShutdown += Channel_ModelShutdown;
             channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
 
             consumer = new AsyncEventingBasicConsumer(channel);
-
+            consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
             consumer.Registered += Consumer_Registered;
-            connection.ConnectionShutdown += Connection_ConnectionShutdown;
-
             consumer.Received += Consumer_Received;
 
             channel.BasicConsume(settings.ReceiveAddress, false, consumerTag, consumer);
-
-            return Task.CompletedTask;
         }
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
@@ -174,6 +178,71 @@
             else
             {
                 circuitBreaker.Failure(new Exception(e.ToString()));
+                _ = Task.Run(() => Reconnect());
+            }
+        }
+
+        void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
+        {
+            if (e.Initiator != ShutdownInitiator.Application)
+            {
+                circuitBreaker.Failure(new Exception(e.ToString()));
+                _ = Task.Run(() => Reconnect());
+            }
+        }
+
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        Task Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        {
+            if (consumer.Model.IsOpen && connection.IsOpen)
+            {
+                circuitBreaker.Failure(new Exception("TODO: Consumer cancelled message"));
+                _ = Task.Run(() => Reconnect());
+            }
+
+            return Task.CompletedTask;
+        }
+
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        async Task Reconnect()
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        {
+            var oldConsumer = consumer;
+            var oldChannel = consumer.Model;
+            var oldConnection = connection;
+
+            var retryDelay = TimeSpan.FromSeconds(10); // replace with passed in value
+
+            Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
+
+            while (true)
+            {
+                await Task.Delay(retryDelay, CancellationToken.None).ConfigureAwait(false);
+
+                try
+                {
+                    ConnectToBroker();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Info("Reconnecting to the broker failed.", ex);
+                }
+            }
+
+            Logger.Info("Connection to the broker reestablished successfully.");
+
+            if (oldChannel.IsOpen)
+            {
+                oldChannel.Close();
+                oldChannel.Dispose();
+            }
+
+            if (oldConnection.IsOpen)
+            {
+                oldConnection.Close();
+                oldConnection.Dispose();
             }
         }
 
