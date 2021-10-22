@@ -199,7 +199,7 @@
         {
             if (consumer.Model.IsOpen && connection.IsOpen)
             {
-                circuitBreaker.Failure(new Exception("TODO: Consumer cancelled message"));
+                circuitBreaker.Failure(new Exception("Consumer canceled by broker"));
                 _ = Task.Run(() => Reconnect());
             }
 
