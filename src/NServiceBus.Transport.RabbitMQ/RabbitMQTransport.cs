@@ -255,7 +255,7 @@
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation);
+                PrefetchCountCalculation, NetworkRecoveryInterval);
 
             return Task.FromResult<TransportInfrastructure>(infra);
         }

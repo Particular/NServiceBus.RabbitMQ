@@ -24,6 +24,7 @@
         readonly PrefetchCountCalculation prefetchCountCalculation;
         readonly ReceiveSettings settings;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
+        readonly TimeSpan retryDelay;
 
         bool disposed;
         OnMessage onMessage;
@@ -42,7 +43,7 @@
         public MessagePump(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, MessageConverter messageConverter, string consumerTag,
             ChannelProvider channelProvider, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation, ReceiveSettings settings,
-            Action<string, Exception, CancellationToken> criticalErrorAction)
+            Action<string, Exception, CancellationToken> criticalErrorAction, TimeSpan retryDelay)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -52,6 +53,7 @@
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.settings = settings;
             this.criticalErrorAction = criticalErrorAction;
+            this.retryDelay = retryDelay;
 
             if (settings.UsePublishSubscribe)
             {
@@ -208,11 +210,9 @@
         async Task Reconnect()
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
-            var oldConsumer = consumer;
+            //var oldConsumer = consumer;
             var oldChannel = consumer.Model;
             var oldConnection = connection;
-
-            var retryDelay = TimeSpan.FromSeconds(10); // replace with passed in value
 
             Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
 
