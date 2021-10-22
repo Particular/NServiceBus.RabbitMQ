@@ -210,39 +210,53 @@
         async Task Reconnect()
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
-            //var oldConsumer = consumer;
-            var oldChannel = consumer.Model;
-            var oldConnection = connection;
-
-            Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
-
-            while (true)
+            try
             {
-                await Task.Delay(retryDelay, CancellationToken.None).ConfigureAwait(false);
+                var oldChannel = consumer.Model;
+                var oldConnection = connection;
 
-                try
+                Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
+
+                while (true)
                 {
-                    ConnectToBroker();
-                    break;
+                    try
+                    {
+                        await Task.Delay(retryDelay, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                    }
+#pragma warning disable PS0020 // When catching OperationCanceledException, cancellation needs to be properly accounted for
+                    catch (OperationCanceledException) { return; }
+#pragma warning restore PS0020 // When catching OperationCanceledException, cancellation needs to be properly accounted for
+
+                    try
+                    {
+                        ConnectToBroker();
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Info("Reconnecting to the broker failed.", ex);
+                    }
                 }
-                catch (Exception ex)
+
+                Logger.Info("Connection to the broker reestablished successfully.");
+
+                if (oldChannel.IsOpen)
                 {
-                    Logger.Info("Reconnecting to the broker failed.", ex);
+                    oldChannel.Close();
+                    oldChannel.Dispose();
+                }
+
+                if (oldConnection.IsOpen)
+                {
+                    oldConnection.Close();
+                    oldConnection.Dispose();
                 }
             }
-
-            Logger.Info("Connection to the broker reestablished successfully.");
-
-            if (oldChannel.IsOpen)
+#pragma warning disable PS0019 // When catching System.Exception, cancellation needs to be properly accounted for
+            catch (Exception ex)
+#pragma warning restore PS0019 // When catching System.Exception, cancellation needs to be properly accounted for
             {
-                oldChannel.Close();
-                oldChannel.Dispose();
-            }
-
-            if (oldConnection.IsOpen)
-            {
-                oldConnection.Close();
-                oldConnection.Dispose();
+                Logger.WarnFormat("Unexpected error while reconnecting: '{0}'", ex.Message);
             }
         }
 
