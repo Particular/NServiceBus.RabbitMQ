@@ -219,13 +219,7 @@
 
                 while (true)
                 {
-                    try
-                    {
-                        await Task.Delay(retryDelay, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
-                    }
-#pragma warning disable PS0020 // When catching OperationCanceledException, cancellation needs to be properly accounted for
-                    catch (OperationCanceledException) { return; }
-#pragma warning restore PS0020 // When catching OperationCanceledException, cancellation needs to be properly accounted for
+                    await Task.Delay(retryDelay, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
 
                     try
                     {
@@ -252,9 +246,11 @@
                     oldConnection.Dispose();
                 }
             }
-#pragma warning disable PS0019 // When catching System.Exception, cancellation needs to be properly accounted for
+            catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationTokenSource.Token))
+            {
+                Logger.Debug("Reconnection canceled since the transport is being stopped.", ex);
+            }
             catch (Exception ex)
-#pragma warning restore PS0019 // When catching System.Exception, cancellation needs to be properly accounted for
             {
                 Logger.WarnFormat("Unexpected error while reconnecting: '{0}'", ex.Message);
             }
