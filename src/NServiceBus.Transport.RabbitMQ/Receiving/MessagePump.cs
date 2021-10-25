@@ -35,7 +35,6 @@
         CancellationTokenSource messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection connection;
-        AsyncEventingBasicConsumer consumer;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -112,7 +111,7 @@
             channel.ModelShutdown += Channel_ModelShutdown;
             channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
 
-            consumer = new AsyncEventingBasicConsumer(channel);
+            var consumer = new AsyncEventingBasicConsumer(channel);
             consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
@@ -122,8 +121,6 @@
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
-            consumer.Received -= Consumer_Received;
-
             messagePumpCancellationTokenSource?.Cancel();
 
             using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
@@ -197,6 +194,8 @@
         Task Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
+            var consumer = (AsyncEventingBasicConsumer)sender;
+
             if (consumer.Model.IsOpen && connection.IsOpen)
             {
                 circuitBreaker.Failure(new Exception("Consumer canceled by broker"));
@@ -212,7 +211,6 @@
         {
             try
             {
-                var oldChannel = consumer.Model;
                 var oldConnection = connection;
 
                 Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
@@ -233,12 +231,6 @@
                 }
 
                 Logger.Info("Connection to the broker reestablished successfully.");
-
-                if (oldChannel.IsOpen)
-                {
-                    oldChannel.Close();
-                    oldChannel.Dispose();
-                }
 
                 if (oldConnection.IsOpen)
                 {
@@ -265,10 +257,12 @@
                 return;
             }
 
-            await ProcessAndSwallowExceptions(eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+            var consumer = (AsyncEventingBasicConsumer)sender;
+
+            await ProcessAndSwallowExceptions(consumer, eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
         }
 
-        async Task ProcessAndSwallowExceptions(BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
+        async Task ProcessAndSwallowExceptions(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
         {
             Interlocked.Increment(ref numberOfMessagesBeingProcessed);
 
@@ -276,7 +270,7 @@
             {
                 try
                 {
-                    await Process(message, messageProcessingCancellationToken).ConfigureAwait(false);
+                    await Process(consumer, message, messageProcessingCancellationToken).ConfigureAwait(false);
                 }
 #pragma warning disable PS0019 // Do not catch Exception without considering OperationCanceledException - handling is the same for OCE
                 catch (Exception ex)
@@ -301,7 +295,7 @@
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
+        async Task Process(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
         {
             Dictionary<string, string> headers;
 
@@ -314,7 +308,7 @@
                 Logger.Error(
                     $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
-                await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -330,7 +324,7 @@
                 Logger.Error(
                     $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
-                await MovePoisonMessage(message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -395,7 +389,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
+        async Task MovePoisonMessage(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
