@@ -118,11 +118,11 @@ jobs:
               Write-Output "No response, retrying..."
               Start-Sleep -m 5000
             }
-          } until (($response.status) -or ($tries -ge 5))
+          } until (($response.status) -or ($tries -ge 10))
 
           if($response.status -ne "ok")
           {
-            Write-Output "Failed to connect after 5 attempts";
+            Write-Output "Failed to connect after 10 attempts";
 
             exit 1
           }
