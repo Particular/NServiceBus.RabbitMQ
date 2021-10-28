@@ -177,7 +177,7 @@
             {
                 connectionShutdownCompleted?.TrySetResult(true);
             }
-            else
+            else if (circuitBreaker.Disarmed)
             {
                 circuitBreaker.Failure(new Exception(e.ToString()));
                 _ = Task.Run(() => Reconnect());
@@ -196,22 +196,28 @@
                 return;
             }
 
-            Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
-            circuitBreaker.Failure(new Exception(e.ToString()));
-            _ = Task.Run(() => Reconnect());
+            if (circuitBreaker.Disarmed)
+            {
+                Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
+                circuitBreaker.Failure(new Exception(e.ToString()));
+                _ = Task.Run(() => Reconnect());
+            }
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         Task Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
-            var consumer = (AsyncEventingBasicConsumer)sender;
-
-            if (consumer.Model.IsOpen && connection.IsOpen)
+            if (circuitBreaker.Disarmed)
             {
-                Logger.WarnFormat("'{0}' consumer canceled by broker: {1}", name, e);
-                circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                _ = Task.Run(() => Reconnect());
+                var consumer = (AsyncEventingBasicConsumer)sender;
+
+                if (consumer.Model.IsOpen && connection.IsOpen)
+                {
+                    Logger.WarnFormat("'{0}' consumer canceled by broker: {1}", name, e);
+                    circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
+                    _ = Task.Run(() => Reconnect());
+                }
             }
 
             return Task.CompletedTask;

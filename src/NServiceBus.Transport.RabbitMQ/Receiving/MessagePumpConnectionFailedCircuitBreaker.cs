@@ -15,6 +15,8 @@ namespace NServiceBus.Transport.RabbitMQ
             timer = new Timer(CircuitBreakerTriggered);
         }
 
+        public bool Disarmed => Interlocked.Read(ref failureCount) == 0;
+
         public void Success()
         {
             var oldValue = Interlocked.Exchange(ref failureCount, 0);
