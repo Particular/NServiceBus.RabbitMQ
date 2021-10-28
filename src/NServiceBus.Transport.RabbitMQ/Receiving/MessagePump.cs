@@ -25,6 +25,7 @@
         readonly ReceiveSettings settings;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
+        readonly string name;
 
         bool disposed;
         OnMessage onMessage;
@@ -60,6 +61,8 @@
             }
 
             queuePurger = new QueuePurger(connectionFactory);
+
+            name = $"{settings.ReceiveAddress} MessagePump";
         }
 
         public ISubscriptionManager Subscriptions { get; }
@@ -85,7 +88,7 @@
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(
-                $"'{settings.ReceiveAddress} MessagePump'",
+                name,
                 timeToWaitBeforeTriggeringCircuitBreaker,
                 (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
 
@@ -96,7 +99,7 @@
 
         void ConnectToBroker()
         {
-            connection = connectionFactory.CreateConnection($"{settings.ReceiveAddress} MessagePump", false, maxConcurrency);
+            connection = connectionFactory.CreateConnection(name, false, maxConcurrency);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
@@ -176,6 +179,7 @@
             }
             else
             {
+                Logger.WarnFormat("'{0}' connection shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
                 _ = Task.Run(() => Reconnect());
             }
@@ -185,6 +189,7 @@
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
+                Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
                 _ = Task.Run(() => Reconnect());
             }
@@ -198,7 +203,8 @@
 
             if (consumer.Model.IsOpen && connection.IsOpen)
             {
-                circuitBreaker.Failure(new Exception("Consumer canceled by broker"));
+                Logger.WarnFormat("'{0}' consumer canceled by broker: {1}", name, e);
+                circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
                 _ = Task.Run(() => Reconnect());
             }
 
@@ -213,7 +219,7 @@
             {
                 var oldConnection = connection;
 
-                Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
+                Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
                 while (true)
                 {
@@ -226,11 +232,11 @@
                     }
                     catch (Exception ex)
                     {
-                        Logger.Info("Reconnecting to the broker failed.", ex);
+                        Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
                 }
 
-                Logger.Info("Connection to the broker reestablished successfully.");
+                Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
 
                 if (oldConnection.IsOpen)
                 {
@@ -240,11 +246,11 @@
             }
             catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationTokenSource.Token))
             {
-                Logger.Debug("Reconnection canceled since the transport is being stopped.", ex);
+                Logger.DebugFormat("'{0}': Reconnection canceled since the transport is being stopped: {1}", name, ex);
             }
             catch (Exception ex)
             {
-                Logger.WarnFormat("Unexpected error while reconnecting: '{0}'", ex.Message);
+                Logger.WarnFormat("'{0}': Unexpected error while reconnecting: '{1}'", name, ex);
             }
         }
 
