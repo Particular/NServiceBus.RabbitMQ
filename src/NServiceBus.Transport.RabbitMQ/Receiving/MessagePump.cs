@@ -187,12 +187,19 @@
 
         void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
-            if (e.Initiator != ShutdownInitiator.Application)
+            if (e.Initiator == ShutdownInitiator.Application)
             {
-                Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
-                circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                return;
             }
+
+            if (e.Initiator == ShutdownInitiator.Peer && e.ReplyCode == 404)
+            {
+                return;
+            }
+
+            Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
+            circuitBreaker.Failure(new Exception(e.ToString()));
+            _ = Task.Run(() => Reconnect());
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
