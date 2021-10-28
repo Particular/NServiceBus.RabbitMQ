@@ -179,7 +179,6 @@
             }
             else
             {
-                Logger.WarnFormat("'{0}' connection shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
                 _ = Task.Run(() => Reconnect());
             }
