@@ -225,10 +225,10 @@
             {
                 var oldConnection = connection;
 
-                Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
-
                 while (true)
                 {
+                    Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
+
                     await Task.Delay(retryDelay, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
 
                     try
