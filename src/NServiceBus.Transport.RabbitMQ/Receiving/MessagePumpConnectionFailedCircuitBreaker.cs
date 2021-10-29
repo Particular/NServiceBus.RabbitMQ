@@ -15,6 +15,8 @@ namespace NServiceBus.Transport.RabbitMQ
             timer = new Timer(CircuitBreakerTriggered);
         }
 
+        public bool Disarmed => Interlocked.Read(ref failureCount) == 0;
+
         public void Success()
         {
             var oldValue = Interlocked.Exchange(ref failureCount, 0);
@@ -25,7 +27,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
 
             timer.Change(Timeout.Infinite, Timeout.Infinite);
-            Logger.InfoFormat("The circuit breaker for {0} is now disarmed", name);
+            Logger.InfoFormat("The circuit breaker for '{0}' is now disarmed", name);
         }
 
         public void Failure(Exception exception)
@@ -36,7 +38,7 @@ namespace NServiceBus.Transport.RabbitMQ
             if (newValue == 1)
             {
                 timer.Change(timeToWaitBeforeTriggering, NoPeriodicTriggering);
-                Logger.WarnFormat("The circuit breaker for {0} is now in the armed state", name);
+                Logger.WarnFormat("The circuit breaker for '{0}' is now in the armed state", name);
             }
         }
 
@@ -49,8 +51,8 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (Interlocked.Read(ref failureCount) > 0)
             {
-                Logger.WarnFormat("The circuit breaker for {0} will now be triggered", name);
-                criticalErrorAction($"{name} connection to the broker has failed.", lastException);
+                Logger.WarnFormat("The circuit breaker for '{0}' will now be triggered", name);
+                criticalErrorAction($"'{name}' connection to the broker has failed.", lastException);
             }
         }
 

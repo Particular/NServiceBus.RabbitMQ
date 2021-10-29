@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
-    using System.Linq;
     using System;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -9,15 +9,17 @@
     {
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
-        IRoutingTopology routingTopology;
+        readonly IRoutingTopology routingTopology;
+        readonly TimeSpan networkRecoveryInterval;
 
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings, ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
-            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
+            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation, TimeSpan networkRecoveryInterval)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
+            this.networkRecoveryInterval = networkRecoveryInterval;
 
             Dispatcher = new MessageDispatcher(channelProvider);
             Receivers = receiverSettings.Select(x => CreateMessagePump(hostSettings, x, messageConverter, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation))
@@ -28,7 +30,7 @@
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
-            return new MessagePump(connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, settings, hostSettings.CriticalErrorAction);
+            return new MessagePump(connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, settings, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
         public override Task Shutdown(CancellationToken cancellationToken = default)
