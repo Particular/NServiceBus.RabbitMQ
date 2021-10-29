@@ -223,13 +223,13 @@
             {
                 if (circuitBreaker.Disarmed)
                 {
-                    Logger.WarnFormat("'{0}' consumer canceled by broker: {1}", name, e);
+                    Logger.WarnFormat("'{0}' consumer canceled by broker", name);
                     circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
                     _ = Task.Run(() => Reconnect());
                 }
                 else
                 {
-                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress: {1}", name, e);
+                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
                 }
             }
 
