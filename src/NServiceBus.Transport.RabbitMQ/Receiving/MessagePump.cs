@@ -179,8 +179,13 @@
             }
             else if (circuitBreaker.Disarmed)
             {
+                //log entry handled by event handler registered in ConnectionFactory
                 circuitBreaker.Failure(new Exception(e.ToString()));
                 _ = Task.Run(() => Reconnect());
+            }
+            else
+            {
+                Logger.WarnFormat("'{0}' connection shutdown while reconnect already in progress: {1}", name, e);
             }
         }
 
@@ -202,21 +207,29 @@
                 circuitBreaker.Failure(new Exception(e.ToString()));
                 _ = Task.Run(() => Reconnect());
             }
+            else
+            {
+                Logger.WarnFormat("'{0}' channel shutdown while reconnect already in progress: {1}", name, e);
+            }
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         Task Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
-            if (circuitBreaker.Disarmed)
-            {
-                var consumer = (AsyncEventingBasicConsumer)sender;
+            var consumer = (AsyncEventingBasicConsumer)sender;
 
-                if (consumer.Model.IsOpen && connection.IsOpen)
+            if (consumer.Model.IsOpen && connection.IsOpen)
+            {
+                if (circuitBreaker.Disarmed)
                 {
                     Logger.WarnFormat("'{0}' consumer canceled by broker: {1}", name, e);
                     circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
                     _ = Task.Run(() => Reconnect());
+                }
+                else
+                {
+                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress: {1}", name, e);
                 }
             }
 
