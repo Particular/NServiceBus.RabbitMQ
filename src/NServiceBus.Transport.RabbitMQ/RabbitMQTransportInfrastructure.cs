@@ -16,9 +16,10 @@
         const string coreHostInformationDisplayNameKey = "NServiceBus.HostInformation.DisplayName";
 
         readonly SettingsHolder settings;
+        readonly TimeSpan networkRetryDelay;
         readonly ConnectionFactory connectionFactory;
+        readonly IRoutingTopology routingTopology;
         readonly ChannelProvider channelProvider;
-        IRoutingTopology routingTopology;
 
         public RabbitMQTransportInfrastructure(SettingsHolder settings, string connectionString)
         {
@@ -32,12 +33,13 @@
             settings.TryGet(SettingsKeys.UseExternalAuthMechanism, out bool useExternalAuthMechanism);
             settings.TryGet(SettingsKeys.HeartbeatInterval, out TimeSpan? heartbeatInterval);
             settings.TryGet(SettingsKeys.NetworkRecoveryInterval, out TimeSpan? networkRecoveryInterval);
+            networkRetryDelay = networkRecoveryInterval ?? connectionConfiguration.RetryDelay;
 
             connectionFactory = new ConnectionFactory(endpointName, connectionConfiguration, clientCertificateCollection, disableRemoteCertificateValidation, useExternalAuthMechanism, heartbeatInterval, networkRecoveryInterval);
 
             routingTopology = CreateRoutingTopology();
 
-            channelProvider = new ChannelProvider(connectionFactory, connectionConfiguration.RetryDelay, routingTopology);
+            channelProvider = new ChannelProvider(connectionFactory, networkRetryDelay, routingTopology);
         }
 
         public override IEnumerable<Type> DeliveryConstraints => new List<Type> { typeof(DiscardIfNotReceivedBefore), typeof(NonDurableDelivery), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith) };
@@ -149,7 +151,7 @@
                 prefetchCount = 0;
             }
 
-            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount);
+            return new MessagePump(connectionFactory, messageConverter, consumerTag, channelProvider, queuePurger, timeToWaitBeforeTriggeringCircuitBreaker, prefetchMultiplier, prefetchCount, networkRetryDelay);
         }
     }
 }

@@ -35,7 +35,7 @@
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, config.RetryDelay);
 
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
@@ -90,6 +90,6 @@
         BlockingCollection<IncomingMessage> receivedMessages;
         ConventionalRoutingTopology routingTopology;
 
-        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(1);
+        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(5);
     }
 }
