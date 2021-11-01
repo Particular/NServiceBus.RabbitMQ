@@ -28,17 +28,19 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
-                _ = Task.Run(Reconnect);
+                var connection = (IConnection)sender;
+
+                _ = Task.Run(() => Reconnect(connection.ClientProvidedName));
             }
         }
 
-        async Task Reconnect()
+        async Task Reconnect(string connectionName)
         {
             var reconnected = false;
 
             while (!reconnected)
             {
-                Logger.InfoFormat("Attempting to reconnect in {0} seconds.", retryDelay.TotalSeconds);
+                Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", connectionName, retryDelay.TotalSeconds);
 
                 await Task.Delay(retryDelay).ConfigureAwait(false);
 
@@ -47,11 +49,11 @@ namespace NServiceBus.Transport.RabbitMQ
                     CreateConnection();
                     reconnected = true;
 
-                    Logger.Info("Connection to the broker reestablished successfully.");
+                    Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", connectionName);
                 }
                 catch (Exception e)
                 {
-                    Logger.Info("Reconnecting to the broker failed.", e);
+                    Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", connectionName, e);
                 }
             }
         }

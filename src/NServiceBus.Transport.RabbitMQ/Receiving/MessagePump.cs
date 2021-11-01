@@ -23,12 +23,14 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly int prefetchMultiplier;
         readonly ushort overriddenPrefetchCount;
+        readonly TimeSpan retryDelay;
 
         // Init
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
         PushSettings settings;
         CriticalError criticalError;
+        string name;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         TaskScheduler exclusiveScheduler;
 
@@ -37,12 +39,11 @@
         SemaphoreSlim semaphore;
         CancellationTokenSource messageProcessing;
         IConnection connection;
-        EventingBasicConsumer consumer;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount)
+        public MessagePump(ConnectionFactory connectionFactory, MessageConverter messageConverter, string consumerTag, ChannelProvider channelProvider, QueuePurger queuePurger, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, int prefetchMultiplier, ushort overriddenPrefetchCount, TimeSpan retryDelay)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -52,6 +53,7 @@
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchMultiplier = prefetchMultiplier;
             this.overriddenPrefetchCount = overriddenPrefetchCount;
+            this.retryDelay = retryDelay;
         }
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
@@ -61,7 +63,9 @@
             this.settings = settings;
             this.criticalError = criticalError;
 
-            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker($"'{settings.InputQueue} MessagePump'", timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
+            name = $"{settings.InputQueue} MessagePump";
+
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(name, timeToWaitBeforeTriggeringCircuitBreaker, criticalError);
 
             exclusiveScheduler = new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
 
@@ -79,9 +83,13 @@
             semaphore = new SemaphoreSlim(limitations.MaxConcurrency, limitations.MaxConcurrency);
             messageProcessing = new CancellationTokenSource();
 
-            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
+            ConnectToBroker();
+        }
 
-            var channel = connection.CreateModel();
+        void ConnectToBroker()
+        {
+            connection = connectionFactory.CreateConnection($"{settings.InputQueue} MessagePump");
+            connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             long prefetchCount;
 
@@ -100,13 +108,13 @@
                 prefetchCount = (long)maxConcurrency * prefetchMultiplier;
             }
 
+            var channel = connection.CreateModel();
+            channel.ModelShutdown += Channel_ModelShutdown;
             channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
 
-            consumer = new EventingBasicConsumer(channel);
-
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
             consumer.Registered += Consumer_Registered;
-            connection.ConnectionShutdown += Connection_ConnectionShutdown;
-
             consumer.Received += Consumer_Received;
 
             channel.BasicConsume(settings.InputQueue, false, consumerTag, consumer);
@@ -114,7 +122,6 @@
 
         public async Task Stop()
         {
-            consumer.Received -= Consumer_Received;
             messageProcessing.Cancel();
 
             while (semaphore.CurrentCount != maxConcurrency)
@@ -147,14 +154,110 @@
             {
                 connectionShutdownCompleted?.TrySetResult(true);
             }
+            else if (circuitBreaker.Disarmed)
+            {
+                //log entry handled by event handler registered in ConnectionFactory
+                circuitBreaker.Failure(new Exception(e.ToString()));
+                _ = Task.Run(() => Reconnect());
+            }
             else
             {
+                Logger.WarnFormat("'{0}' connection shutdown while reconnect already in progress: {1}", name, e);
+            }
+        }
+
+        void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
+        {
+            if (e.Initiator == ShutdownInitiator.Application)
+            {
+                return;
+            }
+
+            if (e.Initiator == ShutdownInitiator.Peer && e.ReplyCode == 404)
+            {
+                return;
+            }
+
+            if (circuitBreaker.Disarmed)
+            {
+                Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
+                _ = Task.Run(() => Reconnect());
+            }
+            else
+            {
+                Logger.WarnFormat("'{0}' channel shutdown while reconnect already in progress: {1}", name, e);
+            }
+        }
+
+        void Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
+        {
+            var consumer = (EventingBasicConsumer)sender;
+
+            if (consumer.Model.IsOpen && connection.IsOpen)
+            {
+                if (circuitBreaker.Disarmed)
+                {
+                    Logger.WarnFormat("'{0}' consumer canceled by broker", name);
+                    circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
+                    _ = Task.Run(() => Reconnect());
+                }
+                else
+                {
+                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
+                }
+            }
+        }
+
+        async Task Reconnect()
+        {
+            try
+            {
+                var oldConnection = connection;
+
+                while (true)
+                {
+                    Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
+
+                    await Task.Delay(retryDelay, messageProcessing.Token).ConfigureAwait(false);
+
+                    try
+                    {
+                        ConnectToBroker();
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
+                    }
+                }
+                Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
+
+                if (oldConnection.IsOpen)
+                {
+                    oldConnection.Close();
+                    oldConnection.Dispose();
+                }
+            }
+            catch (OperationCanceledException ex) when (messageProcessing.Token.IsCancellationRequested)
+            {
+                Logger.DebugFormat("'{0}': Reconnection canceled since the transport is being stopped: {1}", name, ex);
+            }
+            catch (Exception ex)
+            {
+                Logger.WarnFormat("'{0}': Unexpected error while reconnecting: '{1}'", name, ex);
             }
         }
 
         async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
         {
+            if (messageProcessing.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var consumer = (EventingBasicConsumer)sender;
+
             var eventRaisingThreadId = Thread.CurrentThread.ManagedThreadId;
 
             var messageBody = eventArgs.Body.ToArray();
@@ -204,7 +307,7 @@
                     await Task.Yield();
                 }
 
-                await Process(eventArgsCopy, messageBody).ConfigureAwait(false);
+                await Process(consumer, eventArgsCopy, messageBody).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -217,7 +320,7 @@
             }
         }
 
-        async Task Process(BasicDeliverEventArgs message, byte[] messageBody)
+        async Task Process(EventingBasicConsumer consumer, BasicDeliverEventArgs message, byte[] messageBody)
         {
             Dictionary<string, string> headers;
 
@@ -228,7 +331,7 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -242,7 +345,7 @@
             catch (Exception ex)
             {
                 Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
-                await MovePoisonMessage(message, settings.ErrorQueue).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, settings.ErrorQueue).ConfigureAwait(false);
 
                 return;
             }
@@ -311,7 +414,7 @@
             }
         }
 
-        async Task MovePoisonMessage(BasicDeliverEventArgs message, string queue)
+        async Task MovePoisonMessage(EventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue)
         {
             try
             {
