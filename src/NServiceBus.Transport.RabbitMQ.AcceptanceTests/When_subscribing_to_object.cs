@@ -12,9 +12,14 @@ namespace NServiceBus.AcceptanceTests
         {
             var ctx = await Scenario.Define<SubscribeToObjectContext>()
                 .WithEndpoint<SubscriberEndpoint>(b
-                    => b.When(async session =>
+                    => b.When(async (session, c) =>
                         {
                             await session.Subscribe<object>();
+
+                            if (c.HasNativePubSubSupport)
+                            {
+                                c.EndpointSubscribed = true;
+                            }
                         })
                 )
                 .WithEndpoint<PublisherEndpoint>(b => b.When(c => c.EndpointSubscribed, session =>
