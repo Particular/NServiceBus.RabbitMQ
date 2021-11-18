@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 
 class Broker
@@ -8,16 +9,24 @@ class Broker
     {
         try
         {
-            GetBroker().CreateVirtualHostRequest("DELETE").GetResponse().Dispose();
+            Send(GetBroker().CreateVirtualHostRequest(HttpMethod.Delete));
         }
-        catch (WebException ex) when ((ex?.Response as HttpWebResponse)?.StatusCode == HttpStatusCode.NotFound)
+        catch (HttpRequestException ex) when (ex?.StatusCode == HttpStatusCode.NotFound)
         {
         }
     }
 
-    public static void CreateVirtualHost() => GetBroker().CreateVirtualHostRequest("PUT").GetResponse().Dispose();
+    public static void CreateVirtualHost() => Send(GetBroker().CreateVirtualHostRequest(HttpMethod.Put));
 
-    public static void AddUserToVirtualHost() => GetBroker().CreateUserPermissionRequest("PUT").GetResponse().Dispose();
+    public static void AddUserToVirtualHost() => Send(GetBroker().CreateUserPermissionRequest(HttpMethod.Put));
+
+    static void Send(HttpRequestMessage request)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            httpClient.Send(request);
+        }
+    }
 
     public static Broker GetBroker()
     {
@@ -41,10 +50,10 @@ class Broker
         };
     }
 
-    public HttpWebRequest CreateVirtualHostRequest(string method) =>
+    public HttpRequestMessage CreateVirtualHostRequest(HttpMethod method) =>
         CreateHttpWebRequest($"http{(Port == 443 ? "s" : string.Empty)}://{HostName}:{Port}/api/vhosts/{Uri.EscapeDataString(VirtualHost)}", method);
 
-    public HttpWebRequest CreateUserPermissionRequest(string method)
+    public HttpRequestMessage CreateUserPermissionRequest(HttpMethod method)
     {
         var uriString = $"http{(Port == 443 ? "s" : string.Empty)}://{HostName}:{Port}/api/permissions/{Uri.EscapeDataString(VirtualHost)}/{Uri.EscapeDataString(UserName)}";
 
@@ -60,24 +69,18 @@ class Broker
 
         var bodyBytes = new ASCIIEncoding().GetBytes(bodyString);
 
-        request.ContentLength = bodyBytes.Length;
-
-        using (var stream = request.GetRequestStream())
-        {
-            stream.Write(bodyBytes, 0, bodyBytes.Length);
-        }
+        request.Content = new ByteArrayContent(bodyBytes);
 
         return request;
     }
 
-    public HttpWebRequest CreateHttpWebRequest(string uriString, string method)
+    public HttpRequestMessage CreateHttpWebRequest(string uriString, HttpMethod method)
     {
-        var request = WebRequest.CreateHttp(uriString);
+        var request = new HttpRequestMessage(method, uriString);
 
         var encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(UserName + ":" + Password));
         request.Headers.Add("Authorization", "Basic " + encoded);
-        request.ContentType = "application/json";
-        request.Method = method;
+        request.Headers.Add("Content-Type", "application/json");
 
         return request;
     }
