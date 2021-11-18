@@ -70,6 +70,7 @@ class Broker
         var bodyBytes = new ASCIIEncoding().GetBytes(bodyString);
 
         request.Content = new ByteArrayContent(bodyBytes);
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
 
         return request;
     }
@@ -80,7 +81,6 @@ class Broker
 
         var encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(UserName + ":" + Password));
         request.Headers.Add("Authorization", "Basic " + encoded);
-        request.Headers.Add("Content-Type", "application/json");
 
         return request;
     }
