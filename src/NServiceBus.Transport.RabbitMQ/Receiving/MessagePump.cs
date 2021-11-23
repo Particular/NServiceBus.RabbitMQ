@@ -14,7 +14,8 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction TransportTransaction = new TransportTransaction();
-
+        readonly bool purgeOnStartup;
+        readonly string errorQueue;
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
@@ -22,7 +23,6 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
-        readonly ReceiveSettings settings;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
@@ -40,10 +40,22 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, MessageConverter messageConverter, string consumerTag,
-            ChannelProvider channelProvider, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
-            PrefetchCountCalculation prefetchCountCalculation, ReceiveSettings settings,
-            Action<string, Exception, CancellationToken> criticalErrorAction, TimeSpan retryDelay)
+        public MessagePump(
+            string id,
+            string receiveAddress,
+            bool purgeOnStartup,
+            bool usePublishSubscribe,
+            string errorQueue,
+            ConnectionFactory connectionFactory,
+            IRoutingTopology routingTopology,
+            MessageConverter messageConverter,
+            string consumerTag,
+            ChannelProvider channelProvider,
+            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
+            PrefetchCountCalculation prefetchCountCalculation,
+            Action<string, Exception,
+            CancellationToken> criticalErrorAction,
+            TimeSpan retryDelay)
         {
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
@@ -51,22 +63,28 @@
             this.channelProvider = channelProvider;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
-            this.settings = settings;
             this.criticalErrorAction = criticalErrorAction;
             this.retryDelay = retryDelay;
+            this.purgeOnStartup = purgeOnStartup;
+            this.errorQueue = errorQueue;
 
-            if (settings.UsePublishSubscribe)
+            Id = id;
+            ReceiveAddress = receiveAddress;
+
+            if (usePublishSubscribe)
             {
-                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, settings.ReceiveAddress);
+                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, receiveAddress);
             }
 
             queuePurger = new QueuePurger(connectionFactory);
 
-            name = $"{settings.ReceiveAddress} MessagePump";
+            name = $"{receiveAddress} MessagePump";
         }
 
         public ISubscriptionManager Subscriptions { get; }
-        public string Id => settings.Id;
+        public string Id { get; }
+
+        public string ReceiveAddress { get; }
 
         public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
@@ -74,9 +92,9 @@
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
 
-            if (settings.PurgeOnStartup)
+            if (purgeOnStartup)
             {
-                queuePurger.Purge(settings.ReceiveAddress);
+                queuePurger.Purge(ReceiveAddress);
             }
 
             return Task.CompletedTask;
@@ -119,7 +137,7 @@
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
 
-            channel.BasicConsume(settings.ReceiveAddress, false, consumerTag, consumer);
+            channel.BasicConsume(ReceiveAddress, false, consumerTag, consumer);
         }
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
@@ -337,9 +355,9 @@
             catch (Exception ex)
             {
                 Logger.Error(
-                    $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
+                    $"Failed to retrieve headers from poison message. Moving message to queue '{errorQueue}'...",
                     ex);
-                await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, errorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -353,9 +371,9 @@
             catch (Exception ex)
             {
                 Logger.Error(
-                    $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
+                    $"Failed to retrieve ID from poison message. Moving message to queue '{errorQueue}'...",
                     ex);
-                await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, errorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -372,8 +390,7 @@
 
                 try
                 {
-
-                    var messageContext = new MessageContext(messageId, headers, message.Body, TransportTransaction, processingContext);
+                    var messageContext = new MessageContext(messageId, headers, message.Body, TransportTransaction, ReceiveAddress, processingContext);
 
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
@@ -383,7 +400,7 @@
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, processingContext);
+                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
                     try
                     {

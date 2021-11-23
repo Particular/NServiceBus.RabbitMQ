@@ -29,7 +29,7 @@
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
                 (_, __, ___) => { }, true), new[]
             {
-                new ReceiveSettings(ReceiverQueue, ReceiverQueue, true, true, "error")
+                new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, "error")
             }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray());
 
             messageDispatcher = infra.Dispatcher;
