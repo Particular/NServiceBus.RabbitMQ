@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using RabbitMQ.Client.Events;
@@ -268,20 +267,7 @@
 #pragma warning disable CS0672 // Member overrides obsolete member
         public override string ToTransportAddress(QueueAddress address)
 #pragma warning restore CS0672 // Member overrides obsolete member
-        {
-            var queue = new StringBuilder(address.BaseAddress);
-            if (address.Discriminator != null)
-            {
-                queue.Append("-" + address.Discriminator);
-            }
-
-            if (address.Qualifier != null)
-            {
-                queue.Append("." + address.Qualifier);
-            }
-
-            return queue.ToString();
-        }
+            => RabbitMQTransportInfrastructure.TranslateAddress(address);
 
         /// <summary>
         ///     Returns a list of all supported transaction modes of this transport.

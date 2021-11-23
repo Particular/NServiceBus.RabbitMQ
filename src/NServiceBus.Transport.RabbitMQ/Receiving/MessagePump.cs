@@ -14,8 +14,7 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction TransportTransaction = new TransportTransaction();
-        readonly bool purgeOnStartup;
-        readonly string errorQueue;
+        readonly ReceiveSettings settings;
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
@@ -41,11 +40,7 @@
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
         public MessagePump(
-            string id,
-            string receiveAddress,
-            bool purgeOnStartup,
-            bool usePublishSubscribe,
-            string errorQueue,
+            ReceiveSettings settings,
             ConnectionFactory connectionFactory,
             IRoutingTopology routingTopology,
             MessageConverter messageConverter,
@@ -57,6 +52,7 @@
             CancellationToken> criticalErrorAction,
             TimeSpan retryDelay)
         {
+            this.settings = settings;
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
@@ -65,24 +61,21 @@
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.criticalErrorAction = criticalErrorAction;
             this.retryDelay = retryDelay;
-            this.purgeOnStartup = purgeOnStartup;
-            this.errorQueue = errorQueue;
 
-            Id = id;
-            ReceiveAddress = receiveAddress;
+            ReceiveAddress = RabbitMQTransportInfrastructure.TranslateAddress(settings.ReceiveAddress);
 
-            if (usePublishSubscribe)
+            if (settings.UsePublishSubscribe)
             {
-                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, receiveAddress);
+                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, ReceiveAddress);
             }
 
             queuePurger = new QueuePurger(connectionFactory);
 
-            name = $"{receiveAddress} MessagePump";
+            name = $"{ReceiveAddress} MessagePump";
         }
 
         public ISubscriptionManager Subscriptions { get; }
-        public string Id { get; }
+        public string Id => settings.Id;
 
         public string ReceiveAddress { get; }
 
@@ -92,7 +85,7 @@
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
 
-            if (purgeOnStartup)
+            if (settings.PurgeOnStartup)
             {
                 queuePurger.Purge(ReceiveAddress);
             }
@@ -355,9 +348,9 @@
             catch (Exception ex)
             {
                 Logger.Error(
-                    $"Failed to retrieve headers from poison message. Moving message to queue '{errorQueue}'...",
+                    $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
-                await MovePoisonMessage(consumer, message, errorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -371,9 +364,9 @@
             catch (Exception ex)
             {
                 Logger.Error(
-                    $"Failed to retrieve ID from poison message. Moving message to queue '{errorQueue}'...",
+                    $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
                     ex);
-                await MovePoisonMessage(consumer, message, errorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
+                await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }

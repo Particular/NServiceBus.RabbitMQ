@@ -33,7 +33,7 @@
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
             var receiveAddress = ToTransportAddress(settings.ReceiveAddress);
-            return new MessagePump(settings.Id, receiveAddress, settings.PurgeOnStartup, settings.UsePublishSubscribe, settings.ErrorQueue, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
         internal void SetupInfrastructure(QueueMode queueMode, string[] sendingQueues, bool allowInputQueueConfigurationMismatch)
@@ -77,7 +77,9 @@
         ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
         ///     address-string.
         /// </summary>
-        public override string ToTransportAddress(QueueAddress address)
+        public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);
+
+        internal static string TranslateAddress(QueueAddress address)
         {
             var queue = new StringBuilder(address.BaseAddress);
             if (address.Discriminator != null)
