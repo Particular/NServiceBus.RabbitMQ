@@ -41,6 +41,10 @@ namespace NServiceBus
         public bool ValidateRemoteCertificate { get; set; }
         public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
+        [System.Obsolete("Inject the ITransportAddressResolver type to access the address translation mecha" +
+            "nism at runtime. See the NServiceBus version 8 upgrade guide for further details" +
+            ". Will be treated as an error from version 8.0.0. Will be removed in version 9.0" +
+            ".0.", false)]
         public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
     public static class RabbitMQTransportOptionsExtensions

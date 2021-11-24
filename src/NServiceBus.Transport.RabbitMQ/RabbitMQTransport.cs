@@ -2,12 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Security.Cryptography.X509Certificates;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
@@ -247,62 +244,30 @@
 
             var converter = new MessageConverter(MessageIdStrategy);
 
-            if (hostSettings.SetupInfrastructure)
-            {
-                string[] receivingAddresses = receivers.Select(x => x.ReceiveAddress).ToArray();
-                SetupInfrastructure(receivingAddresses, sendingAddresses, connectionFactory);
-            }
-
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation, NetworkRecoveryInterval);
 
-            return Task.FromResult<TransportInfrastructure>(infra);
-        }
-
-        void SetupInfrastructure(string[] receivingQueues, string[] sendingQueues, ConnectionFactory connectionFactory)
-        {
-            using (IConnection connection = connectionFactory.CreateAdministrationConnection())
-            using (IModel channel = connection.CreateModel())
+            if (hostSettings.SetupInfrastructure)
             {
-                // Delayed delivery currently not supported with quorum queues
-                if (QueueMode != QueueMode.Quorum)
-                {
-                    DelayInfrastructure.Build(channel);
-                }
-
-                RoutingTopology.Initialize(connection, receivingQueues, sendingQueues, QueueMode != QueueMode.Classic, AllowInputQueueConfigurationMismatch);
-
-                if (QueueMode != QueueMode.Quorum)
-                {
-                    foreach (string receivingAddress in receivingQueues)
-                    {
-                        RoutingTopology.BindToDelayInfrastructure(channel, receivingAddress,
-                            DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
-                    }
-                }
+                infra.SetupInfrastructure(QueueMode, sendingAddresses, AllowInputQueueConfigurationMismatch);
             }
+
+            return Task.FromResult<TransportInfrastructure>(infra);
         }
 
         /// <summary>
         ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
         ///     address-string.
         /// </summary>
+        [ObsoleteEx(
+            Message = "Inject the ITransportAddressResolver type to access the address translation mechanism at runtime. See the NServiceBus version 8 upgrade guide for further details.",
+            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "9")]
+#pragma warning disable CS0672 // Member overrides obsolete member
         public override string ToTransportAddress(QueueAddress address)
-        {
-            var queue = new StringBuilder(address.BaseAddress);
-            if (address.Discriminator != null)
-            {
-                queue.Append("-" + address.Discriminator);
-            }
-
-            if (address.Qualifier != null)
-            {
-                queue.Append("." + address.Qualifier);
-            }
-
-            return queue.ToString();
-        }
+#pragma warning restore CS0672 // Member overrides obsolete member
+            => RabbitMQTransportInfrastructure.TranslateAddress(address);
 
         /// <summary>
         ///     Returns a list of all supported transaction modes of this transport.

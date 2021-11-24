@@ -2,8 +2,10 @@
 {
     using System;
     using System.Linq;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
@@ -30,7 +32,34 @@
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
-            return new MessagePump(connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, settings, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+            var receiveAddress = ToTransportAddress(settings.ReceiveAddress);
+            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+        }
+
+        internal void SetupInfrastructure(QueueMode queueMode, string[] sendingQueues, bool allowInputQueueConfigurationMismatch)
+        {
+            using (IConnection connection = connectionFactory.CreateAdministrationConnection())
+            using (IModel channel = connection.CreateModel())
+            {
+                // Delayed delivery currently not supported with quorum queues
+                if (queueMode != QueueMode.Quorum)
+                {
+                    DelayInfrastructure.Build(channel);
+                }
+
+                var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
+
+                routingTopology.Initialize(connection, receivingQueues, sendingQueues, queueMode != QueueMode.Classic, allowInputQueueConfigurationMismatch);
+
+                if (queueMode != QueueMode.Quorum)
+                {
+                    foreach (string receivingAddress in receivingQueues)
+                    {
+                        routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
+                            DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                    }
+                }
+            }
         }
 
         public override Task Shutdown(CancellationToken cancellationToken = default)
@@ -42,6 +71,28 @@
 
             channelProvider.Dispose();
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
+        ///     address-string.
+        /// </summary>
+        public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);
+
+        internal static string TranslateAddress(QueueAddress address)
+        {
+            var queue = new StringBuilder(address.BaseAddress);
+            if (address.Discriminator != null)
+            {
+                queue.Append("-" + address.Discriminator);
+            }
+
+            if (address.Qualifier != null)
+            {
+                queue.Append("." + address.Qualifier);
+            }
+
+            return queue.ToString();
         }
     }
 }

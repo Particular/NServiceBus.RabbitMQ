@@ -14,7 +14,7 @@
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction TransportTransaction = new TransportTransaction();
-
+        readonly ReceiveSettings settings;
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
@@ -22,7 +22,6 @@
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
-        readonly ReceiveSettings settings;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
@@ -40,33 +39,45 @@
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
 
-        public MessagePump(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, MessageConverter messageConverter, string consumerTag,
-            ChannelProvider channelProvider, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
-            PrefetchCountCalculation prefetchCountCalculation, ReceiveSettings settings,
-            Action<string, Exception, CancellationToken> criticalErrorAction, TimeSpan retryDelay)
+        public MessagePump(
+            ReceiveSettings settings,
+            ConnectionFactory connectionFactory,
+            IRoutingTopology routingTopology,
+            MessageConverter messageConverter,
+            string consumerTag,
+            ChannelProvider channelProvider,
+            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
+            PrefetchCountCalculation prefetchCountCalculation,
+            Action<string, Exception,
+            CancellationToken> criticalErrorAction,
+            TimeSpan retryDelay)
         {
+            this.settings = settings;
             this.connectionFactory = connectionFactory;
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
-            this.settings = settings;
             this.criticalErrorAction = criticalErrorAction;
             this.retryDelay = retryDelay;
 
+            ReceiveAddress = RabbitMQTransportInfrastructure.TranslateAddress(settings.ReceiveAddress);
+
             if (settings.UsePublishSubscribe)
             {
-                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, settings.ReceiveAddress);
+                Subscriptions = new SubscriptionManager(connectionFactory, routingTopology, ReceiveAddress);
             }
 
             queuePurger = new QueuePurger(connectionFactory);
 
-            name = $"{settings.ReceiveAddress} MessagePump";
+            name = $"{ReceiveAddress} MessagePump";
         }
 
         public ISubscriptionManager Subscriptions { get; }
         public string Id => settings.Id;
+
+        public string ReceiveAddress { get; }
 
         public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
@@ -76,7 +87,7 @@
 
             if (settings.PurgeOnStartup)
             {
-                queuePurger.Purge(settings.ReceiveAddress);
+                queuePurger.Purge(ReceiveAddress);
             }
 
             return Task.CompletedTask;
@@ -119,7 +130,7 @@
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
 
-            channel.BasicConsume(settings.ReceiveAddress, false, consumerTag, consumer);
+            channel.BasicConsume(ReceiveAddress, false, consumerTag, consumer);
         }
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
@@ -372,8 +383,7 @@
 
                 try
                 {
-
-                    var messageContext = new MessageContext(messageId, headers, message.Body, TransportTransaction, processingContext);
+                    var messageContext = new MessageContext(messageId, headers, message.Body, TransportTransaction, ReceiveAddress, processingContext);
 
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
@@ -383,7 +393,7 @@
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, processingContext);
+                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
                     try
                     {

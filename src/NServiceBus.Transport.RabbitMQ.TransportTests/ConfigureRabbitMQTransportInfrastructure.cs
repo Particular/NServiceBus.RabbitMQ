@@ -21,18 +21,18 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         return transport;
     }
 
-    public Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName,
-        string errorQueueName, CancellationToken cancellationToken = default)
+    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress inputQueue, string errorQueueName, CancellationToken cancellationToken = default)
     {
-        queuesToCleanUp = new[] { inputQueueName, errorQueueName };
-
         var mainReceiverSettings = new ReceiveSettings(
             "mainReceiver",
-            inputQueueName,
+            inputQueue,
             true,
             true, errorQueueName);
 
-        return transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName }, cancellationToken);
+        var transport = await transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName }, cancellationToken);
+
+        queuesToCleanUp = new[] { transport.ToTransportAddress(inputQueue), errorQueueName };
+        return transport;
     }
 
     public Task Cleanup(CancellationToken cancellationToken = default)

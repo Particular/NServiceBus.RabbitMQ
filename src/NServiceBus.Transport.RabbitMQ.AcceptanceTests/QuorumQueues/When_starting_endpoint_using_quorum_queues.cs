@@ -80,7 +80,7 @@
             {
                 protected override void Setup(FeatureConfigurationContext context)
                 {
-                    context.AddSatelliteReceiver("QuorumQueueSatelliteReceiver", "QuorumQueueSatelliteReceiver", PushRuntimeSettings.Default, (_, __) => RecoverabilityAction.Discard(string.Empty), (_, __, ___) => Task.CompletedTask);
+                    context.AddSatelliteReceiver("QuorumQueueSatelliteReceiver", new QueueAddress("QuorumQueueSatelliteReceiver"), PushRuntimeSettings.Default, (_, __) => RecoverabilityAction.Discard(string.Empty), (_, __, ___) => Task.CompletedTask);
                 }
             }
         }
