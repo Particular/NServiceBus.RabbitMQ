@@ -108,12 +108,12 @@
             return Task.CompletedTask;
         }
 
-        public async Task ChangeConcurrency(PushRuntimeSettings limitations,
-            CancellationToken cancellationToken = new CancellationToken())
+        public Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
         {
-            await StopReceive(cancellationToken).ConfigureAwait(false);
             maxConcurrency = limitations.MaxConcurrency;
-            await StartReceive(cancellationToken).ConfigureAwait(false);
+            Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
+            _ = Task.Run(() => Reconnect(), cancellationToken);
+            return Task.CompletedTask;
         }
 
         void ConnectToBroker()
@@ -281,7 +281,6 @@
                 }
 
                 Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
-
                 if (oldConnection.IsOpen)
                 {
                     oldConnection.Close();
