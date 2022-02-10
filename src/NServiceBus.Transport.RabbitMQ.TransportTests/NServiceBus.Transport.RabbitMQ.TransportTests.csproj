@@ -19,7 +19,7 @@
     <PackageReference Include="NServiceBus.TransportTests.Sources" Version="8.0.0-alpha.3019" />
     <PackageReference Include="NUnit" Version="3.13.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.2.3" />
   </ItemGroup>
 
 </Project>
