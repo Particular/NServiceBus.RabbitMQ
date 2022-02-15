@@ -127,7 +127,7 @@ jobs:
             exit 1
           }
       - name: Run tests
-        uses: Particular/run-tests-action@v1.1.0
+        uses: Particular/run-tests-action@v1.2.0
         with:
           reset-script: dotnet run --project src/targets
       - name: Teardown RabbitMQ
