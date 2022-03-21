@@ -57,7 +57,7 @@ namespace NServiceBus
 
             if (RoutingTopology == null)
             {
-                throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods.");
+                throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods. Most new projects should use the Conventional routing topology.");
             }
 
             if (string.IsNullOrEmpty(LegacyApiConnectionString))
