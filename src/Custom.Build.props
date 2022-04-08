@@ -4,4 +4,9 @@
     <ParticularAnalyzersVersion>0.9.0</ParticularAnalyzersVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <MinVerMinimumMajorMinor>6.1</MinVerMinimumMajorMinor>
+    <MinVerAutoIncrement>patch</MinVerAutoIncrement>
+  </PropertyGroup>
+
 </Project>
