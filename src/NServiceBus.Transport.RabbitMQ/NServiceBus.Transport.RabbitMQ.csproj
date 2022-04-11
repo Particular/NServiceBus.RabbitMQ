@@ -10,7 +10,7 @@
     <PackageReference Include="Fody" Version="6.6.0" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.2.3, 8.0.0)" />
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
-    <PackageReference Include="Particular.Packaging" Version="1.2.1" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="RabbitMQ.Client" Version="[6.1.0, 7.0.0)" />
   </ItemGroup>
 
