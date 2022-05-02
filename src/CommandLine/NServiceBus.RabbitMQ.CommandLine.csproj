@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ToolCommandName>rmq-transport</ToolCommandName>
+    <PackAsTool>True</PackAsTool>
+    <Description>A .NET global tool to manage the RabbitMQ transport for NServiceBus endpoints</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
+    <PackageReference Include="Particular.Packaging" Version="2.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

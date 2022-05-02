@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NServiceBus.RabbitMQ.CommandLine": {
+      "commandName": "Project",
+      "commandLineArgs": "migrate-delay-infrastructure"
+    }
+  }
+}
