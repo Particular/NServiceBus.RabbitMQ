@@ -116,7 +116,7 @@ jobs:
               Write-Output "No response, retrying..."
               Start-Sleep -m 5000
             }
-          } until (($response.status) -or ($tries -ge 10))
+          } until (($response.status) -or ($tries -ge 20))
 
           if($response.status -ne "ok")
           {
