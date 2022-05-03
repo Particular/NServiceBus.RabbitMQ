@@ -13,8 +13,8 @@
         /// Configures NServiceBus to use the given transport.
         /// </summary>
         [PreObsolete(
-            RemoveInVersion = "9",
-            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "10",
+            TreatAsErrorFromVersion = "9",
             ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)")]
         public static TransportExtensions<RabbitMQTransport> UseTransport<T>(this EndpointConfiguration config)
             where T : RabbitMQTransport
@@ -33,8 +33,8 @@
         /// </summary>
         [PreObsolete(
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transport, string connectionString)
         {
             transport.Transport.LegacyApiConnectionString = connectionString;
@@ -46,8 +46,8 @@
         /// </summary>
         [PreObsolete(
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transport, Func<string> getConnectionString)
         {
             transport.Transport.LegacyApiConnectionString = getConnectionString();
@@ -62,8 +62,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.MessageIdStrategy",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(
             this TransportExtensions<RabbitMQTransport> transport,
             Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy)
@@ -78,8 +78,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.ValidateRemoteCertificate",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> DisableRemoteCertificateValidation(this TransportExtensions<RabbitMQTransport> transport)
         {
             transport.Transport.ValidateRemoteCertificate = false;
@@ -94,8 +94,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.PrefetchCountCalculation",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> PrefetchCount(this TransportExtensions<RabbitMQTransport> transport, ushort prefetchCount)
         {
             transport.Transport.PrefetchCountCalculation = _ => prefetchCount;
@@ -110,8 +110,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.PrefetchCountCalculation",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transport, int prefetchMultiplier)
         {
             transport.Transport.PrefetchCountCalculation = concurrency => prefetchMultiplier * concurrency;
@@ -126,8 +126,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.ClientCertificate",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transport, X509Certificate2 clientCertificate)
         {
             transport.Transport.ClientCertificate = clientCertificate;
@@ -143,8 +143,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.ClientCertificate",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> SetClientCertificate(this TransportExtensions<RabbitMQTransport> transport, string path, string password)
         {
             var cert = new X509Certificate2(path, password);
@@ -160,8 +160,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.HeartbeatInterval",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> SetHeartbeatInterval(this TransportExtensions<RabbitMQTransport> transport, TimeSpan heartbeatInterval)
         {
             transport.Transport.HeartbeatInterval = heartbeatInterval;
@@ -176,8 +176,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.NetworkRecoveryInterval",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> SetNetworkRecoveryInterval(this TransportExtensions<RabbitMQTransport> transport, TimeSpan networkRecoveryInterval)
         {
             transport.Transport.NetworkRecoveryInterval = networkRecoveryInterval;
@@ -192,8 +192,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.TimeToWaitBeforeTriggeringCircuitBreaker",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<RabbitMQTransport> transport, TimeSpan waitTime)
         {
             transport.Transport.TimeToWaitBeforeTriggeringCircuitBreaker = waitTime;
@@ -206,8 +206,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.RoutingTopology",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transport)
         {
             transport.Transport.RoutingTopology = new ConventionalRoutingTopology(true);
@@ -222,8 +222,8 @@
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
         [PreObsolete(
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(
             this TransportExtensions<RabbitMQTransport> transport,
             Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
@@ -239,8 +239,8 @@
         [PreObsolete(
             ReplacementTypeOrMember = "RabbitMQTransport.UseExternalAuthMechanism",
             Message = "The configuration has been moved to RabbitMQTransport class.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseExternalAuthMechanism(this TransportExtensions<RabbitMQTransport> transport)
         {
             transport.Transport.UseExternalAuthMechanism = true;

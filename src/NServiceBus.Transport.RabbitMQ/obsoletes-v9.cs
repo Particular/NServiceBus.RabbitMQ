@@ -9,8 +9,8 @@ namespace NServiceBus
     {
         [ObsoleteEx(
             Message = "To use a custom topology, create a new instance of the RabbitMQTransport class and pass it into endpointConfiguration.UseTransport(rabbitMqTransportDefinition).",
-            TreatAsErrorFromVersion = "7",
-            RemoveInVersion = "8")]
+            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "9")]
         public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(
     this TransportExtensions<RabbitMQTransport> transport,
     Func<bool, IRoutingTopology> topologyFactory)
@@ -20,8 +20,8 @@ namespace NServiceBus
 
         [ObsoleteEx(
             Message = "In order to disable durable exchanges and queues, create a new instance of the RabbitMQTransport class and set the RoutingTopology property with an implementation that passes in the desired value for the useDurableEntities parameter, then pass the RabbitMQTransport instance to endpointConfiguration.UseTransport(rabbitMqTransportDefinition). See the upgrade guide for further details.",
-            TreatAsErrorFromVersion = "7",
-            RemoveInVersion = "8")]
+            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "9")]
         public static TransportExtensions<RabbitMQTransport> DisableDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transport)
         {
             throw new NotImplementedException();
@@ -29,8 +29,8 @@ namespace NServiceBus
 
         [ObsoleteEx(
             Message = "The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for details on how to use the timeout migration tool.",
-            TreatAsErrorFromVersion = "7",
-            RemoveInVersion = "8")]
+            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "9")]
         public static void DelayedDelivery(this TransportExtensions<RabbitMQTransport> transport)
         {
             throw new NotImplementedException();
