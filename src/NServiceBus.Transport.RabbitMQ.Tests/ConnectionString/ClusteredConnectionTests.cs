@@ -7,7 +7,7 @@
     {
         RabbitMQClusterTransport CreateTransportDefinition(string connectionString)
         {
-            return new RabbitMQClusterTransport(Topology.Conventional, connectionString, QueueMode.Classic, DelayedDeliverySupport.UnsafeEnabled);
+            return new RabbitMQClusterTransport(Topology.Conventional, connectionString, QueueMode.Classic);
         }
 
         [Test]

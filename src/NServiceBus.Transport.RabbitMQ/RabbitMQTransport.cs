@@ -44,7 +44,7 @@
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
         public RabbitMQTransport(IRoutingTopology topology, string connectionString)
-            : this(topology, connectionString, QueueMode.Classic, true)
+            : this(topology, connectionString, QueueMode.Classic)
         {
         }
 
@@ -54,10 +54,9 @@
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="queueMode">The queue mode for receiving queues.</param>
-        /// <param name="enableTimeouts">Whether to enable timeouts.</param>
-        private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode, bool enableTimeouts)
+        private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
             : base(TransportTransactionMode.ReceiveOnly,
-                supportsDelayedDelivery: enableTimeouts,
+                supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
                 supportsTTBR: queueMode == QueueMode.Classic)
         {

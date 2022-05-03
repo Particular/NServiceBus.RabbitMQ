@@ -11,9 +11,8 @@
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string of the nodes.</param>
         /// <param name="queueMode">The queue mode for receiving queues.</param>
-        /// <param name="delayedDeliverySupportConfiguration">The timeouts configuration.</param>
-        public RabbitMQClusterTransport(Topology topology, string connectionString, QueueMode queueMode, DelayedDeliverySupport delayedDeliverySupportConfiguration)
-            : base(GetBuiltInTopology(topology), connectionString, queueMode, delayedDeliverySupportConfiguration == DelayedDeliverySupport.UnsafeEnabled)
+        public RabbitMQClusterTransport(Topology topology, string connectionString, QueueMode queueMode)
+            : base(GetBuiltInTopology(topology), connectionString, queueMode)
         {
         }
 

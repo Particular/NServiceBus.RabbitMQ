@@ -62,7 +62,7 @@
         {
             public QuorumEndpoint()
             {
-                var defaultServer = new ClusterEndpoint(QueueMode.Quorum, DelayedDeliverySupport.Disabled);
+                var defaultServer = new ClusterEndpoint(QueueMode.Quorum);
                 EndpointSetup(
                     defaultServer,
                     (configuration, r) =>

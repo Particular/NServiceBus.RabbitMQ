@@ -63,7 +63,7 @@
         {
             public QuorumEndpointWithUnsafeTimeouts()
             {
-                var defaultServer = new ClusterEndpoint(QueueMode.Quorum, DelayedDeliverySupport.UnsafeEnabled);
+                var defaultServer = new ClusterEndpoint(QueueMode.Quorum);
                 EndpointSetup(
                     defaultServer,
                     (configuration, r) =>

@@ -13,12 +13,10 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
     TestRabbitMQTransport transport;
     readonly QueueMode queueMode;
-    readonly bool enableTimeouts;
 
-    public ConfigureEndpointRabbitMQTransport(QueueMode queueMode = QueueMode.Classic, bool enableTimeouts = true)
+    public ConfigureEndpointRabbitMQTransport(QueueMode queueMode = QueueMode.Classic)
     {
         this.queueMode = queueMode;
-        this.enableTimeouts = enableTimeouts;
     }
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
@@ -26,8 +24,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         transport = new TestRabbitMQTransport(
             new ConventionalRoutingTopology(true, type => type.FullName),
             ConnectionHelper.ConnectionString,
-            queueMode,
-            enableTimeouts);
+            queueMode);
 
         configuration.UseTransport(transport);
 
@@ -69,8 +66,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode, bool enableTimeouts)
-            : base(topology, connectionString, queueMode, enableTimeouts)
+        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
+            : base(topology, connectionString, queueMode)
         {
         }
 
