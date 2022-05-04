@@ -33,18 +33,9 @@
         /// </summary>
         /// <param name="topology">The built-in topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        public RabbitMQTransport(Topology topology, string connectionString)
-            : this(GetBuiltInTopology(topology), connectionString)
-        {
-        }
-
-        /// <summary>
-        /// Creates new instance of the RabbitMQ transport.
-        /// </summary>
-        /// <param name="topology">The custom topology to use.</param>
-        /// <param name="connectionString">Connection string.</param>
-        public RabbitMQTransport(IRoutingTopology topology, string connectionString)
-            : this(topology, connectionString, QueueMode.Classic)
+        /// <param name="queueMode">The queue mode for receiving queues.</param>
+        public RabbitMQTransport(Topology topology, string connectionString, QueueMode queueMode)
+            : this(GetBuiltInTopology(topology), connectionString, queueMode)
         {
         }
 
@@ -54,7 +45,7 @@
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="queueMode">The queue mode for receiving queues.</param>
-        private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
+        public RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
@@ -214,6 +205,16 @@
         internal QueueMode QueueMode { get; }
 
         int DefaultPort => UseTLS ? 5671 : 5672;
+
+        /// <summary>
+        /// Adds a new node for use within a cluster.
+        /// </summary>
+        /// <param name="host">The hostname of the node.</param>
+        /// <param name="port">The port of the node.</param>
+        public void AddClusterNode(string host, int port = -1)
+        {
+            additionalHosts.Add((host, port));
+        }
 
         /// <summary>
         ///     Initializes all the factories and supported features for the transport. This method is called right before all

@@ -5,9 +5,9 @@
     [TestFixture]
     public class ClusteredConnectionTests
     {
-        RabbitMQClusterTransport CreateTransportDefinition(string connectionString)
+        RabbitMQTransport CreateTransportDefinition(string connectionString)
         {
-            return new RabbitMQClusterTransport(Topology.Conventional, connectionString, QueueMode.Classic);
+            return new RabbitMQTransport(Topology.Conventional, connectionString, QueueMode.Classic);
         }
 
         [Test]

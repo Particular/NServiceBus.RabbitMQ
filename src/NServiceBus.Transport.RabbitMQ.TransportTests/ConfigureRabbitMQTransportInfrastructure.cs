@@ -16,7 +16,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     {
         var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
-        var transport = new RabbitMQTransport(Topology.Conventional, connectionString);
+        var transport = new RabbitMQTransport(Topology.Conventional, connectionString, QueueMode.Classic);
 
         return transport;
     }
