@@ -41,23 +41,15 @@
             using (IConnection connection = connectionFactory.CreateAdministrationConnection())
             using (IModel channel = connection.CreateModel())
             {
-                // Delayed delivery currently not supported with quorum queues
-                if (queueMode != QueueMode.Quorum)
-                {
-                    DelayInfrastructure.Build(channel);
-                }
+                DelayInfrastructure.Build(channel);
 
                 var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
 
                 routingTopology.Initialize(connection, receivingQueues, sendingQueues, queueMode != QueueMode.Classic, allowInputQueueConfigurationMismatch);
 
-                if (queueMode != QueueMode.Quorum)
+                foreach (string receivingAddress in receivingQueues)
                 {
-                    foreach (string receivingAddress in receivingQueues)
-                    {
-                        routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
-                            DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
-                    }
+                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
                 }
             }
         }
