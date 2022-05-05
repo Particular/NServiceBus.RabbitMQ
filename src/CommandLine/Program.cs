@@ -1,5 +1,5 @@
 ﻿using System.CommandLine;
-using NServiceBus.RabbitMQ.CommandLine;
+using NServiceBus.Transport.RabbitMQ.CommandLine;
 
 var rootCommand = new RootCommand("A .NET global tool to manage the RabbitMQ transport for NServiceBus endpoints");
 
