@@ -64,7 +64,7 @@ jobs:
           path: nugets/
           retention-days: 7
       - name: Azure login
-        uses: azure/login@v1.4.3
+        uses: azure/login@v1.4.4
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
