@@ -7,25 +7,16 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
-    using NServiceBus.Transport.RabbitMQ.CommandLine.Configuration;
 
     public class MigrateDelayInfrastructureCommand
     {
-        const string ConnectionStringEnvironmentVariable = "RabbitMQTransport_ConnectionString";
         const string DelayInSecondsHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
         const string TimeSentHeader = "NServiceBus.TimeSent";
         const string DateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
         const int NumberOfDelayLevelQueues = 27;
 
-        public static Command CreateCommand()
+        public static Command CreateCommand(Option<string> connectionStringOption)
         {
-            var connectionStringOption = new Option<string>(
-                    name: "--connectionString",
-                    description: $"Overrides environment variable '{ConnectionStringEnvironmentVariable}'",
-                    getDefaultValue: () => Environment.GetEnvironmentVariable(ConnectionStringEnvironmentVariable) ?? string.Empty);
-
-            connectionStringOption.AddAlias("-c");
-
             var useNonDurableEntitiesOption = new Option<bool>(
                  name: "--UseNonDurableEntities",
                  description: $"Create non-durable endpoint queues and exchanges");
@@ -54,59 +45,35 @@
 
         public Task Run(bool useDurableEntities, string connectionString, bool runUntilCancelled, CancellationToken cancellationToken = default)
         {
-            var connectionData = ConnectionSettings.Parse(connectionString);
-
-            var factory = new ConnectionFactory
+            CommandRunner.Run(connectionString, channel =>
             {
-                HostName = connectionData.Host,
-                Port = connectionData.Port,
-                VirtualHost = connectionData.VHost,
-                UserName = connectionData.UserName,
-                Password = connectionData.Password,
-                RequestedHeartbeat = connectionData.HeartbeatInterval,
-                NetworkRecoveryInterval = connectionData.NetworkRecoveryInterval,
-                UseBackgroundThreadsForIO = true,
-                DispatchConsumersAsync = true
-            };
-
-            using (IConnection connection = factory.CreateConnection("rmq-transport"))
-            {
-                using (IModel channel = connection.CreateModel())
+                try
                 {
-                    try
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        while (!cancellationToken.IsCancellationRequested)
+                        for (int currentDelayLevel = NumberOfDelayLevelQueues; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
                         {
-                            for (int currentDelayLevel = NumberOfDelayLevelQueues; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
-                            {
-                                MigrateQueue(channel, currentDelayLevel, useDurableEntities, cancellationToken);
-                            }
+                            MigrateQueue(channel, currentDelayLevel, useDurableEntities, cancellationToken);
+                        }
 
-                            if (!runUntilCancelled)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    catch (OperationInterruptedException ex)
-                    {
-                        if (ex.ShutdownReason.ReplyCode == 404)
+                        if (!runUntilCancelled)
                         {
-                            Console.WriteLine($"{ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
+                            break;
                         }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                    finally
-                    {
-                        channel.Close();
                     }
                 }
-
-                connection.Close();
-            }
+                catch (OperationInterruptedException ex)
+                {
+                    if (ex.ShutdownReason.ReplyCode == 404)
+                    {
+                        Console.WriteLine($"{ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            });
 
             return Task.CompletedTask;
         }
