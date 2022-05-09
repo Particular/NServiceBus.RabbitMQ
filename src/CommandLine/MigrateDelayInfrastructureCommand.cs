@@ -32,24 +32,28 @@
 
             useNonDurableEntitiesOption.AddAlias("-n");
 
+            var runUntilCancelled = new Option<bool>(
+                 name: "--RunUntilCancelled",
+                 description: $"The migration script will run until the script is cancelled");
+
+            runUntilCancelled.AddAlias("-r");
+
             var migrateCommand = new Command("migrate-delay-infrastructure", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
             migrateCommand.AddOption(connectionStringOption);
             migrateCommand.AddOption(useNonDurableEntitiesOption);
+            migrateCommand.AddOption(runUntilCancelled);
 
-            migrateCommand.SetHandler(async (string endpointQueueType, bool useNonDurableEntities, string connectionString, CancellationToken cancellationToken) =>
+            migrateCommand.SetHandler(async (bool useNonDurableEntities, string connectionString, bool runUntilCancelled, CancellationToken cancellationToken) =>
             {
                 var migrationProcess = new MigrateDelayInfrastructureCommand();
-                await migrationProcess.Execute(endpointQueueType, !useNonDurableEntities, connectionString, cancellationToken).ConfigureAwait(false);
-
-            }, useNonDurableEntitiesOption, connectionStringOption);
+                await migrationProcess.Run(!useNonDurableEntities, connectionString, runUntilCancelled, cancellationToken).ConfigureAwait(false);
+            }, useNonDurableEntitiesOption, connectionStringOption, runUntilCancelled);
 
             return migrateCommand;
         }
 
-        public Task Execute(string endpointQueueType, bool useDurableEntities, string connectionString, CancellationToken cancellationToken = default)
+        public Task Run(bool useDurableEntities, string connectionString, bool runUntilCancelled, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine("Migrating delay infrustructure...");
-
             var connectionData = ConnectionSettings.Parse(connectionString);
 
             var factory = new ConnectionFactory
@@ -65,15 +69,23 @@
                 DispatchConsumersAsync = true
             };
 
-            using (IConnection connection = factory.CreateConnection())
+            using (IConnection connection = factory.CreateConnection("rmq-transport"))
             {
                 using (IModel channel = connection.CreateModel())
                 {
                     try
                     {
-                        for (int currentDelayLevel = NumberOfDelayLevelQueues; currentDelayLevel >= 0; currentDelayLevel--)
+                        while (!cancellationToken.IsCancellationRequested)
                         {
-                            MigrateQueue(channel, currentDelayLevel, useDurableEntities);
+                            for (int currentDelayLevel = NumberOfDelayLevelQueues; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
+                            {
+                                MigrateQueue(channel, currentDelayLevel, useDurableEntities, cancellationToken);
+                            }
+
+                            if (!runUntilCancelled)
+                            {
+                                break;
+                            }
                         }
                     }
                     catch (OperationInterruptedException ex)
@@ -99,19 +111,20 @@
             return Task.CompletedTask;
         }
 
-        void MigrateQueue(IModel channel, int currentDelayLevel, bool useDurableQueues)
+        void MigrateQueue(IModel channel, int currentDelayLevel, bool useDurableQueues, CancellationToken cancellationToken)
         {
             var currentDelayQueue = $"nsb.delay-level-{currentDelayLevel:00}";
             var messageCount = channel.MessageCount(currentDelayQueue);
-            var createdDestinationQueues = new HashSet<string>();
+            var declaredDestinationQueues = new HashSet<string>();
 
             if (messageCount > 0)
             {
                 Console.Write($"Processing {messageCount} messages at delay level {currentDelayLevel:00}. ");
+
                 int skippedMessages = 0;
                 int processedMessages = 0;
 
-                for (int i = 0; i < messageCount; i++)
+                for (int i = 0; i < messageCount && !cancellationToken.IsCancellationRequested; i++)
                 {
                     var message = channel.BasicGet(currentDelayQueue, false);
 
@@ -133,19 +146,20 @@
                     DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
                     int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(DateTimeOffset.UtcNow).TotalSeconds);
                     string destinationQueue = message.RoutingKey.Substring(message.RoutingKey.LastIndexOf('.') + 1);
-                    string newRoutingId = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int deliveryDelayLevel);
+                    string newRoutingId = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int messageDelayLevel);
 
-                    if (!createdDestinationQueues.Contains(destinationQueue))
+                    // Make sure the destination queue is bound to the delivery exchange to ensure delivery 
+                    if (!declaredDestinationQueues.Contains(destinationQueue))
                     {
                         var arguments = new Dictionary<string, object>();
 
                         channel.ExchangeDeclare(destinationQueue, ExchangeType.Fanout, useDurableQueues, false, arguments);
                         channel.ExchangeBind(destinationQueue, "nsb.delay-delivery", $"#.{destinationQueue}");
 
-                        createdDestinationQueues.Add(destinationQueue);
+                        declaredDestinationQueues.Add(destinationQueue);
                     }
 
-                    string publishExchange = $"nsb.delay-level-{deliveryDelayLevel:00}.2";
+                    string publishExchange = $"nsb.delay-level-{messageDelayLevel:00}.2";
 
                     channel.BasicPublish(publishExchange, newRoutingId, message.BasicProperties, message.Body);
                     channel.BasicAck(message.DeliveryTag, false);
