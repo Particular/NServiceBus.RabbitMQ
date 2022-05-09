@@ -143,10 +143,8 @@
 
                     int delayInSeconds = (int)message.BasicProperties.Headers[DelayInSecondsHeader];
                     DateTimeOffset timeSent = GetTimeSent(message);
-                    DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
-                    int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(DateTimeOffset.UtcNow).TotalSeconds);
-                    string destinationQueue = message.RoutingKey.Substring(message.RoutingKey.LastIndexOf('.') + 1);
-                    string newRoutingId = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int messageDelayLevel);
+
+                    (string destinationQueue, string newRoutingKey, int newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
 
                     // Make sure the destination queue is bound to the delivery exchange to ensure delivery 
                     if (!declaredDestinationQueues.Contains(destinationQueue))
@@ -159,15 +157,25 @@
                         declaredDestinationQueues.Add(destinationQueue);
                     }
 
-                    string publishExchange = $"nsb.delay-level-{messageDelayLevel:00}.2";
+                    string publishExchange = $"nsb.delay-level-{newDelayLevel:00}.2";
 
-                    channel.BasicPublish(publishExchange, newRoutingId, message.BasicProperties, message.Body);
+                    channel.BasicPublish(publishExchange, newRoutingKey, message.BasicProperties, message.Body);
                     channel.BasicAck(message.DeliveryTag, false);
                     processedMessages++;
                 }
 
                 Console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
             }
+        }
+
+        public (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
+        {
+            DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
+            int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
+            string destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
+            string newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
+
+            return (destinationQueue, newRoutingKey, newDelayLevel);
         }
 
         DateTimeOffset GetTimeSent(BasicGetResult message)
