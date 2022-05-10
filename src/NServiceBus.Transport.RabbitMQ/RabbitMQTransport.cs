@@ -278,7 +278,7 @@
         internal static IRoutingTopology GetBuiltInTopology(Topology topology)
         {
             return topology == Topology.Conventional
-                ? (IRoutingTopology)new ConventionalRoutingTopology(true)
+                ? new ConventionalRoutingTopology(true)
                 : new DirectRoutingTopology(true);
         }
 

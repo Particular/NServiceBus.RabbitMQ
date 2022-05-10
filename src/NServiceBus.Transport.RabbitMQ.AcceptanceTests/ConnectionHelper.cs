@@ -20,12 +20,11 @@
             var factory = new ConnectionFactory
             {
                 AutomaticRecoveryEnabled = true,
-                UseBackgroundThreadsForIO = true
+                UseBackgroundThreadsForIO = true,
+                HostName = connectionStringParser.HostName,
+                UserName = connectionStringParser.UserName ?? "guest",
+                Password = connectionStringParser.Password ?? "guest"
             };
-
-            factory.HostName = connectionStringParser.HostName;
-            factory.UserName = connectionStringParser.UserName ?? "guest";
-            factory.Password = connectionStringParser.Password ?? "guest";
 
             if (!string.IsNullOrEmpty(connectionStringParser.VirtualHost))
             {

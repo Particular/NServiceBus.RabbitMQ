@@ -1,13 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1;net6.0</TargetFrameworks>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="..\targets\RabbitMqConnectionStringParser.cs" Link="RabbitMqConnectionStringParser.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Transport.RabbitMQ\NServiceBus.Transport.RabbitMQ.csproj" />
@@ -16,10 +11,17 @@
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="1.4.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="8.0.0-beta.1" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="8.0.0-beta.2" />
     <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\targets\RabbitMqConnectionStringParser.cs" />
   </ItemGroup>
 
 </Project>
