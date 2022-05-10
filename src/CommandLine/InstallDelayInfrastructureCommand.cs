@@ -4,15 +4,15 @@
 
     class InstallDelayInfrastructureCommand
     {
-        public static Command CreateCommand(Option<string> connectionStringOption)
+        public static Command CreateCommand()
         {
             var delayInstallerCommand = new Command("install-delay-infrastructure", "Create delay infrastructure queues and exchanges");
-            delayInstallerCommand.AddOption(connectionStringOption);
+            delayInstallerCommand.AddOption(SharedOptions.ConnectionString);
 
             delayInstallerCommand.SetHandler((string connectionString) =>
             {
                 CommandRunner.Run(connectionString, channel => DelayInfrastructure.Build(channel));
-            }, connectionStringOption);
+            }, SharedOptions.ConnectionString);
 
             return delayInstallerCommand;
         }

@@ -15,7 +15,7 @@
         const string DateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
         const int NumberOfDelayLevelQueues = 27;
 
-        public static Command CreateCommand(Option<string> connectionStringOption)
+        public static Command CreateCommand()
         {
             var useNonDurableEntitiesOption = new Option<bool>(
                  name: "--UseNonDurableEntities",
@@ -30,7 +30,7 @@
             runUntilCancelled.AddAlias("-r");
 
             var migrateCommand = new Command("migrate-delay-infrastructure", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
-            migrateCommand.AddOption(connectionStringOption);
+            migrateCommand.AddOption(SharedOptions.ConnectionString);
             migrateCommand.AddOption(useNonDurableEntitiesOption);
             migrateCommand.AddOption(runUntilCancelled);
 
@@ -38,7 +38,7 @@
             {
                 var migrationProcess = new MigrateDelayInfrastructureCommand();
                 await migrationProcess.Run(!useNonDurableEntities, connectionString, runUntilCancelled, cancellationToken).ConfigureAwait(false);
-            }, useNonDurableEntitiesOption, connectionStringOption, runUntilCancelled);
+            }, useNonDurableEntitiesOption, SharedOptions.ConnectionString, runUntilCancelled);
 
             return migrateCommand;
         }
