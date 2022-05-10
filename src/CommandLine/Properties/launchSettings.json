@@ -7,7 +7,7 @@
     "Verify": {
       "commandName": "Executable",
       "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
-      "commandLineArgs": "verify-safe-delays"
+      "commandLineArgs": "verify-safe-delays --url http://localhost:15672 --username guest --password guest"
     }
   }
 }

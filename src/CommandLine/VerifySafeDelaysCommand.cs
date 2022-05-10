@@ -9,30 +9,50 @@
 
     class VerifySafeDelaysCommand
     {
-
         public static Command CreateCommand()
         {
             var verifyCommand = new Command("verify-safe-delays", "Verifies that the broker configuration allows for safe message delays.");
 
-            verifyCommand.SetHandler(async (CancellationToken cancellationToken) =>
+            var urlOption = new Option<string>("--url", "The url for the management UI of the RabbitMQ broker")
             {
-                var verifyProcess = new VerifySafeDelaysCommand("http://localhost:15672");
-                await verifyProcess.Execute(cancellationToken).ConfigureAwait(false);
+                IsRequired = true
+            };
 
-            });
+            var usernameOption = new Option<string>("--username", "The username")
+            {
+                IsRequired = true
+            };
+
+            var passwordOption = new Option<string>("--password", "The password")
+            {
+                IsRequired = true
+            };
+
+            verifyCommand.AddOption(urlOption);
+            verifyCommand.AddOption(usernameOption);
+            verifyCommand.AddOption(passwordOption);
+
+            verifyCommand.SetHandler(async (string url, string username, string password, CancellationToken cancellationToken) =>
+            {
+                var verifyProcess = new VerifySafeDelaysCommand(url, username, password);
+                await verifyProcess.Execute(cancellationToken).ConfigureAwait(false);
+            }, urlOption, usernameOption, passwordOption);
 
             return verifyCommand;
         }
 
-        public VerifySafeDelaysCommand(string baseUrl)
+
+        public VerifySafeDelaysCommand(string baseUrl, string username, string password)
         {
             this.baseUrl = baseUrl;
+            this.username = username;
+            this.password = password;
         }
 
         public async Task Execute(CancellationToken cancellationToken = default)
         {
             using var httpClient = new HttpClient();
-            var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes("guest:guest"));
+            var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authString);
 
@@ -82,10 +102,12 @@
 #pragma warning restore CS8603 // Possible null reference return.
         }
 
+        readonly string baseUrl;
+        readonly string username;
+        readonly string password;
 
 #pragma warning disable 0649
 #pragma warning disable 8618
-        readonly string baseUrl;
 
         class ServerDetails
         {
