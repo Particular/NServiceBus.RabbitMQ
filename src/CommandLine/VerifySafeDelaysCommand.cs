@@ -9,18 +9,24 @@
 
     class VerifySafeDelaysCommand
     {
+
         public static Command CreateCommand()
         {
             var verifyCommand = new Command("verify-safe-delays", "Verifies that the broker configuration allows for safe message delays.");
 
             verifyCommand.SetHandler(async (CancellationToken cancellationToken) =>
             {
-                var verifyProcess = new VerifySafeDelaysCommand();
+                var verifyProcess = new VerifySafeDelaysCommand("http://localhost:15672");
                 await verifyProcess.Execute(cancellationToken).ConfigureAwait(false);
 
             });
 
             return verifyCommand;
+        }
+
+        public VerifySafeDelaysCommand(string baseUrl)
+        {
+            this.baseUrl = baseUrl;
         }
 
         public async Task Execute(CancellationToken cancellationToken = default)
@@ -29,56 +35,84 @@
             var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes("guest:guest"));
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authString);
-            var failures = new List<string>();
 
-            await CheckServerVersion(httpClient, failures, cancellationToken).ConfigureAwait(false);
+            var serverDetails = await GetServerDetails(httpClient, cancellationToken).ConfigureAwait(false);
 
-            if (failures.Any())
+            if (Version.Parse(serverDetails.Overview.ProductVersion) < Version.Parse("3.10.0"))
             {
-                Console.WriteLine("The following issues where detected:");
+                Console.WriteLine($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
+                return;
+            }
 
-                foreach (var failure in failures)
-                {
-                    Console.WriteLine($"  - {failure}");
-                }
-            }
-            else
+            var streamQueueState = serverDetails.FeatureFlags.SingleOrDefault(fs => fs.Name == "stream_queue");
+
+            if (streamQueueState == null || !streamQueueState.IsEnabled())
             {
-                Console.WriteLine("All checks OK");
+                Console.WriteLine($"Fail: stream_queue feature flag is not enabled");
+                return;
             }
+
+            Console.WriteLine("All checks OK");
         }
 
-        async Task CheckServerVersion(HttpClient httpClient, ICollection<string> failures, CancellationToken cancellationToken)
+        async Task<ServerDetails> GetServerDetails(HttpClient httpClient, CancellationToken cancellationToken)
         {
-            using var response = await httpClient.GetAsync("http://localhost:15672/api/overview", cancellationToken).ConfigureAwait(false);
+            return new ServerDetails
+            {
+                Overview = await MakeHttpRequest<Overview>(httpClient, "overview", cancellationToken).ConfigureAwait(false),
+                FeatureFlags = await MakeHttpRequest<FeatureFlag[]>(httpClient, "feature-flags", cancellationToken).ConfigureAwait(false)
+            };
+        }
+
+        async Task<T> MakeHttpRequest<T>(HttpClient httpClient, string urlPart, CancellationToken cancellationToken)
+        {
+            var url = $"{baseUrl}/api/{urlPart}";
+            using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
+            var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
-            var overviewContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-            var overviewResponse = JsonSerializer.Deserialize<OverviewResponse>(overviewContent);
-
-            if (overviewResponse == null)
+            if (string.IsNullOrEmpty(content))
             {
-                failures.Add("No server version could be detected");
+                throw new Exception("Empty response returned for " + url);
             }
-            else
-            {
-                if (Version.Parse(overviewResponse.ProductVersion) < Version.Parse("3.10.0"))
-                {
-                    failures.Add($"Detected broker version is {overviewResponse.ProductVersion}, at least 3.10.0 is required");
-                }
-            }
+
+#pragma warning disable CS8603 // Possible null reference return.
+            return JsonSerializer.Deserialize<T>(content);
+#pragma warning restore CS8603 // Possible null reference return.
         }
 
-        class OverviewResponse
-        {
+
 #pragma warning disable 0649
 #pragma warning disable 8618
+        readonly string baseUrl;
+
+        class ServerDetails
+        {
+            public Overview Overview { get; set; }
+            public FeatureFlag[] FeatureFlags { get; set; }
+        }
+
+        class Overview
+        {
             [JsonPropertyName("product_version")]
             public string ProductVersion { get; set; }
-#pragma warning restore 8618
-#pragma warning restore 0649
+        }
+
+        class FeatureFlag
+        {
+            [JsonPropertyName("name")]
+            public string Name { get; set; }
+
+            [JsonPropertyName("state")]
+            public string State { get; set; }
+
+            public bool IsEnabled()
+            {
+                return State?.ToLower() == "enabled";
+            }
         }
     }
+#pragma warning restore 8618
+#pragma warning restore 0649
 }
