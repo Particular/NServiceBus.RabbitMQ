@@ -8,16 +8,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fody" Version="6.6.1" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[8.0.0-beta.2, 9.0.0)" />
+    <PackageReference Include="RabbitMQ.Client" Version="[6.3.0, 7.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fody" Version="6.6.1" PrivateAssets="All" />
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="2.0.0" PrivateAssets="All" />
-    <PackageReference Include="RabbitMQ.Client" Version="[6.3.0, 7.0.0)" />
   </ItemGroup>
 
   <PropertyGroup>
     <PackageId>NServiceBus.RabbitMQ</PackageId>
     <Description>RabbitMQ support for NServiceBus</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.Tests" Key="$(NServiceBusTestsKey)" />
+  </ItemGroup>
 
 </Project>
