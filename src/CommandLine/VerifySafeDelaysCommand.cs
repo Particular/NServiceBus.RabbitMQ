@@ -29,27 +29,9 @@
             var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes("guest:guest"));
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authString);
-
-            using var response = await httpClient.GetAsync("http://localhost:15672/api/overview", cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-            var overviewResponse = JsonSerializer.Deserialize<OverviewResponse>(content);
-
             var failures = new List<string>();
 
-            if (overviewResponse == null)
-            {
-                failures.Add("No server version could be detected");
-            }
-            else
-            {
-                if (Version.Parse(overviewResponse.ProductVersion) < Version.Parse("3.10.0"))
-                {
-                    failures.Add($"Detected broker version is {overviewResponse.ProductVersion}, at least 3.10.0 is required");
-                }
-            }
+            await CheckServerVersion(httpClient, failures, cancellationToken).ConfigureAwait(false);
 
             if (failures.Any())
             {
@@ -63,6 +45,29 @@
             else
             {
                 Console.WriteLine("All checks OK");
+            }
+        }
+
+        async Task CheckServerVersion(HttpClient httpClient, ICollection<string> failures, CancellationToken cancellationToken)
+        {
+            using var response = await httpClient.GetAsync("http://localhost:15672/api/overview", cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+
+            var overviewContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+            var overviewResponse = JsonSerializer.Deserialize<OverviewResponse>(overviewContent);
+
+            if (overviewResponse == null)
+            {
+                failures.Add("No server version could be detected");
+            }
+            else
+            {
+                if (Version.Parse(overviewResponse.ProductVersion) < Version.Parse("3.10.0"))
+                {
+                    failures.Add($"Detected broker version is {overviewResponse.ProductVersion}, at least 3.10.0 is required");
+                }
             }
         }
 
