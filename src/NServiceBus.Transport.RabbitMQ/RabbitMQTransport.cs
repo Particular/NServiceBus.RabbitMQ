@@ -195,13 +195,6 @@
             }
         }
 
-        /// <summary>
-        /// Specifies whether the endpoint should ignore failures to declare the incoming queues because the queue already exists with a different configuration (e.g. arguments).
-        /// This is set to <code>false</code> by default which will make the endpoint fail to start when the queue configuration does not match an existing queue.
-        /// This option has no effect if installers have been disabled.
-        /// </summary>
-        public bool AllowInputQueueConfigurationMismatch { get; set; } = false;
-
         internal QueueMode QueueMode { get; }
 
         int DefaultPort => UseTLS ? 5671 : 5672;
@@ -250,7 +243,7 @@
 
             if (hostSettings.SetupInfrastructure)
             {
-                infra.SetupInfrastructure(QueueMode, sendingAddresses, AllowInputQueueConfigurationMismatch);
+                infra.SetupInfrastructure(QueueMode, sendingAddresses);
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);

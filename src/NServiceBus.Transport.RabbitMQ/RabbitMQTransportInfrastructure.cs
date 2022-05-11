@@ -5,7 +5,6 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
@@ -36,16 +35,16 @@
             return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
-        internal void SetupInfrastructure(QueueMode queueMode, string[] sendingQueues, bool allowInputQueueConfigurationMismatch)
+        internal void SetupInfrastructure(QueueMode queueMode, string[] sendingQueues)
         {
-            using (IConnection connection = connectionFactory.CreateAdministrationConnection())
-            using (IModel channel = connection.CreateModel())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
                 DelayInfrastructure.Build(channel);
 
                 var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
 
-                routingTopology.Initialize(connection, receivingQueues, sendingQueues, queueMode != QueueMode.Classic, allowInputQueueConfigurationMismatch);
+                routingTopology.Initialize(channel, receivingQueues, sendingQueues, queueMode != QueueMode.Classic);
 
                 foreach (string receivingAddress in receivingQueues)
                 {
