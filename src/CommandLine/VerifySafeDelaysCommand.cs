@@ -72,6 +72,14 @@
                 return;
             }
 
+            var quorumQueueState = serverDetails.FeatureFlags.SingleOrDefault(fs => fs.Name == "quorum_queue");
+
+            if (quorumQueueState == null || !quorumQueueState.IsEnabled())
+            {
+                Console.WriteLine($"Fail: quorum_queue feature flag is not enabled");
+                return;
+            }
+
             Console.WriteLine("All checks OK");
         }
 
