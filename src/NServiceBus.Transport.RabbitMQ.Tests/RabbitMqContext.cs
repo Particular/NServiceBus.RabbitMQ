@@ -20,7 +20,7 @@
 
             var useTls = connectionString.StartsWith("https", StringComparison.InvariantCultureIgnoreCase) || connectionString.StartsWith("amqps", StringComparison.InvariantCultureIgnoreCase);
 
-            var transport = new RabbitMQTransport(Topology.Conventional, connectionString, QueueMode.Classic);
+            var transport = new RabbitMQTransport(Topology.Conventional, connectionString, QueueType.Classic);
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, transport.Host, transport.Port ?? 5672,
                 transport.VHost, transport.UserName, transport.Password, useTls, null, false,

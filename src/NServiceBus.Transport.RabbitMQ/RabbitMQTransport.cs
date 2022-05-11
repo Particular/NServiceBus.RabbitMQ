@@ -33,9 +33,9 @@
         /// </summary>
         /// <param name="topology">The built-in topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueMode">The queue mode for receiving queues.</param>
-        public RabbitMQTransport(Topology topology, string connectionString, QueueMode queueMode)
-            : this(GetBuiltInTopology(topology), connectionString, queueMode)
+        /// <param name="queueType">The type of queue to use for receiving queues.</param>
+        public RabbitMQTransport(Topology topology, string connectionString, QueueType queueType)
+            : this(GetBuiltInTopology(topology), connectionString, queueType)
         {
         }
 
@@ -44,17 +44,17 @@
         /// </summary>
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueMode">The queue mode for receiving queues.</param>
-        public RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode)
+        /// <param name="queueType">The type of queue to use for receiving queues.</param>
+        public RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueType queueType)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
-                supportsTTBR: queueMode == QueueMode.Classic)
+                supportsTTBR: queueType == QueueType.Classic)
         {
             Guard.AgainstNull(nameof(topology), topology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
-            QueueMode = queueMode;
+            QueueType = queueType;
             RoutingTopology = topology;
             if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
@@ -195,7 +195,7 @@
             }
         }
 
-        internal QueueMode QueueMode { get; }
+        internal QueueType QueueType { get; }
 
         int DefaultPort => UseTLS ? 5671 : 5672;
 
@@ -243,7 +243,7 @@
 
             if (hostSettings.SetupInfrastructure)
             {
-                infra.SetupInfrastructure(QueueMode, sendingAddresses);
+                infra.SetupInfrastructure(QueueType, sendingAddresses);
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);

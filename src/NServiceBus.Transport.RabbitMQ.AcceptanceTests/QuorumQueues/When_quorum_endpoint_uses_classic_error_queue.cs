@@ -26,7 +26,7 @@
         {
             public QuorumQueueEndpoint()
             {
-                var clusterTemplate = new ClusterEndpoint(QueueMode.Quorum);
+                var clusterTemplate = new ClusterEndpoint(QueueType.Quorum);
                 EndpointSetup(clusterTemplate, (c, __) =>
                 {
                     c.SendFailedMessagesTo("rabbitmq.transport.tests.classic-error");

@@ -4,9 +4,9 @@
 
     class ClusterEndpoint : DefaultServer
     {
-        public ClusterEndpoint(QueueMode queueMode)
+        public ClusterEndpoint(QueueType queueType)
         {
-            var transportConfiguration = new ConfigureEndpointRabbitMQTransport(queueMode);
+            var transportConfiguration = new ConfigureEndpointRabbitMQTransport(queueType);
             TransportConfiguration = transportConfiguration;
         }
     }

@@ -11,7 +11,7 @@
 
         RabbitMQTransport CreateTransportDefinition(string connectionString)
         {
-            return new RabbitMQTransport(Topology.Conventional, connectionString, QueueMode.Classic);
+            return new RabbitMQTransport(Topology.Conventional, connectionString, QueueType.Classic);
         }
 
         [Test]
