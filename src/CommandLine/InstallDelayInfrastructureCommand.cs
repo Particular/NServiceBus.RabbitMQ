@@ -6,7 +6,7 @@
     {
         public static Command CreateCommand()
         {
-            var delayInstallerCommand = new Command("install-delay-infrastructure", "Create delay infrastructure queues and exchanges");
+            var delayInstallerCommand = new Command("create", "Create delay infrastructure queues and exchanges");
             delayInstallerCommand.AddOption(SharedOptions.ConnectionString);
 
             delayInstallerCommand.SetHandler((string connectionString) =>

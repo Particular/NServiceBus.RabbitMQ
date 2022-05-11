@@ -29,7 +29,7 @@
 
             runUntilCancelled.AddAlias("-r");
 
-            var migrateCommand = new Command("migrate-delay-infrastructure", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
+            var migrateCommand = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
             migrateCommand.AddOption(SharedOptions.ConnectionString);
             migrateCommand.AddOption(useNonDurableEntitiesOption);
             migrateCommand.AddOption(runUntilCancelled);
