@@ -103,9 +103,10 @@
 
         static ConnectionSettings ParseAmqpConnectionString(string connectionString)
         {
-            ConnectionSettings connectionSettings = new();
-
-            connectionSettings.ConnectionString = connectionString;
+            var connectionSettings = new ConnectionSettings
+            {
+                ConnectionString = connectionString
+            };
 
             var uri = new Uri(connectionString);
 
