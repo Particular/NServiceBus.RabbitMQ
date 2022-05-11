@@ -157,8 +157,10 @@
             CheckDeprecatedSettings(dictionary1);
             var dictionary = dictionary1;
 
-            ConnectionSettings connectionSettings = new();
-            connectionSettings.ConnectionString = connectionString;
+            var connectionSettings = new ConnectionSettings
+            {
+                ConnectionString = connectionString
+            };
 
             if (dictionary.TryGetValue("port", out var portString))
             {
