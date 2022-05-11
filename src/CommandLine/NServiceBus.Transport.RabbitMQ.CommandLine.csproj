@@ -26,10 +26,4 @@
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Transport.RabbitMQ\NServiceBus.Transport.RabbitMQ.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DelayedDelivery\" />
-    <Folder Include="Sending\" />
-  </ItemGroup>
-
 </Project>
