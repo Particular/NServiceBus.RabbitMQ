@@ -2,11 +2,11 @@
 {
     using NServiceBus.AcceptanceTests.EndpointTemplates;
 
-    class ClusterEndpoint : DefaultServer
+    class QuorumEndpoint : DefaultServer
     {
-        public ClusterEndpoint(QueueType queueType)
+        public QuorumEndpoint()
         {
-            var transportConfiguration = new ConfigureEndpointRabbitMQTransport(queueType);
+            var transportConfiguration = new ConfigureEndpointRabbitMQTransport(QueueType.Quorum);
             TransportConfiguration = transportConfiguration;
         }
     }
