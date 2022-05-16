@@ -20,13 +20,14 @@
             TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly
         };
 
-        TimeSpan heartbeatInterval = TimeSpan.FromMinutes(1);
-        string host;
+        TimeSpan? heartbeatIntervalOverride;
+        TimeSpan? networkRecoveryIntervalOverride;
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
-        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
-
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
+        bool initialized = false;
+
+        internal List<(string, int)> additionalHosts = new List<(string, int)>();
 
         /// <summary>
         /// Creates new instance of the RabbitMQ transport.
@@ -56,49 +57,18 @@
 
             QueueType = queueType;
             RoutingTopology = topology;
-            if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
+            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+
+            if (!string.IsNullOrEmpty(ConnectionConfiguration.CertPath))
             {
-                AmqpConnectionString.Parse(connectionString)(this);
-            }
-            else
-            {
-                NServiceBusConnectionString.Parse(connectionString)(this);
+                ClientCertificate = new X509Certificate2(ConnectionConfiguration.CertPath, ConnectionConfiguration.CertPassphrase);
             }
         }
 
         /// <summary>
-        ///     The host to connect to.
+        /// Connection information parsed from the connection string
         /// </summary>
-        public string Host
-        {
-            get => host;
-            set
-            {
-                Guard.AgainstNullAndEmpty("value", value);
-                host = value;
-            }
-        }
-
-        /// <summary>
-        ///     The port to connect to.
-        ///     If not specified, the default port will be used (5672 if not encrypted and 5671 if using TLS)
-        /// </summary>
-        public int? Port { get; set; }
-
-        /// <summary>
-        ///     The vhost to connect to.
-        /// </summary>
-        public string VHost { get; set; } = "/";
-
-        /// <summary>
-        ///     The user name to pass to the broker for authentication.
-        /// </summary>
-        public string UserName { get; set; } = "guest";
-
-        /// <summary>
-        ///     The password to pass to the broker for authentication.
-        /// </summary>
-        public string Password { get; set; } = "guest";
+        internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
         /// <summary>
         ///     The routing topology to use. If not set the conventional routing topology will be used
@@ -150,11 +120,6 @@
         }
 
         /// <summary>
-        ///     Configures if the client should use TLS-secured connection.
-        /// </summary>
-        public bool UseTLS { get; set; }
-
-        /// <summary>
         ///     The certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         public X509Certificate2 ClientCertificate { get; set; }
@@ -174,30 +139,39 @@
         /// </summary>
         public TimeSpan HeartbeatInterval
         {
-            get => heartbeatInterval;
+            get => heartbeatIntervalOverride ?? ConnectionConfiguration.RequestedHeartbeat;
             set
             {
                 Guard.AgainstNegativeAndZero("value", value);
-                heartbeatInterval = value;
+
+                if (initialized)
+                {
+                    throw new InvalidOperationException("The heartbeat interval can only be set before the endpoint is started");
+                }
+
+                heartbeatIntervalOverride = value;
             }
         }
-
         /// <summary>
         ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
         public TimeSpan NetworkRecoveryInterval
         {
-            get => networkRecoveryInterval;
+            get => networkRecoveryIntervalOverride ?? ConnectionConfiguration.RetryDelay;
             set
             {
                 Guard.AgainstNegativeAndZero("value", value);
-                networkRecoveryInterval = value;
+
+                if (initialized)
+                {
+                    throw new InvalidOperationException("Network recovery interval can only be set before the endpoint is started");
+                }
+
+                networkRecoveryIntervalOverride = value;
             }
         }
 
         internal QueueType QueueType { get; }
-
-        int DefaultPort => UseTLS ? 5671 : 5672;
 
         /// <summary>
         /// Adds a new node for use within a cluster.
@@ -223,28 +197,31 @@
             ValidateAndApplyLegacyConfiguration();
 
             X509Certificate2Collection certCollection = null;
+
             if (ClientCertificate != null)
             {
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
-            var connectionFactory = new ConnectionFactory(hostSettings.Name, Host, Port ?? DefaultPort,
-                VHost, UserName, Password, UseTLS, certCollection, ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHosts);
+            var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration.Host, ConnectionConfiguration.Port,
+                ConnectionConfiguration.VirtualHost, ConnectionConfiguration.UserName, ConnectionConfiguration.Password, ConnectionConfiguration.UseTls, certCollection, ValidateRemoteCertificate,
+                UseExternalAuthMechanism, HeartbeatInterval, ConnectionConfiguration.RetryDelay, additionalHosts);
 
-            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, ConnectionConfiguration.RetryDelay, RoutingTopology);
             channelProvider.CreateConnection();
 
             var converter = new MessageConverter(MessageIdStrategy);
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, NetworkRecoveryInterval);
+                PrefetchCountCalculation, ConnectionConfiguration.RetryDelay);
 
             if (hostSettings.SetupInfrastructure)
             {
                 infra.SetupInfrastructure(QueueType, sendingAddresses);
             }
+
+            initialized = true;
 
             return Task.FromResult<TransportInfrastructure>(infra);
         }
@@ -274,7 +251,5 @@
                 ? new ConventionalRoutingTopology(true)
                 : new DirectRoutingTopology(true);
         }
-
-        internal List<(string, int)> additionalHosts = new List<(string, int)>();
     }
 }

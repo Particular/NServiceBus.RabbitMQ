@@ -16,11 +16,11 @@
         {
             const string connectionString = "amqp://Copa:abc_xyz@192.168.1.1:5672/Copa";
 
-            var connectionConfiguration = CreateTransportDefinition(connectionString);
+            var connectionConfiguration = CreateTransportDefinition(connectionString).ConnectionConfiguration;
 
             Assert.AreEqual(connectionConfiguration.Host, "192.168.1.1");
             Assert.AreEqual(connectionConfiguration.Port, 5672);
-            Assert.AreEqual(connectionConfiguration.VHost, "Copa");
+            Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
         }
@@ -35,22 +35,22 @@
         [TestCase("amqps", 5671U, true)]
         public void Should_determine_if_tls_should_be_used_from_connection_string(string scheme, uint port, bool useTls)
         {
-            var connectionConfiguration = CreateTransportDefinition($"{scheme}://guest:guest@localhost/");
+            var connectionConfiguration = CreateTransportDefinition($"{scheme}://guest:guest@localhost/").ConnectionConfiguration;
 
-            Assert.AreEqual(connectionConfiguration.UseTLS, useTls);
+            Assert.AreEqual(connectionConfiguration.UseTls, useTls);
         }
 
         [Test]
         public void Should_use_explicit_port_setting_over_scheme_default()
         {
-            var connectionConfiguration = CreateTransportDefinition("amqp://localhost:1234/");
+            var connectionConfiguration = CreateTransportDefinition("amqp://localhost:1234/").ConnectionConfiguration;
             Assert.AreEqual(connectionConfiguration.Port, 1234);
         }
 
         [Test]
         public void Should_parse_host_without_port()
         {
-            var connectionConfiguration = CreateTransportDefinition("amqp://my.host.com/");
+            var connectionConfiguration = CreateTransportDefinition("amqp://my.host.com/").ConnectionConfiguration;
 
             Assert.AreEqual(connectionConfiguration.Host, "my.host.com");
         }
