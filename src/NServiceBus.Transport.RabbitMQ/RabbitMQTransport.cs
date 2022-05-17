@@ -58,7 +58,7 @@
             RoutingTopology = topology;
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            if (!string.IsNullOrEmpty(ConnectionConfiguration.CertPath))
+            if (!string.IsNullOrEmpty(ConnectionConfiguration.CertPath) && !string.IsNullOrEmpty(ConnectionConfiguration.CertPassphrase))
             {
                 ClientCertificate = new X509Certificate2(ConnectionConfiguration.CertPath, ConnectionConfiguration.CertPassphrase);
             }
