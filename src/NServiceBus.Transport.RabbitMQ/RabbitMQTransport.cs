@@ -58,10 +58,7 @@
             RoutingTopology = topology;
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            if (!string.IsNullOrEmpty(ConnectionConfiguration.CertPath) && !string.IsNullOrEmpty(ConnectionConfiguration.CertPassphrase))
-            {
-                ClientCertificate = new X509Certificate2(ConnectionConfiguration.CertPath, ConnectionConfiguration.CertPassphrase);
-            }
+            InitializeClientCertificate();
         }
 
         /// <summary>
@@ -210,6 +207,14 @@
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);
+        }
+
+        void InitializeClientCertificate()
+        {
+            if (!string.IsNullOrEmpty(ConnectionConfiguration.CertPath) && !string.IsNullOrEmpty(ConnectionConfiguration.CertPassphrase))
+            {
+                ClientCertificate = new X509Certificate2(ConnectionConfiguration.CertPath, ConnectionConfiguration.CertPassphrase);
+            }
         }
 
         /// <summary>
