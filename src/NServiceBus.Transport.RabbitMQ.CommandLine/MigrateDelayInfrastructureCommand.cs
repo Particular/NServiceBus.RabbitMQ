@@ -17,43 +17,51 @@
 
         public static Command CreateCommand()
         {
-            var useNonDurableEntitiesOption = new Option<bool>(
-                 name: "--UseNonDurableEntities",
-                 description: $"Create non-durable endpoint queues and exchanges");
-
-            useNonDurableEntitiesOption.AddAlias("-n");
-
             var runUntilCancelled = new Option<bool>(
                  name: "--RunUntilCancelled",
                  description: $"The migration script will run until the script is cancelled");
 
             runUntilCancelled.AddAlias("-r");
 
+            var quietModeOption = new Option<bool>(
+             name: "--Quiet",
+             description: $"Disable console output while running");
+
+            quietModeOption.AddAlias("-q");
+
             var migrateCommand = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
-            migrateCommand.AddOption(SharedOptions.ConnectionString);
-            migrateCommand.AddOption(useNonDurableEntitiesOption);
+            var connectionStringOption = SharedOptions.CreateConnectionStringOption();
+            var topologyOption = SharedOptions.CreateRoutingTopologyOption();
+            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntities();
+
+            migrateCommand.AddOption(connectionStringOption);
+            migrateCommand.AddOption(topologyOption);
+            migrateCommand.AddOption(useDurableEntitiesOption);
+            migrateCommand.AddOption(quietModeOption);
             migrateCommand.AddOption(runUntilCancelled);
 
-            migrateCommand.SetHandler(async (bool useNonDurableEntities, string connectionString, bool runUntilCancelled, CancellationToken cancellationToken) =>
+            migrateCommand.SetHandler(async (string connectionString, Topology routingTopology, bool useDurableEntities, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
             {
                 var migrationProcess = new MigrateDelayInfrastructureCommand();
-                await migrationProcess.Run(!useNonDurableEntities, connectionString, runUntilCancelled, cancellationToken).ConfigureAwait(false);
-            }, useNonDurableEntitiesOption, SharedOptions.ConnectionString, runUntilCancelled);
+                await migrationProcess.Run(connectionString, routingTopology, useDurableEntities, quietMode, runUntilCancelled, cancellationToken).ConfigureAwait(false);
+            }, connectionStringOption, topologyOption, useDurableEntitiesOption, quietModeOption, runUntilCancelled);
 
             return migrateCommand;
         }
 
-        public Task Run(bool useDurableEntities, string connectionString, bool runUntilCancelled, CancellationToken cancellationToken = default)
+        public Task Run(string connectionString, Topology routingTopology, bool useDurableEntities, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken = default)
         {
             CommandRunner.Run(connectionString, channel =>
             {
                 try
                 {
+                    IRoutingTopology topology = GetRoutingTopology(routingTopology, useDurableEntities);
+
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         for (int currentDelayLevel = NumberOfDelayLevelQueues; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
                         {
-                            MigrateQueue(channel, currentDelayLevel, useDurableEntities, cancellationToken);
+                            MigrateQueue(channel, currentDelayLevel, topology, quietMode, cancellationToken);
                         }
 
                         if (!runUntilCancelled)
@@ -78,7 +86,14 @@
             return Task.CompletedTask;
         }
 
-        void MigrateQueue(IModel channel, int currentDelayLevel, bool useDurableQueues, CancellationToken cancellationToken)
+        IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
+        {
+            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
+            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
+            _ => throw new InvalidOperationException()
+        };
+
+        void MigrateQueue(IModel channel, int currentDelayLevel, IRoutingTopology topology, bool quietMode, CancellationToken cancellationToken)
         {
             var currentDelayQueue = $"nsb.delay-level-{currentDelayLevel:00}";
             var messageCount = channel.MessageCount(currentDelayQueue);
@@ -86,7 +101,10 @@
 
             if (messageCount > 0)
             {
-                Console.Write($"Processing {messageCount} messages at delay level {currentDelayLevel:00}. ");
+                if (!quietMode)
+                {
+                    Console.Write($"Processing {messageCount} messages at delay level {currentDelayLevel:00}. ");
+                }
 
                 int skippedMessages = 0;
                 int processedMessages = 0;
@@ -113,25 +131,24 @@
 
                     (string destinationQueue, string newRoutingKey, int newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
 
-                    // Make sure the destination queue is bound to the delivery exchange to ensure delivery 
+                    // Make sure the destination queue is bound to the delivery exchange to ensure delivery
                     if (!declaredDestinationQueues.Contains(destinationQueue))
                     {
-                        var arguments = new Dictionary<string, object>();
-
-                        channel.ExchangeDeclare(destinationQueue, ExchangeType.Fanout, useDurableQueues, false, arguments);
-                        channel.ExchangeBind(destinationQueue, "nsb.delay-delivery", $"#.{destinationQueue}");
-
+                        topology.BindToDelayInfrastructure(channel, destinationQueue, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(destinationQueue));
                         declaredDestinationQueues.Add(destinationQueue);
                     }
 
-                    string publishExchange = $"nsb.delay-level-{newDelayLevel:00}.2";
+                    string publishExchange = DelayInfrastructure.LevelName(newDelayLevel);
 
                     channel.BasicPublish(publishExchange, newRoutingKey, message.BasicProperties, message.Body);
                     channel.BasicAck(message.DeliveryTag, false);
                     processedMessages++;
                 }
 
-                Console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
+                if (!quietMode)
+                {
+                    Console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
+                }
             }
         }
 

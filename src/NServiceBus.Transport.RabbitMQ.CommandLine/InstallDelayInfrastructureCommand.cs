@@ -7,12 +7,13 @@
         public static Command CreateCommand()
         {
             var delayInstallerCommand = new Command("create", "Create delay infrastructure queues and exchanges");
-            delayInstallerCommand.AddOption(SharedOptions.ConnectionString);
+            var connectionStringOption = SharedOptions.CreateConnectionStringOption();
+            delayInstallerCommand.AddOption(connectionStringOption);
 
             delayInstallerCommand.SetHandler((string connectionString) =>
             {
                 CommandRunner.Run(connectionString, channel => DelayInfrastructure.Build(channel));
-            }, SharedOptions.ConnectionString);
+            }, connectionStringOption);
 
             return delayInstallerCommand;
         }

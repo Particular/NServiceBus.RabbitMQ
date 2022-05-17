@@ -3,10 +3,15 @@
     "NServiceBus.RabbitMQ.CommandLine": {
       "commandName": "Project"
     },
-    "Migrate delays": {
+    "delays migrate": {
       "commandName": "Executable",
       "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
-      "commandLineArgs": "delays migrate -r"
+      "commandLineArgs": "delays migrate -q"
+    },
+    "delays create": {
+      "commandName": "Executable",
+      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
+      "commandLineArgs": "delays create"
     },
     "Verify": {
       "commandName": "Executable",
