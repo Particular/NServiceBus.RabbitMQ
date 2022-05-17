@@ -25,7 +25,6 @@
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
-        bool initialized = false;
 
         internal List<(string, int)> additionalHosts = new List<(string, int)>();
 
@@ -137,36 +136,26 @@
         /// <summary>
         ///     The interval for heartbeats between the endpoint and the broker.
         /// </summary>
-        public TimeSpan HeartbeatInterval
+        public TimeSpan? HeartbeatInterval
         {
-            get => heartbeatIntervalOverride ?? ConnectionConfiguration.RequestedHeartbeat;
+            get => heartbeatIntervalOverride;
             set
             {
-                Guard.AgainstNegativeAndZero("value", value);
-
-                if (initialized)
-                {
-                    throw new InvalidOperationException("The heartbeat interval can only be set before the endpoint is started");
-                }
-
+                Guard.AgainstNull("value", value);
+                Guard.AgainstNegativeAndZero("value", value.Value);
                 heartbeatIntervalOverride = value;
             }
         }
         /// <summary>
         ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
-        public TimeSpan NetworkRecoveryInterval
+        public TimeSpan? NetworkRecoveryInterval
         {
-            get => networkRecoveryIntervalOverride ?? ConnectionConfiguration.RetryDelay;
+            get => networkRecoveryIntervalOverride;
             set
             {
-                Guard.AgainstNegativeAndZero("value", value);
-
-                if (initialized)
-                {
-                    throw new InvalidOperationException("Network recovery interval can only be set before the endpoint is started");
-                }
-
+                Guard.AgainstNull("value", value);
+                Guard.AgainstNegativeAndZero("value", value.Value);
                 networkRecoveryIntervalOverride = value;
             }
         }
@@ -219,8 +208,6 @@
             {
                 infra.SetupInfrastructure(QueueType, sendingAddresses);
             }
-
-            initialized = true;
 
             return Task.FromResult<TransportInfrastructure>(infra);
         }
