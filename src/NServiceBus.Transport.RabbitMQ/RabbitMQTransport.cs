@@ -203,8 +203,7 @@
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
-            var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration.Host, ConnectionConfiguration.Port,
-                ConnectionConfiguration.VirtualHost, ConnectionConfiguration.UserName, ConnectionConfiguration.Password, ConnectionConfiguration.UseTls, certCollection, ValidateRemoteCertificate,
+            var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, ConnectionConfiguration.RetryDelay, additionalHosts);
 
             var channelProvider = new ChannelProvider(connectionFactory, ConnectionConfiguration.RetryDelay, RoutingTopology);
