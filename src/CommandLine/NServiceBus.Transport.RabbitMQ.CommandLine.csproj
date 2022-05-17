@@ -12,17 +12,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" Link="Configuration\ConnectionConfiguration.cs" />
-    <Compile Include="..\NServiceBus.Transport.RabbitMQ\DelayedDelivery\DelayInfrastructure.cs" Link="DelayedDelivery\DelayInfrastructure.cs" />
-    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Guard.cs" />
-    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Sending\BasicPropertiesExtensions.cs" Link="Sending\BasicPropertiesExtensions.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="NServiceBus" Version="8.0.0-beta.2" />
     <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
     <PackageReference Include="Particular.Packaging" Version="2.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" Link="Configuration\ConnectionConfiguration.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\DelayedDelivery\DelayInfrastructure.cs" Link="DelayedDelivery\DelayInfrastructure.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Guard.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Sending\BasicPropertiesExtensions.cs" Link="Sending\BasicPropertiesExtensions.cs" />
   </ItemGroup>
 
 </Project>
