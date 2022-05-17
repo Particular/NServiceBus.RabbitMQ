@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Linq;
     using global::RabbitMQ.Client;
     using Unicast.Messages;
 
@@ -115,7 +116,7 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <summary>
         /// Declares queues and performs any other initialization logic needed (e.g. creating exchanges and bindings).
         /// </summary>
-        /// <param name="connection">The RabbitMQ connection to operate on.</param>
+        /// <param name="channel">The RabbitMQ channel to operate on.</param>
         /// <param name="receivingAddresses">
         /// The addresses of the queues to declare and perform initialization for, that this endpoint is receiving from.
         /// </param>
@@ -125,39 +126,20 @@ namespace NServiceBus.Transport.RabbitMQ
         /// <param name="useQuorumQueues">
         /// Should the queues that this endpoint receieves from be created as quorum queues.
         /// </param>
-        /// <param name="allowInputQueueConfigurationMismatch">
-        /// If the defined receiving queues already exists, the endpoint should fail if the existing queues are configured with different settings unless <paramref name="allowInputQueueConfigurationMismatch"/> is set to <code>true</code>.
-        /// </param>
-        public void Initialize(IConnection connection, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues, bool allowInputQueueConfigurationMismatch)
+        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
         {
             IDictionary<string, object> queueArguments = null;
+
             if (useQuorumQueues)
             {
                 queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             }
 
-            using (var channel = connection.CreateModel())
+            foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                foreach (var receiveAddress in receivingAddresses)
-                {
-                    if (!allowInputQueueConfigurationMismatch || !QueueHelper.QueueExists(connection, receiveAddress))
-                    {
-                        channel.QueueDeclare(receiveAddress, useDurableEntities, false, false, queueArguments);
-                    }
-
-                    CreateExchange(channel, receiveAddress);
-                    channel.QueueBind(receiveAddress, receiveAddress, string.Empty);
-                }
-
-                foreach (var sendingAddress in sendingAddresses)
-                {
-                    if (!QueueHelper.QueueExists(connection, sendingAddress))
-                    {
-                        channel.QueueDeclare(sendingAddress, useDurableEntities, false, false, queueArguments);
-                    }
-                    CreateExchange(channel, sendingAddress);
-                    channel.QueueBind(sendingAddress, sendingAddress, string.Empty);
-                }
+                channel.QueueDeclare(address, useDurableEntities, false, false, queueArguments);
+                CreateExchange(channel, address);
+                channel.QueueBind(address, address, string.Empty);
             }
         }
 
@@ -172,7 +154,6 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             channel.ExchangeBind(address, deliveryExchange, routingKey);
         }
-
 
         void SetupTypeSubscriptions(IModel channel, Type type)
         {

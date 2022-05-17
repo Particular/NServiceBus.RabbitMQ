@@ -3,7 +3,7 @@
     /// <summary>
     /// Specifies what queues should be used by the endpoint.
     /// </summary>
-    public enum QueueMode
+    public enum QueueType
     {
         /// <summary>
         /// Classic RabbitMQ queues. These are the standard queues and used outside cluster configuration.

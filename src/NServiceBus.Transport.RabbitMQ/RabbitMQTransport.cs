@@ -33,8 +33,9 @@
         /// </summary>
         /// <param name="topology">The built-in topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        public RabbitMQTransport(Topology topology, string connectionString)
-            : this(GetBuiltInTopology(topology), connectionString)
+        /// <param name="queueType">The type of queue to use for receiving queues.</param>
+        public RabbitMQTransport(Topology topology, string connectionString, QueueType queueType)
+            : this(GetBuiltInTopology(topology), connectionString, queueType)
         {
         }
 
@@ -43,28 +44,17 @@
         /// </summary>
         /// <param name="topology">The custom topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        public RabbitMQTransport(IRoutingTopology topology, string connectionString)
-            : this(topology, connectionString, QueueMode.Classic, true)
-        {
-        }
-
-        /// <summary>
-        /// Creates new instance of the RabbitMQ transport.
-        /// </summary>
-        /// <param name="topology">The custom topology to use.</param>
-        /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueMode">The queue mode for receiving queues.</param>
-        /// <param name="enableTimeouts">Whether to enable timeouts.</param>
-        private protected RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueMode queueMode, bool enableTimeouts)
+        /// <param name="queueType">The type of queue to use for receiving queues.</param>
+        public RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueType queueType)
             : base(TransportTransactionMode.ReceiveOnly,
-                supportsDelayedDelivery: enableTimeouts,
+                supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
-                supportsTTBR: queueMode == QueueMode.Classic)
+                supportsTTBR: queueType == QueueType.Classic)
         {
             Guard.AgainstNull(nameof(topology), topology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
-            QueueMode = queueMode;
+            QueueType = queueType;
             RoutingTopology = topology;
             if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
             {
@@ -205,16 +195,19 @@
             }
         }
 
-        /// <summary>
-        /// Specifies whether the endpoint should ignore failures to declare the incoming queues because the queue already exists with a different configuration (e.g. arguments).
-        /// This is set to <code>false</code> by default which will make the endpoint fail to start when the queue configuration does not match an existing queue.
-        /// This option has no effect if installers have been disabled.
-        /// </summary>
-        public bool AllowInputQueueConfigurationMismatch { get; set; } = false;
-
-        internal QueueMode QueueMode { get; }
+        internal QueueType QueueType { get; }
 
         int DefaultPort => UseTLS ? 5671 : 5672;
+
+        /// <summary>
+        /// Adds a new node for use within a cluster.
+        /// </summary>
+        /// <param name="host">The hostname of the node.</param>
+        /// <param name="port">The port of the node.</param>
+        public void AddClusterNode(string host, int port = -1)
+        {
+            additionalHosts.Add((host, port));
+        }
 
         /// <summary>
         ///     Initializes all the factories and supported features for the transport. This method is called right before all
@@ -250,7 +243,7 @@
 
             if (hostSettings.SetupInfrastructure)
             {
-                infra.SetupInfrastructure(QueueMode, sendingAddresses, AllowInputQueueConfigurationMismatch);
+                infra.SetupInfrastructure(QueueType, sendingAddresses);
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);

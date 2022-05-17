@@ -5,7 +5,6 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
@@ -36,28 +35,20 @@
             return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
-        internal void SetupInfrastructure(QueueMode queueMode, string[] sendingQueues, bool allowInputQueueConfigurationMismatch)
+        internal void SetupInfrastructure(QueueType queueType, string[] sendingQueues)
         {
-            using (IConnection connection = connectionFactory.CreateAdministrationConnection())
-            using (IModel channel = connection.CreateModel())
+            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using (var channel = connection.CreateModel())
             {
-                // Delayed delivery currently not supported with quorum queues
-                if (queueMode != QueueMode.Quorum)
-                {
-                    DelayInfrastructure.Build(channel);
-                }
+                DelayInfrastructure.Build(channel);
 
                 var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
 
-                routingTopology.Initialize(connection, receivingQueues, sendingQueues, queueMode != QueueMode.Classic, allowInputQueueConfigurationMismatch);
+                routingTopology.Initialize(channel, receivingQueues, sendingQueues, queueType != QueueType.Classic);
 
-                if (queueMode != QueueMode.Quorum)
+                foreach (string receivingAddress in receivingQueues)
                 {
-                    foreach (string receivingAddress in receivingQueues)
-                    {
-                        routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
-                            DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
-                    }
+                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
                 }
             }
         }

@@ -2,27 +2,16 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"NServiceBus.Transport.RabbitMQ.Tests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
 namespace NServiceBus
 {
-    public enum DelayedDeliverySupport
-    {
-        Disabled = 0,
-        UnsafeEnabled = 1,
-    }
     public delegate int PrefetchCountCalculation(int maximumConcurrency);
-    public enum QueueMode
+    public enum QueueType
     {
         Classic = 0,
         Quorum = 1,
     }
-    public class RabbitMQClusterTransport : NServiceBus.RabbitMQTransport
-    {
-        public RabbitMQClusterTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueMode queueMode, NServiceBus.DelayedDeliverySupport delayedDeliverySupportConfiguration) { }
-        public void AddClusterNode(string host, int port = -1) { }
-    }
     public class RabbitMQTransport : NServiceBus.Transport.TransportDefinition
     {
-        public RabbitMQTransport(NServiceBus.Topology topology, string connectionString) { }
-        public RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString) { }
-        public bool AllowInputQueueConfigurationMismatch { get; set; }
+        public RabbitMQTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueType queueType) { }
+        public RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString, NServiceBus.QueueType queueType) { }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
         public string Host { get; set; }
@@ -38,6 +27,7 @@ namespace NServiceBus
         public string UserName { get; set; }
         public string VHost { get; set; }
         public bool ValidateRemoteCertificate { get; set; }
+        public void AddClusterNode(string host, int port = -1) { }
         public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
         [System.Obsolete("Inject the ITransportAddressResolver type to access the address translation mecha" +
@@ -94,7 +84,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public ConventionalRoutingTopology(bool useDurableEntities) { }
         public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
-        public void Initialize(RabbitMQ.Client.IConnection connection, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool useQuorumQueues, bool allowInputQueueConfigurationMismatch) { }
+        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool useQuorumQueues) { }
         public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
         public void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties) { }
         public void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
@@ -105,7 +95,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public DirectRoutingTopology(bool useDurableEntities, System.Func<string> exchangeNameConvention = null, System.Func<System.Type, string> routingKeyConvention = null) { }
         public void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey) { }
-        public void Initialize(RabbitMQ.Client.IConnection connection, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool useQuorumQueues, bool allowInputQueueConfigurationMismatch) { }
+        public void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool useQuorumQueues) { }
         public void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
         public void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties) { }
         public void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties) { }
@@ -115,7 +105,7 @@ namespace NServiceBus.Transport.RabbitMQ
     public interface IRoutingTopology
     {
         void BindToDelayInfrastructure(RabbitMQ.Client.IModel channel, string address, string deliveryExchange, string routingKey);
-        void Initialize(RabbitMQ.Client.IConnection channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool useQuorumQueues, bool allowInputQueueConfigurationMismatch);
+        void Initialize(RabbitMQ.Client.IModel channel, System.Collections.Generic.IEnumerable<string> receivingAddresses, System.Collections.Generic.IEnumerable<string> sendingAddresses, bool useQuorumQueues);
         void Publish(RabbitMQ.Client.IModel channel, System.Type type, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
         void RawSendInCaseOfFailure(RabbitMQ.Client.IModel channel, string address, System.ReadOnlyMemory<byte> body, RabbitMQ.Client.IBasicProperties properties);
         void Send(RabbitMQ.Client.IModel channel, string address, NServiceBus.Transport.OutgoingMessage message, RabbitMQ.Client.IBasicProperties properties);
