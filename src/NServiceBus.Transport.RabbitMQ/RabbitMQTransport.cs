@@ -193,16 +193,16 @@
             }
 
             var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, ConnectionConfiguration.RetryDelay, additionalHosts);
+                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHosts);
 
-            var channelProvider = new ChannelProvider(connectionFactory, ConnectionConfiguration.RetryDelay, RoutingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval ?? ConnectionConfiguration.RetryDelay, RoutingTopology);
             channelProvider.CreateConnection();
 
             var converter = new MessageConverter(MessageIdStrategy);
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, ConnectionConfiguration.RetryDelay);
+                PrefetchCountCalculation, NetworkRecoveryInterval ?? ConnectionConfiguration.RetryDelay);
 
             if (hostSettings.SetupInfrastructure)
             {
