@@ -8,8 +8,7 @@
     public class ConnectionConfigurationTests
     {
         const string connectionString =
-            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;requestedHeartbeat=3;" +
-            "retryDelay=01:02:03;useTls=true;certPath=/path/to/client/keycert.p12;certPassPhrase=abc123";
+            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true;";
 
         ConnectionConfiguration defaults = ConnectionConfiguration.Create("host=localhost");
 
@@ -23,11 +22,7 @@
             Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
             Assert.AreEqual(connectionConfiguration.UserName, "Copa");
             Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
-            Assert.AreEqual(connectionConfiguration.RequestedHeartbeat, TimeSpan.FromSeconds(3));
-            Assert.AreEqual(connectionConfiguration.RetryDelay, new TimeSpan(1, 2, 3)); //01:02:03
             Assert.AreEqual(connectionConfiguration.UseTls, true);
-            Assert.AreEqual(connectionConfiguration.CertPath, "/path/to/client/keycert.p12");
-            Assert.AreEqual(connectionConfiguration.CertPassphrase, "abc123");
         }
 
         [Test]
@@ -88,22 +83,6 @@
         }
 
         [Test]
-        public void Should_parse_the_requestedHeartbeat()
-        {
-            var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;requestedHeartbeat=5");
-
-            Assert.AreEqual(TimeSpan.FromSeconds(5), connectionConfiguration.RequestedHeartbeat);
-        }
-
-        [Test]
-        public void Should_parse_the_retry_delay()
-        {
-            var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;retryDelay=00:00:10");
-
-            Assert.AreEqual(TimeSpan.FromSeconds(10), connectionConfiguration.RetryDelay);
-        }
-
-        [Test]
         public void Should_parse_the_username()
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;username=test");
@@ -129,22 +108,6 @@
         }
 
         [Test]
-        public void Should_parse_the_cert_path()
-        {
-            var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;certPath=/path/keyfile.p12");
-
-            Assert.AreEqual("/path/keyfile.p12", connectionConfiguration.CertPath);
-        }
-
-        [Test]
-        public void Should_parse_the_cert_passphrase()
-        {
-            var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;certPassphrase=abc123");
-
-            Assert.AreEqual("abc123", connectionConfiguration.CertPassphrase);
-        }
-
-        [Test]
         public void Should_throw_on_malformed_string()
         {
             Assert.Throws<ArgumentException>(() => ConnectionConfiguration.Create("not a well formed name value pair;"));
@@ -157,12 +120,14 @@
                 "host=:notaport1,host=localhost2;" +
                 "port=notaport2;" +
                 "useTls=notusetls;" +
-                "requestedHeartbeat=notaheartbeat;" +
-                "retryDelay=notaretrydelay;" +
+                "requestedHeartbeat=60;" +
+                "retryDelay=10;" +
                 "usePublisherConfirms=true;" +
                 "prefetchcount=100;" +
                 "maxWaitTimeForConfirms=02:03:39;" +
-                "dequeuetimeout=1;";
+                "dequeuetimeout=1;" +
+                "certPath =/path/to/client/keycert.p12;" +
+                "certPassPhrase = abc123;";
 
             var exception = Assert.Throws<NotSupportedException>(() =>
                 ConnectionConfiguration.Create(connectionString));
@@ -173,12 +138,14 @@
             Assert.That(exception.Message, Does.Contain("'notaport1' is not a valid Int32 value for the port in the 'host' connection string option."));
             Assert.That(exception.Message, Does.Contain("'notaport2' is not a valid Int32 value for the 'port' connection string option."));
             Assert.That(exception.Message, Does.Contain("'notusetls' is not a valid Boolean value for the 'useTls' connection string option."));
-            Assert.That(exception.Message, Does.Contain("'notaheartbeat' is not a valid UInt16 value for the 'requestedHeartbeat' connection string option."));
-            Assert.That(exception.Message, Does.Contain("'notaretrydelay' is not a valid TimeSpan value for the 'retryDelay' connection string option."));
             Assert.That(exception.Message, Does.Contain("The 'UsePublisherConfirms' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'DequeueTimeout' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'requestedHeartbeat' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().HeartbeatInterval' instead."));
+            Assert.That(exception.Message, Does.Contain("The 'retryDelay' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().NetworkRecoveryInterval' instead."));
+            Assert.That(exception.Message, Does.Contain("The 'certPath' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead."));
+            Assert.That(exception.Message, Does.Contain("The 'certPassphrase' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead."));
         }
 
         [Test]
@@ -206,33 +173,9 @@
         }
 
         [Test]
-        public void Should_set_default_requested_heartbeat()
-        {
-            Assert.AreEqual(defaults.RequestedHeartbeat, TimeSpan.FromSeconds(60));
-        }
-
-        [Test]
-        public void Should_set_default_retry_delay()
-        {
-            Assert.AreEqual(defaults.RetryDelay, TimeSpan.FromSeconds(10));
-        }
-
-        [Test]
         public void Should_set_default_use_tls()
         {
             Assert.AreEqual(defaults.UseTls, false);
-        }
-
-        [Test]
-        public void Should_set_default_cert_path()
-        {
-            Assert.AreEqual(defaults.CertPath, "");
-        }
-
-        [Test]
-        public void Should_set_default_retry_cert_passphrase()
-        {
-            Assert.AreEqual(defaults.CertPassphrase, null);
         }
     }
 }

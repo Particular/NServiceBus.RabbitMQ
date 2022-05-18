@@ -15,8 +15,6 @@
                 VirtualHost = connectionData.VirtualHost,
                 UserName = connectionData.UserName,
                 Password = connectionData.Password,
-                RequestedHeartbeat = connectionData.RequestedHeartbeat,
-                NetworkRecoveryInterval = connectionData.RetryDelay,
                 UseBackgroundThreadsForIO = true,
                 DispatchConsumersAsync = true
             };

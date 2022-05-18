@@ -65,10 +65,9 @@ namespace NServiceBus
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
 
-
             ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
-            InitializeClientCertificate();
         }
     }
 }
+
 #pragma warning restore 1591

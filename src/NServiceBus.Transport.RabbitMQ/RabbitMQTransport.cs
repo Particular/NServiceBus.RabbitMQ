@@ -15,13 +15,16 @@
     /// </summary>
     public partial class RabbitMQTransport : TransportDefinition
     {
+        const ushort defaultRequestedHeartbeat = 60;
+        const ushort defaultRetryDelay = 10;
+
         static readonly TransportTransactionMode[] SupportedTransactionModes =
         {
             TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly
         };
 
-        TimeSpan? heartbeatIntervalOverride;
-        TimeSpan? networkRecoveryIntervalOverride;
+        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(defaultRequestedHeartbeat);
+        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(defaultRetryDelay);
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
@@ -57,8 +60,6 @@
             QueueType = queueType;
             RoutingTopology = topology;
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
-
-            InitializeClientCertificate();
         }
 
         /// <summary>
@@ -133,27 +134,25 @@
         /// <summary>
         ///     The interval for heartbeats between the endpoint and the broker.
         /// </summary>
-        public TimeSpan? HeartbeatInterval
+        public TimeSpan HeartbeatInterval
         {
-            get => heartbeatIntervalOverride;
+            get => heartbeatInterval;
             set
             {
-                Guard.AgainstNull("value", value);
-                Guard.AgainstNegativeAndZero("value", value.Value);
-                heartbeatIntervalOverride = value;
+                Guard.AgainstNegativeAndZero("value", value);
+                heartbeatInterval = value;
             }
         }
         /// <summary>
         ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
-        public TimeSpan? NetworkRecoveryInterval
+        public TimeSpan NetworkRecoveryInterval
         {
-            get => networkRecoveryIntervalOverride;
+            get => networkRecoveryInterval;
             set
             {
-                Guard.AgainstNull("value", value);
-                Guard.AgainstNegativeAndZero("value", value.Value);
-                networkRecoveryIntervalOverride = value;
+                Guard.AgainstNegativeAndZero("value", value);
+                networkRecoveryInterval = value;
             }
         }
 
@@ -192,14 +191,14 @@
             var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHosts);
 
-            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval ?? ConnectionConfiguration.RetryDelay, RoutingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             channelProvider.CreateConnection();
 
             var converter = new MessageConverter(MessageIdStrategy);
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, NetworkRecoveryInterval ?? ConnectionConfiguration.RetryDelay);
+                PrefetchCountCalculation, NetworkRecoveryInterval);
 
             if (hostSettings.SetupInfrastructure)
             {
@@ -207,14 +206,6 @@
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);
-        }
-
-        void InitializeClientCertificate()
-        {
-            if (!string.IsNullOrEmpty(ConnectionConfiguration.CertPath) && !string.IsNullOrEmpty(ConnectionConfiguration.CertPassphrase))
-            {
-                ClientCertificate = new X509Certificate2(ConnectionConfiguration.CertPath, ConnectionConfiguration.CertPassphrase);
-            }
         }
 
         /// <summary>

@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.RabbitMQ
     /// <summary>
     /// Connection information parsed from an AMQP or NServiceBus connection string
     /// </summary>
-    class ConnectionConfiguration
+    partial class ConnectionConfiguration
     {
         const bool defaultUseTls = false;
         const int defaultPort = 5672;
@@ -22,10 +22,6 @@ namespace NServiceBus.Transport.RabbitMQ
         const string defaultVirtualHost = "/";
         const string defaultUserName = "guest";
         const string defaultPassword = "guest";
-        const ushort defaultRequestedHeartbeat = 60;
-        static readonly TimeSpan defaultRetryDelay = TimeSpan.FromSeconds(10);
-        const string defaultCertPath = "";
-        const string defaultCertPassphrase = null;
 
         /// <summary>
         /// The brokers host name
@@ -53,29 +49,9 @@ namespace NServiceBus.Transport.RabbitMQ
         public string Password { get; }
 
         /// <summary>
-        /// The time interval between heartbeats
-        /// </summary>
-        public TimeSpan RequestedHeartbeat { get; }
-
-        /// <summary>
-        /// The amount of time to delay before retrying connections
-        /// </summary>
-        public TimeSpan RetryDelay { get; }
-
-        /// <summary>
         /// Should the connection use TLS?
         /// </summary>
         public bool UseTls { get; }
-
-        /// <summary>
-        /// The path to the X509 certificate to be used during TLS connections
-        /// </summary>
-        public string CertPath { get; }
-
-        /// <summary>
-        /// The password for the X509 certificate file, <see cref="CertPath"/>
-        /// </summary>
-        public string CertPassphrase { get; }
 
         /// <summary>
         /// A set of additional key/value pairs to be used by the connection
@@ -88,11 +64,7 @@ namespace NServiceBus.Transport.RabbitMQ
             string virtualHost,
             string userName,
             string password,
-            TimeSpan requestedHeartbeat,
-            TimeSpan retryDelay,
             bool useTls,
-            string certPath,
-            string certPassphrase,
             Dictionary<string, string> clientProperties)
         {
             Host = host;
@@ -100,11 +72,7 @@ namespace NServiceBus.Transport.RabbitMQ
             VirtualHost = virtualHost;
             UserName = userName;
             Password = password;
-            RequestedHeartbeat = requestedHeartbeat;
-            RetryDelay = retryDelay;
             UseTls = useTls;
-            CertPath = certPath;
-            CertPassphrase = certPassphrase;
             ClientProperties = clientProperties;
         }
 
@@ -135,13 +103,6 @@ namespace NServiceBus.Transport.RabbitMQ
             var userName = GetValue(dictionary, "userName", defaultUserName);
             var password = GetValue(dictionary, "password", defaultPassword);
 
-            var requestedHeartbeatSeconds = GetValue(dictionary, "requestedHeartbeat", ushort.TryParse, defaultRequestedHeartbeat, invalidOptionsMessage);
-            var requestedHeartbeat = TimeSpan.FromSeconds(requestedHeartbeatSeconds);
-
-            var retryDelay = GetValue(dictionary, "retryDelay", TimeSpan.TryParse, defaultRetryDelay, invalidOptionsMessage);
-            var certPath = GetValue(dictionary, "certPath", defaultCertPath);
-            var certPassPhrase = GetValue(dictionary, "certPassphrase", defaultCertPassphrase);
-
             if (invalidOptionsMessage.Length > 0)
             {
                 throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
@@ -170,8 +131,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 { "user", userName }
             };
 
-            return new ConnectionConfiguration(
-                host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
+            return new ConnectionConfiguration(host, port, virtualHost, userName, password, useTls, clientProperties);
         }
 
         static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
@@ -296,6 +256,26 @@ namespace NServiceBus.Transport.RabbitMQ
             if (dictionary.ContainsKey("usepublisherconfirms"))
             {
                 invalidOptionsMessage.AppendLine("The 'UsePublisherConfirms' connection string option has been removed. Consult the documentation for further information.");
+            }
+
+            if (dictionary.ContainsKey("certPath"))
+            {
+                invalidOptionsMessage.AppendLine("The 'certPath' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead.");
+            }
+
+            if (dictionary.ContainsKey("certPassphrase"))
+            {
+                invalidOptionsMessage.AppendLine("The 'certPassphrase' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead.");
+            }
+
+            if (dictionary.ContainsKey("requestedHeartbeat"))
+            {
+                invalidOptionsMessage.AppendLine("The 'requestedHeartbeat' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().HeartbeatInterval' instead.");
+            }
+
+            if (dictionary.ContainsKey("retryDelay"))
+            {
+                invalidOptionsMessage.AppendLine("The 'retryDelay' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().NetworkRecoveryInterval' instead.");
             }
         }
 

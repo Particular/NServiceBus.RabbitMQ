@@ -21,7 +21,7 @@
         readonly object lockObject = new object();
         List<AmqpTcpEndpoint> hostnames;
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan? heartbeatInterval, TimeSpan? networkRecoveryInterval, List<(string, int)> additionalHostnames)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string, int)> additionalHostnames)
         {
             if (endpointName is null)
             {
@@ -42,8 +42,8 @@
                 VirtualHost = connectionConfiguration.VirtualHost,
                 UserName = connectionConfiguration.UserName,
                 Password = connectionConfiguration.Password,
-                RequestedHeartbeat = heartbeatInterval ?? connectionConfiguration.RequestedHeartbeat,
-                NetworkRecoveryInterval = networkRecoveryInterval ?? connectionConfiguration.RetryDelay,
+                RequestedHeartbeat = heartbeatInterval,
+                NetworkRecoveryInterval = networkRecoveryInterval,
                 UseBackgroundThreadsForIO = true,
                 DispatchConsumersAsync = true
             };

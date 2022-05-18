@@ -13,9 +13,9 @@ namespace NServiceBus
         public RabbitMQTransport(NServiceBus.Topology topology, string connectionString, NServiceBus.QueueType queueType) { }
         public RabbitMQTransport(NServiceBus.Transport.RabbitMQ.IRoutingTopology topology, string connectionString, NServiceBus.QueueType queueType) { }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
-        public System.TimeSpan? HeartbeatInterval { get; set; }
+        public System.TimeSpan HeartbeatInterval { get; set; }
         public System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> MessageIdStrategy { get; set; }
-        public System.TimeSpan? NetworkRecoveryInterval { get; set; }
+        public System.TimeSpan NetworkRecoveryInterval { get; set; }
         public NServiceBus.PrefetchCountCalculation PrefetchCountCalculation { get; set; }
         public NServiceBus.Transport.RabbitMQ.IRoutingTopology RoutingTopology { get; set; }
         public System.TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; }
