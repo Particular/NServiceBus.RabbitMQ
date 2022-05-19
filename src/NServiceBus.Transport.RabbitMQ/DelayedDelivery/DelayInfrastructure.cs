@@ -19,9 +19,9 @@
         public const string XFirstDeathExchangeHeader = "x-first-death-exchange";
         public const string XFirstDeathQueueHeader = "x-first-death-queue";
         public const string XFirstDeathReasonHeader = "x-first-death-reason";
-        public const string DeliveryExchange = "nsb.delay-delivery";
+        public const string DeliveryExchange = "nsb.v2.delay-delivery";
 
-        public static string LevelName(int level) => $"nsb.delay-level-{level:D2}";
+        public static string LevelName(int level) => $"nsb.v2.delay-level-{level:D2}";
 
         public static string BindingKey(string address) => $"#.{address}";
 
@@ -38,7 +38,9 @@
 
                 var arguments = new Dictionary<string, object>
                 {
-                    { "x-queue-mode", "lazy" },
+                    { "x-queue-type", "quorum" },
+                    { "x-dead-letter-strategy", "at-least-once" },
+                    { "x-overflow", "reject-publish" },
                     { "x-message-ttl", Convert.ToInt64(Math.Pow(2, level)) * 1000 },
                     { "x-dead-letter-exchange", level > 0 ? nextLevel : DeliveryExchange }
                 };
