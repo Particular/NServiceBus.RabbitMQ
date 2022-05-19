@@ -23,11 +23,11 @@
     /// </summary>
     class ConventionalRoutingTopology : IRoutingTopology
     {
-        readonly bool useDurableExchanges;
+        readonly bool durable;
 
-        public ConventionalRoutingTopology(bool useDurableExchanges)
+        public ConventionalRoutingTopology(bool durable)
         {
-            this.useDurableExchanges = useDurableExchanges;
+            this.durable = durable;
         }
 
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
@@ -76,7 +76,7 @@
         {
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
+                channel.QueueDeclare(address, durable, false, false, null);
                 CreateExchange(channel, address);
                 channel.QueueBind(address, address, string.Empty);
             }
@@ -130,7 +130,7 @@
         {
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableExchanges);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, durable);
             }
             // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
