@@ -76,11 +76,7 @@
         {
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                if (!QueueHelper.QueueExists(QueueCreator.RoutingTopologyInitializeConnection.Value, address))
-                {
-                    channel.QueueDeclare(address, useDurableExchanges, false, false, null);
-                }
-
+                channel.QueueDeclare(address, useDurableExchanges, false, false, null);
                 CreateExchange(channel, address);
                 channel.QueueBind(address, address, string.Empty);
             }

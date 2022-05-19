@@ -1,15 +1,11 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
-    using System.Threading;
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client;
 
     class QueueCreator : ICreateQueues
     {
         readonly ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
-
-        public static ThreadLocal<IConnection> RoutingTopologyInitializeConnection = new ThreadLocal<IConnection>();
 
         public QueueCreator(ConnectionFactory connectionFactory, IRoutingTopology routingTopology)
         {
@@ -24,16 +20,7 @@
             {
                 DelayInfrastructure.Build(channel);
 
-                try
-                {
-                    // workaround to make the connection available to the routing topology
-                    RoutingTopologyInitializeConnection.Value = connection;
-                    routingTopology.Initialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
-                }
-                finally
-                {
-                    RoutingTopologyInitializeConnection.Value = null;
-                }
+                routingTopology.Initialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
 
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
