@@ -15,7 +15,7 @@
         [SetUp]
         public void SetUp()
         {
-            routingTopology = new ConventionalRoutingTopology(true);
+            routingTopology = new ConventionalRoutingTopology(true, QueueType.Classic);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");

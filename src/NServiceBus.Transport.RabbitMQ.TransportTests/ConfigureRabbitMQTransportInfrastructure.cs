@@ -26,7 +26,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
 
         queueBindings = settings.Get<QueueBindings>();
 
-        new TransportExtensions<RabbitMQTransport>(settings).UseConventionalRoutingTopology();
+        new TransportExtensions<RabbitMQTransport>(settings).UseConventionalRoutingTopology(QueueType.Classic);
         result.TransportInfrastructure = transport.Initialize(settings, connectionStringBuilder.ConnectionString);
         isTransportInitialized = true;
         result.PurgeInputQueueOnStartup = true;

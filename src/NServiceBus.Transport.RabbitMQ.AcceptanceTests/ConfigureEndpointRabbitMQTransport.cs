@@ -23,7 +23,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
         transport = configuration.UseTransport<RabbitMQTransport>();
         transport.ConnectionString(ConnectionHelper.ConnectionString);
-        transport.UseConventionalRoutingTopology();
+        transport.UseConventionalRoutingTopology(QueueType.Classic);
 
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
 

@@ -10,10 +10,11 @@
     /// </summary>
     class DirectRoutingTopology : IRoutingTopology
     {
-        public DirectRoutingTopology(Conventions conventions, bool durable)
+        public DirectRoutingTopology(Conventions conventions, bool durable, QueueType queueType)
         {
             this.conventions = conventions;
             this.durable = durable;
+            this.queueType = queueType;
         }
 
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
@@ -44,9 +45,16 @@
 
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
+            Dictionary<string, object> arguments = null;
+
+            if (queueType == QueueType.Quorum)
+            {
+                arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+            }
+
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, durable, false, false, null);
+                channel.QueueDeclare(address, durable, false, false, arguments);
             }
         }
 
@@ -92,6 +100,7 @@
 
         readonly Conventions conventions;
         readonly bool durable;
+        readonly QueueType queueType;
 
         public class Conventions
         {
