@@ -8,7 +8,6 @@ CreateEndpointCommand(rootCommand);
 
 return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
 
-
 void CreateDelaysCommand(Command rootCommand)
 {
     var delaysSubCommand = new Command("delays", "A set of commands that provide functionality related to the delay infrastructure");
