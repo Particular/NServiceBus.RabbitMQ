@@ -7,7 +7,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_endpoint_sends_to_quorum_queue_receiver : NServiceBusAcceptanceTest
+    public class When_classic_endpoint_sends_to_quorum_queue_receiver : NServiceBusAcceptanceTest
     {
         const string DestinationQueueName = "rabbitmq.transport.tests.quorum-destination";
 
