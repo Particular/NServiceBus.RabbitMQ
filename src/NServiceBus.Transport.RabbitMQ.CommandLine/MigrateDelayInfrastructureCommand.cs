@@ -3,6 +3,7 @@
     using System;
     using System.CommandLine;
     using System.Globalization;
+    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
@@ -32,26 +33,37 @@
             var migrateCommand = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
             var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
-            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntities();
+            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
+            var certPathOption = SharedOptions.CreateCertPathOption();
+            var certPassphraseOption = SharedOptions.CreateCertPassphraseOption();
 
             migrateCommand.AddOption(connectionStringOption);
             migrateCommand.AddOption(topologyOption);
             migrateCommand.AddOption(useDurableEntitiesOption);
+            migrateCommand.AddOption(certPathOption);
+            migrateCommand.AddOption(certPassphraseOption);
             migrateCommand.AddOption(quietModeOption);
             migrateCommand.AddOption(runUntilCancelled);
 
-            migrateCommand.SetHandler(async (string connectionString, Topology routingTopology, bool useDurableEntities, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
+            migrateCommand.SetHandler(async (string connectionString, Topology routingTopology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
             {
                 var migrationProcess = new MigrateDelayInfrastructureCommand();
-                await migrationProcess.Run(connectionString, routingTopology, useDurableEntities, quietMode, runUntilCancelled, cancellationToken).ConfigureAwait(false);
-            }, connectionStringOption, topologyOption, useDurableEntitiesOption, quietModeOption, runUntilCancelled);
+                X509Certificate2? certificate = null;
+
+                if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrWhiteSpace(certPassphrase))
+                {
+                    certificate = new X509Certificate2(certPath, certPassphrase);
+                }
+
+                await migrationProcess.Run(connectionString, routingTopology, useDurableEntities, certificate, quietMode, runUntilCancelled, cancellationToken).ConfigureAwait(false);
+            }, connectionStringOption, topologyOption, useDurableEntitiesOption, certPathOption, certPassphraseOption, quietModeOption, runUntilCancelled);
 
             return migrateCommand;
         }
 
-        public Task Run(string connectionString, Topology routingTopology, bool useDurableEntities, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken = default)
+        public Task Run(string connectionString, Topology routingTopology, bool useDurableEntities, X509Certificate2? certificate, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken = default)
         {
-            CommandRunner.Run(connectionString, channel =>
+            CommandRunner.Run(connectionString, certificate, channel =>
             {
                 try
                 {

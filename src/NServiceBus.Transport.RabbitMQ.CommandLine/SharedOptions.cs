@@ -31,7 +31,7 @@
             return topologyOption;
         }
 
-        public static Option<bool> CreateUseDurableEntities()
+        public static Option<bool> CreateUseDurableEntitiesOption()
         {
             var useDurableEntities = new Option<bool>(
                 name: "--useDurableEntities",
@@ -41,6 +41,24 @@
             useDurableEntities.AddAlias("-d");
 
             return useDurableEntities;
+        }
+
+        public static Option<string> CreateCertPathOption()
+        {
+            var certPathOption = new Option<string>(
+            name: "--certPath",
+            description: $"Set the path to the client certificate file for connecting to the broker");
+
+            return certPathOption;
+        }
+
+        public static Option<string> CreateCertPassphraseOption()
+        {
+            var certPassphraseOption = new Option<string>(
+            name: "--certPassphrase",
+            description: $"The passphrase for client certificate file for when using a client certificate");
+
+            return certPassphraseOption;
         }
     }
 }
