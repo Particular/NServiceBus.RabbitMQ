@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using NServiceBus.Transport.RabbitMQ;
 
 class Broker
 {
@@ -32,13 +33,13 @@ class Broker
     {
         var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
-        var connectionStringParser = new RabbitMqConnectionStringParser(connectionString);
+        var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-        string hostName = connectionStringParser.HostName;
-        string username = connectionStringParser.UserName ?? "guest";
-        string password = connectionStringParser.Password ?? "guest";
-        string virtualHost = connectionStringParser.VirtualHost ?? "/";
-        int port = connectionStringParser.IsTls ? 443 : 15672;
+        string hostName = connectionConfiguration.Host;
+        string username = connectionConfiguration.UserName ?? "guest";
+        string password = connectionConfiguration.Password ?? "guest";
+        string virtualHost = connectionConfiguration.VirtualHost ?? "/";
+        int port = connectionConfiguration.UseTls ? 443 : 15672;
 
         return new Broker
         {

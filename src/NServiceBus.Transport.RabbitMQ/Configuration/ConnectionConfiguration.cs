@@ -5,16 +5,13 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Generic;
     using System.Data.Common;
-    using System.Diagnostics;
-    using System.IO;
     using System.Linq;
     using System.Text;
-    using Support;
 
     /// <summary>
     /// Connection information parsed from an AMQP or NServiceBus connection string
     /// </summary>
-    partial class ConnectionConfiguration
+    class ConnectionConfiguration
     {
         const bool defaultUseTls = false;
         const int defaultPort = 5672;
@@ -53,19 +50,13 @@ namespace NServiceBus.Transport.RabbitMQ
         /// </summary>
         public bool UseTls { get; }
 
-        /// <summary>
-        /// A set of additional key/value pairs to be used by the connection
-        /// </summary>
-        public Dictionary<string, string> ClientProperties { get; }
-
         ConnectionConfiguration(
             string host,
             int port,
             string virtualHost,
             string userName,
             string password,
-            bool useTls,
-            Dictionary<string, string> clientProperties)
+            bool useTls)
         {
             Host = host;
             Port = port;
@@ -73,7 +64,6 @@ namespace NServiceBus.Transport.RabbitMQ
             UserName = userName;
             Password = password;
             UseTls = useTls;
-            ClientProperties = clientProperties;
         }
 
         /// <summary>
@@ -107,31 +97,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
             }
-
-            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
-            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
-
-            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionConfiguration).Assembly.Location);
-            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
-
-            var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
-            var applicationName = Path.GetFileName(applicationNameAndPath);
-            var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
-
-            var hostname = RuntimeEnvironment.MachineName;
-
-            var clientProperties = new Dictionary<string, string>
-            {
-                { "client_api", "NServiceBus" },
-                { "nservicebus_version", nsbFileVersion },
-                { "nservicebus.rabbitmq_version", rabbitMQFileVersion },
-                { "application", applicationName },
-                { "application_location", applicationPath },
-                { "machine_name", hostname },
-                { "user", userName }
-            };
-
-            return new ConnectionConfiguration(host, port, virtualHost, userName, password, useTls, clientProperties);
+            return new ConnectionConfiguration(host, port, virtualHost, userName, password, useTls);
         }
 
         static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)

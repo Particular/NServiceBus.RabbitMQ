@@ -21,13 +21,10 @@
                 DispatchConsumersAsync = true,
             };
 
-            if (certificate != null && connectionConfiguration.UseTls)
-            {
-                factory.Ssl.ServerName = connectionConfiguration.Host;
-                factory.Ssl.Certs = new X509CertificateCollection(new X509Certificate2[] { certificate });
-                factory.Ssl.Version = SslProtocols.Tls12;
-                factory.Ssl.Enabled = connectionConfiguration.UseTls;
-            }
+            factory.Ssl.ServerName = connectionConfiguration.Host;
+            factory.Ssl.Certs = certificate != null ? new X509CertificateCollection(new X509Certificate2[] { certificate }) : null;
+            factory.Ssl.Version = SslProtocols.Tls12;
+            factory.Ssl.Enabled = connectionConfiguration.UseTls;
 
             using (IConnection connection = factory.CreateConnection("rabbitmq-transport"))
             {
