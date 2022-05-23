@@ -8,6 +8,7 @@
         public static Command CreateCommand()
         {
             var command = new Command("create", "Create delay infrastructure queues and exchanges");
+
             var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var certPathOption = SharedOptions.CreateCertPathOption();
             var certPassphraseOption = SharedOptions.CreateCertPassphraseOption();

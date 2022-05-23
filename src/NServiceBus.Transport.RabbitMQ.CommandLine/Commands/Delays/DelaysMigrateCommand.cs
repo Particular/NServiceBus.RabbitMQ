@@ -16,24 +16,19 @@
 
         public static Command CreateCommand()
         {
-            var runUntilCancelled = new Option<bool>(
-                 name: "--RunUntilCancelled",
-                 description: $"The migration script will run until the script is cancelled");
-
-            runUntilCancelled.AddAlias("-r");
-
-            var quietModeOption = new Option<bool>(
-             name: "--Quiet",
-             description: $"Disable console output while running");
-
-            quietModeOption.AddAlias("-q");
-
             var command = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
+
             var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
             var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
             var certPathOption = SharedOptions.CreateCertPathOption();
             var certPassphraseOption = SharedOptions.CreateCertPassphraseOption();
+
+            var quietModeOption = new Option<bool>(name: "--Quiet", description: $"Disable console output while running");
+            quietModeOption.AddAlias("-q");
+
+            var runUntilCancelled = new Option<bool>(name: "--RunUntilCancelled", description: $"The migration script will run until the script is cancelled");
+            runUntilCancelled.AddAlias("-r");
 
             command.AddOption(connectionStringOption);
             command.AddOption(topologyOption);
