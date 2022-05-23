@@ -18,7 +18,7 @@
             var originalTimeSent = GetDateTimeOffsetFromValues(originalTimeSentValues);
             var utcNow = GetDateTimeOffsetFromValues(utcNowValues);
 
-            var migrateCommand = new MigrateDelayInfrastructureCommand();
+            var migrateCommand = new DelaysMigrateCommand();
 
             (string destinationQueue, string newRoutingKey, int newDelayLevel) = migrateCommand.GetNewRoutingKey(originalDelayInSeconds, originalTimeSent, originalRoutingKey, utcNow);
 

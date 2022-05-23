@@ -9,7 +9,7 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
 
-    public class MigrateDelayInfrastructureCommand
+    public class DelaysMigrateCommand
     {
         const string DelayInSecondsHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
         const string TimeSentHeader = "NServiceBus.TimeSent";
@@ -30,24 +30,24 @@
 
             quietModeOption.AddAlias("-q");
 
-            var migrateCommand = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
+            var command = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
             var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
             var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
             var certPathOption = SharedOptions.CreateCertPathOption();
             var certPassphraseOption = SharedOptions.CreateCertPassphraseOption();
 
-            migrateCommand.AddOption(connectionStringOption);
-            migrateCommand.AddOption(topologyOption);
-            migrateCommand.AddOption(useDurableEntitiesOption);
-            migrateCommand.AddOption(certPathOption);
-            migrateCommand.AddOption(certPassphraseOption);
-            migrateCommand.AddOption(quietModeOption);
-            migrateCommand.AddOption(runUntilCancelled);
+            command.AddOption(connectionStringOption);
+            command.AddOption(topologyOption);
+            command.AddOption(useDurableEntitiesOption);
+            command.AddOption(certPathOption);
+            command.AddOption(certPassphraseOption);
+            command.AddOption(quietModeOption);
+            command.AddOption(runUntilCancelled);
 
-            migrateCommand.SetHandler(async (string connectionString, Topology routingTopology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string connectionString, Topology routingTopology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
             {
-                var migrationProcess = new MigrateDelayInfrastructureCommand();
+                var migrationProcess = new DelaysMigrateCommand();
                 X509Certificate2? certificate = null;
 
                 if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrWhiteSpace(certPassphrase))
@@ -58,7 +58,7 @@
                 await migrationProcess.Run(connectionString, routingTopology, useDurableEntities, certificate, quietMode, runUntilCancelled, cancellationToken).ConfigureAwait(false);
             }, connectionStringOption, topologyOption, useDurableEntitiesOption, certPathOption, certPassphraseOption, quietModeOption, runUntilCancelled);
 
-            return migrateCommand;
+            return command;
         }
 
         public Task Run(string connectionString, Topology routingTopology, bool useDurableEntities, X509Certificate2? certificate, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken = default)

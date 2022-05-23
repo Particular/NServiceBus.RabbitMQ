@@ -7,11 +7,11 @@
     using System.Text.Json;
     using System.Text.Json.Serialization;
 
-    class VerifySafeDelaysCommand
+    class DelaysVerifyCommand
     {
         public static Command CreateCommand()
         {
-            var verifyCommand = new Command("verify-safe-delays", "Verifies that the broker configuration allows for safe message delays.");
+            var command = new Command("verify", "Verifies that the broker configuration allows for safe message delays.");
 
             var urlOption = new Option<string>("--url", "The url for the management UI of the RabbitMQ broker")
             {
@@ -28,21 +28,21 @@
                 IsRequired = true
             };
 
-            verifyCommand.AddOption(urlOption);
-            verifyCommand.AddOption(usernameOption);
-            verifyCommand.AddOption(passwordOption);
+            command.AddOption(urlOption);
+            command.AddOption(usernameOption);
+            command.AddOption(passwordOption);
 
-            verifyCommand.SetHandler(async (string url, string username, string password, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string url, string username, string password, CancellationToken cancellationToken) =>
             {
-                var verifyProcess = new VerifySafeDelaysCommand(url, username, password);
+                var verifyProcess = new DelaysVerifyCommand(url, username, password);
                 await verifyProcess.Execute(cancellationToken).ConfigureAwait(false);
             }, urlOption, usernameOption, passwordOption);
 
-            return verifyCommand;
+            return command;
         }
 
 
-        public VerifySafeDelaysCommand(string baseUrl, string username, string password)
+        public DelaysVerifyCommand(string baseUrl, string username, string password)
         {
             this.baseUrl = baseUrl;
             this.username = username;

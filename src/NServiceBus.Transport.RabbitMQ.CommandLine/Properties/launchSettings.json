@@ -13,9 +13,10 @@
       "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
       "commandLineArgs": "delays create"
     },
-    "Verify": {
+    "delays verify": {
       "commandName": "Executable",
-      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe"
+      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
+      "commandLineArgs": "delays verify"
     }
   }
 }
