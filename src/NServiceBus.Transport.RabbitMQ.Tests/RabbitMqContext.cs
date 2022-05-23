@@ -23,8 +23,7 @@
             var transport = new RabbitMQTransport(Topology.Conventional, connectionString, QueueType.Classic);
             var connectionConfig = transport.ConnectionConfiguration;
 
-            connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig, null, true,
-                false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);
+            connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig, null, true, false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);
 
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
                 (_, __, ___) => { }, true), new[]
