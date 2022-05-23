@@ -55,8 +55,14 @@
             CommandRunner.Run(connectionString, channel =>
             {
                 var topology = new ConventionalRoutingTopology(useDurableEntities);
+                var holdingQueueName = $"{endpoint}-migration-temp";
 
-                //TBD
+                //does the holding queue need to be quorum?
+                var queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+
+                channel.QueueDeclare(holdingQueueName, true, false, false, queueArguments);
+
+                Console.WriteLine($"Holding queue created: {holdingQueueName}");
             });
 
             return Task.CompletedTask;
