@@ -7,8 +7,7 @@
     [TestFixture]
     public class ConnectionConfigurationTests
     {
-        const string connectionString =
-            "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true;";
+        const string connectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
 
         ConnectionConfiguration defaults = ConnectionConfiguration.Create("host=localhost");
 
