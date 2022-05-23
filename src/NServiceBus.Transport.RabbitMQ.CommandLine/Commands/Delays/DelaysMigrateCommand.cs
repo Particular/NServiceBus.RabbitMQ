@@ -11,10 +11,8 @@
 
     public class DelaysMigrateCommand
     {
-        const string DelayInSecondsHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
-        const string TimeSentHeader = "NServiceBus.TimeSent";
-        const string DateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
-        const int NumberOfDelayLevelQueues = 27;
+        const string timeSentHeader = "NServiceBus.TimeSent";
+        const string dateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
 
         public static Command CreateCommand()
         {
@@ -71,7 +69,7 @@
 
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        for (int currentDelayLevel = NumberOfDelayLevelQueues; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
+                        for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
                         {
                             MigrateQueue(channel, currentDelayLevel, topology, quietMode, cancellationToken);
                         }
@@ -138,7 +136,7 @@
                         continue;
                     }
 
-                    int delayInSeconds = (int)message.BasicProperties.Headers[DelayInSecondsHeader];
+                    int delayInSeconds = (int)message.BasicProperties.Headers[DelayInfrastructure.DelayHeader];
                     DateTimeOffset timeSent = GetTimeSent(message);
 
                     (string destinationQueue, string newRoutingKey, int newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
@@ -176,8 +174,8 @@
 
         DateTimeOffset GetTimeSent(BasicGetResult message)
         {
-            string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[TimeSentHeader]);
-            return DateTimeOffset.ParseExact(timeSentString, DateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
+            string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
+            return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
     }
 }
