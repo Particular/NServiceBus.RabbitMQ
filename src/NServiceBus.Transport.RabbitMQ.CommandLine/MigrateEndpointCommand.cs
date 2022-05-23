@@ -54,6 +54,16 @@
 
             CommandRunner.Run(connectionString, channel =>
             {
+                try
+                {
+                    // make sure that the endpoint queue exists
+                    channel.MessageCount(endpoint);
+                }
+                catch (Exception)
+                {
+                    throw new Exception($"Input queue for endpoint {endpoint} could not be found.");
+                }
+
                 var topology = new ConventionalRoutingTopology(useDurableEntities);
                 var holdingQueueName = $"{endpoint}-migration-temp";
 
