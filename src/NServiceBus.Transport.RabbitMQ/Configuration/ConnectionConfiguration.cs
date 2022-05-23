@@ -8,9 +8,6 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Linq;
     using System.Text;
 
-    /// <summary>
-    /// Connection information parsed from an AMQP or NServiceBus connection string
-    /// </summary>
     class ConnectionConfiguration
     {
         const bool defaultUseTls = false;
@@ -20,34 +17,16 @@ namespace NServiceBus.Transport.RabbitMQ
         const string defaultUserName = "guest";
         const string defaultPassword = "guest";
 
-        /// <summary>
-        /// The brokers host name
-        /// </summary>
         public string Host { get; }
 
-        /// <summary>
-        /// The port on which to connect to the broker
-        /// </summary>
         public int Port { get; }
 
-        /// <summary>
-        /// The name of the RabbitMQ virtual host
-        /// </summary>
         public string VirtualHost { get; }
 
-        /// <summary>
-        /// The username to be used to connect to the broker
-        /// </summary>
         public string UserName { get; }
 
-        /// <summary>
-        /// The username to be used to connect to the broker
-        /// </summary>
         public string Password { get; }
 
-        /// <summary>
-        /// Should the connection use TLS?
-        /// </summary>
         public bool UseTls { get; }
 
         ConnectionConfiguration(
@@ -66,12 +45,6 @@ namespace NServiceBus.Transport.RabbitMQ
             UseTls = useTls;
         }
 
-        /// <summary>
-        /// A factory method that will parse <paramref name="connectionString"/> and create a new instance of <see cref="ConnectionConfiguration"/>.
-        /// </summary>
-        /// <param name="connectionString">The connection string that should be parsed for the new instance</param>
-        /// <returns>A new instance of <see cref="ConnectionConfiguration"/> with the values parsed from <paramref name="connectionString"/></returns>
-        /// <exception cref="NotSupportedException">Thrown when a malformed connection string is detected</exception>
         public static ConnectionConfiguration Create(string connectionString)
         {
             Dictionary<string, string> dictionary;
@@ -97,6 +70,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
             }
+
             return new ConnectionConfiguration(host, port, virtualHost, userName, password, useTls);
         }
 
@@ -226,22 +200,22 @@ namespace NServiceBus.Transport.RabbitMQ
 
             if (dictionary.ContainsKey("certPath"))
             {
-                invalidOptionsMessage.AppendLine("The 'certPath' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead.");
+                invalidOptionsMessage.AppendLine("The 'certPath' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().SetClientCertificate' instead.");
             }
 
             if (dictionary.ContainsKey("certPassphrase"))
             {
-                invalidOptionsMessage.AppendLine("The 'certPassphrase' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead.");
+                invalidOptionsMessage.AppendLine("The 'certPassphrase' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().SetClientCertificate' instead.");
             }
 
             if (dictionary.ContainsKey("requestedHeartbeat"))
             {
-                invalidOptionsMessage.AppendLine("The 'requestedHeartbeat' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().HeartbeatInterval' instead.");
+                invalidOptionsMessage.AppendLine("The 'requestedHeartbeat' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().SetHeartbeatInterval' instead.");
             }
 
             if (dictionary.ContainsKey("retryDelay"))
             {
-                invalidOptionsMessage.AppendLine("The 'retryDelay' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().NetworkRecoveryInterval' instead.");
+                invalidOptionsMessage.AppendLine("The 'retryDelay' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().SetNetworkRecoveryInterval' instead.");
             }
         }
 

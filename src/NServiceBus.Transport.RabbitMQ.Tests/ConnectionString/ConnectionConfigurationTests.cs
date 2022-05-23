@@ -141,10 +141,10 @@
             Assert.That(exception.Message, Does.Contain("The 'PrefetchCount' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'MaxWaitTimeForConfirms' connection string option has been removed"));
             Assert.That(exception.Message, Does.Contain("The 'DequeueTimeout' connection string option has been removed"));
-            Assert.That(exception.Message, Does.Contain("The 'requestedHeartbeat' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().HeartbeatInterval' instead."));
-            Assert.That(exception.Message, Does.Contain("The 'retryDelay' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().NetworkRecoveryInterval' instead."));
-            Assert.That(exception.Message, Does.Contain("The 'certPath' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead."));
-            Assert.That(exception.Message, Does.Contain("The 'certPassphrase' connection string option has been removed. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ClientCertificate' instead."));
+            Assert.That(exception.Message, Does.Contain("The 'requestedHeartbeat' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'retryDelay' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'certPath' connection string option has been removed"));
+            Assert.That(exception.Message, Does.Contain("The 'certPassphrase' connection string option has been removed"));
         }
 
         [Test]
