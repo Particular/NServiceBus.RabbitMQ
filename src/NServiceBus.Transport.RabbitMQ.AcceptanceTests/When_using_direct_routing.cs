@@ -24,7 +24,7 @@
             public Receiver()
             {
                 EndpointSetup<DefaultServer>(c => c.UseTransport<RabbitMQTransport>()
-                    .UseDirectRoutingTopology());
+                    .UseDirectRoutingTopology(QueueType.Classic));
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>

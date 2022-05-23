@@ -10,10 +10,11 @@
     /// </summary>
     class DirectRoutingTopology : IRoutingTopology
     {
-        public DirectRoutingTopology(Conventions conventions, bool useDurableExchanges)
+        public DirectRoutingTopology(Conventions conventions, bool durable, QueueType queueType)
         {
             this.conventions = conventions;
-            this.useDurableExchanges = useDurableExchanges;
+            this.durable = durable;
+            this.queueType = queueType;
         }
 
         public void SetupSubscription(IModel channel, Type type, string subscriberName)
@@ -44,12 +45,16 @@
 
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
+            Dictionary<string, object> arguments = null;
+
+            if (queueType == QueueType.Quorum)
+            {
+                arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+            }
+
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                if (!QueueHelper.QueueExists(QueueCreator.RoutingTopologyInitializeConnection.Value, address))
-                {
-                    channel.QueueDeclare(address, useDurableExchanges, false, false, null);
-                }
+                channel.QueueDeclare(address, durable, false, false, arguments);
             }
         }
 
@@ -69,7 +74,7 @@
 
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableExchanges);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, durable);
             }
             // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)
@@ -94,7 +99,8 @@
         const string AmqpTopicExchange = "amq.topic";
 
         readonly Conventions conventions;
-        readonly bool useDurableExchanges;
+        readonly bool durable;
+        readonly QueueType queueType;
 
         public class Conventions
         {

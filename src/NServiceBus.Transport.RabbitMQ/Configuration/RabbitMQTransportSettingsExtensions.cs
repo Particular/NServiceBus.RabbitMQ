@@ -30,20 +30,22 @@
         /// Uses the conventional routing topology.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        /// <param name="queueType">The type of queue that the endpoint should use.</param>
+        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, QueueType queueType)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            return transportExtensions.UseCustomRoutingTopology(durable => new ConventionalRoutingTopology(durable));
+            return transportExtensions.UseCustomRoutingTopology(durable => new ConventionalRoutingTopology(durable, queueType));
         }
 
         /// <summary>
         /// Uses the direct routing topology with the specified conventions.
         /// </summary>
         /// <param name="transportExtensions"></param>
+        /// <param name="queueType">The type of queue that the endpoint should use.</param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, QueueType queueType, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
@@ -57,7 +59,7 @@
                 exchangeNameConvention = () => "amq.topic";
             }
 
-            return transportExtensions.UseCustomRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable));
+            return transportExtensions.UseCustomRoutingTopology(durable => new DirectRoutingTopology(new DirectRoutingTopology.Conventions(exchangeNameConvention, routingKeyConvention), durable, queueType));
         }
 
         /// <summary>
