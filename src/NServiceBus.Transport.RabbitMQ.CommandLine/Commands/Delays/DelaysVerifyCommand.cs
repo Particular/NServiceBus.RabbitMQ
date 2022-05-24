@@ -35,7 +35,7 @@
             command.SetHandler(async (string url, string username, string password, CancellationToken cancellationToken) =>
             {
                 var verifyProcess = new DelaysVerifyCommand(url, username, password);
-                await verifyProcess.Execute(cancellationToken).ConfigureAwait(false);
+                await verifyProcess.Run(cancellationToken).ConfigureAwait(false);
             }, urlOption, usernameOption, passwordOption);
 
             return command;
@@ -48,7 +48,7 @@
             this.password = password;
         }
 
-        public async Task Execute(CancellationToken cancellationToken = default)
+        public async Task Run(CancellationToken cancellationToken = default)
         {
             using var httpClient = new HttpClient();
             var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
