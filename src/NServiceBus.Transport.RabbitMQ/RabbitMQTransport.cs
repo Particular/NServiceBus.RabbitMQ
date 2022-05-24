@@ -34,31 +34,20 @@
         /// <summary>
         /// Creates new instance of the RabbitMQ transport.
         /// </summary>
-        /// <param name="topology">The built-in topology to use.</param>
+        /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="queueType">The type of queue to use for receiving queues.</param>
-        public RabbitMQTransport(Topology topology, string connectionString, QueueType queueType)
-            : this(GetBuiltInTopology(topology), connectionString, queueType)
-        {
-        }
-
-        /// <summary>
-        /// Creates new instance of the RabbitMQ transport.
-        /// </summary>
-        /// <param name="topology">The custom topology to use.</param>
-        /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueType">The type of queue to use for receiving queues.</param>
-        public RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueType queueType)
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, QueueType queueType)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
                 supportsTTBR: queueType == QueueType.Classic)
         {
-            Guard.AgainstNull(nameof(topology), topology);
+            Guard.AgainstNull(nameof(routingTopology), routingTopology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
             QueueType = queueType;
-            RoutingTopology = topology;
+            RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
@@ -67,11 +56,7 @@
         /// </summary>
         internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
-        /// <summary>
-        ///     The routing topology to use. If not set the conventional routing topology will be used
-        ///     <seealso cref="ConventionalRoutingTopology" />.
-        /// </summary>
-        public IRoutingTopology RoutingTopology { get; set; }
+        internal IRoutingTopology RoutingTopology { get; set; }
 
         /// <summary>
         ///     The strategy for deriving the message ID from the raw RabbitMQ message. Override in case of native integration when
@@ -224,14 +209,6 @@
         /// <summary>
         ///     Returns a list of all supported transaction modes of this transport.
         /// </summary>
-        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
-            SupportedTransactionModes;
-
-        internal static IRoutingTopology GetBuiltInTopology(Topology topology)
-        {
-            return topology == Topology.Conventional
-                ? new ConventionalRoutingTopology(true)
-                : new DirectRoutingTopology(true);
-        }
+        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => SupportedTransactionModes;
     }
 }

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Security.Cryptography.X509Certificates;
-    using NServiceBus.Transport.RabbitMQ;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.
@@ -16,8 +15,7 @@
             RemoveInVersion = "10",
             TreatAsErrorFromVersion = "9",
             ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)")]
-        public static TransportExtensions<RabbitMQTransport> UseTransport<T>(this EndpointConfiguration config)
-            where T : RabbitMQTransport
+        public static TransportExtensions<RabbitMQTransport> UseTransport<T>(this EndpointConfiguration config) where T : RabbitMQTransport
         {
             var transport = new RabbitMQTransport();
 
@@ -64,9 +62,7 @@
             Message = "The configuration has been moved to RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(
-            this TransportExtensions<RabbitMQTransport> transport,
-            Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy)
+        public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transport, Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy)
         {
             transport.Transport.MessageIdStrategy = customIdStrategy;
             return transport;
@@ -210,7 +206,7 @@
             RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transport)
         {
-            transport.Transport.RoutingTopology = new ConventionalRoutingTopology(true);
+            transport.Transport.RoutingTopology = RoutingTopology.Conventional(true).Create();
             return transport;
         }
 
@@ -224,11 +220,9 @@
             Message = "The configuration has been moved to RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(
-            this TransportExtensions<RabbitMQTransport> transport,
-            Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
-            transport.Transport.RoutingTopology = new DirectRoutingTopology(true, exchangeNameConvention, routingKeyConvention);
+            transport.Transport.RoutingTopology = RoutingTopology.Direct(true, exchangeNameConvention, routingKeyConvention).Create();
             return transport;
         }
 

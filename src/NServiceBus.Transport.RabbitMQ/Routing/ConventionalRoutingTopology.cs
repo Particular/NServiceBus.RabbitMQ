@@ -23,12 +23,8 @@ namespace NServiceBus.Transport.RabbitMQ
     /// <item><description>we generate an exchange for each queue so that we can do direct sends to the queue. it is bound as a fanout exchange</description></item>
     /// </list>
     /// </summary>
-    public class ConventionalRoutingTopology : IRoutingTopology
+    class ConventionalRoutingTopology : IRoutingTopology
     {
-        /// <summary>
-        /// Creates a new instance of conventional routing topology.
-        /// </summary>
-        /// <param name="useDurableEntities">Indicates whether exchanges and queues declared by the routing topology should be durable.</param>
         public ConventionalRoutingTopology(bool useDurableEntities)
         {
             this.useDurableEntities = useDurableEntities;
@@ -43,12 +39,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
         static string DefaultExchangeNameConvention(Type type) => type.Namespace + ":" + type.Name;
 
-        /// <summary>
-        /// Sets up a subscription for the subscriber to the specified type.
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="type">The type to subscribe to.</param>
-        /// <param name="subscriberName">The name of the subscriber.</param>
         public void SetupSubscription(IModel channel, MessageMetadata type, string subscriberName)
         {
             // Make handlers for IEvent handle all events whether they extend IEvent or not
@@ -58,12 +48,6 @@ namespace NServiceBus.Transport.RabbitMQ
             channel.ExchangeBind(subscriberName, exchangeNameConvention(typeToSubscribe), string.Empty);
         }
 
-        /// <summary>
-        /// Removes a subscription for the subscriber to the specified type.
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="type">The type to unsubscribe from.</param>
-        /// <param name="subscriberName">The name of the subscriber.</param>
         public void TeardownSubscription(IModel channel, MessageMetadata type, string subscriberName)
         {
             try
@@ -76,56 +60,22 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        /// <summary>
-        /// Publishes a message of the specified type.
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="type">The type of the message to be published.</param>
-        /// <param name="message">The message to publish.</param>
-        /// <param name="properties">The RabbitMQ properties of the message to publish.</param>
         public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
             SetupTypeSubscriptions(channel, type);
             channel.BasicPublish(exchangeNameConvention(type), string.Empty, false, properties, message.Body);
         }
 
-        /// <summary>
-        /// Sends a message to the specified endpoint.
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="address">The address of the destination endpoint.</param>
-        /// <param name="message">The message to send.</param>
-        /// <param name="properties">The RabbitMQ properties of the message to send.</param>
         public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
         {
             channel.BasicPublish(address, string.Empty, true, properties, message.Body);
         }
 
-        /// <summary>
-        /// Sends a raw message body to the specified endpoint.
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="address">The address of the destination endpoint.</param>
-        /// <param name="body">The raw message body to send.</param>
-        /// <param name="properties">The RabbitMQ properties of the message to send.</param>
         public void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
         {
             channel.BasicPublish(address, string.Empty, true, properties, body);
         }
 
-        /// <summary>
-        /// Declares queues and performs any other initialization logic needed (e.g. creating exchanges and bindings).
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="receivingAddresses">
-        /// The addresses of the queues to declare and perform initialization for, that this endpoint is receiving from.
-        /// </param>
-        /// <param name="sendingAddresses">
-        /// The addresses of the queues to declare and perform initialization for, that this endpoint is sending to.
-        /// </param>
-        /// <param name="useQuorumQueues">
-        /// Should the queues that this endpoint receieves from be created as quorum queues.
-        /// </param>
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
         {
             IDictionary<string, object> queueArguments = null;
@@ -143,13 +93,6 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        /// <summary>
-        /// Binds an address to the delay infrastructure's delivery exchange.
-        /// </summary>
-        /// <param name="channel">The RabbitMQ channel to operate on.</param>
-        /// <param name="address">The address that needs to be bound to the delivery exchange.</param>
-        /// <param name="deliveryExchange">The name of the delivery exchange.</param>
-        /// <param name="routingKey">The routing key required for the binding.</param>
         public void BindToDelayInfrastructure(IModel channel, string address, string deliveryExchange, string routingKey)
         {
             channel.ExchangeBind(address, deliveryExchange, routingKey);
