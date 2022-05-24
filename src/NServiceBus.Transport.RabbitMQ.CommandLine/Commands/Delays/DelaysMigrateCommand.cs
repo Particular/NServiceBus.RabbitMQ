@@ -38,9 +38,10 @@
             command.AddOption(quietModeOption);
             command.AddOption(runUntilCancelled);
 
-            command.SetHandler(async (string connectionString, Topology routingTopology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string connectionString, Topology topology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
             {
-                var migrationProcess = new DelaysMigrateCommand();
+                var routingTopology = GetRoutingTopology(topology, useDurableEntities);
+
                 X509Certificate2? certificate = null;
 
                 if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrWhiteSpace(certPassphrase))
@@ -48,25 +49,57 @@
                     certificate = new X509Certificate2(certPath, certPassphrase);
                 }
 
-                await migrationProcess.Run(connectionString, routingTopology, useDurableEntities, certificate, quietMode, runUntilCancelled, cancellationToken).ConfigureAwait(false);
+                var migrationProcess = new DelaysMigrateCommand(connectionString, routingTopology, certificate, quietMode, runUntilCancelled);
+
+                await migrationProcess.Run(cancellationToken).ConfigureAwait(false);
+
             }, connectionStringOption, topologyOption, useDurableEntitiesOption, certPathOption, certPassphraseOption, quietModeOption, runUntilCancelled);
 
             return command;
         }
 
-        public Task Run(string connectionString, Topology routingTopology, bool useDurableEntities, X509Certificate2? certificate, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken = default)
+        static IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
+        {
+            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
+            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
+            _ => throw new InvalidOperationException()
+        };
+
+        static (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
+        {
+            DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
+            int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
+            string destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
+            string newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
+
+            return (destinationQueue, newRoutingKey, newDelayLevel);
+        }
+        static DateTimeOffset GetTimeSent(BasicGetResult message)
+        {
+            string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
+            return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
+        }
+
+        public DelaysMigrateCommand(string connectionString, IRoutingTopology routingTopology, X509Certificate2? certificate, bool quietMode, bool runUntilCancelled)
+        {
+            this.connectionString = connectionString;
+            this.routingTopology = routingTopology;
+            this.certificate = certificate;
+            this.quietMode = quietMode;
+            this.runUntilCancelled = runUntilCancelled;
+        }
+
+        public Task Run(CancellationToken cancellationToken = default)
         {
             CommandRunner.Run(connectionString, certificate, channel =>
             {
                 try
                 {
-                    IRoutingTopology topology = GetRoutingTopology(routingTopology, useDurableEntities);
-
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
                         {
-                            MigrateQueue(channel, currentDelayLevel, topology, quietMode, cancellationToken);
+                            MigrateQueue(channel, currentDelayLevel, cancellationToken);
                         }
 
                         if (!runUntilCancelled)
@@ -91,14 +124,7 @@
             return Task.CompletedTask;
         }
 
-        IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
-        {
-            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
-            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
-            _ => throw new InvalidOperationException()
-        };
-
-        void MigrateQueue(IModel channel, int currentDelayLevel, IRoutingTopology topology, bool quietMode, CancellationToken cancellationToken)
+        void MigrateQueue(IModel channel, int currentDelayLevel, CancellationToken cancellationToken)
         {
             var currentDelayQueue = $"nsb.delay-level-{currentDelayLevel:00}";
             var messageCount = channel.MessageCount(currentDelayQueue);
@@ -139,7 +165,7 @@
                     // Make sure the destination queue is bound to the delivery exchange to ensure delivery
                     if (!declaredDestinationQueues.Contains(destinationQueue))
                     {
-                        topology.BindToDelayInfrastructure(channel, destinationQueue, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(destinationQueue));
+                        routingTopology.BindToDelayInfrastructure(channel, destinationQueue, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(destinationQueue));
                         declaredDestinationQueues.Add(destinationQueue);
                     }
 
@@ -157,20 +183,10 @@
             }
         }
 
-        public (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
-        {
-            DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
-            int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            string destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
-            string newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
-
-            return (destinationQueue, newRoutingKey, newDelayLevel);
-        }
-
-        DateTimeOffset GetTimeSent(BasicGetResult message)
-        {
-            string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
-            return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
-        }
+        readonly string connectionString;
+        readonly IRoutingTopology routingTopology;
+        readonly X509Certificate2? certificate;
+        readonly bool quietMode;
+        readonly bool runUntilCancelled;
     }
 }
