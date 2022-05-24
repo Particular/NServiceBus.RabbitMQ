@@ -41,7 +41,6 @@
             return command;
         }
 
-
         public DelaysVerifyCommand(string baseUrl, string username, string password)
         {
             this.baseUrl = baseUrl;
@@ -58,13 +57,13 @@
 
             var serverDetails = await GetServerDetails(httpClient, cancellationToken).ConfigureAwait(false);
 
-            if (Version.Parse(serverDetails.Overview.ProductVersion) < Version.Parse("3.10.0"))
+            if (Version.TryParse(serverDetails.Overview?.ProductVersion, out var version) && version < Version.Parse("3.10.0"))
             {
                 Console.WriteLine($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
                 return;
             }
 
-            var streamQueueState = serverDetails.FeatureFlags.SingleOrDefault(fs => fs.Name == "stream_queue");
+            var streamQueueState = serverDetails.FeatureFlags?.SingleOrDefault(fs => fs.Name == "stream_queue");
 
             if (streamQueueState == null || !streamQueueState.IsEnabled())
             {
@@ -72,7 +71,7 @@
                 return;
             }
 
-            var quorumQueueState = serverDetails.FeatureFlags.SingleOrDefault(fs => fs.Name == "quorum_queue");
+            var quorumQueueState = serverDetails.FeatureFlags?.SingleOrDefault(fs => fs.Name == "quorum_queue");
 
             if (quorumQueueState == null || !quorumQueueState.IsEnabled())
             {
@@ -92,7 +91,7 @@
             };
         }
 
-        async Task<T> MakeHttpRequest<T>(HttpClient httpClient, string urlPart, CancellationToken cancellationToken)
+        async Task<T?> MakeHttpRequest<T>(HttpClient httpClient, string urlPart, CancellationToken cancellationToken)
         {
             var url = $"{baseUrl}/api/{urlPart}";
             using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
@@ -105,37 +104,33 @@
                 throw new Exception("Empty response returned for " + url);
             }
 
-#pragma warning disable CS8603 // Possible null reference return.
             return JsonSerializer.Deserialize<T>(content);
-#pragma warning restore CS8603 // Possible null reference return.
         }
 
         readonly string baseUrl;
         readonly string username;
         readonly string password;
 
-#pragma warning disable 0649
-#pragma warning disable 8618
-
         class ServerDetails
         {
-            public Overview Overview { get; set; }
-            public FeatureFlag[] FeatureFlags { get; set; }
+            public Overview? Overview { get; set; }
+
+            public FeatureFlag[]? FeatureFlags { get; set; }
         }
 
         class Overview
         {
             [JsonPropertyName("product_version")]
-            public string ProductVersion { get; set; }
+            public string ProductVersion { get; set; } = string.Empty;
         }
 
         class FeatureFlag
         {
             [JsonPropertyName("name")]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
             [JsonPropertyName("state")]
-            public string State { get; set; }
+            public string State { get; set; } = string.Empty;
 
             public bool IsEnabled()
             {
@@ -143,6 +138,4 @@
             }
         }
     }
-#pragma warning restore 8618
-#pragma warning restore 0649
 }
