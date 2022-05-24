@@ -54,15 +54,16 @@
 
             CommandRunner.Run(connectionString, channel =>
             {
-                try
-                {
-                    // make sure that the endpoint queue exists
-                    channel.MessageCount(queueName);
-                }
-                catch (Exception)
-                {
-                    throw new Exception($"Input queue for endpoint {queueName} could not be found.");
-                }
+                // TODO: needs a new channel?
+                //try
+                //{
+                //    // make sure that the endpoint queue exists
+                //    channel.MessageCount(queueName);
+                //}
+                //catch (Exception)
+                //{
+                //    throw new Exception($"Input queue for endpoint {queueName} could not be found.");
+                //}
 
                 //check if queue already is quorum
                 // TODO: needs a new channel?
@@ -84,9 +85,25 @@
                 var topology = new ConventionalRoutingTopology(useDurableEntities);
                 var holdingQueueName = $"{queueName}-migration-temp";
 
-                //does the holding queue need to be quorum?
-                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+                //uint existingHoldingQueueMessages = 0;
 
+                // TODO: needs a new channel?
+                //try
+                //{
+                //    existingHoldingQueueMessages = channel.MessageCount(holdingQueueName);
+                //}
+                //catch (Exception)
+                //{
+                //    //does the holding queue need to be quorum?
+                //    channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+                //}
+
+                //if (existingHoldingQueueMessages > 0)
+                //{
+                //    //TODO: what do we do here?
+                //    throw new Exception($"Holding queue {holdingQueueName} has existing messages.");
+                //}
+                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
                 Console.WriteLine($"Holding queue created: {holdingQueueName}");
 
                 //bind the holding queue to the default exchange of queue under migration
@@ -104,7 +121,7 @@
                     channel,
                     queueName,
                     (message, channel) =>
-                    channel.BasicPublish(holdingQueueName, EmptyRoutingKey, message.BasicProperties, message.Body),
+                    channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body),
                     cancellationToken);
 
                 Console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
@@ -130,7 +147,7 @@
                     holdingQueueName,
                     (message, channel) =>
                     //todo: deduplicate?
-                    channel.BasicPublish(queueName, EmptyRoutingKey, message.BasicProperties, message.Body),
+                    channel.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body),
                     cancellationToken);
 
                 Console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
