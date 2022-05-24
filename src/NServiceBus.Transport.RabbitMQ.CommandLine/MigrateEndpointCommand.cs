@@ -52,59 +52,57 @@
                 throw new NotSupportedException("Quorum queue migration is only supported for the ConventionalRoutingTopology for the moment.");
             }
 
-            CommandRunner.Run(connectionString, channel =>
+            CommandRunner.Run(connectionString, (connection, channel) =>
             {
-                // TODO: needs a new channel?
-                //try
-                //{
-                //    // make sure that the endpoint queue exists
-                //    channel.MessageCount(queueName);
-                //}
-                //catch (Exception)
-                //{
-                //    throw new Exception($"Input queue for endpoint {queueName} could not be found.");
-                //}
+                try
+                {
+                    // make sure that the endpoint queue exists
+                    SafeExecute(connection, ch => ch.MessageCount(queueName));
+                }
+                catch (Exception)
+                {
+                    throw new Exception($"Input queue for endpoint {queueName} could not be found.");
+                }
 
                 //check if queue already is quorum
-                // TODO: needs a new channel?
-                //var isQuorum = true;
-                //try
-                //{
-                //    channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
-                //}
-                //catch (Exception)
-                //{
-                //    isQuorum = false;
-                //}
+                var isQuorum = true;
+                try
+                {
+                    SafeExecute(connection, ch => ch.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments));
+                }
+                catch (Exception)
+                {
+                    isQuorum = false;
+                }
 
-                //if (isQuorum)
-                //{
-                //    throw new Exception($"Queue {queueName} is already a quorum queue");
-                //}
+                if (isQuorum)
+                {
+                    throw new Exception($"Queue {queueName} is already a quorum queue");
+                }
 
-                var topology = new ConventionalRoutingTopology(useDurableEntities);
                 var holdingQueueName = $"{queueName}-migration-temp";
 
-                //uint existingHoldingQueueMessages = 0;
+                uint existingHoldingQueueMessages = 0;
 
-                // TODO: needs a new channel?
-                //try
-                //{
-                //    existingHoldingQueueMessages = channel.MessageCount(holdingQueueName);
-                //}
-                //catch (Exception)
-                //{
-                //    //does the holding queue need to be quorum?
-                //    channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
-                //}
+                try
+                {
+                    SafeExecute(connection, ch =>
+                    {
+                        existingHoldingQueueMessages = channel.MessageCount(holdingQueueName);
+                    });
+                }
+                catch (Exception)
+                {
+                    //does the holding queue need to be quorum?
+                    channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+                    Console.WriteLine($"Holding queue created: {holdingQueueName}");
+                }
 
-                //if (existingHoldingQueueMessages > 0)
-                //{
-                //    //TODO: what do we do here?
-                //    throw new Exception($"Holding queue {holdingQueueName} has existing messages.");
-                //}
-                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
-                Console.WriteLine($"Holding queue created: {holdingQueueName}");
+                if (existingHoldingQueueMessages > 0)
+                {
+                    //TODO: what do we do here?
+                    throw new Exception($"Holding queue {holdingQueueName} has existing messages.");
+                }
 
                 //bind the holding queue to the default exchange of queue under migration
                 // this will throw if the exchange for the endpoint doesn't exist
@@ -190,6 +188,15 @@
             }
 
             return messageCount;
+        }
+
+        void SafeExecute(IConnection connection, Action<IModel> command)
+        {
+            // create temporary channel as the channel will be faulted if the queue does not exist.
+            using (var tempChannel = connection.CreateModel())
+            {
+                command(tempChannel);
+            }
         }
 
         static string EmptyRoutingKey = string.Empty;
