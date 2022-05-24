@@ -57,11 +57,11 @@
                 try
                 {
                     // make sure that the endpoint queue exists
-                    SafeExecute(connection, ch => ch.MessageCount(queueName));
+                    channel.MessageCount(queueName);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    throw new Exception($"Input queue for endpoint {queueName} could not be found.");
+                    throw new Exception($"Input queue for endpoint {queueName} could not be found.", ex);
                 }
 
                 //check if queue already is quorum
