@@ -9,6 +9,8 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +27,10 @@
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" Link="Transport\ConnectionConfiguration.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\DelayedDelivery\DelayInfrastructure.cs" Link="Transport\DelayInfrastructure.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Routing\*.cs" Link="Transport\Routing\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.CommandLine.Tests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
 </Project>

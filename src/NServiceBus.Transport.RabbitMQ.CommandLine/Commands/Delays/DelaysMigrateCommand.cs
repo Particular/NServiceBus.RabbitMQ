@@ -9,7 +9,7 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
 
-    public class DelaysMigrateCommand
+    class DelaysMigrateCommand
     {
         const string timeSentHeader = "NServiceBus.TimeSent";
         const string dateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
