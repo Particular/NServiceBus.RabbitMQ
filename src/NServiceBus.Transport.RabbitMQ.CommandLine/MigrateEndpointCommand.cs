@@ -88,7 +88,7 @@
                 {
                     SafeExecute(connection, ch =>
                     {
-                        existingHoldingQueueMessages = channel.MessageCount(holdingQueueName);
+                        existingHoldingQueueMessages = ch.MessageCount(holdingQueueName);
                     });
                 }
                 catch (Exception)
