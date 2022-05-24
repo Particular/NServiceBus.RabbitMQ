@@ -27,18 +27,14 @@
             var quietModeOption = new Option<bool>(name: "--Quiet", description: $"Disable console output while running");
             quietModeOption.AddAlias("-q");
 
-            var runUntilCancelled = new Option<bool>(name: "--RunUntilCancelled", description: $"The migration script will run until the script is cancelled");
-            runUntilCancelled.AddAlias("-r");
-
             command.AddOption(connectionStringOption);
             command.AddOption(topologyOption);
             command.AddOption(useDurableEntitiesOption);
             command.AddOption(certPathOption);
             command.AddOption(certPassphraseOption);
             command.AddOption(quietModeOption);
-            command.AddOption(runUntilCancelled);
 
-            command.SetHandler(async (string connectionString, Topology topology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, bool runUntilCancelled, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string connectionString, Topology topology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, CancellationToken cancellationToken) =>
             {
                 var routingTopology = GetRoutingTopology(topology, useDurableEntities);
 
@@ -49,13 +45,23 @@
                     certificate = new X509Certificate2(certPath, certPassphrase);
                 }
 
-                var migrationProcess = new DelaysMigrateCommand(connectionString, routingTopology, certificate, quietMode, runUntilCancelled);
+                var migrationProcess = new DelaysMigrateCommand(connectionString, routingTopology, certificate, quietMode);
 
                 await migrationProcess.Run(cancellationToken).ConfigureAwait(false);
 
-            }, connectionStringOption, topologyOption, useDurableEntitiesOption, certPathOption, certPassphraseOption, quietModeOption, runUntilCancelled);
+            }, connectionStringOption, topologyOption, useDurableEntitiesOption, certPathOption, certPassphraseOption, quietModeOption);
 
             return command;
+        }
+
+        public static (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
+        {
+            DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
+            int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
+            string destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
+            string newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
+
+            return (destinationQueue, newRoutingKey, newDelayLevel);
         }
 
         static IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
@@ -65,28 +71,18 @@
             _ => throw new InvalidOperationException()
         };
 
-        static (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
-        {
-            DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
-            int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            string destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
-            string newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
-
-            return (destinationQueue, newRoutingKey, newDelayLevel);
-        }
         static DateTimeOffset GetTimeSent(BasicGetResult message)
         {
             string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 
-        public DelaysMigrateCommand(string connectionString, IRoutingTopology routingTopology, X509Certificate2? certificate, bool quietMode, bool runUntilCancelled)
+        public DelaysMigrateCommand(string connectionString, IRoutingTopology routingTopology, X509Certificate2? certificate, bool quietMode)
         {
             this.connectionString = connectionString;
             this.routingTopology = routingTopology;
             this.certificate = certificate;
             this.quietMode = quietMode;
-            this.runUntilCancelled = runUntilCancelled;
         }
 
         public Task Run(CancellationToken cancellationToken = default)
@@ -95,17 +91,9 @@
             {
                 try
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
                     {
-                        for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
-                        {
-                            MigrateQueue(channel, currentDelayLevel, cancellationToken);
-                        }
-
-                        if (!runUntilCancelled)
-                        {
-                            break;
-                        }
+                        MigrateQueue(channel, currentDelayLevel, cancellationToken);
                     }
                 }
                 catch (OperationInterruptedException ex)
@@ -181,12 +169,18 @@
                     Console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
                 }
             }
+            else
+            {
+                if (!quietMode)
+                {
+                    Console.WriteLine($"No messages to process at delay level {currentDelayLevel:00}.");
+                }
+            }
         }
 
         readonly string connectionString;
         readonly IRoutingTopology routingTopology;
         readonly X509Certificate2? certificate;
         readonly bool quietMode;
-        readonly bool runUntilCancelled;
     }
 }
