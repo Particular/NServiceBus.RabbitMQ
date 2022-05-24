@@ -7,14 +7,7 @@
     {
         public static Command CreateCommand()
         {
-            var quietModeOption = new Option<bool>(
-             name: "--Quiet",
-             description: $"Disable console output while running");
-
             var endpointOption = SharedOptions.CreateConnectionStringOption();
-
-
-            quietModeOption.AddAlias("-q");
 
             var migrateCommand = new Command("migrate-to-quorum", "Migrate and existing endpoint to use quorum queues.");
 
@@ -29,23 +22,19 @@
             migrateCommand.AddOption(connectionStringOption);
             migrateCommand.AddOption(topologyOption);
             migrateCommand.AddOption(useDurableEntitiesOption);
-            migrateCommand.AddOption(quietModeOption);
 
-            migrateCommand.SetHandler(async (string endpoint, string connectionString, Topology routingTopology, bool useDurableEntities, bool quietMode, CancellationToken cancellationToken) =>
+            migrateCommand.SetHandler(async (string endpoint, string connectionString, Topology routingTopology, bool useDurableEntities, CancellationToken cancellationToken) =>
             {
                 var migrationProcess = new MigrateEndpointCommand();
-                await migrationProcess.Run(endpoint, connectionString, routingTopology, useDurableEntities, quietMode, cancellationToken).ConfigureAwait(false);
-            }, endpointArgument, connectionStringOption, topologyOption, useDurableEntitiesOption, quietModeOption);
+                await migrationProcess.Run(endpoint, connectionString, routingTopology, useDurableEntities, cancellationToken).ConfigureAwait(false);
+            }, endpointArgument, connectionStringOption, topologyOption, useDurableEntitiesOption);
 
             return migrateCommand;
         }
 
-        public Task Run(string queueName, string connectionString, Topology routingTopology, bool useDurableEntities, bool quietMode, CancellationToken cancellationToken = default)
+        public Task Run(string queueName, string connectionString, Topology routingTopology, bool useDurableEntities, CancellationToken cancellationToken = default)
         {
-            if (!quietMode)
-            {
-                Console.WriteLine($"Starting migration of {queueName}");
-            }
+            Console.WriteLine($"Starting migration of {queueName}");
 
             if (routingTopology != Topology.Conventional)
             {
