@@ -16,7 +16,7 @@
 
         public static Command CreateCommand()
         {
-            var command = new Command("migrate", "Migrate existing delay queues and in-flight delayed messages to the latest infrustructure.");
+            var command = new Command("migrate", "Migrate in-flight delayed messages to the v2 delay infrustructure.");
 
             var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
