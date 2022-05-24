@@ -11,6 +11,7 @@
 
     class DelaysMigrateCommand
     {
+        const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
         const string dateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
 
@@ -75,6 +76,15 @@
         {
             string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
+        }
+
+        static bool MessageIsInvalid(BasicGetResult? message)
+        {
+            return message == null
+                || message.BasicProperties == null
+                || message.BasicProperties.Headers == null
+                || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
+                || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
         }
 
         public DelaysMigrateCommand(string connectionString, IRoutingTopology routingTopology, X509Certificate2? certificate, bool quietMode)
@@ -153,10 +163,19 @@
                         break;
                     }
 
-                    if (message.BasicProperties == null)
+                    if (MessageIsInvalid(message))
                     {
                         skippedMessages++;
-                        channel.BasicNack(message.DeliveryTag, false, true);
+
+                        if (!poisonQueueCreated)
+                        {
+                            channel.QueueDeclare(poisonMessageQueue, true, false, false);
+                            poisonQueueCreated = true;
+                        }
+
+                        channel.BasicPublish(string.Empty, poisonMessageQueue, message.BasicProperties, message.Body);
+                        channel.BasicAck(message.DeliveryTag, false);
+
                         continue;
                     }
 
@@ -197,5 +216,6 @@
         readonly IRoutingTopology routingTopology;
         readonly X509Certificate2? certificate;
         readonly bool quietMode;
+        bool poisonQueueCreated = false;
     }
 }
