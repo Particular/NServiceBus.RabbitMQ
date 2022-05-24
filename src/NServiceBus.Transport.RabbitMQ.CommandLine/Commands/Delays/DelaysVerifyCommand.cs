@@ -11,7 +11,7 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("verify", "Verifies that the broker configuration allows for safe message delays.");
+            var command = new Command("verify", "Verify broker pre-requisites for v2 delay infrastructure.");
 
             var urlOption = new Option<string>("--url", "The url for the management UI of the RabbitMQ broker")
             {
