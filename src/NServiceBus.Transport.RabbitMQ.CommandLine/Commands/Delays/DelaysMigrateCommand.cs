@@ -87,27 +87,42 @@
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            CommandRunner.Run(connectionString, certificate, channel =>
+            using (var connection = ConnectionHelper.GetConnection(connectionString, certificate))
             {
-                try
+                using (var channel = connection.CreateModel())
                 {
-                    for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
+                    try
                     {
-                        MigrateQueue(channel, currentDelayLevel, cancellationToken);
+                        for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
+                        {
+                            MigrateQueue(channel, currentDelayLevel, cancellationToken);
+                        }
+                    }
+                    catch (OperationInterruptedException ex)
+                    {
+                        if (ex.ShutdownReason.ReplyCode == 404)
+                        {
+                            Console.WriteLine($"Fail: {ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Fail: {ex.Message}");
+                        }
+                    }
+                    finally
+                    {
+                        if (channel.IsOpen)
+                        {
+                            channel.Close();
+                        }
                     }
                 }
-                catch (OperationInterruptedException ex)
+
+                if (connection.IsOpen)
                 {
-                    if (ex.ShutdownReason.ReplyCode == 404)
-                    {
-                        Console.WriteLine($"{ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    connection.Close();
                 }
-            });
+            }
 
             return Task.CompletedTask;
         }

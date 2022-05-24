@@ -27,7 +27,6 @@
                 }
 
                 var createProcess = new DelaysCreateCommand(connectionString, certificate);
-
                 await createProcess.Run(cancellationToken).ConfigureAwait(false);
 
             }, connectionStringOption, certPathOption, certPassphraseOption);
@@ -43,15 +42,34 @@
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            try
+            using (var connection = ConnectionHelper.GetConnection(connectionString, certificate))
             {
-                CommandRunner.Run(connectionString, certificate, channel => DelayInfrastructure.Build(channel));
+                using (var channel = connection.CreateModel())
+                {
+                    try
+                    {
+                        DelayInfrastructure.Build(channel);
+                        channel.Close();
 
-                Console.WriteLine("Delay infrastructure v2 created successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Fail: {ex.Message}");
+                        Console.WriteLine("Delay infrastructure v2 created successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Fail: {ex.Message}");
+                    }
+                    finally
+                    {
+                        if (channel.IsOpen)
+                        {
+                            channel.Close();
+                        }
+                    }
+                }
+
+                if (connection.IsOpen)
+                {
+                    connection.Close();
+                }
             }
 
             return Task.CompletedTask;
