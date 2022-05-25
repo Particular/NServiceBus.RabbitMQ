@@ -35,6 +35,21 @@
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
+        [Test]
+        public void Should_blow_up_when_no_default_exchange_exists()
+        {
+            var migrationCommand = new MigrateEndpointCommand();
+            var endpointName = "EndpointWithNoDefaultExchange";
+
+            CreateQueue(endpointName, quorum: false);
+
+            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true).ConfigureAwait(false));
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            StringAssert.Contains(endpointName, ex.Message);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+
         void CreateQueue(string queueName, bool quorum)
         {
             CommandRunner.Run(ConnectionString, channel =>
