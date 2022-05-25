@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
     using NUnit.Framework;
 
@@ -50,6 +52,20 @@
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
+        [Test]
+        public async Task Should_convert_queue_to_quorum()
+        {
+            var migrationCommand = new MigrateEndpointCommand();
+            var endpointName = "EndpointWithClassicQueue";
+
+            CreateQueue(endpointName, quorum: false);
+            CreateExchange(endpointName);
+
+            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true).ConfigureAwait(false);
+
+            Assert.Throws<OperationInterruptedException>(() => CreateQueue(endpointName, quorum: false));
+        }
+
         void CreateQueue(string queueName, bool quorum)
         {
             CommandRunner.Run(ConnectionString, channel =>
@@ -62,6 +78,14 @@
                 }
 
                 channel.QueueDeclare(queueName, true, false, false, queueArguments);
+            });
+        }
+
+        void CreateExchange(string exchangeName)
+        {
+            CommandRunner.Run(ConnectionString, channel =>
+            {
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
             });
         }
 
