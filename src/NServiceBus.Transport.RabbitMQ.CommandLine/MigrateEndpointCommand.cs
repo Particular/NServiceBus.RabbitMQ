@@ -3,7 +3,8 @@
     using System;
     using System.CommandLine;
     using global::RabbitMQ.Client;
-    class MigrateEndpointCommand
+
+    public class MigrateEndpointCommand
     {
         public static Command CreateCommand()
         {
