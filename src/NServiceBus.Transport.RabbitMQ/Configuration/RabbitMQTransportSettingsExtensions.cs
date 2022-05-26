@@ -2,6 +2,7 @@
 {
     using System;
     using System.Security.Cryptography.X509Certificates;
+    using NServiceBus.Transport.RabbitMQ;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.
@@ -65,6 +66,20 @@
         public static TransportExtensions<RabbitMQTransport> CustomMessageIdStrategy(this TransportExtensions<RabbitMQTransport> transport, Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy)
         {
             transport.Transport.MessageIdStrategy = customIdStrategy;
+            return transport;
+        }
+
+        /// <summary>
+        /// Specifies that exchanges and queues should be declared as non-durable.
+        /// </summary>
+        /// <param name="transport"></param>
+        [PreObsolete(
+           Message = "This is now part of routing topology configuration, which has been moved to the constructor of the RabbitMQTransport class.",
+           TreatAsErrorFromVersion = "9",
+           RemoveInVersion = "10")]
+        public static TransportExtensions<RabbitMQTransport> DisableDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transport)
+        {
+            transport.Transport.UseDurableExchangesAndQueues = false;
             return transport;
         }
 
@@ -200,13 +215,28 @@
         /// Uses the conventional routing topology.
         /// </summary>
         [PreObsolete(
-            ReplacementTypeOrMember = "RabbitMQTransport.RoutingTopology",
-            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transport)
         {
-            transport.Transport.RoutingTopology = RoutingTopology.Conventional(true).Create();
+            transport.Transport.TopologyFactory = durable => new ConventionalRoutingTopology(durable);
+            return transport;
+        }
+
+        /// <summary>
+        /// Registers a custom routing topology.
+        /// </summary>
+        /// <param name="transport"></param>
+        /// <param name="topologyFactory">The function used to create the routing topology instance. The parameter of the function indicates whether exchanges and queues declared by the routing topology should be durable.</param>
+        /// <returns></returns>
+        [PreObsolete(
+            Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
+        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, Func<bool, IRoutingTopology> topologyFactory)
+        {
+            transport.Transport.TopologyFactory = topologyFactory;
             return transport;
         }
 
@@ -217,12 +247,12 @@
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
         [PreObsolete(
-            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
-            transport.Transport.RoutingTopology = RoutingTopology.Direct(true, exchangeNameConvention, routingKeyConvention).Create();
+            transport.Transport.TopologyFactory = durable => new DirectRoutingTopology(durable, exchangeNameConvention, routingKeyConvention);
             return transport;
         }
 

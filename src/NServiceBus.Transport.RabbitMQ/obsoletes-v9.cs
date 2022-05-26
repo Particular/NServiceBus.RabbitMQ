@@ -8,26 +8,6 @@ namespace NServiceBus
     public static partial class RabbitMQTransportSettingsExtensions
     {
         [ObsoleteEx(
-            Message = "To use a custom topology, create a new instance of the RabbitMQTransport class and pass it into endpointConfiguration.UseTransport(rabbitMqTransportDefinition).",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
-        public static TransportExtensions<RabbitMQTransport> UseCustomRoutingTopology(
-    this TransportExtensions<RabbitMQTransport> transport,
-    Func<bool, IRoutingTopology> topologyFactory)
-        {
-            throw new NotImplementedException();
-        }
-
-        [ObsoleteEx(
-            Message = "In order to disable durable exchanges and queues, create a new instance of the RabbitMQTransport class and set the RoutingTopology property with an implementation that passes in the desired value for the useDurableEntities parameter, then pass the RabbitMQTransport instance to endpointConfiguration.UseTransport(rabbitMqTransportDefinition). See the upgrade guide for further details.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9")]
-        public static TransportExtensions<RabbitMQTransport> DisableDurableExchangesAndQueues(this TransportExtensions<RabbitMQTransport> transport)
-        {
-            throw new NotImplementedException();
-        }
-
-        [ObsoleteEx(
             Message = "The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for details on how to use the timeout migration tool.",
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9")]
@@ -40,10 +20,14 @@ namespace NServiceBus
     public partial class RabbitMQTransport
     {
         internal string LegacyApiConnectionString { get; set; }
+
+        internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
+
+        internal bool UseDurableExchangesAndQueues { get; set; } = true;
+
         bool legacyMode;
 
-        internal RabbitMQTransport()
-            : base(TransportTransactionMode.ReceiveOnly, true, true, true)
+        internal RabbitMQTransport() : base(TransportTransactionMode.ReceiveOnly, true, true, true)
         {
             legacyMode = true;
         }
@@ -55,10 +39,12 @@ namespace NServiceBus
                 return;
             }
 
-            if (RoutingTopology == null)
+            if (TopologyFactory == null)
             {
                 throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods. Most new projects should use the Conventional routing topology.");
             }
+
+            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
 
             if (string.IsNullOrEmpty(LegacyApiConnectionString))
             {
