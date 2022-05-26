@@ -32,20 +32,21 @@
             command.AddOption(usernameOption);
             command.AddOption(passwordOption);
 
-            command.SetHandler(async (string url, string username, string password, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string url, string username, string password, IConsole console, CancellationToken cancellationToken) =>
             {
-                var verifyProcess = new DelaysVerifyCommand(url, username, password);
+                var verifyProcess = new DelaysVerifyCommand(url, username, password, console);
                 await verifyProcess.Run(cancellationToken).ConfigureAwait(false);
             }, urlOption, usernameOption, passwordOption);
 
             return command;
         }
 
-        public DelaysVerifyCommand(string baseUrl, string username, string password)
+        public DelaysVerifyCommand(string baseUrl, string username, string password, IConsole console)
         {
             this.baseUrl = baseUrl;
             this.username = username;
             this.password = password;
+            this.console = console;
         }
 
         public async Task Run(CancellationToken cancellationToken = default)
@@ -59,7 +60,7 @@
 
             if (Version.TryParse(serverDetails.Overview?.ProductVersion, out var version) && version < Version.Parse("3.10.0"))
             {
-                Console.WriteLine($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
+                console.WriteLine($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
                 return;
             }
 
@@ -67,7 +68,7 @@
 
             if (streamQueueState == null || !streamQueueState.IsEnabled())
             {
-                Console.WriteLine($"Fail: stream_queue feature flag is not enabled");
+                console.WriteLine($"Fail: stream_queue feature flag is not enabled");
                 return;
             }
 
@@ -75,11 +76,11 @@
 
             if (quorumQueueState == null || !quorumQueueState.IsEnabled())
             {
-                Console.WriteLine($"Fail: quorum_queue feature flag is not enabled");
+                console.WriteLine($"Fail: quorum_queue feature flag is not enabled");
                 return;
             }
 
-            Console.WriteLine("All checks OK");
+            console.WriteLine("All checks OK");
         }
 
         async Task<ServerDetails> GetServerDetails(HttpClient httpClient, CancellationToken cancellationToken)
@@ -110,6 +111,7 @@
         readonly string baseUrl;
         readonly string username;
         readonly string password;
+        readonly IConsole console;
 
         class ServerDetails
         {

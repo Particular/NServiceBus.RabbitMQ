@@ -3,7 +3,6 @@
     using System;
     using System.CommandLine;
     using System.Globalization;
-    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
@@ -20,38 +19,26 @@
         {
             var command = new Command("migrate", "Migrate in-flight delayed messages to the v2 delay infrustructure.");
 
-            var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
             var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
-            var certPathOption = SharedOptions.CreateCertPathOption();
-            var certPassphraseOption = SharedOptions.CreateCertPassphraseOption();
+            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 
             var quietModeOption = new Option<bool>(name: "--Quiet", description: $"Disable console output while running");
             quietModeOption.AddAlias("-q");
 
-            command.AddOption(connectionStringOption);
             command.AddOption(topologyOption);
             command.AddOption(useDurableEntitiesOption);
-            command.AddOption(certPathOption);
-            command.AddOption(certPassphraseOption);
             command.AddOption(quietModeOption);
 
-            command.SetHandler(async (string connectionString, Topology topology, bool useDurableEntities, string certPath, string certPassphrase, bool quietMode, CancellationToken cancellationToken) =>
+            command.SetHandler(async (RabbitMQ.ConnectionFactory connectionFactory, Topology topology, bool useDurableEntities, bool quietMode, IConsole console, CancellationToken cancellationToken) =>
             {
                 var routingTopology = GetRoutingTopology(topology, useDurableEntities);
 
-                X509Certificate2? certificate = null;
-
-                if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrWhiteSpace(certPassphrase))
-                {
-                    certificate = new X509Certificate2(certPath, certPassphrase);
-                }
-
-                var migrationProcess = new DelaysMigrateCommand(connectionString, routingTopology, certificate, quietMode);
+                var migrationProcess = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
 
                 await migrationProcess.Run(cancellationToken).ConfigureAwait(false);
 
-            }, connectionStringOption, topologyOption, useDurableEntitiesOption, certPathOption, certPassphraseOption, quietModeOption);
+            }, connectionFactoryBinder, topologyOption, useDurableEntitiesOption, quietModeOption);
 
             return command;
         }
@@ -88,17 +75,17 @@
                 || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
         }
 
-        public DelaysMigrateCommand(string connectionString, IRoutingTopology routingTopology, X509Certificate2? certificate, bool quietMode)
+        public DelaysMigrateCommand(RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool quietMode, IConsole console)
         {
-            this.connectionString = connectionString;
+            this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
-            this.certificate = certificate;
             this.quietMode = quietMode;
+            this.console = console;
         }
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            using (var connection = ConnectionHelper.GetConnection(connectionString, certificate))
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             {
                 using (var channel = connection.CreateModel())
                 {
@@ -113,11 +100,11 @@
                     {
                         if (ex.ShutdownReason.ReplyCode == 404)
                         {
-                            Console.WriteLine($"Fail: {ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
+                            console.WriteLine($"Fail: {ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
                         }
                         else
                         {
-                            Console.WriteLine($"Fail: {ex.Message}");
+                            console.WriteLine($"Fail: {ex.Message}");
                         }
                     }
                     finally
@@ -148,7 +135,7 @@
             {
                 if (!quietMode)
                 {
-                    Console.Write($"Processing {messageCount} messages at delay level {currentDelayLevel:00}. ");
+                    console.Write($"Processing {messageCount} messages at delay level {currentDelayLevel:00}. ");
                 }
 
                 int skippedMessages = 0;
@@ -212,22 +199,22 @@
 
                 if (!quietMode)
                 {
-                    Console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
+                    console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
                 }
             }
             else
             {
                 if (!quietMode)
                 {
-                    Console.WriteLine($"No messages to process at delay level {currentDelayLevel:00}.");
+                    console.WriteLine($"No messages to process at delay level {currentDelayLevel:00}.");
                 }
             }
         }
 
-        readonly string connectionString;
+        readonly RabbitMQ.ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
-        readonly X509Certificate2? certificate;
         readonly bool quietMode;
+        readonly IConsole console;
         bool poisonQueueCreated = false;
     }
 }

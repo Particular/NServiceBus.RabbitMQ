@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using System.CommandLine;
-    using System.Security.Cryptography.X509Certificates;
 
     class DelaysCreateCommand
     {
@@ -9,40 +8,27 @@
         {
             var command = new Command("create", "Create v2 delay infrastructure queues and exchanges");
 
-            var connectionStringOption = SharedOptions.CreateConnectionStringOption();
-            var certPathOption = SharedOptions.CreateCertPathOption();
-            var certPassphraseOption = SharedOptions.CreateCertPassphraseOption();
+            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 
-            command.AddOption(connectionStringOption);
-            command.AddOption(certPathOption);
-            command.AddOption(certPassphraseOption);
-
-            command.SetHandler(async (string connectionString, string certPath, string certPassphrase, CancellationToken cancellationToken) =>
+            command.SetHandler(async (ConnectionFactory connectionFactory, IConsole console, CancellationToken cancellationToken) =>
             {
-                X509Certificate2? certificate = null;
-
-                if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrWhiteSpace(certPassphrase))
-                {
-                    certificate = new X509Certificate2(certPath, certPassphrase);
-                }
-
-                var createProcess = new DelaysCreateCommand(connectionString, certificate);
+                var createProcess = new DelaysCreateCommand(connectionFactory, console);
                 await createProcess.Run(cancellationToken).ConfigureAwait(false);
 
-            }, connectionStringOption, certPathOption, certPassphraseOption);
+            }, connectionFactoryBinder);
 
             return command;
         }
 
-        public DelaysCreateCommand(string connectionString, X509Certificate2? certificate)
+        public DelaysCreateCommand(ConnectionFactory connectionFactory, IConsole console)
         {
-            this.connectionString = connectionString;
-            this.certificate = certificate;
+            this.connectionFactory = connectionFactory;
+            this.console = console;
         }
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            using (var connection = ConnectionHelper.GetConnection(connectionString, certificate))
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             {
                 using (var channel = connection.CreateModel())
                 {
@@ -51,11 +37,11 @@
                         DelayInfrastructure.Build(channel);
                         channel.Close();
 
-                        Console.WriteLine("Delay infrastructure v2 created successfully");
+                        console.WriteLine("Delay infrastructure v2 created successfully");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Fail: {ex.Message}");
+                        console.WriteLine($"Fail: {ex.Message}");
                     }
                     finally
                     {
@@ -75,7 +61,7 @@
             return Task.CompletedTask;
         }
 
-        readonly string connectionString;
-        readonly X509Certificate2? certificate;
+        readonly ConnectionFactory connectionFactory;
+        readonly IConsole console;
     }
 }
