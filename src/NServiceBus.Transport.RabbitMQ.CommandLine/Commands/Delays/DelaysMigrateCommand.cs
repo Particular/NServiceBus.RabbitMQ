@@ -11,6 +11,7 @@
 
     class DelaysMigrateCommand
     {
+        const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
         const string dateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
@@ -179,7 +180,8 @@
                         continue;
                     }
 
-                    int delayInSeconds = (int)message.BasicProperties.Headers[DelayInfrastructure.DelayHeader];
+                    var messageHeaders = message.BasicProperties.Headers;
+                    int delayInSeconds = (int)messageHeaders[DelayInfrastructure.DelayHeader];
                     DateTimeOffset timeSent = GetTimeSent(message);
 
                     (string destinationQueue, string newRoutingKey, int newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
@@ -192,6 +194,16 @@
                     }
 
                     string publishExchange = DelayInfrastructure.LevelName(newDelayLevel);
+
+                    if (messageHeaders != null)
+                    {
+                        //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
+                        messageHeaders.Remove(DelayInfrastructure.XDeathHeader);
+                        messageHeaders.Remove(DelayInfrastructure.XFirstDeathExchangeHeader);
+                        messageHeaders.Remove(DelayInfrastructure.XFirstDeathQueueHeader);
+                        messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
+                        messageHeaders.Remove(ConfirmationIdHeader);
+                    }
 
                     channel.BasicPublish(publishExchange, newRoutingKey, message.BasicProperties, message.Body);
                     channel.BasicAck(message.DeliveryTag, false);
