@@ -36,17 +36,15 @@
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueType">The type of queue to use for receiving queues.</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, QueueType queueType)
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
-                supportsTTBR: queueType == QueueType.Classic)
+                supportsTTBR: true)
         {
             Guard.AgainstNull(nameof(routingTopology), routingTopology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
-            QueueType = queueType;
             RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
@@ -128,6 +126,7 @@
                 heartbeatInterval = value;
             }
         }
+
         /// <summary>
         ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
@@ -140,8 +139,6 @@
                 networkRecoveryInterval = value;
             }
         }
-
-        internal QueueType QueueType { get; }
 
         /// <summary>
         /// Adds a new node for use within a cluster.
@@ -161,8 +158,7 @@
         ///     cannot
         ///     provide information anymore at this stage).
         /// </summary>
-        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings,
-            ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
 
@@ -187,7 +183,7 @@
 
             if (hostSettings.SetupInfrastructure)
             {
-                infra.SetupInfrastructure(QueueType, sendingAddresses);
+                infra.SetupInfrastructure(sendingAddresses);
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);

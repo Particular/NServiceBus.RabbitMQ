@@ -20,10 +20,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
-        transport = new TestRabbitMQTransport(
-            RoutingTopology.Conventional(type => type.FullName),
-            ConnectionHelper.ConnectionString,
-            queueType);
+        transport = new TestRabbitMQTransport(RoutingTopology.Conventional(queueType, type => type.FullName), ConnectionHelper.ConnectionString);
 
         configuration.UseTransport(transport);
 
@@ -65,8 +62,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(RoutingTopology routingTopology, string connectionString, QueueType queueType)
-            : base(routingTopology, connectionString, queueType)
+        public TestRabbitMQTransport(RoutingTopology routingTopology, string connectionString)
+            : base(routingTopology, connectionString)
         {
         }
 

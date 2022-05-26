@@ -19,28 +19,30 @@ namespace NServiceBus
         /// <summary>
         ///
         /// </summary>
+        /// <param name="queueType"></param>
         /// <param name="useDurableEntities"></param>
         /// <returns></returns>
-        public static RoutingTopology Conventional(bool useDurableEntities = true)
+        public static RoutingTopology Conventional(QueueType queueType, bool useDurableEntities = true)
         {
-            return new RoutingTopology(() => new ConventionalRoutingTopology(useDurableEntities));
+            return new RoutingTopology(() => new ConventionalRoutingTopology(useDurableEntities, queueType));
         }
 
-        internal static RoutingTopology Conventional(Func<Type, string> exchangeNameConvention, bool useDurable = true)
+        internal static RoutingTopology Conventional(QueueType queueType, Func<Type, string> exchangeNameConvention, bool useDurable = true)
         {
-            return new RoutingTopology(() => new ConventionalRoutingTopology(useDurable, exchangeNameConvention));
+            return new RoutingTopology(() => new ConventionalRoutingTopology(useDurable, queueType, exchangeNameConvention));
         }
 
         /// <summary>
         ///
         /// </summary>
+        /// <param name="queueType"></param>
         /// <param name="useDurableEntities"></param>
         /// <param name="exchangeNameConvention"></param>
         /// <param name="routingKeyConvention"></param>
         /// <returns></returns>
-        public static RoutingTopology Direct(bool useDurableEntities = true, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
+        public static RoutingTopology Direct(QueueType queueType, bool useDurableEntities = true, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
         {
-            return new RoutingTopology(() => new DirectRoutingTopology(useDurableEntities, exchangeNameConvention, routingKeyConvention));
+            return new RoutingTopology(() => new DirectRoutingTopology(useDurableEntities, queueType, exchangeNameConvention, routingKeyConvention));
         }
 
         /// <summary>

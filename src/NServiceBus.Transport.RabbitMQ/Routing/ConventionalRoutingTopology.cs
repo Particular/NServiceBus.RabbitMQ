@@ -25,15 +25,17 @@ namespace NServiceBus.Transport.RabbitMQ
     /// </summary>
     class ConventionalRoutingTopology : IRoutingTopology
     {
-        public ConventionalRoutingTopology(bool useDurableEntities)
+        public ConventionalRoutingTopology(bool durable, QueueType queueType)
         {
-            this.useDurableEntities = useDurableEntities;
+            this.durable = durable;
+            this.queueType = queueType;
             exchangeNameConvention = DefaultExchangeNameConvention;
         }
 
-        internal ConventionalRoutingTopology(bool useDurableEntities, Func<Type, string> exchangeNameConvention)
+        internal ConventionalRoutingTopology(bool durable, QueueType queueType, Func<Type, string> exchangeNameConvention)
         {
-            this.useDurableEntities = useDurableEntities;
+            this.queueType = queueType;
+            this.durable = durable;
             this.exchangeNameConvention = exchangeNameConvention;
         }
 
@@ -76,18 +78,18 @@ namespace NServiceBus.Transport.RabbitMQ
             channel.BasicPublish(address, string.Empty, true, properties, body);
         }
 
-        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
+        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
-            IDictionary<string, object> queueArguments = null;
+            Dictionary<string, object> arguments = null;
 
-            if (useQuorumQueues)
+            if (queueType == QueueType.Quorum)
             {
-                queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+                arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             }
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, useDurableEntities, false, false, queueArguments);
+                channel.QueueDeclare(address, durable, false, false, arguments);
                 CreateExchange(channel, address);
                 channel.QueueBind(address, address, string.Empty);
             }
@@ -139,7 +141,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, useDurableEntities);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, durable);
             }
             catch (Exception)
             {
@@ -147,8 +149,10 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        readonly bool useDurableEntities;
+        readonly bool durable;
+        readonly QueueType queueType;
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
+
         Func<Type, string> exchangeNameConvention;
     }
 }

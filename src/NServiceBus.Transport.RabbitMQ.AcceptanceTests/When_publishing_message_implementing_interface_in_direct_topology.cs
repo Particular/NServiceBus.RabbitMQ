@@ -38,7 +38,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.ConfigureRabbitMQTransport().RoutingTopology = new DirectRoutingTopology(true);
+                    c.ConfigureRabbitMQTransport().RoutingTopology = new DirectRoutingTopology(true, QueueType.Classic);
                 });
             }
         }
@@ -49,7 +49,7 @@
             {
                 EndpointSetup<DefaultServer>(builder =>
                 {
-                    builder.ConfigureRabbitMQTransport().RoutingTopology = new DirectRoutingTopology(true);
+                    builder.ConfigureRabbitMQTransport().RoutingTopology = new DirectRoutingTopology(true, QueueType.Classic);
                     builder.DisableFeature<AutoSubscribe>();
                 }, metadata => metadata.RegisterPublisherFor<IMyRequest>(typeof(Publisher)));
             }

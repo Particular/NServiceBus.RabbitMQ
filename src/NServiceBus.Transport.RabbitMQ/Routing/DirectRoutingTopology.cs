@@ -9,12 +9,11 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class DirectRoutingTopology : IRoutingTopology
     {
-        public DirectRoutingTopology(bool useDurableEntities, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
+        public DirectRoutingTopology(bool durable, QueueType queueType, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
         {
-            conventions = new Conventions(
-                exchangeNameConvention ?? DefaultExchangeNameConvention,
-                routingKeyConvention ?? DefaultRoutingKeyConvention.GenerateRoutingKey);
-            this.useDurableEntities = useDurableEntities;
+            this.durable = durable;
+            this.queueType = queueType;
+            conventions = new Conventions(exchangeNameConvention ?? DefaultExchangeNameConvention, routingKeyConvention ?? DefaultRoutingKeyConvention.GenerateRoutingKey);
         }
 
         string DefaultExchangeNameConvention() => "amq.topic";
@@ -45,19 +44,18 @@ namespace NServiceBus.Transport.RabbitMQ
             channel.BasicPublish(string.Empty, address, true, properties, body);
         }
 
-        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, bool useQuorumQueues)
+        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
-            IDictionary<string, object> queueArguments = null;
+            Dictionary<string, object> arguments = null;
 
-            if (useQuorumQueues)
+            if (queueType == QueueType.Quorum)
             {
-                queueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+                arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             }
-
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, useDurableEntities, false, false, queueArguments);
+                channel.QueueDeclare(address, durable, false, false, arguments);
             }
         }
 
@@ -77,7 +75,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, useDurableEntities);
+                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, durable);
             }
             catch (Exception)
             {
@@ -100,7 +98,8 @@ namespace NServiceBus.Transport.RabbitMQ
         const string AmqpTopicExchange = "amq.topic";
 
         readonly Conventions conventions;
-        readonly bool useDurableEntities;
+        readonly bool durable;
+        readonly QueueType queueType;
 
         public class Conventions
         {

@@ -214,13 +214,15 @@
         /// <summary>
         /// Uses the conventional routing topology.
         /// </summary>
+        /// <param name="transport">The transport settings.</param>
+        /// <param name="queueType">The type of queue that the endpoint should use.</param>
         [PreObsolete(
             Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transport)
+        public static TransportExtensions<RabbitMQTransport> UseConventionalRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, QueueType queueType)
         {
-            transport.Transport.TopologyFactory = durable => new ConventionalRoutingTopology(durable);
+            transport.Transport.TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType);
             return transport;
         }
 
@@ -244,15 +246,16 @@
         /// Uses the direct routing topology with the specified conventions.
         /// </summary>
         /// <param name="transport">The transport settings.</param>
+        /// <param name="queueType">The type of queue that the endpoint should use.</param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
         [PreObsolete(
             Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, QueueType queueType, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
-            transport.Transport.TopologyFactory = durable => new DirectRoutingTopology(durable, exchangeNameConvention, routingKeyConvention);
+            transport.Transport.TopologyFactory = durable => new DirectRoutingTopology(durable, queueType, exchangeNameConvention, routingKeyConvention);
             return transport;
         }
 

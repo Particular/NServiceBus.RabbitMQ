@@ -162,8 +162,8 @@
 
         static IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
         {
-            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
-            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
+            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities, QueueType.Quorum),
+            Topology.Direct => new DirectRoutingTopology(useDurableEntities, QueueType.Quorum),
             _ => throw new InvalidOperationException()
         };
 
