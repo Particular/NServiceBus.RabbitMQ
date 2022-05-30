@@ -55,18 +55,9 @@
 
                 var holdingQueueName = $"{queueName}-migration-temp";
 
-                if (!SafeExecute(connection, ch =>
-                {
-                    if (ch.MessageCount(holdingQueueName) > 0)
-                    {
-                        throw new Exception($"Holding queue {holdingQueueName} has existing messages.");
-                    }
-                }))
-                {
-                    //does the holding queue need to be quorum?
-                    channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
-                    Console.WriteLine($"Holding queue created: {holdingQueueName}");
-                }
+                //does the holding queue need to be quorum?
+                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+                Console.WriteLine($"Holding queue created: {holdingQueueName}");
 
                 //bind the holding queue to the default exchange of queue under migration
                 // this will throw if the exchange for the endpoint doesn't exist
