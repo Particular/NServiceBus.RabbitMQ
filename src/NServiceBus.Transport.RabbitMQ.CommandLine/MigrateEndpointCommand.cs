@@ -129,8 +129,10 @@
         {
             var messageCount = channel.MessageCount(sourceQueue);
 
-            for (var i = 0; i < messageCount && !cancellationToken.IsCancellationRequested; i++)
+            for (var i = 0; i < messageCount; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var message = channel.BasicGet(sourceQueue, false);
 
                 if (message == null)
