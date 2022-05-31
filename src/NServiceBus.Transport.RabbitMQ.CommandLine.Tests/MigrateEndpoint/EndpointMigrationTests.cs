@@ -17,9 +17,7 @@
             var endpointName = "NonExistingEndpoint";
             var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true));
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
             StringAssert.Contains(endpointName, ex.Message);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
         [Test]
@@ -32,9 +30,7 @@
 
             var ex = Assert.ThrowsAsync<Exception>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true));
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
             StringAssert.Contains(endpointName, ex.Message);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
         [Test]
@@ -47,9 +43,7 @@
 
             var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true));
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
             StringAssert.Contains(endpointName, ex.Message);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
         [Test]
