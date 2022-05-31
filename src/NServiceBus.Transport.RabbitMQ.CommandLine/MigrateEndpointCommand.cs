@@ -97,13 +97,34 @@
                 //TODO: No idea why we need a new channel for this to work?
                 SafeExecute(connection, ch =>
                 {
+                    var messageIds = new Dictionary<string, string>();
+
                     //move all messages in the holding queue back to the main queue
                     var numMessageMovedBackToMain = ProcessMessages(
                         channel,
                         holdingQueueName,
                         (message, channel) =>
-                        //todo: deduplicate?
-                        ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body),
+                        {
+                            string? messageIdString = null;
+
+                            if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
+                            {
+                                messageIdString = messageId?.ToString();
+
+                                if (messageIdString != null && messageIds.ContainsKey(messageIdString))
+                                {
+                                    return;
+                                }
+                            }
+
+                            ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
+
+                            if (messageIdString != null)
+                            {
+                                messageIds.Add(messageIdString, string.Empty);
+                            }
+                        }
+                        ,
                         cancellationToken);
 
                     Console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");

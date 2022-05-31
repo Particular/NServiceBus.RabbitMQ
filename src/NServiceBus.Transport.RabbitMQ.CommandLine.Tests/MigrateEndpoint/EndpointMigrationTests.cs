@@ -114,6 +114,29 @@
             Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
         }
 
+        [Test]
+        public async Task Should_deduplicate_when_moving_from_holding()
+        {
+            var migrationCommand = new MigrateEndpointCommand();
+            var endpointName = "EndpointWithDuplicatesInHolding";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            var numExistingMessage = 10;
+
+            PrepareTestEndpoint(endpointName);
+
+            CreateQueue(holdingQueueName, quorum: true);
+            AddMessages(holdingQueueName, numExistingMessage, properties =>
+            {
+                properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, "duplicate" } };
+            });
+
+            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.AreEqual(1, MessageCount(endpointName));
+        }
+
         bool QueueIsQuorum(string endpointName)
         {
             try
@@ -182,13 +205,16 @@
             });
         }
 
-        void AddMessages(string queueName, int numMessages)
+        void AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
         {
             CommandRunner.Run(ConnectionString, channel =>
             {
                 for (var i = 0; i < numMessages; i++)
                 {
                     var properties = channel.CreateBasicProperties();
+
+                    modifications?.Invoke(properties);
+
                     channel.BasicPublish(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty);
                 }
             });
