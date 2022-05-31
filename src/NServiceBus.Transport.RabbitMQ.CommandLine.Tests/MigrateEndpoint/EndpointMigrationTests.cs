@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.CommandLine.IO;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
@@ -147,7 +148,7 @@
 
         Task ExecuteMigration(string endpointName)
         {
-            var migrationCommand = new MigrateEndpointCommand(endpointName, connectionFactory, Topology.Conventional, true);
+            var migrationCommand = new MigrateEndpointCommand(endpointName, connectionFactory, Topology.Conventional, true, new TestConsole());
 
             return migrationCommand.Run();
         }
