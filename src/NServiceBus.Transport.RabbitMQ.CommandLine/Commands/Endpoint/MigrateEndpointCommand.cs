@@ -4,36 +4,44 @@
     using System.CommandLine;
     using global::RabbitMQ.Client;
 
-    public class MigrateEndpointCommand
+    class MigrateEndpointCommand
     {
         public static Command CreateCommand()
         {
             var endpointOption = SharedOptions.CreateConnectionStringOption();
 
-            var migrateCommand = new Command("migrate-to-quorum", "Migrate and existing endpoint to use quorum queues.");
+            var command = new Command("migrate-to-quorum", "Migrate and existing endpoint to use quorum queues.");
 
             var endpointArgument = new Argument<string>();
 
-            var connectionStringOption = SharedOptions.CreateConnectionStringOption();
+            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
+
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
             var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
 
-            migrateCommand.AddArgument(endpointArgument);
+            command.AddArgument(endpointArgument);
 
-            migrateCommand.AddOption(connectionStringOption);
-            migrateCommand.AddOption(topologyOption);
-            migrateCommand.AddOption(useDurableEntitiesOption);
+            command.AddOption(topologyOption);
+            command.AddOption(useDurableEntitiesOption);
 
-            migrateCommand.SetHandler(async (string endpoint, string connectionString, Topology routingTopology, bool useDurableEntities, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string endpoint, RabbitMQ.ConnectionFactory connectionFactory, Topology routingTopology, bool useDurableEntities, CancellationToken cancellationToken) =>
             {
-                var migrationProcess = new MigrateEndpointCommand();
-                await migrationProcess.Run(endpoint, connectionString, routingTopology, useDurableEntities, cancellationToken).ConfigureAwait(false);
-            }, endpointArgument, connectionStringOption, topologyOption, useDurableEntitiesOption);
+                var migrateCommand = new MigrateEndpointCommand(endpoint, connectionFactory, routingTopology, useDurableEntities);
+                await migrateCommand.Run(cancellationToken).ConfigureAwait(false);
+            }, endpointArgument, connectionFactoryBinder, topologyOption, useDurableEntitiesOption);
 
-            return migrateCommand;
+            return command;
         }
 
-        public Task Run(string queueName, string connectionString, Topology routingTopology, bool useDurableEntities, CancellationToken cancellationToken = default)
+        public MigrateEndpointCommand(string queueName, RabbitMQ.ConnectionFactory connectionFactory, Topology routingTopology, bool useDurableEntities)
+        {
+            this.queueName = queueName;
+            this.connectionFactory = connectionFactory;
+            this.routingTopology = routingTopology;
+            this.useDurableEntities = useDurableEntities;
+        }
+
+        public Task Run(CancellationToken cancellationToken = default)
         {
             Console.WriteLine($"Starting migration of {queueName}");
 
@@ -42,102 +50,110 @@
                 throw new NotSupportedException("Quorum queue migration is only supported for the ConventionalRoutingTopology for the moment.");
             }
 
-            CommandRunner.Run(connectionString, (connection, channel) =>
+            using (var connection = connectionFactory.CreateAdministrationConnection())
             {
-                // make sure that the endpoint queue exists
-                channel.MessageCount(queueName);
-
-                //check if queue already is quorum
-                if (SafeExecute(connection, ch => ch.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments)))
+                using (var channel = connection.CreateModel())
                 {
-                    throw new Exception($"Queue {queueName} is already a quorum queue");
+                    Migrate(connection, channel, cancellationToken);
                 }
-
-                var holdingQueueName = $"{queueName}-migration-temp";
-
-                //does the holding queue need to be quorum?
-                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
-                Console.WriteLine($"Holding queue created: {holdingQueueName}");
-
-                //bind the holding queue to the default exchange of queue under migration
-                // this will throw if the exchange for the endpoint doesn't exist
-                channel.QueueBind(holdingQueueName, queueName, EmptyRoutingKey);
-
-                Console.WriteLine($"Holding queue bound to main queue exchange");
-
-                //unbind the queue under migration to stopp more messages from coming in
-                channel.QueueUnbind(queueName, queueName, EmptyRoutingKey);
-                Console.WriteLine($"Main queue unbind");
-
-                //move all existing messages to the holding queue
-                var numMessagesMovedToHolding = ProcessMessages(
-                    channel,
-                    queueName,
-                    (message, channel) =>
-                    channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body),
-                    cancellationToken);
-
-                Console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
-
-                // delete the queue under migration
-                channel.QueueDelete(queueName);
-                Console.WriteLine($"Main queue removed");
-
-                //recreate the queue
-                channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
-                Console.WriteLine($"Main queue recreated as a quorum queue");
-
-                channel.QueueBind(queueName, queueName, EmptyRoutingKey);
-                Console.WriteLine($"Main queue binding to its exchange re-added");
-
-                channel.QueueUnbind(holdingQueueName, queueName, EmptyRoutingKey);
-
-                Console.WriteLine($"Holding queue unbinded from main queue exchange");
-
-                //TODO: No idea why we need a new channel for this to work?
-                SafeExecute(connection, ch =>
-                {
-                    var messageIds = new Dictionary<string, string>();
-
-                    //move all messages in the holding queue back to the main queue
-                    var numMessageMovedBackToMain = ProcessMessages(
-                        channel,
-                        holdingQueueName,
-                        (message, channel) =>
-                        {
-                            string? messageIdString = null;
-
-                            if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
-                            {
-                                messageIdString = messageId?.ToString();
-
-                                if (messageIdString != null && messageIds.ContainsKey(messageIdString))
-                                {
-                                    return;
-                                }
-                            }
-
-                            ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
-
-                            if (messageIdString != null)
-                            {
-                                messageIds.Add(messageIdString, string.Empty);
-                            }
-                        }
-                        ,
-                        cancellationToken);
-
-                    Console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
-                });
-
-
-                channel.QueueDelete(holdingQueueName);
-                Console.WriteLine($"Holding queue removed");
-            });
+            }
 
             return Task.CompletedTask;
         }
 
+        void Migrate(IConnection connection, IModel channel, CancellationToken cancellationToken)
+        {
+
+            // make sure that the endpoint queue exists
+            channel.MessageCount(queueName);
+
+            //check if queue already is quorum
+            if (SafeExecute(connection, ch => ch.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments)))
+            {
+                throw new Exception($"Queue {queueName} is already a quorum queue");
+            }
+
+            var holdingQueueName = $"{queueName}-migration-temp";
+
+            //does the holding queue need to be quorum?
+            channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+            Console.WriteLine($"Holding queue created: {holdingQueueName}");
+
+            //bind the holding queue to the default exchange of queue under migration
+            // this will throw if the exchange for the endpoint doesn't exist
+            channel.QueueBind(holdingQueueName, queueName, EmptyRoutingKey);
+
+            Console.WriteLine($"Holding queue bound to main queue exchange");
+
+            //unbind the queue under migration to stopp more messages from coming in
+            channel.QueueUnbind(queueName, queueName, EmptyRoutingKey);
+            Console.WriteLine($"Main queue unbind");
+
+            //move all existing messages to the holding queue
+            var numMessagesMovedToHolding = ProcessMessages(
+                channel,
+                queueName,
+                (message, channel) =>
+                channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body),
+                cancellationToken);
+
+            Console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
+
+            // delete the queue under migration
+            channel.QueueDelete(queueName);
+            Console.WriteLine($"Main queue removed");
+
+            //recreate the queue
+            channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
+            Console.WriteLine($"Main queue recreated as a quorum queue");
+
+            channel.QueueBind(queueName, queueName, EmptyRoutingKey);
+            Console.WriteLine($"Main queue binding to its exchange re-added");
+
+            channel.QueueUnbind(holdingQueueName, queueName, EmptyRoutingKey);
+
+            Console.WriteLine($"Holding queue unbinded from main queue exchange");
+
+            //TODO: No idea why we need a new channel for this to work?
+            SafeExecute(connection, ch =>
+            {
+                var messageIds = new Dictionary<string, string>();
+
+                //move all messages in the holding queue back to the main queue
+                var numMessageMovedBackToMain = ProcessMessages(
+                    channel,
+                    holdingQueueName,
+                    (message, channel) =>
+                    {
+                        string? messageIdString = null;
+
+                        if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
+                        {
+                            messageIdString = messageId?.ToString();
+
+                            if (messageIdString != null && messageIds.ContainsKey(messageIdString))
+                            {
+                                return;
+                            }
+                        }
+
+                        ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
+
+                        if (messageIdString != null)
+                        {
+                            messageIds.Add(messageIdString, string.Empty);
+                        }
+                    }
+                    ,
+                    cancellationToken);
+
+                Console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
+            });
+
+
+            channel.QueueDelete(holdingQueueName);
+            Console.WriteLine($"Holding queue removed");
+        }
         uint ProcessMessages(
             IModel channel,
             string sourceQueue,
@@ -190,6 +206,11 @@
                 return false;
             }
         }
+
+        string queueName;
+        readonly RabbitMQ.ConnectionFactory connectionFactory;
+        readonly Topology routingTopology;
+        bool useDurableEntities;
 
         static string EmptyRoutingKey = string.Empty;
         static Dictionary<string, object> QuorumQueueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
