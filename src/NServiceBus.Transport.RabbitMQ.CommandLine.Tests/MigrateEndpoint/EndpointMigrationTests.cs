@@ -64,13 +64,34 @@
         public async Task Should_preserve_existing_messages()
         {
             var migrationCommand = new MigrateEndpointCommand();
-            var endpointName = "EndpointWithClassicQueueAndExistingMessages";
+            var endpointName = "EndpointWithExistingMessages";
             var numExistingMessage = 10;
 
             CreateQueue(endpointName, quorum: false);
             CreateExchange(endpointName);
             BindQueue(endpointName, endpointName);
             AddMessages(endpointName, numExistingMessage);
+
+            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+
+            Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
+        }
+
+        [Test]
+        public async Task Should_preserve_existing_messages_in_holding_queue()
+        {
+            var migrationCommand = new MigrateEndpointCommand();
+            var endpointName = "EndpointWithExistingMessagesInHolding";
+            var holdingQueueName = $"{endpointName}-migration-temp";
+
+            var numExistingMessage = 10;
+
+            CreateQueue(endpointName, quorum: false);
+            CreateExchange(endpointName);
+            BindQueue(endpointName, endpointName);
+
+            CreateQueue(holdingQueueName, quorum: true);
+            AddMessages(holdingQueueName, numExistingMessage);
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
@@ -115,7 +136,7 @@
                 for (var i = 0; i < numMessages; i++)
                 {
                     var properties = channel.CreateBasicProperties();
-                    channel.BasicPublish(queueName, string.Empty, true, properties, ReadOnlyMemory<byte>.Empty);
+                    channel.BasicPublish(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty);
                 }
             });
         }

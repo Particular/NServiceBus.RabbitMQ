@@ -56,7 +56,7 @@
                 var holdingQueueName = $"{queueName}-migration-temp";
 
                 //does the holding queue need to be quorum?
-                channel.QueueDeclare(holdingQueueName, true, false, false, new Dictionary<string, object>());
+                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
                 Console.WriteLine($"Holding queue created: {holdingQueueName}");
 
                 //bind the holding queue to the default exchange of queue under migration
