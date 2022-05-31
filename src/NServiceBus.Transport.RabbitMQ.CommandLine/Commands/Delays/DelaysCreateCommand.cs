@@ -12,8 +12,8 @@
 
             command.SetHandler(async (ConnectionFactory connectionFactory, IConsole console, CancellationToken cancellationToken) =>
             {
-                var createProcess = new DelaysCreateCommand(connectionFactory, console);
-                await createProcess.Run(cancellationToken).ConfigureAwait(false);
+                var delaysCreate = new DelaysCreateCommand(connectionFactory, console);
+                await delaysCreate.Run(cancellationToken).ConfigureAwait(false);
 
             }, connectionFactoryBinder);
 
@@ -28,28 +28,25 @@
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            {
-                using (var channel = connection.CreateModel())
-                {
-                    try
-                    {
-                        DelayInfrastructure.Build(channel);
-                        channel.Close();
+            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var channel = connection.CreateModel();
 
-                        console.WriteLine("Delay infrastructure v2 created successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        console.WriteLine($"Fail: {ex.Message}");
-                    }
-                    finally
-                    {
-                        if (channel.IsOpen)
-                        {
-                            channel.Close();
-                        }
-                    }
+            try
+            {
+                DelayInfrastructure.Build(channel);
+                channel.Close();
+
+                console.WriteLine("Delay infrastructure v2 created successfully");
+            }
+            catch (Exception ex)
+            {
+                console.WriteLine($"Fail: {ex.Message}");
+            }
+            finally
+            {
+                if (channel.IsOpen)
+                {
+                    channel.Close();
                 }
 
                 if (connection.IsOpen)

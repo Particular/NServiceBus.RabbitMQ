@@ -34,9 +34,9 @@
             {
                 var routingTopology = GetRoutingTopology(topology, useDurableEntities);
 
-                var migrationProcess = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
+                var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
 
-                await migrationProcess.Run(cancellationToken).ConfigureAwait(false);
+                await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
 
             }, connectionFactoryBinder, topologyOption, useDurableEntitiesOption, quietModeOption);
 
@@ -45,10 +45,10 @@
 
         public static (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
         {
-            DateTimeOffset originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
-            int newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            string destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
-            string newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
+            var originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
+            var newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
+            var destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
+            var newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
 
             return (destinationQueue, newRoutingKey, newDelayLevel);
         }
@@ -62,7 +62,7 @@
 
         static DateTimeOffset GetTimeSent(BasicGetResult message)
         {
-            string? timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
+            var timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 
@@ -85,35 +85,32 @@
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var channel = connection.CreateModel();
+
+            try
             {
-                using (var channel = connection.CreateModel())
+                for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
                 {
-                    try
-                    {
-                        for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
-                        {
-                            MigrateQueue(channel, currentDelayLevel, cancellationToken);
-                        }
-                    }
-                    catch (OperationInterruptedException ex)
-                    {
-                        if (ex.ShutdownReason.ReplyCode == 404)
-                        {
-                            console.WriteLine($"Fail: {ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
-                        }
-                        else
-                        {
-                            console.WriteLine($"Fail: {ex.Message}");
-                        }
-                    }
-                    finally
-                    {
-                        if (channel.IsOpen)
-                        {
-                            channel.Close();
-                        }
-                    }
+                    MigrateQueue(channel, currentDelayLevel, cancellationToken);
+                }
+            }
+            catch (OperationInterruptedException ex)
+            {
+                if (ex.ShutdownReason.ReplyCode == 404)
+                {
+                    console.WriteLine($"Fail: {ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
+                }
+                else
+                {
+                    console.WriteLine($"Fail: {ex.Message}");
+                }
+            }
+            finally
+            {
+                if (channel.IsOpen)
+                {
+                    channel.Close();
                 }
 
                 if (connection.IsOpen)
@@ -168,8 +165,8 @@
                     }
 
                     var messageHeaders = message.BasicProperties.Headers;
-                    int delayInSeconds = (int)messageHeaders[DelayInfrastructure.DelayHeader];
-                    DateTimeOffset timeSent = GetTimeSent(message);
+                    var delayInSeconds = (int)messageHeaders[DelayInfrastructure.DelayHeader];
+                    var timeSent = GetTimeSent(message);
 
                     (string destinationQueue, string newRoutingKey, int newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
 
@@ -180,7 +177,7 @@
                         declaredDestinationQueues.Add(destinationQueue);
                     }
 
-                    string publishExchange = DelayInfrastructure.LevelName(newDelayLevel);
+                    var publishExchange = DelayInfrastructure.LevelName(newDelayLevel);
 
                     if (messageHeaders != null)
                     {

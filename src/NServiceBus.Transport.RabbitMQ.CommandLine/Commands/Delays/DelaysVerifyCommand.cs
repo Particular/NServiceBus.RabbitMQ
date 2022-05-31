@@ -34,8 +34,8 @@
 
             command.SetHandler(async (string url, string username, string password, IConsole console, CancellationToken cancellationToken) =>
             {
-                var verifyProcess = new DelaysVerifyCommand(url, username, password, console);
-                await verifyProcess.Run(cancellationToken).ConfigureAwait(false);
+                var delaysVerify = new DelaysVerifyCommand(url, username, password, console);
+                await delaysVerify.Run(cancellationToken).ConfigureAwait(false);
             }, urlOption, usernameOption, passwordOption);
 
             return command;
