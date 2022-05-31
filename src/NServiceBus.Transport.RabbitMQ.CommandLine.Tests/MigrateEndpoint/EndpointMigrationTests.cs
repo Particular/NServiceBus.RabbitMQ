@@ -52,8 +52,7 @@
             var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithClassicQueue";
 
-            CreateQueue(endpointName, quorum: false);
-            CreateExchange(endpointName);
+            PrepareTestEndpoint(endpointName);
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
