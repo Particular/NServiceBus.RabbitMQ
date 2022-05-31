@@ -60,6 +60,24 @@
         }
 
         [Test]
+        public async Task Should_handle_failure_after_unbind()
+        {
+            var migrationCommand = new MigrateEndpointCommand();
+            var endpointName = "FailureAfterUnbind";
+
+            PrepareTestEndpoint(endpointName);
+
+            CommandRunner.Run(ConnectionString, channel =>
+            {
+                channel.QueueUnbind(endpointName, endpointName, string.Empty);
+            });
+
+            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+
+            Assert.Throws<OperationInterruptedException>(() => CreateQueue(endpointName, quorum: false));
+        }
+
+        [Test]
         public async Task Should_preserve_existing_messages()
         {
             var migrationCommand = new MigrateEndpointCommand();
