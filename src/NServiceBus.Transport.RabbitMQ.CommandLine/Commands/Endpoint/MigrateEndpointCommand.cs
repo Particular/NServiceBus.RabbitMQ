@@ -16,7 +16,7 @@
 
             var connectionStringOption = SharedOptions.CreateConnectionStringOption();
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
-            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntities();
+            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
 
             migrateCommand.AddArgument(endpointArgument);
 
