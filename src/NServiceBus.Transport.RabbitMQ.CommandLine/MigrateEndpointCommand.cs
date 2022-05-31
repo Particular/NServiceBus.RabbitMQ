@@ -56,7 +56,7 @@
                 var holdingQueueName = $"{queueName}-migration-temp";
 
                 //does the holding queue need to be quorum?
-                channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+                channel.QueueDeclare(holdingQueueName, true, false, false, new Dictionary<string, object>());
                 Console.WriteLine($"Holding queue created: {holdingQueueName}");
 
                 //bind the holding queue to the default exchange of queue under migration
@@ -94,16 +94,21 @@
 
                 Console.WriteLine($"Holding queue unbinded from main queue exchange");
 
-                //move all messages in the holding queue back to the main queue
-                var numMessageMovedBackToMain = ProcessMessages(
-                    channel,
-                    holdingQueueName,
-                    (message, channel) =>
-                    //todo: deduplicate?
-                    channel.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body),
-                    cancellationToken);
+                //TODO: No idea why we need a new channel for this to work?
+                SafeExecute(connection, ch =>
+                {
+                    //move all messages in the holding queue back to the main queue
+                    var numMessageMovedBackToMain = ProcessMessages(
+                        channel,
+                        holdingQueueName,
+                        (message, channel) =>
+                        //todo: deduplicate?
+                        ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body),
+                        cancellationToken);
 
-                Console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
+                    Console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
+                });
+
 
                 channel.QueueDelete(holdingQueueName);
                 Console.WriteLine($"Holding queue removed");
