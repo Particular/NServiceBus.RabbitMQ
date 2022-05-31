@@ -67,7 +67,7 @@
         }
 
         [Test]
-        public async Task Should_cater_for_existing_messages()
+        public async Task Should_preserve_existing_messages()
         {
             var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithClassicQueueAndExistingMessages";
