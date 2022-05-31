@@ -38,14 +38,7 @@
                 certificateCollection.Add(certificate);
             }
 
-            var connectionFactory = new ConnectionFactory("rabbitmq-transport",
-                        connectionConfiguration,
-                        certificateCollection,
-                        disableCertificateValidation,
-                        useExternalAuth,
-                        TimeSpan.FromSeconds(10),
-                        TimeSpan.FromSeconds(60),
-                        new List<(string, int)>());
+            var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), new List<(string, int)>());
 
             return connectionFactory;
         }
