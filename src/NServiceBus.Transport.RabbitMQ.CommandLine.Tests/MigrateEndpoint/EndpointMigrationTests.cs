@@ -67,9 +67,8 @@
             var endpointName = "EndpointWithExistingMessages";
             var numExistingMessage = 10;
 
-            CreateQueue(endpointName, quorum: false);
-            CreateExchange(endpointName);
-            BindQueue(endpointName, endpointName);
+            PrepareTestEndpoint(endpointName);
+
             AddMessages(endpointName, numExistingMessage);
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
@@ -82,13 +81,11 @@
         {
             var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithExistingMessagesInHolding";
-            var holdingQueueName = $"{endpointName}-migration-temp";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
 
             var numExistingMessage = 10;
 
-            CreateQueue(endpointName, quorum: false);
-            CreateExchange(endpointName);
-            BindQueue(endpointName, endpointName);
+            PrepareTestEndpoint(endpointName);
 
             CreateQueue(holdingQueueName, quorum: true);
             AddMessages(holdingQueueName, numExistingMessage);
@@ -96,6 +93,30 @@
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
             Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
+        }
+
+        void PrepareTestEndpoint(string endpointName)
+        {
+            TryDeleteQueue(endpointName);
+            TryDeleteQueue(GetHoldingQueueName(endpointName));
+
+            CreateQueue(endpointName, quorum: false);
+            CreateExchange(endpointName);
+            BindQueue(endpointName, endpointName);
+        }
+
+        void TryDeleteQueue(string queueName)
+        {
+            CommandRunner.Run(ConnectionString, channel =>
+            {
+                try
+                {
+                    channel.QueueDelete(queueName);
+                }
+                catch (Exception)
+                {
+                }
+            });
         }
 
         void CreateQueue(string queueName, bool quorum)
@@ -150,6 +171,11 @@
             });
 
             return messageCount;
+        }
+
+        string GetHoldingQueueName(string endpointName)
+        {
+            return $"{endpointName}-migration-temp";
         }
 
         static string ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
