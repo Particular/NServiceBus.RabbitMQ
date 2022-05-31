@@ -13,9 +13,8 @@
         [Test]
         public void Should_blow_up_when_endpoint_queue_does_not_exist()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "NonExistingEndpoint";
-            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true));
+            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await ExecuteMigration(endpointName));
 
             StringAssert.Contains(endpointName, ex.Message);
         }
@@ -23,12 +22,11 @@
         [Test]
         public void Should_blow_up_when_endpoint_queue_already_is_quorum()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointThatIsAlreadyMigrated";
 
             CreateQueue(endpointName, quorum: true);
 
-            var ex = Assert.ThrowsAsync<Exception>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true));
+            var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
 
             StringAssert.Contains(endpointName, ex.Message);
         }
@@ -36,12 +34,11 @@
         [Test]
         public void Should_blow_up_when_no_default_exchange_exists()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithNoDefaultExchange";
 
             CreateQueue(endpointName, quorum: false);
 
-            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true));
+            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await ExecuteMigration(endpointName));
 
             StringAssert.Contains(endpointName, ex.Message);
         }
@@ -49,12 +46,11 @@
         [Test]
         public async Task Should_convert_queue_to_quorum()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithClassicQueue";
 
             PrepareTestEndpoint(endpointName);
 
-            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+            await ExecuteMigration(endpointName);
 
             Assert.True(QueueIsQuorum(endpointName));
         }
@@ -62,17 +58,16 @@
         [Test]
         public async Task Should_handle_failure_after_unbind()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "FailureAfterUnbind";
 
             PrepareTestEndpoint(endpointName);
 
-            CommandRunner.Run(ConnectionString, channel =>
+            ExecuteBrokerCommand(channel =>
             {
                 channel.QueueUnbind(endpointName, endpointName, string.Empty);
             });
 
-            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+            await ExecuteMigration(endpointName);
 
             Assert.True(QueueIsQuorum(endpointName));
         }
@@ -80,7 +75,6 @@
         [Test]
         public async Task Should_preserve_existing_messages()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithExistingMessages";
             var numExistingMessage = 10;
 
@@ -88,7 +82,7 @@
 
             AddMessages(endpointName, numExistingMessage);
 
-            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+            await ExecuteMigration(endpointName);
 
             Assert.True(QueueIsQuorum(endpointName));
             Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
@@ -97,7 +91,6 @@
         [Test]
         public async Task Should_preserve_existing_messages_in_holding_queue()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithExistingMessagesInHolding";
             var holdingQueueName = GetHoldingQueueName(endpointName);
 
@@ -108,7 +101,7 @@
             CreateQueue(holdingQueueName, quorum: true);
             AddMessages(holdingQueueName, numExistingMessage);
 
-            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+            await ExecuteMigration(endpointName);
 
             Assert.True(QueueIsQuorum(endpointName));
             Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
@@ -117,7 +110,6 @@
         [Test]
         public async Task Should_deduplicate_when_moving_from_holding()
         {
-            var migrationCommand = new MigrateEndpointCommand();
             var endpointName = "EndpointWithDuplicatesInHolding";
             var holdingQueueName = GetHoldingQueueName(endpointName);
 
@@ -131,10 +123,33 @@
                 properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, "duplicate" } };
             });
 
-            await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
+            await ExecuteMigration(endpointName);
 
             Assert.True(QueueIsQuorum(endpointName));
             Assert.AreEqual(1, MessageCount(endpointName));
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
+
+            connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", ConnectionConfiguration.Create(connectionString), null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
+            connection = connectionFactory.CreateAdministrationConnection();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            connection.Close();
+            connection.Dispose();
+        }
+
+        Task ExecuteMigration(string endpointName)
+        {
+            var migrationCommand = new MigrateEndpointCommand(endpointName, connectionFactory, Topology.Conventional, true);
+
+            return migrationCommand.Run();
         }
 
         bool QueueIsQuorum(string endpointName)
@@ -162,7 +177,7 @@
 
         void TryDeleteQueue(string queueName)
         {
-            CommandRunner.Run(ConnectionString, channel =>
+            ExecuteBrokerCommand(channel =>
             {
                 try
                 {
@@ -176,7 +191,7 @@
 
         void CreateQueue(string queueName, bool quorum)
         {
-            CommandRunner.Run(ConnectionString, channel =>
+            ExecuteBrokerCommand(channel =>
             {
                 var queueArguments = new Dictionary<string, object>();
 
@@ -191,7 +206,7 @@
 
         void CreateExchange(string exchangeName)
         {
-            CommandRunner.Run(ConnectionString, channel =>
+            ExecuteBrokerCommand(channel =>
             {
                 channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
             });
@@ -199,7 +214,7 @@
 
         void BindQueue(string queueName, string exchangeName)
         {
-            CommandRunner.Run(ConnectionString, channel =>
+            ExecuteBrokerCommand(channel =>
             {
                 channel.QueueBind(queueName, exchangeName, string.Empty);
             });
@@ -207,7 +222,7 @@
 
         void AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
         {
-            CommandRunner.Run(ConnectionString, channel =>
+            ExecuteBrokerCommand(channel =>
             {
                 for (var i = 0; i < numMessages; i++)
                 {
@@ -223,7 +238,8 @@
         uint MessageCount(string queueName)
         {
             uint messageCount = 0;
-            CommandRunner.Run(ConnectionString, channel =>
+
+            ExecuteBrokerCommand(channel =>
             {
                 messageCount = channel.MessageCount(queueName);
             });
@@ -231,11 +247,20 @@
             return messageCount;
         }
 
+        void ExecuteBrokerCommand(Action<IModel> command)
+        {
+            using (var channel = connection.CreateModel())
+            {
+                command(channel);
+            }
+        }
+
         string GetHoldingQueueName(string endpointName)
         {
             return $"{endpointName}-migration-temp";
         }
 
-        static string ConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
+        RabbitMQ.ConnectionFactory connectionFactory;
+        IConnection connection;
     }
 }
