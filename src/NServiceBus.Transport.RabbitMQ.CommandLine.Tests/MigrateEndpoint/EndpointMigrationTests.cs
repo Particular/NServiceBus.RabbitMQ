@@ -56,7 +56,7 @@
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
-            Assert.Throws<OperationInterruptedException>(() => CreateQueue(endpointName, quorum: false));
+            Assert.True(QueueIsQuorum(endpointName));
         }
 
         [Test]
@@ -74,7 +74,7 @@
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
-            Assert.Throws<OperationInterruptedException>(() => CreateQueue(endpointName, quorum: false));
+            Assert.True(QueueIsQuorum(endpointName));
         }
 
         [Test]
@@ -90,6 +90,7 @@
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
+            Assert.True(QueueIsQuorum(endpointName));
             Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
         }
 
@@ -109,7 +110,21 @@
 
             await migrationCommand.Run(endpointName, ConnectionString, Topology.Conventional, true);
 
+            Assert.True(QueueIsQuorum(endpointName));
             Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
+        }
+
+        bool QueueIsQuorum(string endpointName)
+        {
+            try
+            {
+                CreateQueue(endpointName, quorum: false);
+                return false;
+            }
+            catch (OperationInterruptedException)
+            {
+                return true;
+            }
         }
 
         void PrepareTestEndpoint(string endpointName)
