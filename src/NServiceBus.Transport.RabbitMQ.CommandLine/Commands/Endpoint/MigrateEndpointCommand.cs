@@ -69,11 +69,10 @@
 
         void Migrate(IConnection connection, IModel channel, CancellationToken cancellationToken)
         {
-
             // make sure that the endpoint queue exists
             channel.MessageCount(queueName);
 
-            //check if queue already is quorum
+            // check if queue already is quorum
             if (SafeExecute(connection, ch => ch.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments)))
             {
                 throw new Exception($"Queue {queueName} is already a quorum queue");
@@ -81,21 +80,21 @@
 
             var holdingQueueName = $"{queueName}-migration-temp";
 
-            //does the holding queue need to be quorum?
+            // does the holding queue need to be quorum?
             channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
             console.WriteLine($"Holding queue created: {holdingQueueName}");
 
-            //bind the holding queue to the default exchange of queue under migration
+            // bind the holding queue to the default exchange of queue under migration
             // this will throw if the exchange for the endpoint doesn't exist
             channel.QueueBind(holdingQueueName, queueName, EmptyRoutingKey);
 
             console.WriteLine($"Holding queue bound to main queue exchange");
 
-            //unbind the queue under migration to stopp more messages from coming in
+            // unbind the queue under migration to stopp more messages from coming in
             channel.QueueUnbind(queueName, queueName, EmptyRoutingKey);
             console.WriteLine($"Main queue unbind");
 
-            //move all existing messages to the holding queue
+            // move all existing messages to the holding queue
             var numMessagesMovedToHolding = ProcessMessages(
                 channel,
                 queueName,
@@ -109,7 +108,7 @@
             channel.QueueDelete(queueName);
             console.WriteLine($"Main queue removed");
 
-            //recreate the queue
+            // recreate the queue
             channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
             console.WriteLine($"Main queue recreated as a quorum queue");
 
@@ -125,7 +124,7 @@
             {
                 var messageIds = new Dictionary<string, string>();
 
-                //move all messages in the holding queue back to the main queue
+                // move all messages in the holding queue back to the main queue
                 var numMessageMovedBackToMain = ProcessMessages(
                     channel,
                     holdingQueueName,
@@ -178,13 +177,6 @@
                 {
                     // Queue is empty
                     break;
-                }
-
-                //what is the scenario for this?
-                if (message.BasicProperties == null)
-                {
-                    channel.BasicNack(message.DeliveryTag, false, true);
-                    continue;
                 }
 
                 onMoveMessage(message, channel);
