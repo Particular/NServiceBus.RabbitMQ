@@ -10,7 +10,6 @@
 
     class DelaysMigrateCommand
     {
-        const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
         const string dateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
@@ -186,7 +185,6 @@
                         messageHeaders.Remove(DelayInfrastructure.XFirstDeathExchangeHeader);
                         messageHeaders.Remove(DelayInfrastructure.XFirstDeathQueueHeader);
                         messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
-                        messageHeaders.Remove(ConfirmationIdHeader);
                     }
 
                     channel.BasicPublish(publishExchange, newRoutingKey, message.BasicProperties, message.Body);
