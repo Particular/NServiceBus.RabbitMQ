@@ -6,7 +6,6 @@
     using System.Text;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Exceptions;
 
     class DelaysMigrateCommand
     {
@@ -95,9 +94,9 @@
             return Task.CompletedTask;
         }
 
-        void MigrateQueue(IModel channel, int currentDelayLevel, CancellationToken cancellationToken)
+        void MigrateQueue(IModel channel, int delayLevel, CancellationToken cancellationToken)
         {
-            var currentDelayQueue = $"nsb.delay-level-{currentDelayLevel:00}";
+            var currentDelayQueue = $"nsb.delay-level-{delayLevel:00}";
             var messageCount = channel.MessageCount(currentDelayQueue);
             var declaredDestinationQueues = new HashSet<string>();
 
@@ -105,7 +104,7 @@
             {
                 if (!quietMode)
                 {
-                    console.Write($"Processing {messageCount} messages at delay level {currentDelayLevel:00}. ");
+                    console.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
                 }
 
                 int skippedMessages = 0;
@@ -141,7 +140,7 @@
                     var delayInSeconds = (int)messageHeaders[DelayInfrastructure.DelayHeader];
                     var timeSent = GetTimeSent(message);
 
-                    (string destinationQueue, string newRoutingKey, int newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
+                    var (destinationQueue, newRoutingKey, newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
 
                     // Make sure the destination queue is bound to the delivery exchange to ensure delivery
                     if (!declaredDestinationQueues.Contains(destinationQueue))
@@ -175,7 +174,7 @@
             {
                 if (!quietMode)
                 {
-                    console.WriteLine($"No messages to process at delay level {currentDelayLevel:00}.");
+                    console.WriteLine($"No messages to process at delay level {delayLevel:00}.");
                 }
             }
         }
@@ -184,6 +183,7 @@
         readonly IRoutingTopology routingTopology;
         readonly bool quietMode;
         readonly IConsole console;
+
         bool poisonQueueCreated = false;
     }
 }

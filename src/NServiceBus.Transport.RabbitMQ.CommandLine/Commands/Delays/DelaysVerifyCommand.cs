@@ -52,8 +52,8 @@
         public async Task Run(CancellationToken cancellationToken = default)
         {
             using var httpClient = new HttpClient();
-            var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
 
+            var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authString);
 
             var serverDetails = await GetServerDetails(httpClient, cancellationToken).ConfigureAwait(false);

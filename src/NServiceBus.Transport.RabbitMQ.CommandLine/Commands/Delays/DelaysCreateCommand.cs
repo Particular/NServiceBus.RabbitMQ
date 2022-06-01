@@ -32,7 +32,6 @@
             using var channel = connection.CreateModel();
 
             DelayInfrastructure.Build(channel);
-            channel.Close();
 
             console.WriteLine("Delay infrastructure v2 created successfully");
 
