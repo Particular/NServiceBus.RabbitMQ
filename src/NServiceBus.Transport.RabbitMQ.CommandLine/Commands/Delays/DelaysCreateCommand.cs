@@ -31,17 +31,10 @@
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
 
-            try
-            {
-                DelayInfrastructure.Build(channel);
-                channel.Close();
+            DelayInfrastructure.Build(channel);
+            channel.Close();
 
-                console.WriteLine("Delay infrastructure v2 created successfully");
-            }
-            catch (Exception ex)
-            {
-                console.WriteLine($"Fail: {ex.Message}");
-            }
+            console.WriteLine("Delay infrastructure v2 created successfully");
 
             return Task.CompletedTask;
         }

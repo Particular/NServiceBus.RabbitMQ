@@ -87,23 +87,9 @@
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
 
-            try
+            for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
-                for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
-                {
-                    MigrateQueue(channel, currentDelayLevel, cancellationToken);
-                }
-            }
-            catch (OperationInterruptedException ex)
-            {
-                if (ex.ShutdownReason.ReplyCode == 404)
-                {
-                    console.WriteLine($"Fail: {ex.ShutdownReason.ReplyText}, run installers prior to running this tool.");
-                }
-                else
-                {
-                    console.WriteLine($"Fail: {ex.Message}");
-                }
+                MigrateQueue(channel, currentDelayLevel, cancellationToken);
             }
 
             return Task.CompletedTask;
