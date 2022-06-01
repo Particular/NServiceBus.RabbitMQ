@@ -41,38 +41,6 @@
             return command;
         }
 
-        public static (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
-        {
-            var originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
-            var newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            var destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
-            var newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
-
-            return (destinationQueue, newRoutingKey, newDelayLevel);
-        }
-
-        static IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
-        {
-            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
-            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
-            _ => throw new InvalidOperationException()
-        };
-
-        static DateTimeOffset GetTimeSent(BasicGetResult message)
-        {
-            var timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
-            return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
-        }
-
-        static bool MessageIsInvalid(BasicGetResult? message)
-        {
-            return message == null
-                || message.BasicProperties == null
-                || message.BasicProperties.Headers == null
-                || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
-                || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
-        }
-
         public DelaysMigrateCommand(RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool quietMode, IConsole console)
         {
             this.connectionFactory = connectionFactory;
@@ -177,6 +145,38 @@
                     console.WriteLine($"No messages to process at delay level {delayLevel:00}.");
                 }
             }
+        }
+
+        public static (string DestinationQueue, string NewRoutingKey, int NewDelayLevel) GetNewRoutingKey(int delayInSeconds, DateTimeOffset timeSent, string currentRoutingKey, DateTimeOffset utcNow)
+        {
+            var originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
+            var newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
+            var destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
+            var newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
+
+            return (destinationQueue, newRoutingKey, newDelayLevel);
+        }
+
+        static IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
+        {
+            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
+            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
+            _ => throw new InvalidOperationException()
+        };
+
+        static DateTimeOffset GetTimeSent(BasicGetResult message)
+        {
+            var timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
+            return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
+        }
+
+        static bool MessageIsInvalid(BasicGetResult? message)
+        {
+            return message == null
+                || message.BasicProperties == null
+                || message.BasicProperties.Headers == null
+                || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
+                || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
         }
 
         readonly RabbitMQ.ConnectionFactory connectionFactory;
