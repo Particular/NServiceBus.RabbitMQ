@@ -16,7 +16,6 @@
             connectionStringOption.AddAlias("-c");
 
             return connectionStringOption;
-
         }
 
         public static Option<Topology> CreateRoutingTopologyOption()

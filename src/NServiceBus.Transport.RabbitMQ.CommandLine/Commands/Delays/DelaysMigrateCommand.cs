@@ -105,18 +105,6 @@
                     console.WriteLine($"Fail: {ex.Message}");
                 }
             }
-            finally
-            {
-                if (channel.IsOpen)
-                {
-                    channel.Close();
-                }
-
-                if (connection.IsOpen)
-                {
-                    connection.Close();
-                }
-            }
 
             return Task.CompletedTask;
         }

@@ -6,12 +6,6 @@
 
     class ConnectionFactoryBinder : BinderBase<ConnectionFactory>
     {
-        readonly Option<string> connectionStringOption;
-        readonly Option<string> certPathOption;
-        readonly Option<string> certPassphraseOption;
-        readonly Option<bool> disableCertificateValidationOption;
-        readonly Option<bool> useExternalAuthOption;
-
         public ConnectionFactoryBinder(Option<string> connectionStringOption, Option<string> certPathOption, Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
         {
             this.connectionStringOption = connectionStringOption;
@@ -42,5 +36,11 @@
 
             return connectionFactory;
         }
+
+        readonly Option<string> connectionStringOption;
+        readonly Option<string> certPathOption;
+        readonly Option<string> certPassphraseOption;
+        readonly Option<bool> disableCertificateValidationOption;
+        readonly Option<bool> useExternalAuthOption;
     }
 }
