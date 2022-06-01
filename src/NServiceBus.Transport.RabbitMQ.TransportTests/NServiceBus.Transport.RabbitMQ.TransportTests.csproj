@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\targets\RabbitMqConnectionStringParser.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" />
   </ItemGroup>
 
 </Project>

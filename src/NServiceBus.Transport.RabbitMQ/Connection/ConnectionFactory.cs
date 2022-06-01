@@ -21,7 +21,7 @@
         readonly object lockObject = new object();
         List<AmqpTcpEndpoint> hostnames;
 
-        public ConnectionFactory(string endpointName, string host, int port, string vhost, string userName, string password, bool useTls, X509Certificate2Collection clientCertificateCollection, bool validateRemoteCertificate, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string, int)> additionalHostnames)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string, int)> additionalHostnames)
         {
             if (endpointName is null)
             {
@@ -37,23 +37,23 @@
 
             connectionFactory = new global::RabbitMQ.Client.ConnectionFactory
             {
-                HostName = host,
-                Port = port,
-                VirtualHost = vhost,
-                UserName = userName,
-                Password = password,
+                HostName = connectionConfiguration.Host,
+                Port = connectionConfiguration.Port,
+                VirtualHost = connectionConfiguration.VirtualHost,
+                UserName = connectionConfiguration.UserName,
+                Password = connectionConfiguration.Password,
                 RequestedHeartbeat = heartbeatInterval,
                 NetworkRecoveryInterval = networkRecoveryInterval,
                 UseBackgroundThreadsForIO = true,
                 DispatchConsumersAsync = true
             };
 
-            connectionFactory.Ssl.ServerName = host;
+            connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
             connectionFactory.Ssl.Certs = clientCertificateCollection;
             connectionFactory.Ssl.Version = SslProtocols.Tls12;
-            connectionFactory.Ssl.Enabled = useTls;
+            connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
 
-            if (!validateRemoteCertificate)
+            if (disableRemoteCertificateValidation)
             {
                 connectionFactory.Ssl.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateChainErrors |
                                                                SslPolicyErrors.RemoteCertificateNameMismatch |
@@ -65,11 +65,11 @@
                 connectionFactory.AuthMechanisms = new[] { new ExternalMechanismFactory() };
             }
 
-            SetClientProperties(endpointName, userName);
+            SetClientProperties(endpointName, connectionConfiguration.UserName);
 
             hostnames = new List<AmqpTcpEndpoint>
             {
-                new AmqpTcpEndpoint(host, port, connectionFactory.Ssl)
+                new AmqpTcpEndpoint(connectionConfiguration.Host, connectionConfiguration.Port, connectionFactory.Ssl)
             };
 
             if (additionalHostnames?.Count > 0)

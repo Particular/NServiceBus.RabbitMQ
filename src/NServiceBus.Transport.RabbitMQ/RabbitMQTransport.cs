@@ -15,18 +15,21 @@
     /// </summary>
     public partial class RabbitMQTransport : TransportDefinition
     {
+        const ushort defaultRequestedHeartbeat = 60;
+        const ushort defaultRetryDelay = 10;
+
         static readonly TransportTransactionMode[] SupportedTransactionModes =
         {
             TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly
         };
 
-        TimeSpan heartbeatInterval = TimeSpan.FromMinutes(1);
-        string host;
+        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(defaultRequestedHeartbeat);
+        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(defaultRetryDelay);
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
-        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
-
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
+
+        internal List<(string, int)> additionalHosts = new List<(string, int)>();
 
         /// <summary>
         /// Creates new instance of the RabbitMQ transport.
@@ -56,49 +59,13 @@
 
             QueueType = queueType;
             RoutingTopology = topology;
-            if (connectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
-            {
-                AmqpConnectionString.Parse(connectionString)(this);
-            }
-            else
-            {
-                NServiceBusConnectionString.Parse(connectionString)(this);
-            }
+            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
         /// <summary>
-        ///     The host to connect to.
+        /// Connection information parsed from the connection string
         /// </summary>
-        public string Host
-        {
-            get => host;
-            set
-            {
-                Guard.AgainstNullAndEmpty("value", value);
-                host = value;
-            }
-        }
-
-        /// <summary>
-        ///     The port to connect to.
-        ///     If not specified, the default port will be used (5672 if not encrypted and 5671 if using TLS)
-        /// </summary>
-        public int? Port { get; set; }
-
-        /// <summary>
-        ///     The vhost to connect to.
-        /// </summary>
-        public string VHost { get; set; } = "/";
-
-        /// <summary>
-        ///     The user name to pass to the broker for authentication.
-        /// </summary>
-        public string UserName { get; set; } = "guest";
-
-        /// <summary>
-        ///     The password to pass to the broker for authentication.
-        /// </summary>
-        public string Password { get; set; } = "guest";
+        internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
         /// <summary>
         ///     The routing topology to use. If not set the conventional routing topology will be used
@@ -150,11 +117,6 @@
         }
 
         /// <summary>
-        ///     Configures if the client should use TLS-secured connection.
-        /// </summary>
-        public bool UseTLS { get; set; }
-
-        /// <summary>
         ///     The certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         public X509Certificate2 ClientCertificate { get; set; }
@@ -181,7 +143,6 @@
                 heartbeatInterval = value;
             }
         }
-
         /// <summary>
         ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
@@ -196,8 +157,6 @@
         }
 
         internal QueueType QueueType { get; }
-
-        int DefaultPort => UseTLS ? 5671 : 5672;
 
         /// <summary>
         /// Adds a new node for use within a cluster.
@@ -223,13 +182,13 @@
             ValidateAndApplyLegacyConfiguration();
 
             X509Certificate2Collection certCollection = null;
+
             if (ClientCertificate != null)
             {
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
-            var connectionFactory = new ConnectionFactory(hostSettings.Name, Host, Port ?? DefaultPort,
-                VHost, UserName, Password, UseTLS, certCollection, ValidateRemoteCertificate,
+            var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHosts);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
@@ -274,7 +233,5 @@
                 ? new ConventionalRoutingTopology(true)
                 : new DirectRoutingTopology(true);
         }
-
-        internal List<(string, int)> additionalHosts = new List<(string, int)>();
     }
 }

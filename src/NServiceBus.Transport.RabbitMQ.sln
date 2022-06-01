@@ -18,6 +18,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Targets", "targets\Targets.csproj", "{F164238E-085A-451A-A852-B06496AE98EB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.CommandLine.Tests", "NServiceBus.Transport.RabbitMQ.CommandLine.Tests\NServiceBus.Transport.RabbitMQ.CommandLine.Tests.csproj", "{8C2C0317-C4AC-4B84-8DAD-069394A2F5F6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.RabbitMQ.CommandLine", "NServiceBus.Transport.RabbitMQ.CommandLine\NServiceBus.Transport.RabbitMQ.CommandLine.csproj", "{A7358B75-D6EB-4C40-818D-5D47FE8C2884}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +48,14 @@ Global
 		{F164238E-085A-451A-A852-B06496AE98EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F164238E-085A-451A-A852-B06496AE98EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F164238E-085A-451A-A852-B06496AE98EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C2C0317-C4AC-4B84-8DAD-069394A2F5F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C2C0317-C4AC-4B84-8DAD-069394A2F5F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C2C0317-C4AC-4B84-8DAD-069394A2F5F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C2C0317-C4AC-4B84-8DAD-069394A2F5F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7358B75-D6EB-4C40-818D-5D47FE8C2884}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7358B75-D6EB-4C40-818D-5D47FE8C2884}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7358B75-D6EB-4C40-818D-5D47FE8C2884}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7358B75-D6EB-4C40-818D-5D47FE8C2884}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

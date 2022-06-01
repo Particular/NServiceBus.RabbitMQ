@@ -1,4 +1,4 @@
-﻿
+﻿#nullable disable
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;

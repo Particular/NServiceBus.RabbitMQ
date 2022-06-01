@@ -9,8 +9,8 @@
     static class DelayInfrastructure
     {
         const int maxNumberOfBitsToUse = 28;
-        const int maxLevel = maxNumberOfBitsToUse - 1;
 
+        public const int MaxLevel = maxNumberOfBitsToUse - 1;
         public const int MaxDelayInSeconds = (1 << maxNumberOfBitsToUse) - 1;
         public const string DelayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
         public const string XDeathHeader = "x-death";
@@ -27,7 +27,7 @@
         {
             var bindingKey = "1.#";
 
-            for (var level = maxLevel; level >= 0; level--)
+            for (var level = MaxLevel; level >= 0; level--)
             {
                 var currentLevel = LevelName(level);
                 var nextLevel = LevelName(level - 1);
@@ -51,7 +51,7 @@
 
             bindingKey = "0.#";
 
-            for (var level = maxLevel; level >= 1; level--)
+            for (var level = MaxLevel; level >= 1; level--)
             {
                 var currentLevel = LevelName(level);
                 var nextLevel = LevelName(level - 1);
@@ -69,7 +69,7 @@
         {
             channel.ExchangeDelete(DeliveryExchange);
 
-            for (var level = maxLevel; level >= 0; level--)
+            for (var level = MaxLevel; level >= 0; level--)
             {
                 var name = LevelName(level);
 
@@ -89,7 +89,7 @@
             var sb = new StringBuilder();
             startingDelayLevel = 0;
 
-            for (var level = maxLevel; level >= 0; level--)
+            for (var level = MaxLevel; level >= 0; level--)
             {
                 if (startingDelayLevel == 0 && bitArray[level])
                 {

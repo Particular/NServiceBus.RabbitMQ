@@ -65,15 +65,9 @@ namespace NServiceBus
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
 
-            if (LegacyApiConnectionString.StartsWith("amqp", StringComparison.OrdinalIgnoreCase))
-            {
-                AmqpConnectionString.Parse(LegacyApiConnectionString)(this);
-            }
-            else
-            {
-                NServiceBusConnectionString.Parse(LegacyApiConnectionString)(this);
-            }
+            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
         }
     }
 }
+
 #pragma warning restore 1591

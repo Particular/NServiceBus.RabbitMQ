@@ -1,0 +1,22 @@
+{
+  "profiles": {
+    "NServiceBus.RabbitMQ.CommandLine": {
+      "commandName": "Project"
+    },
+    "delays migrate": {
+      "commandName": "Executable",
+      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
+      "commandLineArgs": "delays migrate"
+    },
+    "delays create": {
+      "commandName": "Executable",
+      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
+      "commandLineArgs": "delays create"
+    },
+    "delays verify": {
+      "commandName": "Executable",
+      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
+      "commandLineArgs": "delays verify"
+    }
+  }
+}

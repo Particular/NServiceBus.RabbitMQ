@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Authentication;
+using NServiceBus.Transport.RabbitMQ;
 using RabbitMQ.Client;
 
 public class ConnectionHelper
@@ -13,31 +14,23 @@ public class ConnectionHelper
 
     static Lazy<ConnectionFactory> connectionFactory = new Lazy<ConnectionFactory>(() =>
     {
-        var connectionStringParser = new RabbitMqConnectionStringParser(ConnectionString);
+        var connectionStringParser = ConnectionConfiguration.Create(ConnectionString);
 
         var factory = new ConnectionFactory
         {
             AutomaticRecoveryEnabled = true,
             UseBackgroundThreadsForIO = true,
-            HostName = connectionStringParser.HostName,
+            HostName = connectionStringParser.Host,
+            Port = connectionStringParser.Port,
+            VirtualHost = connectionStringParser.VirtualHost,
             UserName = connectionStringParser.UserName ?? "guest",
             Password = connectionStringParser.Password ?? "guest"
         };
 
-        if (!string.IsNullOrEmpty(connectionStringParser.VirtualHost))
-        {
-            factory.VirtualHost = connectionStringParser.VirtualHost;
-        }
-
-        if (connectionStringParser.Port.HasValue)
-        {
-            factory.Port = connectionStringParser.Port.Value;
-        }
-
         factory.Ssl.ServerName = factory.HostName;
         factory.Ssl.Certs = null;
         factory.Ssl.Version = SslProtocols.Tls12;
-        factory.Ssl.Enabled = connectionStringParser.IsTls;
+        factory.Ssl.Enabled = connectionStringParser.UseTls;
 
         return factory;
     });
