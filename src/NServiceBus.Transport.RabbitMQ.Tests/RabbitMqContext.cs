@@ -10,6 +10,7 @@
 
     class RabbitMqContext
     {
+        readonly TimeSpan defaultRetryDelay = TimeSpan.FromSeconds(60);
         public virtual int MaximumConcurrency => 1;
 
         [SetUp]
@@ -25,17 +26,17 @@
                 throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
             }
 
-            var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
+            var config = ConnectionConfiguration.Create(connectionString, string.Empty);
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, config, default, false, false, default, default);
-            channelProvider = new ChannelProvider(connectionFactory, config.RetryDelay, routingTopology);
+            channelProvider = new ChannelProvider(connectionFactory, defaultRetryDelay, routingTopology);
             channelProvider.CreateConnection();
 
             messageDispatcher = new MessageDispatcher(channelProvider);
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, config.RetryDelay);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, defaultRetryDelay);
 
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 

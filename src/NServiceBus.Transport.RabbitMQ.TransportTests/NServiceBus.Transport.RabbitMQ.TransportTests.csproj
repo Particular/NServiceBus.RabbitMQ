@@ -18,4 +18,8 @@
     <PackageReference Include="RabbitMQ.Client" Version="6.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" Link="ConnectionConfiguration.cs" />
+  </ItemGroup>
+
 </Project>
