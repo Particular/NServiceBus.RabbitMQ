@@ -84,7 +84,7 @@
                 dictionary = ParseNServiceBusConnectionString(connectionString, invalidOptionsMessage);
             }
 
-            var host = GetValue(dictionary, "host", default);
+            var host = GetValue(dictionary, "host", string.Empty);
             var useTls = GetValue(dictionary, "useTls", bool.TryParse, defaultUseTls, invalidOptionsMessage);
             var port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
             var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);
@@ -121,7 +121,7 @@
                 { "nservicebus_version", nsbFileVersion },
                 { "nservicebus.rabbitmq_version", rabbitMQFileVersion },
                 { "application", applicationName },
-                { "application_location", applicationPath },
+                { "application_location", applicationPath ?? string.Empty },
                 { "machine_name", hostname },
                 { "user", userName },
                 { "endpoint_name", endpointName },
@@ -181,7 +181,7 @@
         {
             var dictionary = new DbConnectionStringBuilder { ConnectionString = connectionString }
                 .OfType<KeyValuePair<string, object>>()
-                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
             RegisterDeprecatedSettingsAsInvalidOptions(dictionary, invalidOptionsMessage);
 

@@ -76,11 +76,15 @@
 
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
-            Dictionary<string, object> arguments = null;
+            Dictionary<string, object> arguments;
 
             if (queueType == QueueType.Quorum)
             {
                 arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+            }
+            else
+            {
+                arguments = new Dictionary<string, object>();
             }
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
@@ -130,7 +134,7 @@
 
         void MarkTypeConfigured(Type eventType)
         {
-            typeTopologyConfiguredSet[eventType] = null;
+            typeTopologyConfiguredSet[eventType] = string.Empty;
         }
 
         bool IsTypeTopologyKnownConfigured(Type eventType) => typeTopologyConfiguredSet.ContainsKey(eventType);

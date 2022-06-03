@@ -39,7 +39,7 @@
                 key += ".";
             }
 
-            return key + type.FullName.Replace(".", "-");
+            return key + type.FullName?.Replace(".", "-");
         }
 
         static bool IsSystemType(Type type)
@@ -47,7 +47,11 @@
             if (!IsSystemTypeCache.TryGetValue(type, out var result))
             {
                 var nameOfContainingAssembly = type.Assembly.GetName().GetPublicKeyToken();
-                IsSystemTypeCache[type] = result = IsClrType(nameOfContainingAssembly);
+
+                if (nameOfContainingAssembly != null)
+                {
+                    IsSystemTypeCache[type] = result = IsClrType(nameOfContainingAssembly);
+                }
             }
 
             return result;
@@ -61,7 +65,7 @@
 
         static bool IsNServiceBusMarkerInterface(Type type) => type == typeof(IMessage) || type == typeof(ICommand) || type == typeof(IEvent);
 
-        static readonly byte[] MsPublicKeyToken = typeof(string).Assembly.GetName().GetPublicKeyToken();
+        static readonly byte[] MsPublicKeyToken = typeof(string).Assembly.GetName().GetPublicKeyToken() ?? new byte[0];
         static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new ConcurrentDictionary<Type, bool>();
         static readonly ILog Logger = LogManager.GetLogger(typeof(DefaultRoutingKeyConvention));
     }
