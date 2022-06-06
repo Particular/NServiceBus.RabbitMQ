@@ -19,7 +19,7 @@
 
         static Lazy<ConnectionFactory> connectionFactory = new Lazy<ConnectionFactory>(() =>
         {
-            var connectionConfiguration = ConnectionConfiguration.Create(ConnectionString, string.Empty);
+            var connectionConfiguration = ConnectionConfiguration.Create(ConnectionString);
 
             var connectionFactory = new ConnectionFactory
             {

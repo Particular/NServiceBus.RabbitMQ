@@ -22,7 +22,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
         }
 
-        connectionConfiguration = ConnectionConfiguration.Create(connectionString, string.Empty);
+        connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
         queueBindings = settings.Get<QueueBindings>();
 

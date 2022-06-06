@@ -26,7 +26,7 @@
             this.settings = settings;
 
             var endpointName = settings.EndpointName();
-            var connectionConfiguration = ConnectionConfiguration.Create(connectionString, endpointName);
+            var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
             settings.TryGet(SettingsKeys.ClientCertificateCollection, out X509Certificate2Collection clientCertificateCollection);
             settings.TryGet(SettingsKeys.DisableRemoteCertificateValidation, out bool disableRemoteCertificateValidation);

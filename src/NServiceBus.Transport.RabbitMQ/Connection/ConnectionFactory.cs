@@ -1,6 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Diagnostics;
+    using System.IO;
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
@@ -70,12 +72,33 @@
                 connectionFactory.AuthMechanisms = new[] { new ExternalMechanismFactory() };
             }
 
+            SetClientProperties(endpointName, connectionConfiguration.UserName);
+        }
+
+        void SetClientProperties(string endpointName, string userName)
+        {
             connectionFactory.ClientProperties.Clear();
 
-            foreach (var item in connectionConfiguration.ClientProperties)
-            {
-                connectionFactory.ClientProperties.Add(item.Key, item.Value);
-            }
+            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
+            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
+
+            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionConfiguration).Assembly.Location);
+            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
+
+            var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
+            var applicationName = Path.GetFileName(applicationNameAndPath);
+            var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
+
+            var hostname = Environment.MachineName;
+
+            connectionFactory.ClientProperties.Add("client_api", "NServiceBus");
+            connectionFactory.ClientProperties.Add("nservicebus_version", nsbFileVersion);
+            connectionFactory.ClientProperties.Add("nservicebus.rabbitmq_version", rabbitMQFileVersion);
+            connectionFactory.ClientProperties.Add("application", applicationName);
+            connectionFactory.ClientProperties.Add("application_location", applicationPath ?? string.Empty);
+            connectionFactory.ClientProperties.Add("machine_name", hostname);
+            connectionFactory.ClientProperties.Add("user", userName);
+            connectionFactory.ClientProperties.Add("endpoint_name", endpointName);
         }
 
         public IConnection CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);

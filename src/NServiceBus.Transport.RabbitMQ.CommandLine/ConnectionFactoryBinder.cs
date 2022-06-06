@@ -23,7 +23,7 @@
             var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
             var useExternalAuth = bindingContext.ParseResult.GetValueForOption(useExternalAuthOption);
 
-            var connectionConfiguration = ConnectionConfiguration.Create(connectionString, string.Empty);
+            var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var certificateCollection = new X509Certificate2Collection();
 
             if (certPath != null)
