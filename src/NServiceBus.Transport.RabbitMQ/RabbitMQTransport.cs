@@ -18,11 +18,6 @@
         const ushort defaultRequestedHeartbeat = 60;
         const ushort defaultRetryDelay = 10;
 
-        static readonly TransportTransactionMode[] SupportedTransactionModes =
-        {
-            TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly
-        };
-
         TimeSpan heartbeatInterval = TimeSpan.FromSeconds(defaultRequestedHeartbeat);
         TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(defaultRetryDelay);
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
@@ -205,6 +200,6 @@
         /// <summary>
         ///     Returns a list of all supported transaction modes of this transport.
         /// </summary>
-        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => SupportedTransactionModes;
+        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
     }
 }
