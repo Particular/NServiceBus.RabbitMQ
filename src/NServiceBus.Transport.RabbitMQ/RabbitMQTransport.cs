@@ -41,9 +41,6 @@
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
-        /// <summary>
-        /// Connection information parsed from the connection string
-        /// </summary>
         internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
         internal IRoutingTopology RoutingTopology { get; set; }
