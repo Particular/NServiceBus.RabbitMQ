@@ -15,11 +15,8 @@
     /// </summary>
     public partial class RabbitMQTransport : TransportDefinition
     {
-        const ushort defaultRequestedHeartbeat = 60;
-        const ushort defaultRetryDelay = 10;
-
-        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(defaultRequestedHeartbeat);
-        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(defaultRetryDelay);
+        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(60);
+        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
