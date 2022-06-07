@@ -123,7 +123,8 @@
 
             console.WriteLine($"Holding queue unbinded from main queue exchange");
 
-            //TODO: No idea why we need a new channel for this to work?
+            // Due to https://github.com/dotnet/command-line-api/issues/1750 we need to use a seprate channel to move
+            // the messages back to the main queue again.
             SafeExecute(connection, ch =>
             {
                 ch.ConfirmSelect();
@@ -198,7 +199,6 @@
         {
             try
             {
-                // create temporary channel as the channel will be faulted if the queue does not exist.
                 using (var tempChannel = connection.CreateModel())
                 {
                     command(tempChannel);
