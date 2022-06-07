@@ -59,7 +59,7 @@
                     ConvertToQuorum(channel, cancellationToken);
                 }
 
-                // Due to https://github.com/dotnet/command-line-api/issues/1750 we need to use a separate channel to move
+                // Due to https://github.com/rabbitmq/rabbitmq-server/issues/4976 we need to use a separate channel to move
                 // the messages back to the main queue again.
                 using (var channel = connection.CreateModel())
                 {
