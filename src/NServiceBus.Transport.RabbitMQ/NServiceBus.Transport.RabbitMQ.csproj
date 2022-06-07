@@ -19,4 +19,8 @@
     <Description>RabbitMQ support for NServiceBus</Description>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.Tests" Key="$(NServiceBusTestsKey)" />
+  </ItemGroup>
+
 </Project>

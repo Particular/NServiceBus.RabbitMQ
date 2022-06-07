@@ -25,7 +25,7 @@
                 throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
             }
 
-            var config = ConnectionConfiguration.Create(connectionString, ReceiverQueue);
+            var config = ConnectionConfiguration.Create(connectionString);
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, config, default, false, false, default, default);
             channelProvider = new ChannelProvider(connectionFactory, config.RetryDelay, routingTopology);

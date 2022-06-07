@@ -1,8 +1,8 @@
 using System;
-using System.Data.Common;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using NServiceBus.Transport.RabbitMQ;
 
 class Broker
 {
@@ -38,25 +38,14 @@ class Broker
             throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
         }
 
-        var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
-
-        string hostName;
-
-        if (connectionStringBuilder.TryGetValue("host", out var value))
-        {
-            hostName = value.ToString();
-        }
-        else
-        {
-            throw new Exception("The connection string doesn't contain a value for 'host'.");
-        }
+        var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
         return new Broker
         {
-            UserName = connectionStringBuilder.GetOrDefault("username", "guest"),
-            Password = connectionStringBuilder.GetOrDefault("password", "guest"),
-            VirtualHost = connectionStringBuilder.GetOrDefault("virtualhost", "/"),
-            HostName = hostName,
+            UserName = connectionConfiguration.UserName,
+            Password = connectionConfiguration.Password,
+            VirtualHost = connectionConfiguration.VirtualHost,
+            HostName = connectionConfiguration.Host,
             Port = 15672,
         };
     }

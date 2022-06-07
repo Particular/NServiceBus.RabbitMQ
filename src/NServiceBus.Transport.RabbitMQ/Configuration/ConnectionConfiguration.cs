@@ -3,11 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Data.Common;
-    using System.Diagnostics;
-    using System.IO;
     using System.Linq;
     using System.Text;
-    using Support;
 
     class ConnectionConfiguration
     {
@@ -42,8 +39,6 @@
 
         public string CertPassphrase { get; }
 
-        public Dictionary<string, string> ClientProperties { get; }
-
         ConnectionConfiguration(
             string host,
             int port,
@@ -54,8 +49,7 @@
             TimeSpan retryDelay,
             bool useTls,
             string certPath,
-            string certPassphrase,
-            Dictionary<string, string> clientProperties)
+            string certPassphrase)
         {
             Host = host;
             Port = port;
@@ -67,10 +61,9 @@
             UseTls = useTls;
             CertPath = certPath;
             CertPassphrase = certPassphrase;
-            ClientProperties = clientProperties;
         }
 
-        public static ConnectionConfiguration Create(string connectionString, string endpointName)
+        public static ConnectionConfiguration Create(string connectionString)
         {
             Dictionary<string, string> dictionary;
             var invalidOptionsMessage = new StringBuilder();
@@ -103,32 +96,8 @@
                 throw new NotSupportedException(invalidOptionsMessage.ToString().TrimEnd('\r', '\n'));
             }
 
-            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
-            var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
-
-            var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionConfiguration).Assembly.Location);
-            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
-
-            var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
-            var applicationName = Path.GetFileName(applicationNameAndPath);
-            var applicationPath = Path.GetDirectoryName(applicationNameAndPath);
-
-            var hostname = RuntimeEnvironment.MachineName;
-
-            var clientProperties = new Dictionary<string, string>
-            {
-                { "client_api", "NServiceBus" },
-                { "nservicebus_version", nsbFileVersion },
-                { "nservicebus.rabbitmq_version", rabbitMQFileVersion },
-                { "application", applicationName },
-                { "application_location", applicationPath },
-                { "machine_name", hostname },
-                { "user", userName },
-                { "endpoint_name", endpointName },
-            };
-
             return new ConnectionConfiguration(
-                host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase, clientProperties);
+                host, port, virtualHost, userName, password, requestedHeartbeat, retryDelay, useTls, certPath, certPassPhrase);
         }
 
         static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
@@ -181,7 +150,7 @@
         {
             var dictionary = new DbConnectionStringBuilder { ConnectionString = connectionString }
                 .OfType<KeyValuePair<string, object>>()
-                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
             RegisterDeprecatedSettingsAsInvalidOptions(dictionary, invalidOptionsMessage);
 
