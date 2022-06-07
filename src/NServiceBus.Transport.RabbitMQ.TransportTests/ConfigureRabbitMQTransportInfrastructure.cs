@@ -61,8 +61,8 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             HostName = connectionConfiguration.Host,
             Port = connectionConfiguration.Port,
             VirtualHost = connectionConfiguration.VirtualHost,
-            UserName = connectionConfiguration.UserName ?? "guest",
-            Password = connectionConfiguration.Password ?? "guest"
+            UserName = connectionConfiguration.UserName,
+            Password = connectionConfiguration.Password
         };
 
         var queues = queueBindings.ReceivingAddresses.Concat(queueBindings.SendingAddresses);
