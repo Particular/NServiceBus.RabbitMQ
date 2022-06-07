@@ -77,7 +77,7 @@
                 dictionary = ParseNServiceBusConnectionString(connectionString, invalidOptionsMessage);
             }
 
-            var host = GetValue(dictionary, "host", string.Empty);
+            var host = GetValue(dictionary, "host", default);
             var useTls = GetValue(dictionary, "useTls", bool.TryParse, defaultUseTls, invalidOptionsMessage);
             var port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
             var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);

@@ -10,7 +10,6 @@
 
     class RabbitMqContext
     {
-        readonly TimeSpan defaultRetryDelay = TimeSpan.FromSeconds(60);
         public virtual int MaximumConcurrency => 1;
 
         [SetUp]
@@ -29,14 +28,14 @@
             var config = ConnectionConfiguration.Create(connectionString);
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, config, default, false, false, default, default);
-            channelProvider = new ChannelProvider(connectionFactory, defaultRetryDelay, routingTopology);
+            channelProvider = new ChannelProvider(connectionFactory, config.RetryDelay, routingTopology);
             channelProvider.CreateConnection();
 
             messageDispatcher = new MessageDispatcher(channelProvider);
 
             var purger = new QueuePurger(connectionFactory);
 
-            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, defaultRetryDelay);
+            messagePump = new MessagePump(connectionFactory, new MessageConverter(), "Unit test", channelProvider, purger, TimeSpan.FromMinutes(2), 3, 0, config.RetryDelay);
 
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
