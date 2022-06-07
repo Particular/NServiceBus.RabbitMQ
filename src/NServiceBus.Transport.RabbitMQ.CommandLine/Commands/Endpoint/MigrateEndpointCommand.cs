@@ -45,6 +45,7 @@
             this.routingTopology = routingTopology;
             this.useDurableEntities = useDurableEntities;
             this.console = console;
+            holdingQueueName = $"{queueName}-migration-temp";
         }
 
         public Task Run(CancellationToken cancellationToken = default)
@@ -60,27 +61,44 @@
             {
                 using (var channel = connection.CreateModel())
                 {
-                    channel.ConfirmSelect();
-                    Migrate(connection, channel, cancellationToken);
+                    Validate(channel, cancellationToken);
+                }
+
+                using (var channel = connection.CreateModel())
+                {
+                    ConvertToQuorum(channel, cancellationToken);
+                }
+
+                // Due to https://github.com/dotnet/command-line-api/issues/1750 we need to use a separate channel to move
+                // the messages back to the main queue again.
+                using (var channel = connection.CreateModel())
+                {
+                    RestoreMessages(channel, cancellationToken);
                 }
             }
 
             return Task.CompletedTask;
         }
-
-        void Migrate(IConnection connection, IModel channel, CancellationToken cancellationToken)
+        void Validate(IModel channel, CancellationToken cancellationToken)
         {
             // make sure that the endpoint queue exists
             channel.MessageCount(queueName);
 
             // check if queue already is quorum
-            if (SafeExecute(connection, ch => ch.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments)))
+            try
             {
-                throw new Exception($"Queue {queueName} is already a quorum queue");
+                channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
+            }
+            catch (Exception)
+            {
+                return;
             }
 
-            var holdingQueueName = $"{queueName}-migration-temp";
+            throw new Exception($"Queue {queueName} is already a quorum queue");
+        }
 
+        void ConvertToQuorum(IModel channel, CancellationToken cancellationToken)
+        {
             // does the holding queue need to be quorum?
             channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
             console.WriteLine($"Holding queue created: {holdingQueueName}");
@@ -96,10 +114,12 @@
             console.WriteLine($"Main queue unbind");
 
             // move all existing messages to the holding queue
+            channel.ConfirmSelect();
+
             var numMessagesMovedToHolding = ProcessMessages(
                 channel,
                 queueName,
-                (message, channel) =>
+                message =>
                 {
                     channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
@@ -120,48 +140,43 @@
             console.WriteLine($"Main queue binding to its exchange re-added");
 
             channel.QueueUnbind(holdingQueueName, queueName, EmptyRoutingKey);
-
             console.WriteLine($"Holding queue unbinded from main queue exchange");
+        }
+        void RestoreMessages(IModel channel, CancellationToken cancellationToken)
+        {
+            var messageIds = new Dictionary<string, string>();
 
-            // Due to https://github.com/dotnet/command-line-api/issues/1750 we need to use a seprate channel to move
-            // the messages back to the main queue again.
-            SafeExecute(connection, ch =>
-            {
-                ch.ConfirmSelect();
+            // move all messages in the holding queue back to the main queue
+            channel.ConfirmSelect();
 
-                var messageIds = new Dictionary<string, string>();
+            var numMessageMovedBackToMain = ProcessMessages(
+                channel,
+                holdingQueueName,
+                message =>
+                {
+                    string? messageIdString = null;
 
-                // move all messages in the holding queue back to the main queue
-                var numMessageMovedBackToMain = ProcessMessages(
-                    channel,
-                    holdingQueueName,
-                    (message, channel) =>
+                    if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
                     {
-                        string? messageIdString = null;
+                        messageIdString = messageId?.ToString();
 
-                        if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
+                        if (messageIdString != null && messageIds.ContainsKey(messageIdString))
                         {
-                            messageIdString = messageId?.ToString();
-
-                            if (messageIdString != null && messageIds.ContainsKey(messageIdString))
-                            {
-                                return;
-                            }
-                        }
-
-                        ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
-                        channel.WaitForConfirmsOrDie();
-
-                        if (messageIdString != null)
-                        {
-                            messageIds.Add(messageIdString, string.Empty);
+                            return;
                         }
                     }
-                    ,
-                    cancellationToken);
 
-                console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
-            });
+                    channel.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
+                    channel.WaitForConfirmsOrDie();
+
+                    if (messageIdString != null)
+                    {
+                        messageIds.Add(messageIdString, string.Empty);
+                    }
+                },
+                cancellationToken);
+
+            console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
 
 
             channel.QueueDelete(holdingQueueName);
@@ -170,7 +185,7 @@
         uint ProcessMessages(
             IModel channel,
             string sourceQueue,
-            Action<BasicGetResult, IModel> onMoveMessage,
+            Action<BasicGetResult> onMoveMessage,
             CancellationToken cancellationToken)
         {
             var messageCount = channel.MessageCount(sourceQueue);
@@ -187,7 +202,7 @@
                     break;
                 }
 
-                onMoveMessage(message, channel);
+                onMoveMessage(message);
 
                 channel.BasicAck(message.DeliveryTag, false);
             }
@@ -195,27 +210,11 @@
             return messageCount;
         }
 
-        bool SafeExecute(IConnection connection, Action<IModel> command)
-        {
-            try
-            {
-                using (var tempChannel = connection.CreateModel())
-                {
-                    command(tempChannel);
-                }
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        string queueName;
+        readonly string queueName;
+        readonly string holdingQueueName;
         readonly RabbitMQ.ConnectionFactory connectionFactory;
         readonly Topology routingTopology;
-        bool useDurableEntities;
+        readonly bool useDurableEntities;
         readonly IConsole console;
         static string EmptyRoutingKey = string.Empty;
         static Dictionary<string, object> QuorumQueueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
