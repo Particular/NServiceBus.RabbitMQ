@@ -4,7 +4,7 @@
     using System.CommandLine;
     using global::RabbitMQ.Client;
 
-    class MigrateEndpointCommand
+    class EndpointMigrateCommand
     {
         public static Command CreateCommand()
         {
@@ -26,14 +26,14 @@
 
             command.SetHandler(async (string endpoint, RabbitMQ.ConnectionFactory connectionFactory, Topology routingTopology, bool useDurableEntities, IConsole console, CancellationToken cancellationToken) =>
             {
-                var migrateCommand = new MigrateEndpointCommand(endpoint, connectionFactory, routingTopology, useDurableEntities, console);
+                var migrateCommand = new EndpointMigrateCommand(endpoint, connectionFactory, routingTopology, useDurableEntities, console);
                 await migrateCommand.Run(cancellationToken).ConfigureAwait(false);
             }, endpointArgument, connectionFactoryBinder, topologyOption, useDurableEntitiesOption);
 
             return command;
         }
 
-        public MigrateEndpointCommand(
+        public EndpointMigrateCommand(
             string queueName,
             RabbitMQ.ConnectionFactory connectionFactory,
             Topology routingTopology,

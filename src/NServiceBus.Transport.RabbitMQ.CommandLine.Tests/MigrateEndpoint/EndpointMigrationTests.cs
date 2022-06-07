@@ -148,7 +148,7 @@
 
         Task ExecuteMigration(string endpointName)
         {
-            var migrationCommand = new MigrateEndpointCommand(endpointName, connectionFactory, Topology.Conventional, true, new TestConsole());
+            var migrationCommand = new EndpointMigrateCommand(endpointName, connectionFactory, Topology.Conventional, true, new TestConsole());
 
             return migrationCommand.Run();
         }
