@@ -92,7 +92,7 @@
             };
         }
 
-        async Task<T?> MakeHttpRequest<T>(HttpClient httpClient, string urlPart, CancellationToken cancellationToken)
+        async Task<T> MakeHttpRequest<T>(HttpClient httpClient, string urlPart, CancellationToken cancellationToken)
         {
             var url = $"{baseUrl}/api/{urlPart}";
             using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
@@ -115,9 +115,9 @@
 
         class ServerDetails
         {
-            public Overview? Overview { get; set; }
+            public Overview Overview { get; set; }
 
-            public FeatureFlag[]? FeatureFlags { get; set; }
+            public FeatureFlag[] FeatureFlags { get; set; }
         }
 
         class Overview

@@ -170,7 +170,7 @@
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 
-        static bool MessageIsInvalid(BasicGetResult? message)
+        static bool MessageIsInvalid(BasicGetResult message)
         {
             return message == null
                 || message.BasicProperties == null
