@@ -8,19 +8,14 @@
     {
         public static Command CreateCommand()
         {
-            var endpointOption = SharedOptions.CreateConnectionStringOption();
-
             var command = new Command("migrate-to-quorum", "Migrate an existing endpoint to use quorum queues.");
 
             var endpointArgument = new Argument<string>();
-
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
-
             var topologyOption = SharedOptions.CreateRoutingTopologyOption();
             var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
 
             command.AddArgument(endpointArgument);
-
             command.AddOption(topologyOption);
             command.AddOption(useDurableEntitiesOption);
 
@@ -33,12 +28,7 @@
             return command;
         }
 
-        public EndpointMigrateCommand(
-            string queueName,
-            RabbitMQ.ConnectionFactory connectionFactory,
-            Topology routingTopology,
-            bool useDurableEntities,
-            IConsole console)
+        public EndpointMigrateCommand(string queueName, RabbitMQ.ConnectionFactory connectionFactory, Topology routingTopology, bool useDurableEntities, IConsole console)
         {
             this.queueName = queueName;
             this.connectionFactory = connectionFactory;
@@ -54,7 +44,7 @@
 
             if (routingTopology != Topology.Conventional)
             {
-                throw new NotSupportedException("Quorum queue migration is only supported for the ConventionalRoutingTopology for the moment.");
+                throw new NotSupportedException("Quorum queue migration is only supported for the conventional routing topology.");
             }
 
             using (var connection = connectionFactory.CreateAdministrationConnection())
@@ -79,15 +69,16 @@
 
             return Task.CompletedTask;
         }
+
         void Validate(IModel channel, CancellationToken cancellationToken)
         {
             // make sure that the endpoint queue exists
-            channel.MessageCount(queueName);
+            channel.QueueDeclarePassive(queueName);
 
             // check if queue already is quorum
             try
             {
-                channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
+                channel.QueueDeclare(queueName, useDurableEntities, false, false, quorumQueueArguments);
             }
             catch (Exception)
             {
@@ -100,18 +91,17 @@
         void ConvertToQuorum(IModel channel, CancellationToken cancellationToken)
         {
             // does the holding queue need to be quorum?
-            channel.QueueDeclare(holdingQueueName, true, false, false, QuorumQueueArguments);
+            channel.QueueDeclare(holdingQueueName, true, false, false, quorumQueueArguments);
             console.WriteLine($"Holding queue created: {holdingQueueName}");
 
-            // bind the holding queue to the default exchange of queue under migration
+            // bind the holding queue to the exchange of the queue under migration
             // this will throw if the exchange for the endpoint doesn't exist
-            channel.QueueBind(holdingQueueName, queueName, EmptyRoutingKey);
+            channel.QueueBind(holdingQueueName, queueName, emptyRoutingKey);
+            console.WriteLine($"Holding queue bound to main queue's exchange");
 
-            console.WriteLine($"Holding queue bound to main queue exchange");
-
-            // unbind the queue under migration to stopp more messages from coming in
-            channel.QueueUnbind(queueName, queueName, EmptyRoutingKey);
-            console.WriteLine($"Main queue unbind");
+            // unbind the queue under migration to stop more messages from coming in
+            channel.QueueUnbind(queueName, queueName, emptyRoutingKey);
+            console.WriteLine($"Main queue unbound from exchange");
 
             // move all existing messages to the holding queue
             channel.ConfirmSelect();
@@ -121,7 +111,7 @@
                 queueName,
                 message =>
                 {
-                    channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body);
+                    channel.BasicPublish(emptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
                 },
                 cancellationToken);
@@ -133,15 +123,16 @@
             console.WriteLine($"Main queue removed");
 
             // recreate the queue
-            channel.QueueDeclare(queueName, useDurableEntities, false, false, QuorumQueueArguments);
+            channel.QueueDeclare(queueName, useDurableEntities, false, false, quorumQueueArguments);
             console.WriteLine($"Main queue recreated as a quorum queue");
 
-            channel.QueueBind(queueName, queueName, EmptyRoutingKey);
-            console.WriteLine($"Main queue binding to its exchange re-added");
+            channel.QueueBind(queueName, queueName, emptyRoutingKey);
+            console.WriteLine($"Main queue re-bound to its exchange");
 
-            channel.QueueUnbind(holdingQueueName, queueName, EmptyRoutingKey);
-            console.WriteLine($"Holding queue unbinded from main queue exchange");
+            channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
+            console.WriteLine($"Holding queue unbound from main queue's exchange");
         }
+
         void RestoreMessages(IModel channel, CancellationToken cancellationToken)
         {
             var messageIds = new Dictionary<string, string>();
@@ -166,7 +157,7 @@
                         }
                     }
 
-                    channel.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
+                    channel.BasicPublish(emptyRoutingKey, queueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
 
                     if (messageIdString != null)
@@ -178,15 +169,11 @@
 
             console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
 
-
             channel.QueueDelete(holdingQueueName);
             console.WriteLine($"Holding queue removed");
         }
-        uint ProcessMessages(
-            IModel channel,
-            string sourceQueue,
-            Action<BasicGetResult> onMoveMessage,
-            CancellationToken cancellationToken)
+
+        uint ProcessMessages(IModel channel, string sourceQueue, Action<BasicGetResult> onMoveMessage, CancellationToken cancellationToken)
         {
             var messageCount = channel.MessageCount(sourceQueue);
 
@@ -216,7 +203,8 @@
         readonly Topology routingTopology;
         readonly bool useDurableEntities;
         readonly IConsole console;
-        static string EmptyRoutingKey = string.Empty;
-        static Dictionary<string, object> QuorumQueueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+
+        static string emptyRoutingKey = string.Empty;
+        static Dictionary<string, object> quorumQueueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
     }
 }
