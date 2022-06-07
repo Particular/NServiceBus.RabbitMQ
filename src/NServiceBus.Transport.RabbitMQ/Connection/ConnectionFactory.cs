@@ -95,7 +95,7 @@
             connectionFactory.ClientProperties.Add("nservicebus_version", nsbFileVersion);
             connectionFactory.ClientProperties.Add("nservicebus.rabbitmq_version", rabbitMQFileVersion);
             connectionFactory.ClientProperties.Add("application", applicationName);
-            connectionFactory.ClientProperties.Add("application_location", applicationPath ?? string.Empty);
+            connectionFactory.ClientProperties.Add("application_location", applicationPath);
             connectionFactory.ClientProperties.Add("machine_name", hostname);
             connectionFactory.ClientProperties.Add("user", userName);
             connectionFactory.ClientProperties.Add("endpoint_name", endpointName);
