@@ -10,7 +10,7 @@
         {
             var endpointOption = SharedOptions.CreateConnectionStringOption();
 
-            var command = new Command("migrate-to-quorum", "Migrate and existing endpoint to use quorum queues.");
+            var command = new Command("migrate-to-quorum", "Migrate an existing endpoint to use quorum queues.");
 
             var endpointArgument = new Argument<string>();
 
