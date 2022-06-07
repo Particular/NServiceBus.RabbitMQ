@@ -60,6 +60,7 @@
             {
                 using (var channel = connection.CreateModel())
                 {
+                    channel.ConfirmSelect();
                     Migrate(connection, channel, cancellationToken);
                 }
             }
@@ -99,7 +100,10 @@
                 channel,
                 queueName,
                 (message, channel) =>
-                channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body),
+                {
+                    channel.BasicPublish(EmptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body);
+                    channel.WaitForConfirmsOrDie();
+                },
                 cancellationToken);
 
             console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
@@ -122,6 +126,8 @@
             //TODO: No idea why we need a new channel for this to work?
             SafeExecute(connection, ch =>
             {
+                ch.ConfirmSelect();
+
                 var messageIds = new Dictionary<string, string>();
 
                 // move all messages in the holding queue back to the main queue
@@ -143,6 +149,7 @@
                         }
 
                         ch.BasicPublish(EmptyRoutingKey, queueName, message.BasicProperties, message.Body);
+                        channel.WaitForConfirmsOrDie();
 
                         if (messageIdString != null)
                         {
