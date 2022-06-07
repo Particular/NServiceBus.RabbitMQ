@@ -1,5 +1,5 @@
-[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Transport.RabbitMQ.Tests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
-[assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"NServiceBus.Transport.RabbitMQ.Tests, PublicKey=00240000048000009400000006020000002400005253413100040000010001007f16e21368ff041183fab592d9e8ed37e7be355e93323147a1d29983d6e591b04282e4da0c9e18bd901e112c0033925eb7d7872c2f1706655891c5c9d57297994f707d16ee9a8f40d978f064ee1ffc73c0db3f4712691b23bf596f75130f4ec978cf78757ec034625a5f27e6bb50c618931ea49f6f628fd74271c32959efb1c5")]
+[assembly: System.Runtime.InteropServices.ComVisible(false)]
 namespace NServiceBus
 {
     public enum QueueType
@@ -13,7 +13,7 @@ namespace NServiceBus
         public override string ExampleConnectionStringForErrorMessage { get; }
         public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
     }
-    public class static RabbitMQTransportSettingsExtensions
+    public static class RabbitMQTransportSettingsExtensions
     {
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
         public static NServiceBus.Transport.RabbitMQ.DelayedDeliverySettings DelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
@@ -26,15 +26,15 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetHeartbeatInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan heartbeatInterval) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetNetworkRecoveryInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan networkRecoveryInterval) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType) { }
-        [System.ObsoleteAttribute("Choosing a queue type is mandatory now. Use `UseConventionalRoutingTopology(Queue" +
+        [System.Obsolete("Choosing a queue type is mandatory now. Use `UseConventionalRoutingTopology(Queue" +
             "Type queueType)` instead. The member currently throws a NotImplementedException." +
             " Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
-        [System.ObsoleteAttribute(@"Choosing a queue type is mandatory now. Use `UseDirectRoutingTopology(QueueType queueType, Func<Type, string> routingKeyConvention, Func<string> exchangeNameConvention)` instead. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
+        [System.Obsolete(@"Choosing a queue type is mandatory now. Use `UseDirectRoutingTopology(QueueType queueType, Func<Type, string> routingKeyConvention, Func<string> exchangeNameConvention)` instead. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
     }
 }
