@@ -1,8 +1,9 @@
+using System.Threading.Tasks;
 using static Bullseye.Targets;
 
 static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Target("delete-virtual-host", () => Broker.DeleteVirtualHost());
 
@@ -12,6 +13,6 @@ static class Program
 
         Target("default", DependsOn("delete-virtual-host", "create-virtual-host", "add-user-to-virtual-host"));
 
-        RunTargetsAndExit(args);
+        await RunTargetsAndExitAsync(args).ConfigureAwait(false);
     }
 }
