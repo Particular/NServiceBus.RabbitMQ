@@ -8,10 +8,26 @@ namespace NServiceBus
     public static partial class RabbitMQTransportSettingsExtensions
     {
         [ObsoleteEx(
+            Message = "The transport no longer has configurable settings for delayed delivery.",
+            TreatAsErrorFromVersion = "8",
+            RemoveInVersion = "9")]
+        public static DelayedDeliverySettings DelayedDelivery(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ObsoleteEx(
+        Message = "The transport no longer has configurable settings for delayed delivery.",
+        TreatAsErrorFromVersion = "8",
+        RemoveInVersion = "9")]
+    public class DelayedDeliverySettings
+    {
+        [ObsoleteEx(
             Message = "The TimeoutManager has been removed from NServiceBus 8. See the upgrade guide for details on how to use the timeout migration tool.",
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9")]
-        public static void DelayedDelivery(this TransportExtensions<RabbitMQTransport> transport)
+        public DelayedDeliverySettings EnableTimeoutManager()
         {
             throw new NotImplementedException();
         }
