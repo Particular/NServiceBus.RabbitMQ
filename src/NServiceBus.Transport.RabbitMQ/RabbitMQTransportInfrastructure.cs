@@ -64,10 +64,6 @@
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
-        ///     address-string.
-        /// </summary>
         public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);
 
         internal static string TranslateAddress(QueueAddress address)

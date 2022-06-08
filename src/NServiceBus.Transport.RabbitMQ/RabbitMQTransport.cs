@@ -139,14 +139,7 @@
             additionalHosts.Add((host, port));
         }
 
-        /// <summary>
-        ///     Initializes all the factories and supported features for the transport. This method is called right before all
-        ///     features
-        ///     are activated and the settings will be locked down. This means you can use the SettingsHolder both for providing
-        ///     default capabilities as well as for initializing the transport's configuration based on those settings (the user
-        ///     cannot
-        ///     provide information anymore at this stage).
-        /// </summary>
+        /// <inheritdoc />
         public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
@@ -178,22 +171,16 @@
             return Task.FromResult<TransportInfrastructure>(infra);
         }
 
-        /// <summary>
-        ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
-        ///     address-string.
-        /// </summary>
+#pragma warning disable CS0672 // Member overrides obsolete member
+        /// <inheritdoc />
         [ObsoleteEx(
             Message = "Inject the ITransportAddressResolver type to access the address translation mechanism at runtime. See the NServiceBus version 8 upgrade guide for further details.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-#pragma warning disable CS0672 // Member overrides obsolete member
-        public override string ToTransportAddress(QueueAddress address)
+        public override string ToTransportAddress(QueueAddress address) => RabbitMQTransportInfrastructure.TranslateAddress(address);
 #pragma warning restore CS0672 // Member overrides obsolete member
-            => RabbitMQTransportInfrastructure.TranslateAddress(address);
 
-        /// <summary>
-        ///     Returns a list of all supported transaction modes of this transport.
-        /// </summary>
+        /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
     }
 }
