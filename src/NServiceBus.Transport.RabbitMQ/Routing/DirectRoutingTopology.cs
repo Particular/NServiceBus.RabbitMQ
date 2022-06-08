@@ -9,29 +9,28 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class DirectRoutingTopology : IRoutingTopology
     {
-        public DirectRoutingTopology(bool durable, QueueType queueType, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
+        public DirectRoutingTopology(bool durable, QueueType queueType, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
             this.durable = durable;
             this.queueType = queueType;
-            conventions = new Conventions(exchangeNameConvention ?? DefaultExchangeNameConvention, routingKeyConvention ?? DefaultRoutingKeyConvention.GenerateRoutingKey);
+            this.routingKeyConvention = routingKeyConvention ?? DefaultRoutingKeyConvention.GenerateRoutingKey;
+            this.exchangeNameConvention = exchangeNameConvention ?? (() => amqpTopicExchange);
         }
-
-        string DefaultExchangeNameConvention() => "amq.topic";
 
         public void SetupSubscription(IModel channel, MessageMetadata type, string subscriberName)
         {
-            CreateExchange(channel, ExchangeName());
-            channel.QueueBind(subscriberName, ExchangeName(), GetRoutingKeyForBinding(type.MessageType));
+            CreateExchange(channel, exchangeNameConvention());
+            channel.QueueBind(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType));
         }
 
         public void TeardownSubscription(IModel channel, MessageMetadata type, string subscriberName)
         {
-            channel.QueueUnbind(subscriberName, ExchangeName(), GetRoutingKeyForBinding(type.MessageType), null);
+            channel.QueueUnbind(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType), null);
         }
 
         public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
         {
-            channel.BasicPublish(ExchangeName(), GetRoutingKeyForPublish(type), false, properties, message.Body);
+            channel.BasicPublish(exchangeNameConvention(), GetRoutingKeyForPublish(type), false, properties, message.Body);
         }
 
         public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
@@ -64,11 +63,9 @@ namespace NServiceBus.Transport.RabbitMQ
             channel.QueueBind(address, deliveryExchange, routingKey);
         }
 
-        string ExchangeName() => conventions.ExchangeName();
-
         void CreateExchange(IModel channel, string exchangeName)
         {
-            if (exchangeName == AmqpTopicExchange)
+            if (exchangeName == amqpTopicExchange)
             {
                 return;
             }
@@ -83,7 +80,7 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        string GetRoutingKeyForPublish(Type eventType) => conventions.RoutingKey(eventType);
+        string GetRoutingKeyForPublish(Type eventType) => routingKeyConvention(eventType);
 
         string GetRoutingKeyForBinding(Type eventType)
         {
@@ -92,26 +89,14 @@ namespace NServiceBus.Transport.RabbitMQ
                 return "#";
             }
 
-            return conventions.RoutingKey(eventType) + ".#";
+            return routingKeyConvention(eventType) + ".#";
         }
 
-        const string AmqpTopicExchange = "amq.topic";
+        const string amqpTopicExchange = "amq.topic";
 
-        readonly Conventions conventions;
         readonly bool durable;
         readonly QueueType queueType;
-
-        public class Conventions
-        {
-            public Conventions(Func<string> exchangeName, Func<Type, string> routingKey)
-            {
-                ExchangeName = exchangeName;
-                RoutingKey = routingKey;
-            }
-
-            public Func<string> ExchangeName { get; }
-
-            public Func<Type, string> RoutingKey { get; }
-        }
+        readonly Func<Type, string> routingKeyConvention;
+        readonly Func<string> exchangeNameConvention;
     }
 }

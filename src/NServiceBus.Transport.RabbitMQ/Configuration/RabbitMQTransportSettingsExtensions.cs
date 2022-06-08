@@ -255,7 +255,7 @@
             RemoveInVersion = "10")]
         public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transport, QueueType queueType, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
-            transport.Transport.TopologyFactory = durable => new DirectRoutingTopology(durable, queueType, exchangeNameConvention, routingKeyConvention);
+            transport.Transport.TopologyFactory = durable => new DirectRoutingTopology(durable, queueType, routingKeyConvention, exchangeNameConvention);
             return transport;
         }
 

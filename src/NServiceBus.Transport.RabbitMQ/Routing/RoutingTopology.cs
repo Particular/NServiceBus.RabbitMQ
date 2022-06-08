@@ -40,7 +40,7 @@ namespace NServiceBus
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
         public static RoutingTopology Direct(QueueType queueType, bool useDurableEntities = true, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
-            return new RoutingTopology(() => new DirectRoutingTopology(useDurableEntities, queueType, exchangeNameConvention, routingKeyConvention));
+            return new RoutingTopology(() => new DirectRoutingTopology(useDurableEntities, queueType, routingKeyConvention, exchangeNameConvention));
         }
 
         /// <summary>
