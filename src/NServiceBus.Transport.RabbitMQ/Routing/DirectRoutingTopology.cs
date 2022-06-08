@@ -5,6 +5,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Generic;
     using System.Linq;
     using global::RabbitMQ.Client;
+    using NServiceBus.Logging;
     using Unicast.Messages;
 
     class DirectRoutingTopology : IRoutingTopology
@@ -46,15 +47,22 @@ namespace NServiceBus.Transport.RabbitMQ
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
             Dictionary<string, object> arguments = null;
+            var createDurableQueue = durable;
 
             if (queueType == QueueType.Quorum)
             {
                 arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+
+                if (createDurableQueue == false)
+                {
+                    createDurableQueue = true;
+                    Logger.Warn("Quorum queues are always durable, so the non-durable setting is being ignored for queue declaration.");
+                }
             }
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, durable, false, false, arguments);
+                channel.QueueDeclare(address, createDurableQueue, false, false, arguments);
             }
         }
 
@@ -98,5 +106,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly QueueType queueType;
         readonly Func<Type, string> routingKeyConvention;
         readonly Func<string> exchangeNameConvention;
+
+        static readonly ILog Logger = LogManager.GetLogger(typeof(DirectRoutingTopology));
     }
 }
