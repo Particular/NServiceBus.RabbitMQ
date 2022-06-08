@@ -5,7 +5,7 @@ namespace NServiceBus
     using NServiceBus.Transport.RabbitMQ;
 
     /// <summary>
-    ///
+    /// Configures the transport to use the specified routing topology.
     /// </summary>
     public class RoutingTopology
     {
@@ -17,11 +17,10 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///
+        /// Configures the transport to use the conventional routing topology.
         /// </summary>
-        /// <param name="queueType"></param>
-        /// <param name="useDurableEntities"></param>
-        /// <returns></returns>
+        /// <param name="queueType">The type of queue that the endpoint should use.</param>
+        /// <param name="useDurableEntities">Specifies whether exchanges and queues should be declared as durable or not.</param>
         public static RoutingTopology Conventional(QueueType queueType, bool useDurableEntities = true)
         {
             return new RoutingTopology(() => new ConventionalRoutingTopology(useDurableEntities, queueType));
@@ -33,23 +32,21 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///
+        /// Configures the transport to use the direct routing topology.
         /// </summary>
-        /// <param name="queueType"></param>
-        /// <param name="useDurableEntities"></param>
-        /// <param name="exchangeNameConvention"></param>
-        /// <param name="routingKeyConvention"></param>
-        /// <returns></returns>
-        public static RoutingTopology Direct(QueueType queueType, bool useDurableEntities = true, Func<string> exchangeNameConvention = null, Func<Type, string> routingKeyConvention = null)
+        /// <param name="queueType">The type of queue to use.</param>
+        /// <param name="useDurableEntities">Specifies whether exchanges and queues should be declared as durable or not.</param>
+        /// <param name="routingKeyConvention">The routing key convention.</param>
+        /// <param name="exchangeNameConvention">The exchange name convention.</param>
+        public static RoutingTopology Direct(QueueType queueType, bool useDurableEntities = true, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
         {
             return new RoutingTopology(() => new DirectRoutingTopology(useDurableEntities, queueType, exchangeNameConvention, routingKeyConvention));
         }
 
         /// <summary>
-        ///
+        /// Configures the transport to use a custom routing topology.
         /// </summary>
-        /// <param name="routingTopology"></param>
-        /// <returns></returns>
+        /// <param name="routingTopology">The custom routing topology instance to use.</param>
         public static RoutingTopology Custom(IRoutingTopology routingTopology)
         {
             return new RoutingTopology(() => routingTopology);
