@@ -17,11 +17,13 @@
 
         protected override ConnectionFactory GetBoundValue(BindingContext bindingContext)
         {
-            var connectionString = bindingContext.ParseResult.GetValueForOption(connectionStringOption)!;
+            var connectionStringValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption)!;
             var certPath = bindingContext.ParseResult.GetValueForOption(certPathOption);
             var certPassphrase = bindingContext.ParseResult.GetValueForOption(certPassphraseOption);
             var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
             var useExternalAuth = bindingContext.ParseResult.GetValueForOption(useExternalAuthOption);
+
+            string connectionString = GetConnectionString(connectionStringValue);
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var certificateCollection = new X509Certificate2Collection();
@@ -35,6 +37,18 @@
             var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), new List<(string, int)>());
 
             return connectionFactory;
+        }
+
+        string GetConnectionString(string connectionStringValue)
+        {
+            var environment = Environment.GetEnvironmentVariable(connectionStringValue);
+
+            if (environment != null)
+            {
+                return environment;
+            }
+
+            return connectionStringValue;
         }
 
         readonly Option<string> connectionStringOption;

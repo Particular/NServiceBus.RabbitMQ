@@ -10,8 +10,9 @@
         {
             var connectionStringOption = new Option<string>(
                 name: "--connectionString",
-                description: $"Overrides environment variable '{ConnectionStringEnvironmentVariable}'",
-                getDefaultValue: () => Environment.GetEnvironmentVariable(ConnectionStringEnvironmentVariable) ?? string.Empty);
+                description: $"Specify an environment variable or connection string.",
+                getDefaultValue: () => ConnectionStringEnvironmentVariable
+               );
 
             connectionStringOption.AddAlias("-c");
 
