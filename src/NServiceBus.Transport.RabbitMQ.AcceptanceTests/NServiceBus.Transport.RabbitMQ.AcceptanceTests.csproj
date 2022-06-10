@@ -18,8 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-beta.3" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="8.0.0-beta.3" GeneratePathProperty="true" />
     <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Recoverability\When_non_transactional_message_is_moved_to_error_queue.cs" Condition="'$(PkgNServiceBus_AcceptanceTests_Sources)' != ''" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Tx\ImmediateDispatch\At_most_once.cs" Condition="'$(PkgNServiceBus_AcceptanceTests_Sources)' != ''" />
   </ItemGroup>
 
 </Project>
