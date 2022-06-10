@@ -18,28 +18,40 @@
             return connectionStringOption;
         }
 
-        public static Option<Topology> CreateRoutingTopologyOption()
+        public static Option<RoutingTopologyType> CreateRoutingTopologyTypeOption()
         {
-            var topologyOption = new Option<Topology>(
-                name: "--topology",
-                description: $"Defines which routing toplogy is being used, defaults to Conventional",
-                getDefaultValue: () => Topology.Conventional);
+            var routingTopologyTypeOption = new Option<RoutingTopologyType>(
+                name: "--routingTopology",
+                description: $"Defines which routing toplogy to use",
+                getDefaultValue: () => RoutingTopologyType.Conventional);
 
-            topologyOption.AddAlias("-t");
+            routingTopologyTypeOption.AddAlias("-r");
 
-            return topologyOption;
+            return routingTopologyTypeOption;
         }
 
         public static Option<bool> CreateUseDurableEntitiesOption()
         {
             var useDurableEntities = new Option<bool>(
                 name: "--useDurableEntities",
-                description: $"Defines if entities should be created as durable, defaults to true",
+                description: $"Defines if entities should be created as durable",
                 getDefaultValue: () => true);
 
             useDurableEntities.AddAlias("-d");
 
             return useDurableEntities;
+        }
+
+        public static Option<QueueType> CreateQueueTypeOption()
+        {
+            var queueTypeOption = new Option<QueueType>(
+                name: "--queueType",
+                description: $"Defines which type of queue to use",
+                getDefaultValue: () => QueueType.Quorum);
+
+            queueTypeOption.AddAlias("-t");
+
+            return queueTypeOption;
         }
 
         public static Option<bool> CreateDisableCertValidationOption()
@@ -95,6 +107,19 @@
             command.AddOption(useExternalAuthOption);
 
             return new ConnectionFactoryBinder(connectionStringOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
+        }
+
+        public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)
+        {
+            var routingTopologyTypeOption = CreateRoutingTopologyTypeOption();
+            var useDurableEntitiesOption = CreateUseDurableEntitiesOption();
+            var queueTypeOption = CreateQueueTypeOption();
+
+            command.AddOption(routingTopologyTypeOption);
+            command.AddOption(useDurableEntitiesOption);
+            command.AddOption(queueTypeOption);
+
+            return new RoutingTopologyBinder(routingTopologyTypeOption, useDurableEntitiesOption, queueTypeOption);
         }
     }
 }

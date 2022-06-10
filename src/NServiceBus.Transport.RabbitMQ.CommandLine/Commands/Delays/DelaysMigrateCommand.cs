@@ -17,26 +17,21 @@
         {
             var command = new Command("migrate", "Migrate in-flight delayed messages to the v2 delay infrustructure.");
 
-            var topologyOption = SharedOptions.CreateRoutingTopologyOption();
-            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
+            var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
 
             var quietModeOption = new Option<bool>(name: "--Quiet", description: $"Disable console output while running");
             quietModeOption.AddAlias("-q");
 
-            command.AddOption(topologyOption);
-            command.AddOption(useDurableEntitiesOption);
             command.AddOption(quietModeOption);
 
-            command.SetHandler(async (RabbitMQ.ConnectionFactory connectionFactory, Topology topology, bool useDurableEntities, bool quietMode, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool quietMode, IConsole console, CancellationToken cancellationToken) =>
             {
-                var routingTopology = GetRoutingTopology(topology, useDurableEntities);
-
                 var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
 
                 await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
 
-            }, connectionFactoryBinder, topologyOption, useDurableEntitiesOption, quietModeOption);
+            }, connectionFactoryBinder, routingTopologyBinder, quietModeOption);
 
             return command;
         }
@@ -159,13 +154,6 @@
 
             return (destinationQueue, newRoutingKey, newDelayLevel);
         }
-
-        static IRoutingTopology GetRoutingTopology(Topology routingTopology, bool useDurableEntities) => routingTopology switch
-        {
-            Topology.Conventional => new ConventionalRoutingTopology(useDurableEntities),
-            Topology.Direct => new DirectRoutingTopology(useDurableEntities),
-            _ => throw new InvalidOperationException()
-        };
 
         static DateTimeOffset GetTimeSent(BasicGetResult message)
         {

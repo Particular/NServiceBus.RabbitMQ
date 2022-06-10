@@ -15,16 +15,8 @@
     /// </summary>
     public partial class RabbitMQTransport : TransportDefinition
     {
-        const ushort defaultRequestedHeartbeat = 60;
-        const ushort defaultRetryDelay = 10;
-
-        static readonly TransportTransactionMode[] SupportedTransactionModes =
-        {
-            TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly
-        };
-
-        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(defaultRequestedHeartbeat);
-        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(defaultRetryDelay);
+        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(60);
+        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
@@ -34,44 +26,24 @@
         /// <summary>
         /// Creates new instance of the RabbitMQ transport.
         /// </summary>
-        /// <param name="topology">The built-in topology to use.</param>
+        /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueType">The type of queue to use for receiving queues.</param>
-        public RabbitMQTransport(Topology topology, string connectionString, QueueType queueType)
-            : this(GetBuiltInTopology(topology), connectionString, queueType)
-        {
-        }
-
-        /// <summary>
-        /// Creates new instance of the RabbitMQ transport.
-        /// </summary>
-        /// <param name="topology">The custom topology to use.</param>
-        /// <param name="connectionString">Connection string.</param>
-        /// <param name="queueType">The type of queue to use for receiving queues.</param>
-        public RabbitMQTransport(IRoutingTopology topology, string connectionString, QueueType queueType)
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
-                supportsTTBR: queueType == QueueType.Classic)
+                supportsTTBR: true)
         {
-            Guard.AgainstNull(nameof(topology), topology);
+            Guard.AgainstNull(nameof(routingTopology), routingTopology);
             Guard.AgainstNull(nameof(connectionString), connectionString);
 
-            QueueType = queueType;
-            RoutingTopology = topology;
+            RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
-        /// <summary>
-        /// Connection information parsed from the connection string
-        /// </summary>
         internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
-        /// <summary>
-        ///     The routing topology to use. If not set the conventional routing topology will be used
-        ///     <seealso cref="ConventionalRoutingTopology" />.
-        /// </summary>
-        public IRoutingTopology RoutingTopology { get; set; }
+        internal IRoutingTopology RoutingTopology { get; set; }
 
         /// <summary>
         ///     The strategy for deriving the message ID from the raw RabbitMQ message. Override in case of native integration when
@@ -143,6 +115,7 @@
                 heartbeatInterval = value;
             }
         }
+
         /// <summary>
         ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
@@ -156,8 +129,6 @@
             }
         }
 
-        internal QueueType QueueType { get; }
-
         /// <summary>
         /// Adds a new node for use within a cluster.
         /// </summary>
@@ -168,16 +139,8 @@
             additionalHosts.Add((host, port));
         }
 
-        /// <summary>
-        ///     Initializes all the factories and supported features for the transport. This method is called right before all
-        ///     features
-        ///     are activated and the settings will be locked down. This means you can use the SettingsHolder both for providing
-        ///     default capabilities as well as for initializing the transport's configuration based on those settings (the user
-        ///     cannot
-        ///     provide information anymore at this stage).
-        /// </summary>
-        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings,
-            ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
+        /// <inheritdoc />
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
 
@@ -202,36 +165,22 @@
 
             if (hostSettings.SetupInfrastructure)
             {
-                infra.SetupInfrastructure(QueueType, sendingAddresses);
+                infra.SetupInfrastructure(sendingAddresses);
             }
 
             return Task.FromResult<TransportInfrastructure>(infra);
         }
 
-        /// <summary>
-        ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
-        ///     address-string.
-        /// </summary>
+#pragma warning disable CS0672 // Member overrides obsolete member
+        /// <inheritdoc />
         [ObsoleteEx(
             Message = "Inject the ITransportAddressResolver type to access the address translation mechanism at runtime. See the NServiceBus version 8 upgrade guide for further details.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-#pragma warning disable CS0672 // Member overrides obsolete member
-        public override string ToTransportAddress(QueueAddress address)
+        public override string ToTransportAddress(QueueAddress address) => RabbitMQTransportInfrastructure.TranslateAddress(address);
 #pragma warning restore CS0672 // Member overrides obsolete member
-            => RabbitMQTransportInfrastructure.TranslateAddress(address);
 
-        /// <summary>
-        ///     Returns a list of all supported transaction modes of this transport.
-        /// </summary>
-        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
-            SupportedTransactionModes;
-
-        internal static IRoutingTopology GetBuiltInTopology(Topology topology)
-        {
-            return topology == Topology.Conventional
-                ? new ConventionalRoutingTopology(true)
-                : new DirectRoutingTopology(true);
-        }
+        /// <inheritdoc />
+        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
     }
 }

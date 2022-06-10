@@ -35,7 +35,7 @@
             return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
-        internal void SetupInfrastructure(QueueType queueType, string[] sendingQueues)
+        internal void SetupInfrastructure(string[] sendingQueues)
         {
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
@@ -44,7 +44,7 @@
 
                 var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
 
-                routingTopology.Initialize(channel, receivingQueues, sendingQueues, queueType != QueueType.Classic);
+                routingTopology.Initialize(channel, receivingQueues, sendingQueues);
 
                 foreach (string receivingAddress in receivingQueues)
                 {
@@ -64,10 +64,6 @@
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Translates a <see cref="T:NServiceBus.Transport.QueueAddress" /> object into a transport specific queue
-        ///     address-string.
-        /// </summary>
         public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);
 
         internal static string TranslateAddress(QueueAddress address)

@@ -25,7 +25,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.ConfigureRabbitMQTransport().RoutingTopology = new DirectRoutingTopology(true);
+                    c.ConfigureRabbitMQTransport().RoutingTopology = new DirectRoutingTopology(true, QueueType.Classic);
                 });
             }
 

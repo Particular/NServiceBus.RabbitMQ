@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Transport;
-using NServiceBus.Transport.RabbitMQ;
 using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
@@ -21,10 +20,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
-        transport = new TestRabbitMQTransport(
-            new ConventionalRoutingTopology(true, type => type.FullName),
-            ConnectionHelper.ConnectionString,
-            queueType);
+        transport = new TestRabbitMQTransport(RoutingTopology.Conventional(queueType, type => type.FullName), ConnectionHelper.ConnectionString);
 
         configuration.UseTransport(transport);
 
@@ -66,8 +62,8 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     class TestRabbitMQTransport : RabbitMQTransport
     {
-        public TestRabbitMQTransport(IRoutingTopology topology, string connectionString, QueueType queueType)
-            : base(topology, connectionString, queueType)
+        public TestRabbitMQTransport(RoutingTopology routingTopology, string connectionString)
+            : base(routingTopology, connectionString)
         {
         }
 
