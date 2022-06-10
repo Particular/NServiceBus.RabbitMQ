@@ -118,6 +118,11 @@
 
             console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
 
+            if (channel.MessageCount(queueName) > 0)
+            {
+                throw new Exception($"Queue '{queueName}' is not empty after message processing. This can occur if messages are published directly to the queue during the migration process.");
+            }
+
             // delete the queue under migration
             channel.QueueDelete(queueName);
             console.WriteLine($"Main queue removed");
