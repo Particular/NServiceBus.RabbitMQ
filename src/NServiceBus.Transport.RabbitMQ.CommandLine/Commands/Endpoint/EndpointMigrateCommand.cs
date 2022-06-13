@@ -10,30 +10,28 @@
         {
             var command = new Command("migrate-to-quorum", "Migrate an existing endpoint to use quorum queues.");
 
-            var endpointArgument = new Argument<string>();
+            var endpointArgument = new Argument<string>()
+            {
+                Name = "endpointName",
+                Description = ""
+            };
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
-            var topologyOption = SharedOptions.CreateRoutingTopologyOption();
-            var useDurableEntitiesOption = SharedOptions.CreateUseDurableEntitiesOption();
 
             command.AddArgument(endpointArgument);
-            command.AddOption(topologyOption);
-            command.AddOption(useDurableEntitiesOption);
 
-            command.SetHandler(async (string endpoint, RabbitMQ.ConnectionFactory connectionFactory, Topology routingTopology, bool useDurableEntities, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string endpoint, RabbitMQ.ConnectionFactory connectionFactory, bool useDurableEntities, IConsole console, CancellationToken cancellationToken) =>
             {
-                var migrateCommand = new EndpointMigrateCommand(endpoint, connectionFactory, routingTopology, useDurableEntities, console);
+                var migrateCommand = new EndpointMigrateCommand(endpoint, connectionFactory, console);
                 await migrateCommand.Run(cancellationToken).ConfigureAwait(false);
-            }, endpointArgument, connectionFactoryBinder, topologyOption, useDurableEntitiesOption);
+            }, endpointArgument, connectionFactoryBinder);
 
             return command;
         }
 
-        public EndpointMigrateCommand(string queueName, RabbitMQ.ConnectionFactory connectionFactory, Topology routingTopology, bool useDurableEntities, IConsole console)
+        public EndpointMigrateCommand(string queueName, RabbitMQ.ConnectionFactory connectionFactory, IConsole console)
         {
             this.queueName = queueName;
             this.connectionFactory = connectionFactory;
-            this.routingTopology = routingTopology;
-            this.useDurableEntities = useDurableEntities;
             this.console = console;
             holdingQueueName = $"{queueName}-migration-temp";
         }
@@ -41,11 +39,6 @@
         public Task Run(CancellationToken cancellationToken = default)
         {
             console.WriteLine($"Starting migration of {queueName}");
-
-            if (routingTopology != Topology.Conventional)
-            {
-                throw new NotSupportedException("Quorum queue migration is only supported for the conventional routing topology.");
-            }
 
             using (var connection = connectionFactory.CreateAdministrationConnection())
             {
@@ -72,13 +65,23 @@
 
         void Validate(IModel channel, CancellationToken cancellationToken)
         {
+            // Make sure the endpoint exchange exists
+            try
+            {
+                channel.ExchangeDeclarePassive(queueName);
+            }
+            catch (Exception ex)
+            {
+                throw new NotSupportedException($"'{queueName}' exchange not found. Quorum queue migration is only supports the conventional routing topology.", ex);
+            }
+
             // make sure that the endpoint queue exists
             channel.QueueDeclarePassive(queueName);
 
             // check if queue already is quorum
             try
             {
-                channel.QueueDeclare(queueName, useDurableEntities, false, false, quorumQueueArguments);
+                channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
             }
             catch (Exception)
             {
@@ -128,7 +131,7 @@
             console.WriteLine($"Main queue removed");
 
             // recreate the queue
-            channel.QueueDeclare(queueName, useDurableEntities, false, false, quorumQueueArguments);
+            channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
             console.WriteLine($"Main queue recreated as a quorum queue");
 
             channel.QueueBind(queueName, queueName, emptyRoutingKey);
@@ -205,8 +208,6 @@
         readonly string queueName;
         readonly string holdingQueueName;
         readonly RabbitMQ.ConnectionFactory connectionFactory;
-        readonly Topology routingTopology;
-        readonly bool useDurableEntities;
         readonly IConsole console;
 
         static string emptyRoutingKey = string.Empty;

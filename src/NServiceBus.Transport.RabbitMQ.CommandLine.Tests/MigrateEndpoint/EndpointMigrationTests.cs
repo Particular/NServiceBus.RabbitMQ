@@ -15,6 +15,9 @@
         public void Should_blow_up_when_endpoint_queue_does_not_exist()
         {
             var endpointName = "NonExistingEndpoint";
+
+            CreateExchange(endpointName);
+
             var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await ExecuteMigration(endpointName));
 
             StringAssert.Contains(endpointName, ex.Message);
@@ -25,6 +28,7 @@
         {
             var endpointName = "EndpointThatIsAlreadyMigrated";
 
+            CreateExchange(endpointName);
             CreateQueue(endpointName, quorum: true);
 
             var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
@@ -39,7 +43,7 @@
 
             CreateQueue(endpointName, quorum: false);
 
-            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await ExecuteMigration(endpointName));
+            var ex = Assert.ThrowsAsync<NotSupportedException>(async () => await ExecuteMigration(endpointName));
 
             StringAssert.Contains(endpointName, ex.Message);
         }
@@ -148,7 +152,7 @@
 
         Task ExecuteMigration(string endpointName)
         {
-            var migrationCommand = new EndpointMigrateCommand(endpointName, connectionFactory, Topology.Conventional, true, new TestConsole());
+            var migrationCommand = new EndpointMigrateCommand(endpointName, connectionFactory, new TestConsole());
 
             return migrationCommand.Run();
         }
