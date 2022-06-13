@@ -6,9 +6,10 @@
 
     class ConnectionFactoryBinder : BinderBase<ConnectionFactory>
     {
-        public ConnectionFactoryBinder(Option<string> connectionStringOption, Option<string> certPathOption, Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
+        public ConnectionFactoryBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> certPathOption, Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
         {
             this.connectionStringOption = connectionStringOption;
+            this.connectionStringEnvOption = connectionStringEnvOption;
             this.certPathOption = certPathOption;
             this.certPassphraseOption = certPassphraseOption;
             this.disableCertificateValidationOption = disableCertificateValidationOption;
@@ -18,12 +19,13 @@
         protected override ConnectionFactory GetBoundValue(BindingContext bindingContext)
         {
             var connectionStringValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption)!;
+            var connectionStringEnvValue = bindingContext.ParseResult.GetValueForOption(connectionStringEnvOption)!;
             var certPath = bindingContext.ParseResult.GetValueForOption(certPathOption);
             var certPassphrase = bindingContext.ParseResult.GetValueForOption(certPassphraseOption);
             var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
             var useExternalAuth = bindingContext.ParseResult.GetValueForOption(useExternalAuthOption);
 
-            string connectionString = GetConnectionString(connectionStringValue);
+            string connectionString = GetConnectionString(connectionStringValue, connectionStringEnvValue);
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var certificateCollection = new X509Certificate2Collection();
@@ -39,19 +41,23 @@
             return connectionFactory;
         }
 
-        string GetConnectionString(string connectionStringValue)
+        string GetConnectionString(string connectionStringValue, string connectionStringEnvValue)
         {
-            var environment = Environment.GetEnvironmentVariable(connectionStringValue);
-
-            if (environment != null)
+            if (string.IsNullOrWhiteSpace(connectionStringValue))
             {
-                return environment;
+                var environment = Environment.GetEnvironmentVariable(connectionStringEnvValue);
+
+                if (environment != null)
+                {
+                    return environment;
+                }
             }
 
             return connectionStringValue;
         }
 
         readonly Option<string> connectionStringOption;
+        readonly Option<string> connectionStringEnvOption;
         readonly Option<string> certPathOption;
         readonly Option<string> certPassphraseOption;
         readonly Option<bool> disableCertificateValidationOption;

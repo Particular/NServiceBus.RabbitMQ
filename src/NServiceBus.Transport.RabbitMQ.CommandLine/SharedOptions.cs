@@ -10,13 +10,21 @@
         {
             var connectionStringOption = new Option<string>(
                 name: "--connectionString",
-                description: $"Specify an environment variable or connection string.",
-                getDefaultValue: () => ConnectionStringEnvironmentVariable
-               );
+                description: $"Specify a connection string");
 
             connectionStringOption.AddAlias("-c");
 
             return connectionStringOption;
+        }
+
+        public static Option<string> CreateConnectionStringEnvOption()
+        {
+            var connectionStringEnvOption = new Option<string>(
+                name: "--connectionStringEnv",
+                description: $"Override the connection string environment variable.",
+                getDefaultValue: () => ConnectionStringEnvironmentVariable);
+
+            return connectionStringEnvOption;
         }
 
         public static Option<RoutingTopologyType> CreateRoutingTopologyTypeOption()
@@ -96,18 +104,20 @@
         public static ConnectionFactoryBinder CreateConnectionFactoryBinderWithOptions(Command command)
         {
             var connectionStringOption = CreateConnectionStringOption();
+            var connectionStringEnvOption = CreateConnectionStringEnvOption();
             var certPathOption = CreateCertPathOption();
             var certPassphraseOption = CreateCertPassphraseOption();
             var disableCertVaidationOption = CreateDisableCertValidationOption();
             var useExternalAuthOption = CreateUseExternalAuthOption();
 
             command.AddOption(connectionStringOption);
+            command.AddOption(connectionStringEnvOption);
             command.AddOption(certPathOption);
             command.AddOption(certPassphraseOption);
             command.AddOption(disableCertVaidationOption);
             command.AddOption(useExternalAuthOption);
 
-            return new ConnectionFactoryBinder(connectionStringOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
+            return new ConnectionFactoryBinder(connectionStringOption, connectionStringEnvOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
         }
 
         public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)
