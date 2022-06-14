@@ -48,6 +48,7 @@
         {
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
+            channel.ConfirmSelect();
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
@@ -94,6 +95,7 @@
                         }
 
                         channel.BasicPublish(string.Empty, poisonMessageQueue, message.BasicProperties, message.Body);
+                        channel.WaitForConfirmsOrDie();
                         channel.BasicAck(message.DeliveryTag, false);
 
                         continue;
@@ -124,6 +126,7 @@
                     }
 
                     channel.BasicPublish(publishExchange, newRoutingKey, message.BasicProperties, message.Body);
+                    channel.WaitForConfirmsOrDie();
                     channel.BasicAck(message.DeliveryTag, false);
                     processedMessages++;
                 }
