@@ -18,14 +18,14 @@
 
         protected override ConnectionFactory GetBoundValue(BindingContext bindingContext)
         {
-            var connectionStringValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption)!;
-            var connectionStringEnvValue = bindingContext.ParseResult.GetValueForOption(connectionStringEnvOption)!;
+            var connectionStringOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption);
+            var connectionStringEnvOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringEnvOption);
             var certPath = bindingContext.ParseResult.GetValueForOption(certPathOption);
             var certPassphrase = bindingContext.ParseResult.GetValueForOption(certPassphraseOption);
             var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
             var useExternalAuth = bindingContext.ParseResult.GetValueForOption(useExternalAuthOption);
 
-            string connectionString = GetConnectionString(connectionStringValue, connectionStringEnvValue);
+            var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var certificateCollection = new X509Certificate2Collection();
@@ -41,11 +41,11 @@
             return connectionFactory;
         }
 
-        string GetConnectionString(string connectionStringValue, string connectionStringEnvValue)
+        string GetConnectionString(string? connectionString, string? connectionStringEnv)
         {
-            if (string.IsNullOrWhiteSpace(connectionStringValue))
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
-                var environment = Environment.GetEnvironmentVariable(connectionStringEnvValue);
+                var environment = Environment.GetEnvironmentVariable(connectionStringEnv ?? string.Empty);
 
                 if (environment != null)
                 {
@@ -53,7 +53,7 @@
                 }
             }
 
-            return connectionStringValue;
+            return connectionString ?? string.Empty;
         }
 
         readonly Option<string> connectionStringOption;
