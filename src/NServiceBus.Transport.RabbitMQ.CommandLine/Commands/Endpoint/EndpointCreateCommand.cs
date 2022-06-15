@@ -25,9 +25,9 @@
                 name: "--auditQueueName",
                 description: "Specifies that an audit queue with the specified name should be created");
 
-            var instanceQueuesOption = new Option<IEnumerable<string>>(
-                name: "--addressableInstances",
-                description: "Specifies a list queues to create for uniquely addressable endpoint instances")
+            var instanceDiscriminatorsOption = new Option<IEnumerable<string>>(
+                name: "--instanceDiscriminators",
+                description: "Specifies a list of instance discriminators to use when the endpoint needs uniquely addressable instances")
             {
                 Arity = ArgumentArity.ZeroOrMore,
                 AllowMultipleArgumentsPerToken = true
@@ -39,14 +39,14 @@
             command.AddArgument(endpointNameArgument);
             command.AddOption(errorQueueOption);
             command.AddOption(auditQueueOption);
-            command.AddOption(instanceQueuesOption);
+            command.AddOption(instanceDiscriminatorsOption);
 
-            command.SetHandler(async (string queueName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceQueues, ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string queueName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console, CancellationToken cancellationToken) =>
             {
                 var queueCreate = new EndpointCreateCommand(connectionFactory, routingTopology, console);
-                await queueCreate.Run(queueName, errorQueue, auditQueue, instanceQueues, cancellationToken).ConfigureAwait(false);
+                await queueCreate.Run(queueName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken).ConfigureAwait(false);
 
-            }, endpointNameArgument, errorQueueOption, auditQueueOption, instanceQueuesOption, connectionFactoryBinder, routingTopologyBinder);
+            }, endpointNameArgument, errorQueueOption, auditQueueOption, instanceDiscriminatorsOption, connectionFactoryBinder, routingTopologyBinder);
 
             return command;
         }
@@ -58,7 +58,7 @@
             this.console = console;
         }
 
-        public Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceQueues, CancellationToken cancellationToken = default)
+        public Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, CancellationToken cancellationToken = default)
         {
             console.WriteLine("Connecting to broker");
 
@@ -79,10 +79,13 @@
 
             console.WriteLine($"Creating queues");
 
-            var receivingAddresses = new List<string>()
+            var receivingAddresses = new List<string>() { endpointName };
+
+            if (instanceDiscriminators.Any())
             {
-                endpointName
-            };
+                receivingAddresses.AddRange(instanceDiscriminators.Select(discriminator => $"{endpointName}-{discriminator}"));
+            }
+
             var sendingAddresses = new List<string>();
 
             if (!string.IsNullOrWhiteSpace(errorQueue))
@@ -93,11 +96,6 @@
             if (!string.IsNullOrWhiteSpace(auditQueue))
             {
                 sendingAddresses.Add(auditQueue);
-            }
-
-            if (instanceQueues.Any())
-            {
-                receivingAddresses.AddRange(instanceQueues.Select(discriminator => $"{endpointName}-{discriminator}"));
             }
 
             routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
