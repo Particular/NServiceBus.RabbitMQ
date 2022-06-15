@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using System.CommandLine;
+    using global::RabbitMQ.Client.Exceptions;
 
     class EndpointCreateCommand
     {
@@ -59,10 +60,24 @@
 
         public Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceQueues, CancellationToken cancellationToken = default)
         {
-            console.WriteLine($"Creating queues..");
+            console.WriteLine("Connecting to broker");
 
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
+
+            console.WriteLine("Checking for delay infrastructure v2");
+
+            try
+            {
+                channel.ExchangeDeclarePassive(DelayInfrastructure.DeliveryExchange);
+            }
+            catch (OperationInterruptedException)
+            {
+                console.Error.Write("Fail: Delay infrastructure v2 not found.\n");
+                throw;
+            }
+
+            console.WriteLine($"Creating queues");
 
             var receivingAddresses = new List<string>()
             {
