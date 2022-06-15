@@ -41,10 +41,10 @@
             command.AddOption(auditQueueOption);
             command.AddOption(instanceDiscriminatorsOption);
 
-            command.SetHandler(async (string queueName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console, CancellationToken cancellationToken) =>
             {
                 var queueCreate = new EndpointCreateCommand(connectionFactory, routingTopology, console);
-                await queueCreate.Run(queueName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken).ConfigureAwait(false);
+                await queueCreate.Run(endpointName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken).ConfigureAwait(false);
 
             }, endpointNameArgument, errorQueueOption, auditQueueOption, instanceDiscriminatorsOption, connectionFactoryBinder, routingTopologyBinder);
 
