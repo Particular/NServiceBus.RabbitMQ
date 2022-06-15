@@ -10,7 +10,7 @@
 
         public static Command CreateCommand()
         {
-            var command = new Command("create", "Create standard queues and exchanges for an endpoint based on a routing topology");
+            var command = new Command("create", "Creates queues and exchanges for an endpoint based on a routing topology");
 
             var endpointNameArgument = new Argument<string>(
                 name: "endpointName",
@@ -26,7 +26,7 @@
 
             var instanceQueuesOption = new Option<IEnumerable<string>>(
                 name: "--addressableInstances",
-                description: "Specifies a list of uniquely addressable endpoint instances to create")
+                description: "Specifies a list queues to create for uniquely addressable endpoint instances")
             {
                 Arity = ArgumentArity.ZeroOrMore,
                 AllowMultipleArgumentsPerToken = true
