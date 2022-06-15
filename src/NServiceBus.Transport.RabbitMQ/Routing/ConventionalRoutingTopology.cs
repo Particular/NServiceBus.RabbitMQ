@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using global::RabbitMQ.Client;
+    using NServiceBus.Logging;
 
     /// <summary>
     /// Implements the RabbitMQ routing topology as described at http://codebetter.com/drusellers/2011/05/08/brain-dump-conventional-routing-in-rabbitmq/
@@ -77,15 +78,22 @@
         public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
         {
             Dictionary<string, object> arguments = null;
+            var createDurableQueue = durable;
 
             if (queueType == QueueType.Quorum)
             {
                 arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+
+                if (createDurableQueue == false)
+                {
+                    createDurableQueue = true;
+                    Logger.Warn("Quorum queues are always durable, so the non-durable setting is being ignored for queue declaration.");
+                }
             }
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, durable, false, false, arguments);
+                channel.QueueDeclare(address, createDurableQueue, false, false, arguments);
                 CreateExchange(channel, address);
                 channel.QueueBind(address, address, string.Empty);
             }
@@ -150,5 +158,7 @@
         }
 
         readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
+
+        static readonly ILog Logger = LogManager.GetLogger(typeof(ConventionalRoutingTopology));
     }
 }
