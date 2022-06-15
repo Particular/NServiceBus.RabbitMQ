@@ -152,7 +152,7 @@
 
         Task ExecuteMigration(string endpointName)
         {
-            var migrationCommand = new EndpointMigrateCommand(endpointName, connectionFactory, new TestConsole());
+            var migrationCommand = new QueueMigrateCommand(endpointName, connectionFactory, new TestConsole());
 
             return migrationCommand.Run();
         }
