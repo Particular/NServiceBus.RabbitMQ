@@ -10,19 +10,28 @@
         {
             var connectionStringOption = new Option<string>(
                 name: "--connectionString",
-                description: $"Overrides environment variable '{ConnectionStringEnvironmentVariable}'",
-                getDefaultValue: () => Environment.GetEnvironmentVariable(ConnectionStringEnvironmentVariable) ?? string.Empty);
+                description: $"Force this command to use the specified connection string");
 
             connectionStringOption.AddAlias("-c");
 
             return connectionStringOption;
         }
 
+        public static Option<string> CreateConnectionStringEnvOption()
+        {
+            var connectionStringEnvOption = new Option<string>(
+                name: "--connectionStringEnv",
+                description: $"Specifies the environment variable where the connection string can be found. --connectionString, if specified, will take precedence over this option.",
+                getDefaultValue: () => ConnectionStringEnvironmentVariable);
+
+            return connectionStringEnvOption;
+        }
+
         public static Option<RoutingTopologyType> CreateRoutingTopologyTypeOption()
         {
             var routingTopologyTypeOption = new Option<RoutingTopologyType>(
                 name: "--routingTopology",
-                description: $"Defines which routing toplogy to use",
+                description: $"Specifies which routing toplogy to use.",
                 getDefaultValue: () => RoutingTopologyType.Conventional);
 
             routingTopologyTypeOption.AddAlias("-r");
@@ -34,7 +43,7 @@
         {
             var useDurableEntities = new Option<bool>(
                 name: "--useDurableEntities",
-                description: $"Defines if entities should be created as durable, defaults to true",
+                description: $"Specifies if entities should be created as durable",
                 getDefaultValue: () => true);
 
             useDurableEntities.AddAlias("-d");
@@ -46,7 +55,7 @@
         {
             var queueTypeOption = new Option<QueueType>(
                 name: "--queueType",
-                description: $"Defines which type of queue to use",
+                description: $"Specifies queue type will be used for queue creation",
                 getDefaultValue: () => QueueType.Quorum);
 
             queueTypeOption.AddAlias("-t");
@@ -95,18 +104,20 @@
         public static ConnectionFactoryBinder CreateConnectionFactoryBinderWithOptions(Command command)
         {
             var connectionStringOption = CreateConnectionStringOption();
+            var connectionStringEnvOption = CreateConnectionStringEnvOption();
             var certPathOption = CreateCertPathOption();
             var certPassphraseOption = CreateCertPassphraseOption();
             var disableCertVaidationOption = CreateDisableCertValidationOption();
             var useExternalAuthOption = CreateUseExternalAuthOption();
 
             command.AddOption(connectionStringOption);
+            command.AddOption(connectionStringEnvOption);
             command.AddOption(certPathOption);
             command.AddOption(certPassphraseOption);
             command.AddOption(disableCertVaidationOption);
             command.AddOption(useExternalAuthOption);
 
-            return new ConnectionFactoryBinder(connectionStringOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
+            return new ConnectionFactoryBinder(connectionStringOption, connectionStringEnvOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
         }
 
         public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)

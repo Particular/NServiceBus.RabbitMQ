@@ -6,7 +6,7 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("create", "Create v2 delay infrastructure queues and exchanges");
+            var command = new Command("create", "Create delay infrastructure v2 queues and exchanges");
 
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 
@@ -29,6 +29,9 @@
         public Task Run(CancellationToken cancellationToken = default)
         {
             _ = cancellationToken;
+
+            console.WriteLine($"Creating delay infrastructure v2..");
+
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
 
