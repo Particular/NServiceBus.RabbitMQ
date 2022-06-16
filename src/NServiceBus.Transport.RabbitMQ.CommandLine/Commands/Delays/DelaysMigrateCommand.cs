@@ -15,7 +15,7 @@
 
         public static Command CreateCommand()
         {
-            var command = new Command("migrate", "Migrate in-flight delayed messages to the v2 delay infrustructure.");
+            var command = new Command("migrate", "Migrate in-flight delayed messages to the delay infrustructure v2.");
 
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
             var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
@@ -25,7 +25,7 @@
 
             command.AddOption(quietModeOption);
 
-            command.SetHandler(async (RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool useDurableEntities, bool quietMode, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool quietMode, IConsole console, CancellationToken cancellationToken) =>
             {
                 var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
 
