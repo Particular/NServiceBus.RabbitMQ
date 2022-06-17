@@ -18,7 +18,7 @@
 
             CreateExchange(endpointName);
 
-            var ex = Assert.ThrowsAsync<OperationInterruptedException>(async () => await ExecuteMigration(endpointName));
+            var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
 
             StringAssert.Contains(endpointName, ex.Message);
         }
