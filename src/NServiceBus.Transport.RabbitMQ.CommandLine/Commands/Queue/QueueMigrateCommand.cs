@@ -57,7 +57,7 @@
                         migrationState.CurrentStage = DeleteMainQueue(connection);
                         break;
                     case MigrationStage.ClassicQueueDeleted:
-                        migrationStage.CurrentStage = CreateMainQueueAsQuorum(connection);
+                        migrationState.CurrentStage = CreateMainQueueAsQuorum(connection);
                         break;
                     case MigrationStage.QuorumQueueCreated:
                         migrationState.CurrentStage = RestoreMessages(connection, cancellationToken);
@@ -124,7 +124,7 @@
             return MigrationStage.ClassicQueueDeleted;
         }
 
-        void CreateMainQueueAsQuorum(IConnection connection)
+        MigrationStage CreateMainQueueAsQuorum(IConnection connection)
         {
             using var channel = connection.CreateModel();
 

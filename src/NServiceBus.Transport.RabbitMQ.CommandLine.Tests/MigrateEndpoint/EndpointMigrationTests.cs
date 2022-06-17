@@ -24,19 +24,6 @@
         }
 
         [Test]
-        public void Should_blow_up_when_endpoint_queue_already_is_quorum()
-        {
-            var endpointName = "EndpointThatIsAlreadyMigrated";
-
-            CreateExchange(endpointName);
-            CreateQueue(endpointName, quorum: true);
-
-            var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
-
-            StringAssert.Contains(endpointName, ex.Message);
-        }
-
-        [Test]
         public void Should_blow_up_when_no_default_exchange_exists()
         {
             var endpointName = "EndpointWithNoDefaultExchange";
