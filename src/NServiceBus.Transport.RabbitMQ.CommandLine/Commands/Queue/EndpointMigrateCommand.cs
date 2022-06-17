@@ -42,51 +42,39 @@
         {
             console.WriteLine($"Starting migration of '{queueName}'");
 
-            using (var connection = connectionFactory.CreateAdministrationConnection())
+            using var connection = connectionFactory.CreateAdministrationConnection();
+
+            migrationState.SetInitialMigrationStage(queueName, holdingQueueName, connection);
+
+            while (migrationState.CurrentStage != MigrationStage.Complete)
             {
-                migrationState.SetInitialMigrationStage(queueName, holdingQueueName, connection);
-
-                using (var channel = connection.CreateModel())
+                switch (migrationState.CurrentStage)
                 {
-                    // Migrate to holding queue, delete main queue.
-                    if (migrationState.CurrentStage == MigrationStage.MoveToHoldingQueue)
-                    {
-                        MigrateMessagesToHoldingQueue(channel, cancellationToken);
-
-                        migrationState.CurrentStage = MigrationStage.DeleteMainQueue;
-                    }
-
-                    if (migrationState.CurrentStage == MigrationStage.DeleteMainQueue)
-                    {
-                        DeleteMainQueue(channel);
-                        migrationState.CurrentStage = MigrationStage.ReCreateMainQueue;
-                    }
-
-                    // Create main queue as quorum
-                    if (migrationState.CurrentStage == MigrationStage.ReCreateMainQueue)
-                    {
-                        CreateMainQueueAsQuorum(channel);
-                        migrationState.CurrentStage = MigrationStage.MoveToMainQueue;
-                    }
-                }
-
-                if (migrationState.CurrentStage == MigrationStage.MoveToMainQueue)
-                {
-                    // Due to https://github.com/rabbitmq/rabbitmq-server/issues/4976 we need to use a separate channel to move
-                    // the messages back to the main queue again.
-                    using (var channel = connection.CreateModel())
-                    {
-                        // Restore messages from holding queue to main queue.
-                        RestoreMessages(channel, cancellationToken);
-                    }
+                    case MigrationStage.Starting:
+                        migrationState.CurrentStage = MoveMessagesToHoldingQueue(connection, cancellationToken);
+                        break;
+                    case MigrationStage.MessagesMovedToHoldingQueue:
+                        migrationState.CurrentStage = DeleteMainQueue(connection);
+                        break;
+                    case MigrationStage.ClassicQueueDeleted:
+                        migrationStage.CurrentStage = CreateMainQueueAsQuorum(connection);
+                        break;
+                    case MigrationStage.QuorumQueueCreated:
+                        migrationState.CurrentStage = RestoreMessages(connection, cancellationToken);
+                        break;
+                    case MigrationStage.Complete:
+                    default:
+                        break;
                 }
             }
 
             return Task.CompletedTask;
         }
 
-        void MigrateMessagesToHoldingQueue(IModel channel, CancellationToken cancellationToken)
+        MigrationStage MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
+            using var channel = connection.CreateModel();
+
             console.WriteLine($"Migrating main queue messages to holding queue");
 
             // does the holding queue need to be quorum?
@@ -116,10 +104,14 @@
                 cancellationToken);
 
             console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
+
+            return MigrationStage.MessagesMovedToHoldingQueue;
         }
 
-        void DeleteMainQueue(IModel channel)
+        MigrationStage DeleteMainQueue(IConnection connection)
         {
+            using var channel = connection.CreateModel();
+
             if (channel.MessageCount(queueName) > 0)
             {
                 throw new Exception($"Queue '{queueName}' is not empty after message processing. This can occur if messages are being published directly to the queue during the migration process.");
@@ -128,10 +120,13 @@
             // delete the queue under migration
             channel.QueueDelete(queueName);
             console.WriteLine($"Main queue removed");
+
+            return MigrationStage.ClassicQueueDeleted;
         }
 
-        void CreateMainQueueAsQuorum(IModel channel)
+        void CreateMainQueueAsQuorum(IConnection connection)
         {
+            using var channel = connection.CreateModel();
 
             channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
             console.WriteLine($"Main queue recreated as a quorum queue");
@@ -141,10 +136,14 @@
 
             channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
             console.WriteLine($"Holding queue unbound from main queue's exchange");
+
+            return MigrationStage.QuorumQueueCreated;
         }
 
-        void RestoreMessages(IModel channel, CancellationToken cancellationToken)
+        MigrationStage RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
+            using var channel = connection.CreateModel();
+
             var messageIds = new Dictionary<string, string>();
 
             // move all messages in the holding queue back to the main queue
@@ -181,6 +180,8 @@
 
             channel.QueueDelete(holdingQueueName);
             console.WriteLine($"Holding queue removed");
+
+            return MigrationStage.Complete;
         }
 
         uint ProcessMessages(IModel channel, string sourceQueue, Action<BasicGetResult> onMoveMessage, CancellationToken cancellationToken)
@@ -218,10 +219,10 @@
 
         enum MigrationStage
         {
-            MoveToHoldingQueue,
-            DeleteMainQueue,
-            ReCreateMainQueue,
-            MoveToMainQueue,
+            Starting,
+            MessagesMovedToHoldingQueue,
+            ClassicQueueDeleted,
+            QuorumQueueCreated,
             Complete
         }
 
@@ -242,32 +243,32 @@
                 {
                     if (holdingQueueHasMessages)
                     {
-                        CurrentStage = MigrationStage.MoveToMainQueue;
+                        CurrentStage = MigrationStage.QuorumQueueCreated;
                     }
                     else
                     {
-                        throw new Exception($"Queue '{queueName}' is already a quorum queue");
+                        CurrentStage = MigrationStage.Complete;
                     }
                 }
                 else
                 {
                     if (mainQueueHasMessages)
                     {
-                        CurrentStage = MigrationStage.MoveToHoldingQueue;
+                        CurrentStage = MigrationStage.Starting;
                     }
                     else if (holdingQueueHasMessages && mainQueueExists)
                     {
-                        CurrentStage = MigrationStage.DeleteMainQueue;
+                        CurrentStage = MigrationStage.MessagesMovedToHoldingQueue;
                     }
                     else if (holdingQueueHasMessages)
                     {
-                        CurrentStage = MigrationStage.ReCreateMainQueue;
+                        CurrentStage = MigrationStage.ClassicQueueDeleted;
                     }
                     else
                     {
                         if (mainQueueExists)
                         {
-                            CurrentStage = MigrationStage.MoveToHoldingQueue;
+                            CurrentStage = MigrationStage.Starting;
                         }
                         else
                         {
