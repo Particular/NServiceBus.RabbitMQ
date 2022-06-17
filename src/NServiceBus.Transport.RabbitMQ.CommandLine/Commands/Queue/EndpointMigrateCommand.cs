@@ -35,7 +35,7 @@
             this.connectionFactory = connectionFactory;
             this.console = console;
             holdingQueueName = $"{queueName}-migration-temp";
-            brokerState = new BrokerState();
+            migrationState = new MigrationState();
         }
 
         public Task Run(CancellationToken cancellationToken = default)
@@ -44,30 +44,33 @@
 
             using (var connection = connectionFactory.CreateAdministrationConnection())
             {
-                brokerState.SetState(queueName, holdingQueueName, connection);
-
-                Validate();
+                migrationState.SetInitialMigrationStage(queueName, holdingQueueName, connection);
 
                 using (var channel = connection.CreateModel())
                 {
-                    if (brokerState.MainQueueExists && !brokerState.MainQueueIsQuorum)
+                    // Migrate to holding queue, delete main queue.
+                    if (migrationState.CurrentStage == MigrationStage.MoveToHoldingQueue)
                     {
                         MigrateMessagesToHoldingQueue(channel, cancellationToken);
-                        DeleteMainQueue(channel);
+
+                        migrationState.CurrentStage = MigrationStage.CreateMainQueue;
                     }
 
-                    if (!brokerState.MainQueueExists)
+                    // Create main queue as quorum
+                    if (migrationState.CurrentStage == MigrationStage.CreateMainQueue)
                     {
                         CreateMainQueueAsQuorum(channel);
+                        migrationState.CurrentStage = MigrationStage.MoveToMainQueue;
                     }
                 }
 
-                if (brokerState.MainQueueIsQuorum && brokerState.HoldingQueueHasMessages)
+                if (migrationState.CurrentStage == MigrationStage.MoveToMainQueue)
                 {
                     // Due to https://github.com/rabbitmq/rabbitmq-server/issues/4976 we need to use a separate channel to move
                     // the messages back to the main queue again.
                     using (var channel = connection.CreateModel())
                     {
+                        // Restore messages from holding queue to main queue.
                         RestoreMessages(channel, cancellationToken);
                     }
                 }
@@ -75,25 +78,6 @@
 
             return Task.CompletedTask;
         }
-
-        void Validate()
-        {
-            if (!brokerState.ExchangeExists)
-            {
-                throw new NotSupportedException($"'{queueName}' exchange not found. Quorum queue migration is only supports the conventional routing topology.");
-            }
-
-            if (!brokerState.MainQueueExists && !brokerState.HoldingQueueExists)
-            {
-                throw new Exception($"Queue '{queueName}' was not found");
-            }
-
-            if (brokerState.MainQueueIsQuorum && !brokerState.HoldingQueueHasMessages)
-            {
-                throw new Exception($"Queue '{queueName}' is already a quorum queue");
-            }
-        }
-
 
         void MigrateMessagesToHoldingQueue(IModel channel, CancellationToken cancellationToken)
         {
@@ -112,8 +96,6 @@
             channel.QueueUnbind(queueName, queueName, emptyRoutingKey);
             console.WriteLine($"Main queue unbound from exchange");
 
-            brokerState.HoldingQueueExists = true;
-
             // move all existing messages to the holding queue
             channel.ConfirmSelect();
 
@@ -124,14 +106,13 @@
                 {
                     channel.BasicPublish(emptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
-                    brokerState.HoldingQueueHasMessages = true;
                 },
                 cancellationToken);
 
             console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
         }
 
-        void DeleteMainQueue(IModel channel)
+        void CreateMainQueueAsQuorum(IModel channel)
         {
             if (channel.MessageCount(queueName) > 0)
             {
@@ -140,17 +121,8 @@
 
             // delete the queue under migration
             channel.QueueDelete(queueName);
-
-            brokerState.MainQueueExists = false;
-            brokerState.MainQueueIsQuorum = false;
-            brokerState.MainQueueHasMessages = false;
-
             console.WriteLine($"Main queue removed");
-        }
 
-        void CreateMainQueueAsQuorum(IModel channel)
-        {
-            // recreate the queue
             channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
             console.WriteLine($"Main queue recreated as a quorum queue");
 
@@ -159,9 +131,6 @@
 
             channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
             console.WriteLine($"Holding queue unbound from main queue's exchange");
-
-            brokerState.MainQueueExists = true;
-            brokerState.MainQueueIsQuorum = true;
         }
 
         void RestoreMessages(IModel channel, CancellationToken cancellationToken)
@@ -190,7 +159,6 @@
 
                     channel.BasicPublish(emptyRoutingKey, queueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
-                    brokerState.MainQueueHasMessages = true;
 
                     if (messageIdString != null)
                     {
@@ -202,9 +170,6 @@
             console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
 
             channel.QueueDelete(holdingQueueName);
-            brokerState.HoldingQueueExists = false;
-            brokerState.HoldingQueueHasMessages = false;
-
             console.WriteLine($"Holding queue removed");
         }
 
@@ -236,36 +201,78 @@
         readonly string holdingQueueName;
         readonly RabbitMQ.ConnectionFactory connectionFactory;
         readonly IConsole console;
-        BrokerState brokerState;
+        readonly MigrationState migrationState;
 
         static string emptyRoutingKey = string.Empty;
         static Dictionary<string, object> quorumQueueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
 
-        class BrokerState
+        enum MigrationStage
         {
-            public bool ExchangeExists { get; set; } = false;
-            public bool MainQueueExists { get; set; } = false;
-            public bool MainQueueHasMessages { get; set; } = false;
-            public bool MainQueueIsQuorum { get; set; } = false;
-            public bool HoldingQueueExists { get; set; } = false;
-            public bool HoldingQueueHasMessages { get; set; } = false;
+            MoveToHoldingQueue,
+            CreateMainQueue,
+            MoveToMainQueue,
+            Complete
+        }
 
-            public void SetState(string queueName, string holdingQueueName, IConnection connection)
+        class MigrationState
+        {
+            bool mainQueueExists = false;
+            bool mainQueueHasMessages = false;
+            bool mainQueueIsQuorum = false;
+            bool holdingQueueHasMessages = false;
+
+            public MigrationStage CurrentStage { get; set; }
+
+            public void SetInitialMigrationStage(string queueName, string holdingQueueName, IConnection connection)
+            {
+                SetBrokerState(queueName, holdingQueueName, connection);
+
+                if (mainQueueIsQuorum)
+                {
+                    if (holdingQueueHasMessages)
+                    {
+                        CurrentStage = MigrationStage.MoveToMainQueue;
+                    }
+                    else
+                    {
+                        throw new Exception($"Queue '{queueName}' is already a quorum queue");
+                    }
+                }
+                else
+                {
+                    if (mainQueueHasMessages)
+                    {
+                        CurrentStage = MigrationStage.MoveToHoldingQueue;
+                    }
+                    else if (holdingQueueHasMessages)
+                    {
+                        CurrentStage = MigrationStage.CreateMainQueue;
+                    }
+                    else
+                    {
+                        if (mainQueueExists)
+                        {
+                            CurrentStage = MigrationStage.MoveToHoldingQueue;
+                        }
+                        else
+                        {
+                            throw new Exception($"Queue '{queueName}' was not found");
+                        }
+                    }
+                }
+            }
+
+            void SetBrokerState(string queueName, string holdingQueueName, IConnection connection)
             {
                 var channel = connection.CreateModel();
 
-                // Make sure the queue exchange exists
                 try
                 {
                     channel.ExchangeDeclarePassive(queueName);
-                    ExchangeExists = true;
                 }
                 catch (OperationInterruptedException)
                 {
-                    channel.Close();
-                    channel.Dispose();
-
-                    channel = connection.CreateModel();
+                    throw new NotSupportedException($"'{queueName}' exchange not found. Quorum queue migration is only supports the conventional routing topology.");
                 }
 
                 try
@@ -273,11 +280,11 @@
                     // make sure that the queue exists
                     channel.QueueDeclarePassive(queueName);
 
-                    MainQueueExists = true;
-                    MainQueueHasMessages = channel.MessageCount(queueName) > 0;
+                    mainQueueExists = true;
+                    mainQueueHasMessages = channel.MessageCount(queueName) > 0;
 
                     channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
-                    MainQueueIsQuorum = true;
+                    mainQueueIsQuorum = true;
                 }
                 catch (OperationInterruptedException)
                 {
@@ -290,8 +297,7 @@
                 try
                 {
                     channel.QueueDeclarePassive(holdingQueueName);
-                    HoldingQueueExists = true;
-                    HoldingQueueHasMessages = channel.MessageCount(holdingQueueName) > 0;
+                    holdingQueueHasMessages = channel.MessageCount(holdingQueueName) > 0;
                 }
                 catch (OperationInterruptedException)
                 {
