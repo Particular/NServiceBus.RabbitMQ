@@ -53,11 +53,17 @@
                     {
                         MigrateMessagesToHoldingQueue(channel, cancellationToken);
 
-                        migrationState.CurrentStage = MigrationStage.CreateMainQueue;
+                        migrationState.CurrentStage = MigrationStage.DeleteMainQueue;
+                    }
+
+                    if (migrationState.CurrentStage == MigrationStage.DeleteMainQueue)
+                    {
+                        DeleteMainQueue(channel);
+                        migrationState.CurrentStage = MigrationStage.ReCreateMainQueue;
                     }
 
                     // Create main queue as quorum
-                    if (migrationState.CurrentStage == MigrationStage.CreateMainQueue)
+                    if (migrationState.CurrentStage == MigrationStage.ReCreateMainQueue)
                     {
                         CreateMainQueueAsQuorum(channel);
                         migrationState.CurrentStage = MigrationStage.MoveToMainQueue;
@@ -112,7 +118,7 @@
             console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
         }
 
-        void CreateMainQueueAsQuorum(IModel channel)
+        void DeleteMainQueue(IModel channel)
         {
             if (channel.MessageCount(queueName) > 0)
             {
@@ -122,6 +128,10 @@
             // delete the queue under migration
             channel.QueueDelete(queueName);
             console.WriteLine($"Main queue removed");
+        }
+
+        void CreateMainQueueAsQuorum(IModel channel)
+        {
 
             channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
             console.WriteLine($"Main queue recreated as a quorum queue");
@@ -209,7 +219,8 @@
         enum MigrationStage
         {
             MoveToHoldingQueue,
-            CreateMainQueue,
+            DeleteMainQueue,
+            ReCreateMainQueue,
             MoveToMainQueue,
             Complete
         }
@@ -244,9 +255,13 @@
                     {
                         CurrentStage = MigrationStage.MoveToHoldingQueue;
                     }
+                    else if (holdingQueueHasMessages && mainQueueExists)
+                    {
+                        CurrentStage = MigrationStage.DeleteMainQueue;
+                    }
                     else if (holdingQueueHasMessages)
                     {
-                        CurrentStage = MigrationStage.CreateMainQueue;
+                        CurrentStage = MigrationStage.ReCreateMainQueue;
                     }
                     else
                     {

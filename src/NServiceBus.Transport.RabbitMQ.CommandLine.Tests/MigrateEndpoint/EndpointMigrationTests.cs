@@ -134,6 +134,112 @@
             Assert.AreEqual(1, MessageCount(endpointName));
         }
 
+        [Test]
+        public async Task Should_succeeed_if_holding_queue_exists_with_messages()
+        {
+            var endpointName = "PartiallyMigratedEndpoint";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            var numExistingMessage = 5;
+            var expectedMessageCount = 10;
+
+            PrepareTestEndpoint(endpointName);
+            AddMessages(endpointName, numExistingMessage);
+
+            CreateQueue(holdingQueueName, quorum: true);
+            AddMessages(holdingQueueName, numExistingMessage);
+
+            await ExecuteMigration(endpointName);
+
+            Assert.AreEqual(expectedMessageCount, MessageCount(endpointName));
+        }
+
+        [Test]
+        public async Task Should_succeeed_if_main_queue_empty_holding_queue_exists_with_messages()
+        {
+            var endpointName = "PartiallyMigratedEndpoint_EmptyMain";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            var numExistingMessage = 5;
+
+            PrepareTestEndpoint(endpointName);
+
+            CreateQueue(holdingQueueName, quorum: true);
+            AddMessages(holdingQueueName, numExistingMessage);
+
+            await ExecuteMigration(endpointName);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
+        }
+
+        [Test]
+        public async Task Should_succeeed_if_main_queue_missing_holding_queue_exists_with_messages()
+        {
+            var endpointName = "PartiallyMigratedEndpoint_MissingMain";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            var numExistingMessage = 5;
+
+            CreateExchange(endpointName);
+
+            TryDeleteQueue(endpointName);
+
+            CreateQueue(holdingQueueName, quorum: true);
+            AddMessages(holdingQueueName, numExistingMessage);
+
+            await ExecuteMigration(endpointName);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
+        }
+
+        [Test]
+        public async Task Should_succeeed_if_empty_quorum_queue_exists_holding_queue_exists_with_messages()
+        {
+            var endpointName = "PartiallyMigratedEndpoint_EmptyQuorumMain";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            var numExistingMessage = 5;
+
+            CreateExchange(endpointName);
+
+            CreateQueue(endpointName, quorum: true);
+            CreateQueue(holdingQueueName, quorum: true);
+
+            AddMessages(holdingQueueName, numExistingMessage);
+
+            await ExecuteMigration(endpointName);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.AreEqual(numExistingMessage, MessageCount(endpointName));
+        }
+
+        [Test]
+        public async Task Should_succeeed_if_quorum_queue_exists_with_messages_holding_queue_exists_with_messages()
+        {
+            var endpointName = "PartiallyMigratedEndpoint_NotEmptyQuorumMain";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            var numExistingMessage = 5;
+            var expectedMessageCount = 10;
+
+            CreateExchange(endpointName);
+
+            CreateQueue(endpointName, quorum: true);
+
+            AddMessages(endpointName, numExistingMessage);
+
+            CreateQueue(holdingQueueName, quorum: true);
+
+            AddMessages(holdingQueueName, numExistingMessage);
+
+            await ExecuteMigration(endpointName);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.AreEqual(expectedMessageCount, MessageCount(endpointName));
+        }
+
         [SetUp]
         public void SetUp()
         {
