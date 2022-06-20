@@ -46,7 +46,7 @@
 
             migrationState.SetInitialMigrationStage(queueName, holdingQueueName, connection);
 
-            while (migrationState.CurrentStage != MigrationStage.Complete)
+            while (migrationState.CurrentStage != MigrationStage.CleanUpCompleted)
             {
                 switch (migrationState.CurrentStage)
                 {
@@ -62,7 +62,10 @@
                     case MigrationStage.QuorumQueueCreated:
                         migrationState.CurrentStage = RestoreMessages(connection, cancellationToken);
                         break;
-                    case MigrationStage.Complete:
+                    case MigrationStage.MessagesMovedToQuorumQueue:
+                        migrationState.CurrentStage = CleanUpHoldingQueue(connection, cancellationToken);
+                        break;
+                    case MigrationStage.CleanUpCompleted:
                     default:
                         break;
                 }
@@ -178,10 +181,22 @@
 
             console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
 
+            return MigrationStage.MessagesMovedToQuorumQueue;
+        }
+
+        MigrationStage CleanUpHoldingQueue(IConnection connection, CancellationToken cancellationToken)
+        {
+            using var channel = connection.CreateModel();
+
+            if (channel.MessageCount(holdingQueueName) != 0)
+            {
+                throw new Exception($"'{holdingQueueName}' is not empty was not deleted.");
+            }
+
             channel.QueueDelete(holdingQueueName);
             console.WriteLine($"Holding queue removed");
 
-            return MigrationStage.Complete;
+            return MigrationStage.CleanUpCompleted;
         }
 
         uint ProcessMessages(IModel channel, string sourceQueue, Action<BasicGetResult> onMoveMessage, CancellationToken cancellationToken)
@@ -223,7 +238,8 @@
             MessagesMovedToHoldingQueue,
             ClassicQueueDeleted,
             QuorumQueueCreated,
-            Complete
+            MessagesMovedToQuorumQueue,
+            CleanUpCompleted
         }
 
         class MigrationState
@@ -231,6 +247,7 @@
             bool mainQueueExists = false;
             bool mainQueueHasMessages = false;
             bool mainQueueIsQuorum = false;
+            bool holdingQueueExists = false;
             bool holdingQueueHasMessages = false;
 
             public MigrationStage CurrentStage { get; set; }
@@ -245,9 +262,13 @@
                     {
                         CurrentStage = MigrationStage.QuorumQueueCreated;
                     }
+                    else if (holdingQueueExists)
+                    {
+                        CurrentStage = MigrationStage.MessagesMovedToQuorumQueue;
+                    }
                     else
                     {
-                        CurrentStage = MigrationStage.Complete;
+                        CurrentStage = MigrationStage.CleanUpCompleted;
                     }
                 }
                 else
@@ -313,6 +334,9 @@
                 try
                 {
                     channel.QueueDeclarePassive(holdingQueueName);
+
+                    holdingQueueExists = true;
+
                     holdingQueueHasMessages = channel.MessageCount(holdingQueueName) > 0;
                 }
                 catch (OperationInterruptedException)

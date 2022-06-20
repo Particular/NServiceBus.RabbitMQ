@@ -9,7 +9,7 @@
     using NUnit.Framework;
 
     [TestFixture]
-    public class EndpointMigrationTests
+    public class QueueMigrateToQuorumTests
     {
         [Test]
         public void Should_blow_up_when_endpoint_queue_does_not_exist()
@@ -227,6 +227,23 @@
             Assert.AreEqual(expectedMessageCount, MessageCount(endpointName));
         }
 
+        [Test]
+        public async Task Should_succeeed_if_quorum_queue_exists_with_messages_holding_queue_empty()
+        {
+            var endpointName = "PartiallyMigratedEndpoint_QuorumMainEmptyHoldingQueue";
+            var holdingQueueName = GetHoldingQueueName(endpointName);
+
+            CreateExchange(endpointName);
+
+            CreateQueue(endpointName, quorum: true);
+            CreateQueue(holdingQueueName, quorum: true);
+
+            await ExecuteMigration(endpointName);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.False(QueueExists(holdingQueueName));
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -322,6 +339,8 @@
         {
             ExecuteBrokerCommand(channel =>
             {
+                channel.ConfirmSelect();
+
                 for (var i = 0; i < numMessages; i++)
                 {
                     var properties = channel.CreateBasicProperties();
@@ -329,6 +348,7 @@
                     modifications?.Invoke(properties);
 
                     channel.BasicPublish(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty);
+                    channel.WaitForConfirmsOrDie();
                 }
             });
         }
@@ -343,6 +363,26 @@
             });
 
             return messageCount;
+        }
+
+        bool QueueExists(string queueName)
+        {
+            bool queueExists = false;
+
+            ExecuteBrokerCommand(channel =>
+            {
+                try
+                {
+                    channel.QueueDeclarePassive(queueName);
+                    queueExists = true;
+                }
+                catch (OperationInterruptedException)
+                {
+                    queueExists = false;
+                }
+            });
+
+            return queueExists;
         }
 
         void ExecuteBrokerCommand(Action<IModel> command)
