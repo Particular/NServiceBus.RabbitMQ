@@ -78,20 +78,20 @@
         {
             using var channel = connection.CreateModel();
 
-            console.WriteLine($"Migrating main queue messages to holding queue");
+            console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
             // does the holding queue need to be quorum?
             channel.QueueDeclare(holdingQueueName, true, false, false, quorumQueueArguments);
-            console.WriteLine($"Holding queue created: '{holdingQueueName}'");
+            console.WriteLine($"Created queue '{holdingQueueName}'");
 
             // bind the holding queue to the exchange of the queue under migration
             // this will throw if the exchange for the queue doesn't exist
             channel.QueueBind(holdingQueueName, queueName, emptyRoutingKey);
-            console.WriteLine($"Holding queue bound to main queue's exchange");
+            console.WriteLine($"Bound '{holdingQueueName}' to exchange '{queueName}'");
 
             // unbind the queue under migration to stop more messages from coming in
             channel.QueueUnbind(queueName, queueName, emptyRoutingKey);
-            console.WriteLine($"Main queue unbound from exchange");
+            console.WriteLine($"Unbound '{queueName}' from exchange '{queueName}' ");
 
             // move all existing messages to the holding queue
             channel.ConfirmSelect();
@@ -106,7 +106,7 @@
                 },
                 cancellationToken);
 
-            console.WriteLine($"{numMessagesMovedToHolding} messages moved to the holding queue");
+            console.WriteLine($"Moved {numMessagesMovedToHolding} messages to '{holdingQueueName}'");
 
             return MigrationStage.MessagesMovedToHoldingQueue;
         }
@@ -122,7 +122,7 @@
 
             // delete the queue under migration
             channel.QueueDelete(queueName);
-            console.WriteLine($"Main queue removed");
+            console.WriteLine($"Removed '{queueName}'");
 
             return MigrationStage.ClassicQueueDeleted;
         }
@@ -132,13 +132,13 @@
             using var channel = connection.CreateModel();
 
             channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
-            console.WriteLine($"Main queue recreated as a quorum queue");
+            console.WriteLine($"Recreated '{queueName}' as a quorum queue");
 
             channel.QueueBind(queueName, queueName, emptyRoutingKey);
-            console.WriteLine($"Main queue re-bound to its exchange");
+            console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
 
             channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
-            console.WriteLine($"Holding queue unbound from main queue's exchange");
+            console.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
 
             return MigrationStage.QuorumQueueCreated;
         }
@@ -179,7 +179,7 @@
                 },
                 cancellationToken);
 
-            console.WriteLine($"{numMessageMovedBackToMain} messages moved back to main queue");
+            console.WriteLine($"Moved {numMessageMovedBackToMain} messages from '{holdingQueueName}' to '{queueName}'");
 
             return MigrationStage.MessagesMovedToQuorumQueue;
         }
@@ -190,11 +190,11 @@
 
             if (channel.MessageCount(holdingQueueName) != 0)
             {
-                throw new Exception($"'{holdingQueueName}' is not empty was not deleted.");
+                throw new Exception($"'{holdingQueueName}' is not empty and was not deleted.");
             }
 
             channel.QueueDelete(holdingQueueName);
-            console.WriteLine($"Holding queue removed");
+            console.WriteLine($"Removed '{holdingQueueName}'");
 
             return MigrationStage.CleanUpCompleted;
         }
@@ -309,7 +309,7 @@
                 }
                 catch (OperationInterruptedException)
                 {
-                    throw new NotSupportedException($"'{queueName}' exchange not found. Quorum queue migration is only supports the conventional routing topology.");
+                    throw new NotSupportedException($"'{queueName}' exchange was not found. Quorum queue migration only supports the conventional routing topology.");
                 }
 
                 try
