@@ -134,18 +134,18 @@
             channel.QueueDeclare(queueName, true, false, false, quorumQueueArguments);
             console.WriteLine($"Recreated '{queueName}' as a quorum queue");
 
-            channel.QueueBind(queueName, queueName, emptyRoutingKey);
-            console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
-
-            channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
-            console.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
-
             return MigrationStage.QuorumQueueCreated;
         }
 
         MigrationStage RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
             using var channel = connection.CreateModel();
+
+            channel.QueueBind(queueName, queueName, emptyRoutingKey);
+            console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
+
+            channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
+            console.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
 
             var messageIds = new Dictionary<string, string>();
 
