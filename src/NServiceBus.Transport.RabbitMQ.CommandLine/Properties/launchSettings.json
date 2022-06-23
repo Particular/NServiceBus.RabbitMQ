@@ -22,6 +22,11 @@
       "commandName": "Executable",
       "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
       "commandLineArgs": "endpoint create TestEndpoint"
+    },
+    "queue migrate": {
+      "commandName": "Executable",
+      "executablePath": ".\\NServiceBus.Transport.RabbitMQ.CommandLine.exe",
+      "commandLineArgs": "queue migrate-to-quorum Samples.RabbitMQ.SimpleReceiver -c host=localhost"
     }
   }
 }
