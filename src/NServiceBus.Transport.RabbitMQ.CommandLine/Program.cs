@@ -5,9 +5,9 @@ var rootCommand = new RootCommand("A .NET global tool to manage the RabbitMQ tra
 
 CreateDelaysCommand(rootCommand);
 CreateEndpointCommand(rootCommand);
+CreateQueueCommand(rootCommand);
 
 return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
-
 
 void CreateDelaysCommand(Command rootCommand)
 {
@@ -27,4 +27,13 @@ void CreateEndpointCommand(Command rootCommand)
     endpointSubCommand.AddCommand(EndpointCreateCommand.CreateCommand());
 
     rootCommand.AddCommand(endpointSubCommand);
+}
+
+void CreateQueueCommand(Command rootCommand)
+{
+    var queueSubCommand = new Command("queue", "A set of commands that provide functionality related to individual queues");
+
+    queueSubCommand.AddCommand(QueueMigrateCommand.CreateCommand());
+
+    rootCommand.AddCommand(queueSubCommand);
 }
