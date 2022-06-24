@@ -25,13 +25,12 @@
 
             command.AddOption(quietModeOption);
 
-            command.SetHandler(async (RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool quietMode, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (connectionFactory, routingTopology, quietMode, console, cancellationToken) =>
             {
                 var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
-
                 await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
-
-            }, connectionFactoryBinder, routingTopologyBinder, quietModeOption);
+            },
+            connectionFactoryBinder, routingTopologyBinder, quietModeOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
