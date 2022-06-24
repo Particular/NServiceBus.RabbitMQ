@@ -32,11 +32,12 @@
             command.AddOption(usernameOption);
             command.AddOption(passwordOption);
 
-            command.SetHandler(async (string url, string username, string password, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (url, username, password, console, cancellationToken) =>
             {
                 var delaysVerify = new DelaysVerifyCommand(url, username, password, console);
                 await delaysVerify.Run(cancellationToken).ConfigureAwait(false);
-            }, urlOption, usernameOption, passwordOption);
+            },
+            urlOption, usernameOption, passwordOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }

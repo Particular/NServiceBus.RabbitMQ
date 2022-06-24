@@ -10,12 +10,12 @@
 
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 
-            command.SetHandler(async (ConnectionFactory connectionFactory, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (connectionFactory, console, cancellationToken) =>
             {
                 var delaysCreate = new DelaysCreateCommand(connectionFactory, console);
                 await delaysCreate.Run(cancellationToken).ConfigureAwait(false);
-
-            }, connectionFactoryBinder);
+            },
+            connectionFactoryBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }

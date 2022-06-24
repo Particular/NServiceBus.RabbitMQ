@@ -20,11 +20,12 @@
 
             command.AddArgument(queueNameArgument);
 
-            command.SetHandler(async (string queueName, RabbitMQ.ConnectionFactory connectionFactory, bool useDurableEntities, IConsole console, CancellationToken cancellationToken) =>
+            command.SetHandler(async (queueName, connectionFactory, console, cancellationToken) =>
             {
                 var migrateCommand = new QueueMigrateCommand(queueName, connectionFactory, console);
                 await migrateCommand.Run(cancellationToken).ConfigureAwait(false);
-            }, queueNameArgument, connectionFactoryBinder);
+            },
+            queueNameArgument, connectionFactoryBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
