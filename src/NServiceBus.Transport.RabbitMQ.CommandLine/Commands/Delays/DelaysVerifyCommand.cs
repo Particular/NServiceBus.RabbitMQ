@@ -11,19 +11,19 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("verify", "Verify broker pre-requisites for using the delay infrastructure v2.");
+            var command = new Command("verify", "Verify broker requirements for using the delay infrastructure v2");
 
-            var urlOption = new Option<string>("--url", "Specifies the url to the RabbitMQ management api")
+            var urlOption = new Option<string>("--url", "The URL of the RabbitMQ management API")
             {
                 IsRequired = true
             };
 
-            var usernameOption = new Option<string>("--username", "Specifies the username for accessing the RabbitMQ management api")
+            var usernameOption = new Option<string>("--username", "The username for accessing the RabbitMQ management API")
             {
                 IsRequired = true
             };
 
-            var passwordOption = new Option<string>("--password", "Specifies the password for acessing the RabbitMQ management api")
+            var passwordOption = new Option<string>("--password", "The password for acessing the RabbitMQ management API")
             {
                 IsRequired = true
             };

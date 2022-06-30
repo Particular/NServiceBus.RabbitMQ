@@ -1,7 +1,7 @@
 ﻿using System.CommandLine;
 using NServiceBus.Transport.RabbitMQ.CommandLine;
 
-var rootCommand = new RootCommand("A .NET global tool to manage the RabbitMQ transport for NServiceBus endpoints");
+var rootCommand = new RootCommand("A tool to manage the RabbitMQ transport for NServiceBus endpoints");
 
 CreateDelaysCommand(rootCommand);
 CreateEndpointCommand(rootCommand);
@@ -11,7 +11,7 @@ return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
 
 void CreateDelaysCommand(Command rootCommand)
 {
-    var delaysSubCommand = new Command("delays", "A set of commands that provide functionality related to the delay infrastructure");
+    var delaysSubCommand = new Command("delays", "Commands to create and manage the queues and exchanges for the NServiceBus delay infrastructure");
 
     delaysSubCommand.AddCommand(DelaysCreateCommand.CreateCommand());
     delaysSubCommand.AddCommand(DelaysMigrateCommand.CreateCommand());
@@ -22,7 +22,7 @@ void CreateDelaysCommand(Command rootCommand)
 
 void CreateEndpointCommand(Command rootCommand)
 {
-    var endpointSubCommand = new Command("endpoint", "A set of commands that provide functionality related to endpoints");
+    var endpointSubCommand = new Command("endpoint", "Commands to manage the infrastructure for an NServiceBus endpoint");
 
     endpointSubCommand.AddCommand(EndpointCreateCommand.CreateCommand());
 
@@ -31,7 +31,7 @@ void CreateEndpointCommand(Command rootCommand)
 
 void CreateQueueCommand(Command rootCommand)
 {
-    var queueSubCommand = new Command("queue", "A set of commands that provide functionality related to individual queues");
+    var queueSubCommand = new Command("queue", "Commands to manage individual queues");
 
     queueSubCommand.AddCommand(QueueMigrateCommand.CreateCommand());
 

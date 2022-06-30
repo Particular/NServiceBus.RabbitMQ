@@ -11,23 +11,23 @@
 
         public static Command CreateCommand()
         {
-            var command = new Command("create", "Creates queues and exchanges for an endpoint based on a routing topology");
+            var command = new Command("create", "Creates queues and exchanges for an endpoint");
 
             var endpointNameArgument = new Argument<string>(
                 name: "endpointName",
-                description: "Specifies the name of the endpoint to create");
+                description: "The name of the endpoint to create");
 
             var errorQueueOption = new Option<string>(
                 name: "--errorQueueName",
-                description: "Specifies that an error queue with the specified name should be created");
+                description: "Also create an error queue with the specified name");
 
             var auditQueueOption = new Option<string>(
                 name: "--auditQueueName",
-                description: "Specifies that an audit queue with the specified name should be created");
+                description: "Also create an audit queue with the specified name");
 
             var instanceDiscriminatorsOption = new Option<IEnumerable<string>>(
                 name: "--instanceDiscriminators",
-                description: "Specifies a list of instance discriminators to use when the endpoint needs uniquely addressable instances")
+                description: "An optional list of instance discriminators to use when the endpoint needs uniquely addressable instances")
             {
                 Arity = ArgumentArity.ZeroOrMore,
                 AllowMultipleArgumentsPerToken = true

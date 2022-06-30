@@ -27,7 +27,7 @@
         }
 
         /// <summary>
-        /// Uses the conventional routing topology.
+        /// Use the conventional routing topology. This is the preferred setting for new projects.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="queueType">The type of queue that the endpoint should use.</param>
@@ -63,7 +63,7 @@
         }
 
         /// <summary>
-        /// Allows the user to control how the message ID is determined. Mostly useful when doing native integration with non-NSB endpoints.
+        /// Allows the user to control how the message ID is determined. Mostly useful when consuming native messages from non-NServiceBus endpoints.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="customIdStrategy">The user-defined strategy for giving the message a unique ID.</param>
@@ -79,7 +79,7 @@
         }
 
         /// <summary>
-        /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure when the message pump's connection to the broker is lost and cannot be recovered.
+        /// When the enpdoint cannot communicate with the broker, set how long to wait before triggering the endpoint shutdown procedure.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="waitTime">The time to wait before triggering the circuit breaker.</param>
@@ -94,10 +94,12 @@
         }
 
         /// <summary>
-        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
+        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count. The default value is 3.
+        /// Higher numbers will cause more messages to be received by the endpoint in a batch, but this is only valuable when message processing
+        /// times are so short that latency of fetching new messages from the server is the limiting factor.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
+        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation. The default value is 3.</param>
         public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -110,6 +112,8 @@
 
         /// <summary>
         /// Overrides the default prefetch count calculation with the specified value.
+        /// Higher numbers will cause more messages to be received by the endpoint in a batch, but this is only valuable when message processing
+        /// times are so short that latency of fetching new messages from the server is the limiting factor.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="prefetchCount">The prefetch count to use.</param>

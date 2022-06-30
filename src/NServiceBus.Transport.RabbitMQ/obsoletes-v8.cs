@@ -7,7 +7,7 @@ namespace NServiceBus
     public static partial class RabbitMQTransportSettingsExtensions
     {
         [ObsoleteEx(
-            Message = "Choosing a queue type is mandatory now.",
+            Message = "Choosing a queue type is mandatory.",
             ReplacementTypeOrMember = "UseConventionalRoutingTopology(QueueType queueType)",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "8")]
@@ -17,7 +17,7 @@ namespace NServiceBus
         }
 
         [ObsoleteEx(
-            Message = "Choosing a queue type is mandatory now.",
+            Message = "Choosing a queue type is mandatory.",
             ReplacementTypeOrMember = "UseDirectRoutingTopology(QueueType queueType, Func<Type, string> routingKeyConvention, Func<string> exchangeNameConvention)",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "8")]

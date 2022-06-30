@@ -10,7 +10,7 @@
         {
             var connectionStringOption = new Option<string>(
                 name: "--connectionString",
-                description: $"Force this command to use the specified connection string");
+                description: $"The RabbitMQ connection string. Takes precedence over a connection string provided in an environment variable.");
 
             connectionStringOption.AddAlias("-c");
 
@@ -21,7 +21,7 @@
         {
             var connectionStringEnvOption = new Option<string>(
                 name: "--connectionStringEnv",
-                description: $"Specifies the environment variable where the connection string can be found. --connectionString, if specified, will take precedence over this option.",
+                description: $"An environment variable that contains the RabbitMQ connection string",
                 getDefaultValue: () => ConnectionStringEnvironmentVariable);
 
             return connectionStringEnvOption;
@@ -31,7 +31,7 @@
         {
             var routingTopologyTypeOption = new Option<RoutingTopologyType>(
                 name: "--routingTopology",
-                description: $"Specifies which routing toplogy to use.",
+                description: $"The routing toplogy to use",
                 getDefaultValue: () => RoutingTopologyType.Conventional);
 
             routingTopologyTypeOption.AddAlias("-r");
@@ -55,7 +55,7 @@
         {
             var queueTypeOption = new Option<QueueType>(
                 name: "--queueType",
-                description: $"Specifies queue type will be used for queue creation",
+                description: $"The type of queue to create",
                 getDefaultValue: () => QueueType.Quorum);
 
             queueTypeOption.AddAlias("-t");
@@ -87,7 +87,7 @@
         {
             var certPathOption = new Option<string>(
             name: "--certPath",
-            description: $"Set the path to the client certificate file for connecting to the broker");
+            description: $"The path to the client certificate file for connecting to the broker");
 
             return certPathOption;
         }
@@ -96,7 +96,7 @@
         {
             var certPassphraseOption = new Option<string>(
             name: "--certPassphrase",
-            description: $"The passphrase for client certificate file for when using a client certificate");
+            description: $"The passphrase for the client certificate file when authenticating using certificates");
 
             return certPassphraseOption;
         }

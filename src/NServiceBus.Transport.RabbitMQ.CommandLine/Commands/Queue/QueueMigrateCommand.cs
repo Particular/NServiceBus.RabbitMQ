@@ -9,12 +9,12 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("migrate-to-quorum", "Migrate an existing classic queue to a quorum queue.");
+            var command = new Command("migrate-to-quorum", "Migrate an existing classic queue to a quorum queue");
 
             var queueNameArgument = new Argument<string>()
             {
                 Name = "queueName",
-                Description = "Specify the name of the queue to migrate"
+                Description = "The name of the classic queue to migrate to a quorum queue"
             };
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 

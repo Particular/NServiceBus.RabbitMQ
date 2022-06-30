@@ -30,14 +30,14 @@
         {
             _ = cancellationToken;
 
-            console.WriteLine($"Creating delay infrastructure v2..");
+            console.WriteLine($"Creating delay infrastructure v2 queues and exchanges...");
 
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
 
             DelayInfrastructure.Build(channel);
 
-            console.WriteLine("Delay infrastructure v2 created successfully");
+            console.WriteLine("Delay infrastructure v2 queues and exchanges created successfully");
 
             return Task.CompletedTask;
         }
