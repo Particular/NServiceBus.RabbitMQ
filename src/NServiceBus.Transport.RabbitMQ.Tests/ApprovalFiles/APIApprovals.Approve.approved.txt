@@ -26,13 +26,13 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetHeartbeatInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan heartbeatInterval) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetNetworkRecoveryInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan networkRecoveryInterval) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
-        [System.Obsolete("Choosing a queue type is mandatory now. Use `UseConventionalRoutingTopology(Queue" +
-            "Type queueType)` instead. The member currently throws a NotImplementedException." +
-            " Will be removed in version 8.0.0.", true)]
+        [System.Obsolete("Choosing a queue type is mandatory. Use `UseConventionalRoutingTopology(QueueType" +
+            " queueType)` instead. The member currently throws a NotImplementedException. Wil" +
+            "l be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
-        [System.Obsolete(@"Choosing a queue type is mandatory now. Use `UseDirectRoutingTopology(QueueType queueType, Func<Type, string> routingKeyConvention, Func<string> exchangeNameConvention)` instead. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
+        [System.Obsolete(@"Choosing a queue type is mandatory. Use `UseDirectRoutingTopology(QueueType queueType, Func<Type, string> routingKeyConvention, Func<string> exchangeNameConvention)` instead. The member currently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
