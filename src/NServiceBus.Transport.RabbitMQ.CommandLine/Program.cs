@@ -11,7 +11,7 @@ return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
 
 void CreateDelaysCommand(Command rootCommand)
 {
-    var delaysSubCommand = new Command("delays", "Commands to create and manage the queues and exchanges for the NServiceBus delay infrastructure");
+    var delaysSubCommand = new Command("delays", "Commands to manage the queues and exchanges for the NServiceBus delay infrastructure");
 
     delaysSubCommand.AddCommand(DelaysCreateCommand.CreateCommand());
     delaysSubCommand.AddCommand(DelaysMigrateCommand.CreateCommand());

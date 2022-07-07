@@ -27,7 +27,7 @@
         }
 
         /// <summary>
-        /// Use the conventional routing topology. This is the preferred setting for new projects.
+        /// Uses the conventional routing topology. This is the preferred setting for new projects.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="queueType">The type of queue that the endpoint should use.</param>
@@ -79,7 +79,7 @@
         }
 
         /// <summary>
-        /// When the enpdoint cannot communicate with the broker, set how long to wait before triggering the endpoint shutdown procedure.
+        /// Sets how long to wait before executing the critical error action when the endpoint cannot communicate with the broker.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="waitTime">The time to wait before triggering the circuit breaker.</param>
@@ -94,12 +94,10 @@
         }
 
         /// <summary>
-        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count. The default value is 3.
-        /// Higher numbers will cause more messages to be received by the endpoint in a batch, but this is only valuable when message processing
-        /// times are so short that latency of fetching new messages from the server is the limiting factor.
+        /// Specifies the multiplier to apply to the maximum concurrency value to calculate the prefetch count.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation. The default value is 3.</param>
+        /// <param name="prefetchMultiplier">The multiplier value to use in the prefetch calculation.</param>
         public static TransportExtensions<RabbitMQTransport> PrefetchMultiplier(this TransportExtensions<RabbitMQTransport> transportExtensions, int prefetchMultiplier)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -112,8 +110,6 @@
 
         /// <summary>
         /// Overrides the default prefetch count calculation with the specified value.
-        /// Higher numbers will cause more messages to be received by the endpoint in a batch, but this is only valuable when message processing
-        /// times are so short that latency of fetching new messages from the server is the limiting factor.
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="prefetchCount">The prefetch count to use.</param>

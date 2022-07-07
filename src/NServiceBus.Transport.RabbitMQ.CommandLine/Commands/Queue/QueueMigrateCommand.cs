@@ -16,6 +16,7 @@
                 Name = "queueName",
                 Description = "The name of the classic queue to migrate to a quorum queue"
             };
+
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 
             command.AddArgument(queueNameArgument);

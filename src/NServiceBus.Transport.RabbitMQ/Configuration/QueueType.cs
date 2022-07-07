@@ -1,17 +1,17 @@
 ﻿namespace NServiceBus
 {
     /// <summary>
-    /// Specifies what queues should be used by the endpoint. <see cref="QueueType.Quorum">Quorum</see> queues should be considered the default option for a replicated queue type.
+    /// The types of queues supported by the transport. Quorum queues should be considered the default option for a replicated queue type.
     /// </summary>
     public enum QueueType
     {
         /// <summary>
-        /// The original classic/mirrored RabbitMQ queues. These are provided for backward compatibility, but have weaknesses
-        /// compared to <see cref="QueueType.Quorum">Quorum</see> queues which make it less than ideal for replicated queues where reliability is key. 
+        /// The original type of queue provided by RabbitMQ. They should only be used when a non-replicated queue is desired.
         /// </summary>
         Classic,
+
         /// <summary>
-        /// Quorum queues provide additional safety and availability in RabbitMQ clusters. Should be considered the default option for a replicated queue type.
+        /// A queue that provides high availability via replication and focuses on data safety under network partition and failure scenarios.
         /// </summary>
         Quorum
     }

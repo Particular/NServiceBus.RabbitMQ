@@ -4,7 +4,7 @@
 
     static class SharedOptions
     {
-        const string ConnectionStringEnvironmentVariable = "RabbitMQTransport_ConnectionString";
+        const string connectionStringEnvironmentVariable = "RabbitMQTransport_ConnectionString";
 
         public static Option<string> CreateConnectionStringOption()
         {
@@ -21,8 +21,8 @@
         {
             var connectionStringEnvOption = new Option<string>(
                 name: "--connectionStringEnv",
-                description: $"An environment variable that contains the RabbitMQ connection string",
-                getDefaultValue: () => ConnectionStringEnvironmentVariable);
+                description: $"The environment variable that contains the RabbitMQ connection string",
+                getDefaultValue: () => connectionStringEnvironmentVariable);
 
             return connectionStringEnvOption;
         }
@@ -96,7 +96,7 @@
         {
             var certPassphraseOption = new Option<string>(
             name: "--certPassphrase",
-            description: $"The passphrase for the client certificate file when authenticating using certificates");
+            description: $"The passphrase for the client certificate file specified by the 'certPath' option");
 
             return certPassphraseOption;
         }

@@ -11,7 +11,7 @@
 
         public static Command CreateCommand()
         {
-            var command = new Command("create", "Creates queues and exchanges for an endpoint");
+            var command = new Command("create", "Create queues and exchanges for an endpoint");
 
             var endpointNameArgument = new Argument<string>(
                 name: "endpointName",
@@ -67,7 +67,7 @@
             using var connection = connectionFactory.CreateAdministrationConnection();
             using var channel = connection.CreateModel();
 
-            console.WriteLine("Checking for delay infrastructure v2");
+            console.WriteLine("Checking for v2 delay infrastructure");
 
             try
             {
@@ -75,7 +75,7 @@
             }
             catch (OperationInterruptedException)
             {
-                console.Error.Write("Fail: Delay infrastructure v2 not found.\n");
+                console.Error.Write("Fail: v2 delay infrastructure not found.\n");
                 throw;
             }
 

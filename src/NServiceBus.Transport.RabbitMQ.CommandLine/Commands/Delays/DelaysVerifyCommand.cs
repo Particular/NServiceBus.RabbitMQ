@@ -11,7 +11,7 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("verify", "Verify broker requirements for using the delay infrastructure v2");
+            var command = new Command("verify", "Verify broker requirements for using the v2 delay infrastructure");
 
             var urlOption = new Option<string>("--url", "The URL of the RabbitMQ management API")
             {
