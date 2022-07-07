@@ -7,7 +7,7 @@
     {
         /// <summary>
         /// The original classic/mirrored RabbitMQ queues. These are provided for backward compatibility, but have weaknesses
-        /// compared to <see cref="Quroum" /> queues which make it less than ideal for replicated queues where reliability is key. 
+        /// compared to <see cref="QueueType.Quorum">Quorum</see> queues which make it less than ideal for replicated queues where reliability is key. 
         /// </summary>
         Classic,
         /// <summary>
