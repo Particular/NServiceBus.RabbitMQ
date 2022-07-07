@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus
 {
     /// <summary>
-    /// Specifies what queues should be used by the endpoint. <see cref="Quorum" /> queues should be considered the default option for a replicated queue type.
+    /// Specifies what queues should be used by the endpoint. <see cref="QueueType.Quorum">Quorum</see> queues should be considered the default option for a replicated queue type.
     /// </summary>
     public enum QueueType
     {
