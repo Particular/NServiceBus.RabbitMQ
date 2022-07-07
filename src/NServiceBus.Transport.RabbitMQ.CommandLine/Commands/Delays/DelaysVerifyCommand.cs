@@ -61,24 +61,21 @@
 
             if (Version.TryParse(serverDetails.Overview?.ProductVersion, out var version) && version < Version.Parse("3.10.0"))
             {
-                console.WriteLine($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
-                return;
+                throw new Exception($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
             }
 
             var streamQueueState = serverDetails.FeatureFlags?.SingleOrDefault(fs => fs.Name == "stream_queue");
 
             if (streamQueueState == null || !streamQueueState.IsEnabled())
             {
-                console.WriteLine($"Fail: stream_queue feature flag is not enabled");
-                return;
+                throw new Exception($"Fail: stream_queue feature flag is not enabled");
             }
 
             var quorumQueueState = serverDetails.FeatureFlags?.SingleOrDefault(fs => fs.Name == "quorum_queue");
 
             if (quorumQueueState == null || !quorumQueueState.IsEnabled())
             {
-                console.WriteLine($"Fail: quorum_queue feature flag is not enabled");
-                return;
+                throw new Exception($"Fail: quorum_queue feature flag is not enabled");
             }
 
             console.WriteLine("All checks OK");
