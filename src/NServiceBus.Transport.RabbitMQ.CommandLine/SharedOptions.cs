@@ -31,7 +31,7 @@
         {
             var routingTopologyTypeOption = new Option<RoutingTopologyType>(
                 name: "--routingTopology",
-                description: $"The routing toplogy to use",
+                description: $"The routing topology to use",
                 getDefaultValue: () => RoutingTopologyType.Conventional);
 
             routingTopologyTypeOption.AddAlias("-r");
@@ -58,7 +58,7 @@
                 description: $"The type of queue to create",
                 getDefaultValue: () => QueueType.Quorum);
 
-            queueTypeOption.AddAlias("-t");
+            queueTypeOption.AddAlias("-q");
 
             return queueTypeOption;
         }

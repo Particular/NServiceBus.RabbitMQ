@@ -20,26 +20,20 @@
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
             var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
 
-            var quietModeOption = new Option<bool>(name: "--Quiet", description: $"Disable console output while running");
-            quietModeOption.AddAlias("-q");
-
-            command.AddOption(quietModeOption);
-
-            command.SetHandler(async (connectionFactory, routingTopology, quietMode, console, cancellationToken) =>
+            command.SetHandler(async (connectionFactory, routingTopology, console, cancellationToken) =>
             {
-                var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, quietMode, console);
+                var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, console);
                 await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
             },
-            connectionFactoryBinder, routingTopologyBinder, quietModeOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            connectionFactoryBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
 
-        public DelaysMigrateCommand(RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, bool quietMode, IConsole console)
+        public DelaysMigrateCommand(RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
-            this.quietMode = quietMode;
             this.console = console;
         }
 
@@ -65,10 +59,7 @@
 
             if (messageCount > 0)
             {
-                if (!quietMode)
-                {
-                    console.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
-                }
+                console.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
 
                 int skippedMessages = 0;
                 int processedMessages = 0;
@@ -130,17 +121,11 @@
                     processedMessages++;
                 }
 
-                if (!quietMode)
-                {
-                    console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
-                }
+                console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
             }
             else
             {
-                if (!quietMode)
-                {
-                    console.WriteLine($"No messages to process at delay level {delayLevel:00}.");
-                }
+                console.WriteLine($"No messages to process at delay level {delayLevel:00}.");
             }
         }
 
@@ -171,7 +156,6 @@
 
         readonly RabbitMQ.ConnectionFactory connectionFactory;
         readonly IRoutingTopology routingTopology;
-        readonly bool quietMode;
         readonly IConsole console;
 
         bool poisonQueueCreated = false;

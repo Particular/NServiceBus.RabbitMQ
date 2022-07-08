@@ -23,7 +23,7 @@
                 IsRequired = true
             };
 
-            var passwordOption = new Option<string>("--password", "The password for acessing the RabbitMQ management API")
+            var passwordOption = new Option<string>("--password", "The password for accessing the RabbitMQ management API")
             {
                 IsRequired = true
             };
