@@ -15,7 +15,7 @@
 
         public static Command CreateCommand()
         {
-            var command = new Command("migrate", "Migrate in-flight delayed messages to the delay infrustructure v2.");
+            var command = new Command("migrate", "Migrate in-flight delayed messages from the v1 delay infrastructure to the v2 delay infrastructure");
 
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
             var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
