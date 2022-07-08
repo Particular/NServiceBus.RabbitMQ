@@ -31,7 +31,7 @@
         {
             var routingTopologyTypeOption = new Option<RoutingTopologyType>(
                 name: "--routingTopology",
-                description: $"The routing toplogy to use",
+                description: $"The routing topology to use",
                 getDefaultValue: () => RoutingTopologyType.Conventional);
 
             routingTopologyTypeOption.AddAlias("-r");
