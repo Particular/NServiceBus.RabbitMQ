@@ -11,19 +11,19 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("verify", "Verify broker pre-requisites for using the delay infrastructure v2.");
+            var command = new Command("verify", "Verify broker requirements for using the v2 delay infrastructure");
 
-            var urlOption = new Option<string>("--url", "Specifies the url to the RabbitMQ management api")
+            var urlOption = new Option<string>("--url", "The URL of the RabbitMQ management API")
             {
                 IsRequired = true
             };
 
-            var usernameOption = new Option<string>("--username", "Specifies the username for accessing the RabbitMQ management api")
+            var usernameOption = new Option<string>("--username", "The username for accessing the RabbitMQ management API")
             {
                 IsRequired = true
             };
 
-            var passwordOption = new Option<string>("--password", "Specifies the password for acessing the RabbitMQ management api")
+            var passwordOption = new Option<string>("--password", "The password for accessing the RabbitMQ management API")
             {
                 IsRequired = true
             };
@@ -61,24 +61,21 @@
 
             if (Version.TryParse(serverDetails.Overview?.ProductVersion, out var version) && version < Version.Parse("3.10.0"))
             {
-                console.WriteLine($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
-                return;
+                throw new Exception($"Fail: Detected broker version is {serverDetails.Overview.ProductVersion}, at least 3.10.0 is required");
             }
 
             var streamQueueState = serverDetails.FeatureFlags?.SingleOrDefault(fs => fs.Name == "stream_queue");
 
             if (streamQueueState == null || !streamQueueState.IsEnabled())
             {
-                console.WriteLine($"Fail: stream_queue feature flag is not enabled");
-                return;
+                throw new Exception($"Fail: stream_queue feature flag is not enabled");
             }
 
             var quorumQueueState = serverDetails.FeatureFlags?.SingleOrDefault(fs => fs.Name == "quorum_queue");
 
             if (quorumQueueState == null || !quorumQueueState.IsEnabled())
             {
-                console.WriteLine($"Fail: quorum_queue feature flag is not enabled");
-                return;
+                throw new Exception($"Fail: quorum_queue feature flag is not enabled");
             }
 
             console.WriteLine("All checks OK");
