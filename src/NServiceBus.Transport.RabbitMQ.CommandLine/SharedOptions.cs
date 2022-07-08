@@ -58,7 +58,7 @@
                 description: $"The type of queue to create",
                 getDefaultValue: () => QueueType.Quorum);
 
-            queueTypeOption.AddAlias("-t");
+            queueTypeOption.AddAlias("-q");
 
             return queueTypeOption;
         }
