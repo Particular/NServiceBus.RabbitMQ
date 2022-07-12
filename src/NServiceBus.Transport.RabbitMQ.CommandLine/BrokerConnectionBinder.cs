@@ -4,9 +4,9 @@
     using System.CommandLine.Binding;
     using System.Security.Cryptography.X509Certificates;
 
-    class ConnectionFactoryBinder : BinderBase<ConnectionFactory>
+    class BrokerConnectionBinder : BinderBase<BrokerConnection>
     {
-        public ConnectionFactoryBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> certPathOption, Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
+        public BrokerConnectionBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> certPathOption, Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
         {
             this.connectionStringOption = connectionStringOption;
             this.connectionStringEnvOption = connectionStringEnvOption;
@@ -16,7 +16,7 @@
             this.useExternalAuthOption = useExternalAuthOption;
         }
 
-        protected override ConnectionFactory GetBoundValue(BindingContext bindingContext)
+        protected override BrokerConnection GetBoundValue(BindingContext bindingContext)
         {
             var connectionStringOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption);
             var connectionStringEnvOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringEnvOption);
@@ -37,8 +37,9 @@
             }
 
             var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), new List<(string, int)>());
+            var brokerConnection = new BrokerConnection(connectionFactory);
 
-            return connectionFactory;
+            return brokerConnection;
         }
 
         string GetConnectionString(string? connectionString, string? connectionStringEnv)

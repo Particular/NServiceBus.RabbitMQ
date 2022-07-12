@@ -8,21 +8,21 @@
         {
             var command = new Command("create", "Create v2 delay infrastructure queues and exchanges");
 
-            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
+            var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
 
-            command.SetHandler(async (connectionFactory, console, cancellationToken) =>
+            command.SetHandler(async (brokerConnection, console, cancellationToken) =>
             {
-                var delaysCreate = new DelaysCreateCommand(connectionFactory, console);
+                var delaysCreate = new DelaysCreateCommand(brokerConnection, console);
                 await delaysCreate.Run(cancellationToken).ConfigureAwait(false);
             },
-            connectionFactoryBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            brokerConnectionBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
 
-        public DelaysCreateCommand(ConnectionFactory connectionFactory, IConsole console)
+        public DelaysCreateCommand(BrokerConnection brokerConnection, IConsole console)
         {
-            this.connectionFactory = connectionFactory;
+            this.brokerConnection = brokerConnection;
             this.console = console;
         }
 
@@ -30,7 +30,7 @@
         {
             console.WriteLine($"Creating v2 delay infrastructure queues and exchanges...");
 
-            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var connection = brokerConnection.Create();
             using var channel = connection.CreateModel();
 
             DelayInfrastructure.Build(channel);
@@ -40,7 +40,7 @@
             return Task.CompletedTask;
         }
 
-        readonly ConnectionFactory connectionFactory;
+        readonly BrokerConnection brokerConnection;
         readonly IConsole console;
     }
 }

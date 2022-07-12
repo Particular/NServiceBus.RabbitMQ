@@ -249,8 +249,11 @@
         {
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
-            connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", ConnectionConfiguration.Create(connectionString), null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
-            connection = connectionFactory.CreateAdministrationConnection();
+            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", ConnectionConfiguration.Create(connectionString), null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
+
+            brokerConnection = new BrokerConnection(connectionFactory);
+
+            connection = brokerConnection.Create();
         }
 
         [TearDown]
@@ -262,7 +265,7 @@
 
         Task ExecuteMigration(string endpointName)
         {
-            var migrationCommand = new QueueMigrateCommand(endpointName, connectionFactory, new TestConsole());
+            var migrationCommand = new QueueMigrateCommand(endpointName, brokerConnection, new TestConsole());
 
             return migrationCommand.Run();
         }
@@ -398,7 +401,7 @@
             return $"{endpointName}-migration-temp";
         }
 
-        RabbitMQ.ConnectionFactory connectionFactory;
+        BrokerConnection brokerConnection;
         IConnection connection;
     }
 }
