@@ -54,7 +54,7 @@
         }
 
         /// <summary>
-        /// Allows the user to control how the message ID is determined. Mostly useful when doing native integration with non-NSB endpoints.
+        /// Allows the user to control how the message ID is determined. Mostly useful when consuming native messages from non-NServiceBus endpoints.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
         /// <param name="customIdStrategy">The user-defined strategy for giving the message a unique ID.</param>
@@ -220,7 +220,7 @@
         }
 
         /// <summary>
-        /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure when the message pump's connection to the broker is lost and cannot be recovered.
+        /// Sets how long to wait before executing the critical error action when the endpoint cannot communicate with the broker.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
         /// <param name="waitTime">The time to wait before triggering the circuit breaker.</param>
@@ -239,7 +239,7 @@
         }
 
         /// <summary>
-        /// Uses the conventional routing topology.
+        /// Uses the conventional routing topology. This is the preferred setting for new projects.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
         /// <param name="queueType">The type of queue that the endpoint should use.</param>

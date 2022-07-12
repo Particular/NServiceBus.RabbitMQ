@@ -9,13 +9,14 @@
     {
         public static Command CreateCommand()
         {
-            var command = new Command("migrate-to-quorum", "Migrate an existing classic queue to a quorum queue.");
+            var command = new Command("migrate-to-quorum", "Migrate an existing classic queue to a quorum queue");
 
             var queueNameArgument = new Argument<string>()
             {
                 Name = "queueName",
-                Description = "Specify the name of the queue to migrate"
+                Description = "The name of the classic queue to migrate to a quorum queue"
             };
+
             var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
 
             command.AddArgument(queueNameArgument);
@@ -64,7 +65,7 @@
                         migrationState.CurrentStage = RestoreMessages(connection, cancellationToken);
                         break;
                     case MigrationStage.MessagesMovedToQuorumQueue:
-                        migrationState.CurrentStage = CleanUpHoldingQueue(connection, cancellationToken);
+                        migrationState.CurrentStage = CleanUpHoldingQueue(connection);
                         break;
                     case MigrationStage.CleanUpCompleted:
                     default:
@@ -118,7 +119,7 @@
 
             if (channel.MessageCount(queueName) > 0)
             {
-                throw new Exception($"Queue '{queueName}' is not empty after message processing. This can occur if messages are being published directly to the queue during the migration process.");
+                throw new Exception($"Queue '{queueName}' is not empty after message processing. This can occur if messages are being published directly to the queue during the migration process. Run the command again to retry message processing.");
             }
 
             // delete the queue under migration
@@ -185,13 +186,13 @@
             return MigrationStage.MessagesMovedToQuorumQueue;
         }
 
-        MigrationStage CleanUpHoldingQueue(IConnection connection, CancellationToken cancellationToken)
+        MigrationStage CleanUpHoldingQueue(IConnection connection)
         {
             using var channel = connection.CreateModel();
 
             if (channel.MessageCount(holdingQueueName) != 0)
             {
-                throw new Exception($"'{holdingQueueName}' is not empty and was not deleted.");
+                throw new Exception($"'{holdingQueueName}' is not empty and was not deleted. Run the command again to retry message processing.");
             }
 
             channel.QueueDelete(holdingQueueName);
