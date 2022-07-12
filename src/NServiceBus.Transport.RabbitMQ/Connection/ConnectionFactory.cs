@@ -8,6 +8,7 @@
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
+    using System.Text;
     using global::RabbitMQ.Client;
     using Logging;
     using Support;
@@ -15,6 +16,7 @@
     class ConnectionFactory
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(IConnection));
+        static readonly Version MinimumBrokerVersion = Version.Parse("3.10.0");
 
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
@@ -118,6 +120,8 @@
 
                 var connection = connectionFactory.CreateConnection(hostnames, connectionName);
 
+                CheckForMinimumBrokerVersion(connection);
+
                 connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
                 connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
 
@@ -132,6 +136,16 @@
                 };
 
                 return connection;
+            }
+        }
+
+        void CheckForMinimumBrokerVersion(IConnection connection)
+        {
+            var brokerVersionString = Encoding.UTF8.GetString((byte[])connection.ServerProperties["version"]);
+
+            if (Version.TryParse(brokerVersionString, out var brokerVersion) && brokerVersion < MinimumBrokerVersion)
+            {
+                throw new Exception($"An unsupported broker version was detected: {brokerVersion}. The broker must be at least version {MinimumBrokerVersion}.");
             }
         }
     }
