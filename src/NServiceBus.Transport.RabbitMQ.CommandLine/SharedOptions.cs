@@ -101,7 +101,7 @@
             return certPassphraseOption;
         }
 
-        public static ConnectionFactoryBinder CreateConnectionFactoryBinderWithOptions(Command command)
+        public static BrokerConnectionBinder CreateBrokerConnectionBinderWithOptions(Command command)
         {
             var connectionStringOption = CreateConnectionStringOption();
             var connectionStringEnvOption = CreateConnectionStringEnvOption();
@@ -117,7 +117,7 @@
             command.AddOption(disableCertVaidationOption);
             command.AddOption(useExternalAuthOption);
 
-            return new ConnectionFactoryBinder(connectionStringOption, connectionStringEnvOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
+            return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
         }
 
         public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)
