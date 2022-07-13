@@ -28,6 +28,7 @@
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\QueueType.cs" Link="Transport\QueueType.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\SettingsKeys.cs" Link="Transport\SettingsKeys.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Connection\ConnectionFactory.cs" Link="Transport\ConnectionFactory.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Connection\ConnectionExtensions.cs" Link="Transport\ConnectionExtensions.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\DelayedDelivery\DelayInfrastructure.cs" Link="Transport\DelayInfrastructure.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Routing\*.cs" Link="Transport\Routing\%(Filename)%(Extension)" />
   </ItemGroup>

@@ -5,7 +5,7 @@
 
     class EndpointCreateCommand
     {
-        readonly ConnectionFactory connectionFactory;
+        readonly BrokerConnection brokerConnection;
         readonly IRoutingTopology routingTopology;
         readonly IConsole console;
 
@@ -33,7 +33,7 @@
                 AllowMultipleArgumentsPerToken = true
             };
 
-            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
+            var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
             var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
 
             command.AddArgument(endpointNameArgument);
@@ -41,19 +41,19 @@
             command.AddOption(auditQueueOption);
             command.AddOption(instanceDiscriminatorsOption);
 
-            command.SetHandler(async (endpointName, errorQueue, auditQueue, instanceDiscriminators, connectionFactory, routingTopology, console, cancellationToken) =>
+            command.SetHandler(async (endpointName, errorQueue, auditQueue, instanceDiscriminators, brokerConnection, routingTopology, console, cancellationToken) =>
             {
-                var queueCreate = new EndpointCreateCommand(connectionFactory, routingTopology, console);
+                var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, console);
                 await queueCreate.Run(endpointName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken).ConfigureAwait(false);
             },
-            endpointNameArgument, errorQueueOption, auditQueueOption, instanceDiscriminatorsOption, connectionFactoryBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            endpointNameArgument, errorQueueOption, auditQueueOption, instanceDiscriminatorsOption, brokerConnectionBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
 
-        public EndpointCreateCommand(ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console)
+        public EndpointCreateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
         {
-            this.connectionFactory = connectionFactory;
+            this.brokerConnection = brokerConnection;
             this.routingTopology = routingTopology;
             this.console = console;
         }
@@ -64,7 +64,7 @@
 
             console.WriteLine("Connecting to broker");
 
-            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var connection = brokerConnection.Create();
             using var channel = connection.CreateModel();
 
             console.WriteLine("Checking for v2 delay infrastructure");

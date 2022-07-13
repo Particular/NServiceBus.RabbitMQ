@@ -17,24 +17,24 @@
                 Description = "The name of the classic queue to migrate to a quorum queue"
             };
 
-            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
+            var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
 
             command.AddArgument(queueNameArgument);
 
-            command.SetHandler(async (queueName, connectionFactory, console, cancellationToken) =>
+            command.SetHandler(async (queueName, brokerConnection, console, cancellationToken) =>
             {
-                var migrateCommand = new QueueMigrateCommand(queueName, connectionFactory, console);
+                var migrateCommand = new QueueMigrateCommand(queueName, brokerConnection, console);
                 await migrateCommand.Run(cancellationToken).ConfigureAwait(false);
             },
-            queueNameArgument, connectionFactoryBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            queueNameArgument, brokerConnectionBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
 
-        public QueueMigrateCommand(string queueName, RabbitMQ.ConnectionFactory connectionFactory, IConsole console)
+        public QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, IConsole console)
         {
             this.queueName = queueName;
-            this.connectionFactory = connectionFactory;
+            this.brokerConnection = brokerConnection;
             this.console = console;
             holdingQueueName = $"{queueName}-migration-temp";
             migrationState = new MigrationState();
@@ -44,7 +44,7 @@
         {
             console.WriteLine($"Starting migration of '{queueName}'");
 
-            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var connection = brokerConnection.Create();
 
             migrationState.SetInitialMigrationStage(queueName, holdingQueueName, connection);
 
@@ -227,7 +227,7 @@
 
         readonly string queueName;
         readonly string holdingQueueName;
-        readonly RabbitMQ.ConnectionFactory connectionFactory;
+        readonly BrokerConnection brokerConnection;
         readonly IConsole console;
         readonly MigrationState migrationState;
 
