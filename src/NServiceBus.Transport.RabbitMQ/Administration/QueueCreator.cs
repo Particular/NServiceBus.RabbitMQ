@@ -18,6 +18,8 @@
             using (var connection = connectionFactory.CreateAdministrationConnection())
             using (var channel = connection.CreateModel())
             {
+                connection.VerifyBrokerRequirements();
+
                 DelayInfrastructure.Build(channel);
 
                 routingTopology.Initialize(channel, queueBindings.ReceivingAddresses, queueBindings.SendingAddresses);
