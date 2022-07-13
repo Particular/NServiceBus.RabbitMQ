@@ -17,29 +17,29 @@
         {
             var command = new Command("migrate", "Migrate in-flight delayed messages from the v1 delay infrastructure to the v2 delay infrastructure");
 
-            var connectionFactoryBinder = SharedOptions.CreateConnectionFactoryBinderWithOptions(command);
+            var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
             var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
 
-            command.SetHandler(async (connectionFactory, routingTopology, console, cancellationToken) =>
+            command.SetHandler(async (brokerConnection, routingTopology, console, cancellationToken) =>
             {
-                var delaysMigrate = new DelaysMigrateCommand(connectionFactory, routingTopology, console);
+                var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, console);
                 await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
             },
-            connectionFactoryBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            brokerConnectionBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
 
-        public DelaysMigrateCommand(RabbitMQ.ConnectionFactory connectionFactory, IRoutingTopology routingTopology, IConsole console)
+        public DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
         {
-            this.connectionFactory = connectionFactory;
+            this.brokerConnection = brokerConnection;
             this.routingTopology = routingTopology;
             this.console = console;
         }
 
         public Task Run(CancellationToken cancellationToken = default)
         {
-            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var connection = brokerConnection.Create();
             using var channel = connection.CreateModel();
             channel.ConfirmSelect();
 
@@ -154,7 +154,7 @@
                 || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
         }
 
-        readonly RabbitMQ.ConnectionFactory connectionFactory;
+        readonly BrokerConnection brokerConnection;
         readonly IRoutingTopology routingTopology;
         readonly IConsole console;
 
