@@ -18,14 +18,23 @@
             var command = new Command("migrate", "Migrate in-flight delayed messages from the v1 delay infrastructure to the v2 delay infrastructure");
 
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
-            var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
 
-            command.SetHandler(async (brokerConnection, routingTopology, console, cancellationToken) =>
+            var routingTopologyTypeOption = SharedOptions.CreateRoutingTopologyTypeOption();
+            command.AddOption(routingTopologyTypeOption);
+
+            command.SetHandler(async (brokerConnection, routingTopologyType, console, cancellationToken) =>
             {
+                IRoutingTopology routingTopology = routingTopologyType switch
+                {
+                    RoutingTopologyType.Conventional => new ConventionalRoutingTopology(true, QueueType.Quorum),
+                    RoutingTopologyType.Direct => new DirectRoutingTopology(true, QueueType.Quorum),
+                    _ => throw new InvalidOperationException()
+                };
+
                 var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, console);
                 await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
             },
-            brokerConnectionBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            brokerConnectionBinder, routingTopologyTypeOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
             return command;
         }
