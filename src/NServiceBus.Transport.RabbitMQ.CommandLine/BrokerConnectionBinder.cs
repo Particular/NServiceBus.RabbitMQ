@@ -36,7 +36,7 @@
                 certificateCollection.Add(certificate);
             }
 
-            var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), new List<(string, int)>());
+            var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), new List<(string, int, bool)>());
             var brokerConnection = new BrokerConnection(connectionFactory);
 
             return brokerConnection;

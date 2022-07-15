@@ -21,7 +21,7 @@
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
 
-        internal List<(string, int)> additionalHosts = new List<(string, int)>();
+        readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = new();
 
         /// <summary>
         /// Creates new instance of the RabbitMQ transport.
@@ -130,13 +130,29 @@
         }
 
         /// <summary>
-        /// Adds a new node for use within a cluster.
+        /// Adds an additional cluster node that the endpoint can use to connect to the broker.
         /// </summary>
-        /// <param name="host">The hostname of the node.</param>
-        /// <param name="port">The port of the node.</param>
-        public void AddClusterNode(string host, int port = -1)
+        /// <param name="hostName">The hostname of the node.</param>
+        /// <param name="useTls">Indicates if the connection to the node should be secured with TLS.</param>
+        public void AddClusterNode(string hostName, bool useTls)
         {
-            additionalHosts.Add((host, port));
+            Guard.AgainstNullAndEmpty(nameof(hostName), hostName);
+
+            additionalClusterNodes.Add((hostName, -1, useTls));
+        }
+
+        /// <summary>
+        /// Adds an additional cluster node that the endpoint can use to connect to the broker.
+        /// </summary>
+        /// <param name="hostName">The hostname of the node.</param>
+        /// <param name="port">The port of the node.</param>
+        /// <param name="useTls">Indicates if the connection to the node should be secured with TLS.</param>
+        public void AddClusterNode(string hostName, int port, bool useTls)
+        {
+            Guard.AgainstNullAndEmpty(nameof(hostName), hostName);
+            Guard.AgainstNegativeAndZero(nameof(port), port);
+
+            additionalClusterNodes.Add((hostName, port, useTls));
         }
 
         /// <inheritdoc />
@@ -152,7 +168,7 @@
             }
 
             var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalHosts);
+                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalClusterNodes);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             channelProvider.CreateConnection();
