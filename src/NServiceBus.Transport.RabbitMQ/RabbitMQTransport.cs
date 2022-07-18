@@ -24,10 +24,10 @@
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = new();
 
         /// <summary>
-        /// Creates new instance of the RabbitMQ transport.
+        /// Creates a new instance of the RabbitMQ transport.
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
-        /// <param name="connectionString">Connection string.</param>
+        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
         public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
@@ -46,9 +46,8 @@
         internal IRoutingTopology RoutingTopology { get; set; }
 
         /// <summary>
-        ///     The strategy for deriving the message ID from the raw RabbitMQ message. Override in case of native integration when
-        ///     the sender
-        ///     of the message is not an NServiceBus endpoint.
+        /// The strategy for deriving the message ID from the raw RabbitMQ message. Override in case of native integration when
+        /// the sender of the message is not an NServiceBus endpoint.
         /// </summary>
         public Func<BasicDeliverEventArgs, string> MessageIdStrategy
         {
@@ -61,8 +60,7 @@
         }
 
         /// <summary>
-        ///     Time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure when the
-        ///     message pump's connection to the broker is lost and cannot be recovered.
+        /// The time to wait before executing the critical error action when the endpoint cannot communicate with the broker.
         /// </summary>
         public TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker
         {
@@ -75,8 +73,7 @@
         }
 
         /// <summary>
-        ///     The calculation method for prefetch count. By default 3 times the maximum concurrency value.
-        ///     The argument for the callback is the maximum concurrency. The result needs to be a positive integer value.
+        /// The calculation method for the prefetch count. The default is 3 times the maximum concurrency value.
         /// </summary>
         public PrefetchCountCalculation PrefetchCountCalculation
         {
@@ -89,22 +86,22 @@
         }
 
         /// <summary>
-        ///     The certificate to use for client authentication when connecting to the broker via TLS.
+        /// The certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         public X509Certificate2 ClientCertificate { get; set; }
 
         /// <summary>
-        ///     Should the client validate the broker certificate when connecting via TLS.
+        /// Should the client validate the broker certificate when connecting via TLS.
         /// </summary>
         public bool ValidateRemoteCertificate { get; set; } = true;
 
         /// <summary>
-        ///     Specifies if an external authentication mechanism should be used for client authentication.
+        /// Specifies if an external authentication mechanism should be used for client authentication.
         /// </summary>
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
-        ///     The interval for heartbeats between the endpoint and the broker.
+        /// The interval for heartbeats between the endpoint and the broker.
         /// </summary>
         public TimeSpan HeartbeatInterval
         {
@@ -117,7 +114,7 @@
         }
 
         /// <summary>
-        ///     The time to wait between attempts to reconnect to the broker if the connection is lost.
+        /// The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
         public TimeSpan NetworkRecoveryInterval
         {
