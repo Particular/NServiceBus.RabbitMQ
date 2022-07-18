@@ -4,9 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using System.Linq;
     using System.Net.Security;
-    using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
     using Logging;
@@ -18,10 +16,10 @@
 
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
-        readonly object lockObject = new object();
-        List<AmqpTcpEndpoint> hostnames;
+        readonly List<AmqpTcpEndpoint> endpoints = new();
+        readonly object lockObject = new();
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string, int)> additionalHostnames)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
         {
             if (endpointName is null)
             {
@@ -37,28 +35,14 @@
 
             connectionFactory = new global::RabbitMQ.Client.ConnectionFactory
             {
-                HostName = connectionConfiguration.Host,
-                Port = connectionConfiguration.Port,
                 VirtualHost = connectionConfiguration.VirtualHost,
                 UserName = connectionConfiguration.UserName,
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = heartbeatInterval,
                 NetworkRecoveryInterval = networkRecoveryInterval,
                 UseBackgroundThreadsForIO = true,
-                DispatchConsumersAsync = true
+                DispatchConsumersAsync = true,
             };
-
-            connectionFactory.Ssl.ServerName = connectionConfiguration.Host;
-            connectionFactory.Ssl.Certs = clientCertificateCollection;
-            connectionFactory.Ssl.Version = SslProtocols.Tls12;
-            connectionFactory.Ssl.Enabled = connectionConfiguration.UseTls;
-
-            if (disableRemoteCertificateValidation)
-            {
-                connectionFactory.Ssl.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateChainErrors |
-                                                               SslPolicyErrors.RemoteCertificateNameMismatch |
-                                                               SslPolicyErrors.RemoteCertificateNotAvailable;
-            }
 
             if (useExternalAuthMechanism)
             {
@@ -67,15 +51,38 @@
 
             SetClientProperties(endpointName, connectionConfiguration.UserName);
 
-            hostnames = new List<AmqpTcpEndpoint>
-            {
-                new AmqpTcpEndpoint(connectionConfiguration.Host, connectionConfiguration.Port, connectionFactory.Ssl)
-            };
+            var endpoint = CreateAmqpTcpEndpoint(connectionConfiguration.Host, connectionConfiguration.Port, connectionConfiguration.UseTls, clientCertificateCollection, disableRemoteCertificateValidation);
+            endpoints.Add(endpoint);
 
-            if (additionalHostnames?.Count > 0)
+            if (additionalClusterNodes?.Count > 0)
             {
-                hostnames.AddRange(additionalHostnames.Select(kv => new AmqpTcpEndpoint(kv.Item1, kv.Item2, connectionFactory.Ssl)));
+                foreach (var (hostName, port, useTls) in additionalClusterNodes)
+                {
+                    endpoint = CreateAmqpTcpEndpoint(hostName, port, useTls, clientCertificateCollection, disableRemoteCertificateValidation);
+                    endpoints.Add(endpoint);
+                }
             }
+        }
+
+        static AmqpTcpEndpoint CreateAmqpTcpEndpoint(string hostName, int port, bool useTls, X509Certificate2Collection certificateCollection, bool disableRemoteCertificateValidation)
+        {
+            var sslOption = new SslOption();
+
+            if (useTls)
+            {
+                sslOption.ServerName = hostName;
+                sslOption.Certs = certificateCollection;
+                sslOption.Enabled = useTls;
+
+                if (disableRemoteCertificateValidation)
+                {
+                    sslOption.AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateChainErrors |
+                                                       SslPolicyErrors.RemoteCertificateNameMismatch |
+                                                       SslPolicyErrors.RemoteCertificateNotAvailable;
+                }
+            }
+
+            return new AmqpTcpEndpoint(hostName, port, sslOption);
         }
 
         void SetClientProperties(string endpointName, string userName)
@@ -86,8 +93,7 @@
             var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
 
             var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionFactory).Assembly.Location);
-            var rabbitMQFileVersion =
-                $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
+            var rabbitMQFileVersion = $"{rabbitMQVersion.FileMajorPart}.{rabbitMQVersion.FileMinorPart}.{rabbitMQVersion.FileBuildPart}";
 
             var applicationNameAndPath = Environment.GetCommandLineArgs()[0];
             var applicationName = Path.GetFileName(applicationNameAndPath);
@@ -116,7 +122,7 @@
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
-                var connection = connectionFactory.CreateConnection(hostnames, connectionName);
+                var connection = connectionFactory.CreateConnection(endpoints, connectionName);
 
                 connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
                 connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);

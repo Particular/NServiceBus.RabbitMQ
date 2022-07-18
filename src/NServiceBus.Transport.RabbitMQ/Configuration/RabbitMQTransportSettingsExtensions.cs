@@ -28,6 +28,44 @@
         }
 
         /// <summary>
+        ///  Adds an additional cluster node that the endpoint can use to connect to the broker.
+        /// </summary>
+        /// <param name="transportExtensions">The transport settings.</param>
+        /// <param name="hostName">The hostname of the node.</param>
+        /// <param name="useTls">Indicates if the connection to the node should be secured with TLS.</param>
+        [PreObsolete(
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
+        public static TransportExtensions<RabbitMQTransport> AddClusterNode(this TransportExtensions<RabbitMQTransport> transportExtensions, string hostName, bool useTls)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+
+            transportExtensions.Transport.AddClusterNode(hostName, useTls);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Adds an additional cluster node that the endpoint can use to connect to the broker.
+        /// </summary>
+        /// <param name="transportExtensions">The transport settings.</param>
+        /// <param name="hostName">The hostname of the node.</param>
+        /// <param name="port">The port of the node.</param>
+        /// <param name="useTls">Indicates if the connection to the node should be secured with TLS.</param>
+        /// <returns></returns>
+        [PreObsolete(
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            TreatAsErrorFromVersion = "9",
+            RemoveInVersion = "10")]
+        public static TransportExtensions<RabbitMQTransport> AddClusterNode(this TransportExtensions<RabbitMQTransport> transportExtensions, string hostName, int port, bool useTls)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+
+            transportExtensions.Transport.AddClusterNode(hostName, port, useTls);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// The connection string to use when connecting to the broker.
         /// </summary>
         [PreObsolete(
