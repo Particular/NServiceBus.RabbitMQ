@@ -5,7 +5,7 @@
     /// <summary>
     /// Adds extension methods for the relevant ExtendableOptions classes.
     /// </summary>
-    public static class RabbitMQTransportOptionsExtensions
+    public static class NonPersistentDeliveryModeExtensions
     {
         /// <summary>
         /// Uses the non-persistent delivery mode to send the message.

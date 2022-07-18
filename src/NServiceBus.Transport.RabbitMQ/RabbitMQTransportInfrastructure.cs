@@ -27,8 +27,7 @@
                 .ToDictionary(x => x.Id, x => x);
         }
 
-        IMessageReceiver CreateMessagePump(HostSettings hostSettings, ReceiveSettings settings, MessageConverter messageConverter,
-            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
+        IMessageReceiver CreateMessagePump(HostSettings hostSettings, ReceiveSettings settings, MessageConverter messageConverter, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
             var receiveAddress = ToTransportAddress(settings.ReceiveAddress);

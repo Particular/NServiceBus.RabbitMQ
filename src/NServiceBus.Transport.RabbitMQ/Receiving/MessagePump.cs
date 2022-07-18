@@ -13,7 +13,8 @@
     sealed class MessagePump : IMessageReceiver, IDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
-        static readonly TransportTransaction TransportTransaction = new TransportTransaction();
+        static readonly TransportTransaction transportTransaction = new();
+
         readonly ReceiveSettings settings;
         readonly ConnectionFactory connectionFactory;
         readonly MessageConverter messageConverter;
@@ -390,7 +391,7 @@
 
                 try
                 {
-                    var messageContext = new MessageContext(messageId, headers, message.Body, TransportTransaction, ReceiveAddress, processingContext);
+                    var messageContext = new MessageContext(messageId, headers, message.Body, transportTransaction, ReceiveAddress, processingContext);
 
                     await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
                     processed = true;
@@ -400,7 +401,7 @@
                     ++numberOfDeliveryAttempts;
                     headers = messageConverter.RetrieveHeaders(message);
 
-                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, TransportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
+                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
                     try
                     {

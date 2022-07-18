@@ -12,7 +12,13 @@ namespace NServiceBus
             " NotImplementedException. Will be removed in version 9.0.0.", true)]
         public NServiceBus.DelayedDeliverySettings EnableTimeoutManager() { }
     }
-    public delegate int PrefetchCountCalculation(int maximumConcurrency);
+    public static class NonPersistentDeliveryModeExtensions
+    {
+        public static void UseNonPersistentDeliveryMode(this NServiceBus.PublishOptions options) { }
+        public static void UseNonPersistentDeliveryMode(this NServiceBus.ReplyOptions options) { }
+        public static void UseNonPersistentDeliveryMode(this NServiceBus.SendOptions options) { }
+    }
+    public delegate long PrefetchCountCalculation(int maximumConcurrency);
     public enum QueueType
     {
         Classic = 0,
@@ -39,18 +45,12 @@ namespace NServiceBus
             "0.0.", false)]
         public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
-    public static class RabbitMQTransportOptionsExtensions
-    {
-        public static void UseNonPersistentDeliveryMode(this NServiceBus.PublishOptions options) { }
-        public static void UseNonPersistentDeliveryMode(this NServiceBus.ReplyOptions options) { }
-        public static void UseNonPersistentDeliveryMode(this NServiceBus.SendOptions options) { }
-    }
     public static class RabbitMQTransportSettingsExtensions
     {
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> AddClusterNode(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string hostName, bool useTls) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> AddClusterNode(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string hostName, int port, bool useTls) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, System.Func<string> getConnectionString) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transport, string connectionString) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<string> getConnectionString) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string connectionString) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> CustomMessageIdStrategy(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> customIdStrategy) { }
         [System.Obsolete("The transport no longer has configurable settings for delayed delivery. The membe" +
             "r currently throws a NotImplementedException. Will be removed in version 9.0.0.", true)]
