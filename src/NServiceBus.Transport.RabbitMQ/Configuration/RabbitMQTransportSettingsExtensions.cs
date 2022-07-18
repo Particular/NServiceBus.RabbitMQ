@@ -18,6 +18,8 @@
             ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)")]
         public static TransportExtensions<RabbitMQTransport> UseTransport<T>(this EndpointConfiguration config) where T : RabbitMQTransport
         {
+            Guard.AgainstNull(nameof(config), config);
+
             var transport = new RabbitMQTransport();
 
             var routing = config.UseTransport(transport);
@@ -72,10 +74,13 @@
             Message = "The configuration has been moved to RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-        public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transport, string connectionString)
+        public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transportExtensions, string connectionString)
         {
-            transport.Transport.LegacyApiConnectionString = connectionString;
-            return transport;
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+
+            transportExtensions.Transport.LegacyApiConnectionString = connectionString;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -85,10 +90,13 @@
             Message = "The configuration has been moved to RabbitMQTransport class.",
             TreatAsErrorFromVersion = "9",
             RemoveInVersion = "10")]
-        public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transport, Func<string> getConnectionString)
+        public static TransportExtensions<RabbitMQTransport> ConnectionString(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<string> getConnectionString)
         {
-            transport.Transport.LegacyApiConnectionString = getConnectionString();
-            return transport;
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNull(nameof(getConnectionString), getConnectionString);
+
+            transportExtensions.Transport.LegacyApiConnectionString = getConnectionString();
+            return transportExtensions;
         }
 
         /// <summary>
