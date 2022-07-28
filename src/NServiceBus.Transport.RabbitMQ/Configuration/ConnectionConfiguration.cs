@@ -172,7 +172,7 @@
 
                 if (hostsAndPorts.Length > 1)
                 {
-                    invalidOptionsMessage.AppendLine("Multiple hosts are no longer supported. If using RabbitMQ in a cluster, consider using a load balancer to represent the nodes as a single host.");
+                    invalidOptionsMessage.AppendLine("Multiple hosts are no longer supported in the connection string. Use 'EndpointConfiguration.UseTransport<RabbitMQTransport>().AddClusterNode' instead.");
                 }
             }
 
