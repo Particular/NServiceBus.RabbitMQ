@@ -132,7 +132,6 @@
                 ConnectionConfiguration.Create(connectionString));
 
             Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
-            Assert.That(exception.Message, Does.Contain("consider using a load balancer"));
             Assert.That(exception.Message, Does.Contain("Empty host name in 'host' connection string option."));
             Assert.That(exception.Message, Does.Contain("'notaport1' is not a valid Int32 value for the port in the 'host' connection string option."));
             Assert.That(exception.Message, Does.Contain("'notaport2' is not a valid Int32 value for the 'port' connection string option."));
