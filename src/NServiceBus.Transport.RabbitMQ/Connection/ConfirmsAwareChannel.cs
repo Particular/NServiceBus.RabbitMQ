@@ -66,10 +66,7 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             var task = GetConfirmationTask(cancellationToken);
 
-            if (properties.Headers == null)
-            {
-                properties.Headers = new Dictionary<string, object>();
-            }
+            properties.Headers ??= new Dictionary<string, object>();
 
             properties.SetConfirmationId(channel.NextPublishSeqNo);
 
