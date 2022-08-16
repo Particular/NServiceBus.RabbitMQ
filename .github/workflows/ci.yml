@@ -3,10 +3,8 @@ on:
   push:
     branches:
       - master
-      - release-[6-9].*
+      - release-*
   pull_request:
-    branches-ignore:
-      - release-[0-5].*
   workflow_dispatch:
 env:
   DOTNET_NOLOGO: true
@@ -48,7 +46,7 @@ jobs:
           path: nugets/
           retention-days: 7
       - name: Azure login
-        uses: azure/login@v1.4.4
+        uses: azure/login@v1.4.5
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
