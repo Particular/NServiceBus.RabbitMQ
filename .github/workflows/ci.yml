@@ -66,7 +66,7 @@ jobs:
         uses: Particular/setup-rabbitmq-action@v1.2.0
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
-          tag: NServiceBus.RabbitMQ
+          tag: RabbitMQTransport
       - name: Run tests
         uses: Particular/run-tests-action@v1.3.0
         with:
