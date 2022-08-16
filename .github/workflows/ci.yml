@@ -3,13 +3,9 @@ on:
   push:
     branches:
       - master
-      - release-[6-9].*
+      - release-*
   pull_request:
-    branches-ignore:
-      - release-[0-5].*
   pull_request_target:
-    branches-ignore:
-      - release-[0-5].*
   workflow_dispatch:
 env:
   DOTNET_NOLOGO: true
@@ -37,17 +33,17 @@ jobs:
         run: exit $(If ($env:SECRETS_AVAILABLE -eq 'true') { 0 } Else { 1 })
       - name: Checkout
         if: github.event_name != 'pull_request_target'
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.2
         with:
           fetch-depth: 0
       - name: Checkout for Dependabot
         if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3.0.2
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
           fetch-depth: 0
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v1.9.0
+        uses: actions/setup-dotnet@v2.1.0
         with:
           dotnet-version: |
             6.0.x
@@ -56,82 +52,22 @@ jobs:
         run: dotnet build src --configuration Release
       - name: Upload packages
         if: matrix.name == 'Windows'
-        uses: actions/upload-artifact@v2.2.2
+        uses: actions/upload-artifact@v3.1.0
         with:
           name: NuGet packages
           path: nugets/
           retention-days: 7
       - name: Azure login
-        uses: azure/login@v1.3.0
+        uses: azure/login@v1.4.5
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
       - name: Setup RabbitMQ
-        id: setup-rabbitmq
-        shell: pwsh
-        run: |
-          $hostInfo = curl -H Metadata:true "169.254.169.254/metadata/instance?api-version=2017-08-01" | ConvertFrom-Json
-          $region = $hostInfo.compute.location
-          $hostname = "psw-rabbitmq-$(Get-Random)"
-
-          echo "::set-output name=hostname::$hostname"
-          echo "Creating RabbitMQ container $hostname in $region (This can take a while.)"
-
-          $jsonResult = az container create --image rabbitmq:3-management --name $hostname --location $region --dns-name-label $hostname --resource-group GitHubActions-RG --cpu 4 --memory 16 --ports 5672 15672 --ip-address public
-
-          if(!$jsonResult)
-          {
-            Write-Output "Failed to create RabbitMQ container"
-            exit 1;
-          }
-
-          $details = $jsonResult | ConvertFrom-Json
-
-          if (!$details.ipAddress) {
-            Write-Output "Failed to create RabbitMQ container $hostname in $region"
-            Write-Output $jsonResult
-            exit 1;
-          }
-
-          $ip=$details.ipAddress.ip
-
-          echo "::add-mask::$ip"
-          echo "Tagging container image"
-
-          $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
-          $ignore = az tag create --resource-id $details.id --tags Package=RabbitMQTransport RunnerOS=${{ runner.os }} $dateTag
-
-          echo "RabbitMQTransport_ConnectionString=host=$ip" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
-         
-          $uri = "http://" + $ip + ":15672/api/health/checks/virtual-hosts"
-          $tries = 0
-
-          do
-          {
-            $response = curl $uri -u guest:guest | ConvertFrom-Json
-            $tries++
-
-            if(!$response.status)
-            {
-              Write-Output "No response, retrying..."
-              Start-Sleep -m 5000
-            }
-          } until (($response.status) -or ($tries -ge 20))
-
-          if($response.status -ne "ok")
-          {
-            Write-Output "Failed to connect after 10 attempts";
-
-            Write-Output 
-            exit 1
-          }
+        uses: Particular/setup-rabbitmq-action@v1.2.0
+        with:
+          connection-string-name: RabbitMQTransport_ConnectionString
+          tag: NServiceBus.RabbitMQ
       - name: Run tests
-        uses: Particular/run-tests-action@v1.0.0
+        uses: Particular/run-tests-action@v1.3.0
         with:
           reset-script: dotnet run --project src/targets
-      - name: Teardown RabbitMQ
-        if: ${{ always() }}
-        uses: Azure/powershell@v1
-        with:
-          inlineScript: Remove-AzContainerGroup -ResourceGroupName GitHubActions-RG -Name ${{ steps.setup-rabbitmq.outputs.hostname }}
-          azPSVersion: latest
