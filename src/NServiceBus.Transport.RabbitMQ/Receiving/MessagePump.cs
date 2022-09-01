@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -26,6 +27,7 @@
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
+        readonly ConcurrentDictionary<string, int> deliveryAttempts = new();
 
         bool disposed;
         OnMessage onMessage;
@@ -375,48 +377,37 @@
                 return;
             }
 
-            var processed = false;
-            var errorHandled = false;
-            var numberOfDeliveryAttempts = 0;
+            var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
+            var processingContext = new ContextBag();
 
-            while (!processed && !errorHandled)
+            processingContext.Set(message);
+
+            try
             {
-                var processingContext = new ContextBag();
-
-                processingContext.Set(message);
+                var messageContext = new MessageContext(messageId, headers, message.Body, transportTransaction, ReceiveAddress, processingContext);
+                await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
+            {
+                headers = messageConverter.RetrieveHeaders(message);
+                var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
                 try
                 {
-                    var messageContext = new MessageContext(messageId, headers, message.Body, transportTransaction, ReceiveAddress, processingContext);
+                    var result = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false);
 
-                    await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
-                    processed = true;
-                }
-                catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
-                {
-                    ++numberOfDeliveryAttempts;
-                    headers = messageConverter.RetrieveHeaders(message);
-
-                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
-
-                    try
+                    if (result == ErrorHandleResult.RetryRequired)
                     {
-                        errorHandled =
-                            await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) ==
-                            ErrorHandleResult.Handled;
-
-                        if (!errorHandled)
-                        {
-                            headers = messageConverter.RetrieveHeaders(message);
-                        }
-                    }
-                    catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
-                    {
-                        criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx, messageProcessingCancellationToken);
                         consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
                         return;
                     }
+                }
+                catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
+                {
+                    criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx, messageProcessingCancellationToken);
+                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+
+                    return;
                 }
             }
 
@@ -428,6 +419,30 @@
             {
                 Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
             }
+        }
+
+        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageId)
+        {
+            var attempts = 1;
+
+            if (!message.Redelivered)
+            {
+                return attempts;
+            }
+
+            if (message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
+            {
+                attempts = Convert.ToInt32(headerValue) + 1;
+            }
+            else
+            {
+                var cacheValue = deliveryAttempts.GetOrAdd(messageId, 1);
+
+                attempts = cacheValue + 1;
+                deliveryAttempts[messageId] = attempts;
+            }
+
+            return attempts;
         }
 
         async Task MovePoisonMessage(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
