@@ -1,10 +1,10 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using BitFaster.Caching.Lru;
     using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -27,7 +27,7 @@
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
-        readonly ConcurrentDictionary<string, int> deliveryAttempts = new();
+        readonly FastConcurrentLru<string, int> deliveryAttempts = new(1000);
 
         bool disposed;
         OnMessage onMessage;
@@ -436,10 +436,9 @@
             }
             else
             {
-                var cacheValue = deliveryAttempts.GetOrAdd(messageId, 1);
-
-                attempts = cacheValue + 1;
-                deliveryAttempts[messageId] = attempts;
+                attempts = deliveryAttempts.GetOrAdd(messageId, k => 1);
+                attempts++;
+                deliveryAttempts.AddOrUpdate(messageId, attempts);
             }
 
             return attempts;
