@@ -67,6 +67,10 @@
                 deserializedHeaders[Headers.ReplyToAddress] = deserializedHeaders["NServiceBus.RabbitMQ.CallbackQueue"];
             }
 
+            //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
+            //They can't be removed before deserialization because the value is used by the message pump
+            deserializedHeaders.Remove("x-delivery-count");
+
             return deserializedHeaders;
         }
 
