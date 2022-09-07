@@ -378,9 +378,7 @@
                 return;
             }
 
-            var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
             var processingContext = new ContextBag();
-
             processingContext.Set(message);
 
             try
@@ -390,6 +388,7 @@
             }
             catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
             {
+                var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
                 headers = messageConverter.RetrieveHeaders(message);
                 var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
