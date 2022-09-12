@@ -236,8 +236,8 @@
                 if (oldConnection.IsOpen)
                 {
                     oldConnection.Close();
-                    oldConnection.Dispose();
                 }
+                oldConnection.Dispose();
             }
             catch (OperationCanceledException ex) when (messageProcessing.Token.IsCancellationRequested)
             {
