@@ -28,7 +28,7 @@
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
-        readonly FastConcurrentLru<string, int> deliveryAttempts = new(1000);
+        readonly FastConcurrentLru<string, int> deliveryAttempts = new(100);
 
         bool disposed;
         OnMessage onMessage;
