@@ -213,10 +213,10 @@
         {
             try
             {
-                var oldConnection = connection;
-
                 while (true)
                 {
+                    connection?.Dispose();
+
                     Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
                     await Task.Delay(retryDelay, messageProcessing.Token).ConfigureAwait(false);
@@ -232,12 +232,6 @@
                     }
                 }
                 Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
-
-                if (oldConnection.IsOpen)
-                {
-                    oldConnection.Close();
-                    oldConnection.Dispose();
-                }
             }
             catch (OperationCanceledException ex) when (messageProcessing.Token.IsCancellationRequested)
             {
