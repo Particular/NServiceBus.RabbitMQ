@@ -233,10 +233,6 @@
                 }
                 Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
 
-                if (oldConnection.IsOpen)
-                {
-                    oldConnection.Close();
-                }
                 oldConnection.Dispose();
             }
             catch (OperationCanceledException ex) when (messageProcessing.Token.IsCancellationRequested)
