@@ -2,8 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
+    using BitFaster.Caching.Lru;
     using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -26,6 +28,7 @@
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
+        readonly FastConcurrentLru<string, int> deliveryAttempts = new(100);
 
         bool disposed;
         OnMessage onMessage;
@@ -355,9 +358,7 @@
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                    $"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...",
-                    ex);
+                Logger.Error($"Failed to retrieve headers from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
                 await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
@@ -371,58 +372,42 @@
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                    $"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...",
-                    ex);
+                Logger.Error($"Failed to retrieve ID from poison message. Moving message to queue '{settings.ErrorQueue}'...", ex);
                 await MovePoisonMessage(consumer, message, settings.ErrorQueue, messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
 
-            var processed = false;
-            var errorHandled = false;
-            var numberOfDeliveryAttempts = 0;
+            var processingContext = new ContextBag();
+            processingContext.Set(message);
 
-            while (!processed && !errorHandled)
+            try
             {
-                var processingContext = new ContextBag();
-
-                processingContext.Set(message);
+                var messageContext = new MessageContext(messageId, headers, message.Body, transportTransaction, ReceiveAddress, processingContext);
+                await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
+            {
+                var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
+                headers = messageConverter.RetrieveHeaders(message);
+                var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
                 try
                 {
-                    var messageContext = new MessageContext(messageId, headers, message.Body, transportTransaction, ReceiveAddress, processingContext);
+                    var result = await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false);
 
-                    await onMessage(messageContext, messageProcessingCancellationToken).ConfigureAwait(false);
-                    processed = true;
-                }
-                catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
-                {
-                    ++numberOfDeliveryAttempts;
-                    headers = messageConverter.RetrieveHeaders(message);
-
-                    var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
-
-                    try
+                    if (result == ErrorHandleResult.RetryRequired)
                     {
-                        errorHandled =
-                            await onError(errorContext, messageProcessingCancellationToken).ConfigureAwait(false) ==
-                            ErrorHandleResult.Handled;
-
-                        if (!errorHandled)
-                        {
-                            headers = messageConverter.RetrieveHeaders(message);
-                        }
-                    }
-                    catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
-                    {
-                        criticalErrorAction(
-                            $"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx,
-                            messageProcessingCancellationToken);
                         consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
-
                         return;
                     }
+                }
+                catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
+                {
+                    criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx, messageProcessingCancellationToken);
+                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+
+                    return;
                 }
             }
 
@@ -432,10 +417,38 @@
             }
             catch (AlreadyClosedException ex)
             {
-                Logger.Warn(
-                    $"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.",
-                    ex);
+                if (Regex.IsMatch(ex.ShutdownReason.ReplyText, @"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more"))
+                {
+                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
+                }
+                else
+                {
+                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                }
             }
+        }
+
+        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageId)
+        {
+            var attempts = 1;
+
+            if (!message.Redelivered)
+            {
+                return attempts;
+            }
+
+            if (message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
+            {
+                attempts = Convert.ToInt32(headerValue) + 1;
+            }
+            else
+            {
+                attempts = deliveryAttempts.GetOrAdd(messageId, k => 1);
+                attempts++;
+                deliveryAttempts.AddOrUpdate(messageId, attempts);
+            }
+
+            return attempts;
         }
 
         async Task MovePoisonMessage(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
