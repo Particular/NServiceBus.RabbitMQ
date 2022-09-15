@@ -2,8 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
+    using BitFaster.Caching.Lru;
     using Extensibility;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
@@ -24,6 +26,7 @@
         readonly int prefetchMultiplier;
         readonly ushort overriddenPrefetchCount;
         readonly TimeSpan retryDelay;
+        readonly FastConcurrentLru<string, int> deliveryAttempts = new FastConcurrentLru<string, int>(100);
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -352,51 +355,43 @@
 
             using (var tokenSource = new CancellationTokenSource())
             {
-                var processed = false;
-                var errorHandled = false;
-                var numberOfDeliveryAttempts = 0;
-
-                while (!processed && !errorHandled)
+                try
                 {
+                    var contextBag = new ContextBag();
+                    contextBag.Set(message);
+
+                    var messageContext = new MessageContext(messageId, headers, messageBody ?? new byte[0], transportTransaction, tokenSource, contextBag);
+
+                    await onMessage(messageContext).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
+                    headers = messageConverter.RetrieveHeaders(message);
+                    var contextBag = new ContextBag();
+                    contextBag.Set(message);
+
+                    var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
+
                     try
                     {
-                        var contextBag = new ContextBag();
-                        contextBag.Set(message);
-
-                        var messageContext = new MessageContext(messageId, headers, messageBody ?? new byte[0], transportTransaction, tokenSource, contextBag);
-
-                        await onMessage(messageContext).ConfigureAwait(false);
-                        processed = true;
-                    }
-                    catch (Exception exception)
-                    {
-                        ++numberOfDeliveryAttempts;
-                        headers = messageConverter.RetrieveHeaders(message);
-                        var contextBag = new ContextBag();
-                        contextBag.Set(message);
-
-                        var errorContext = new ErrorContext(exception, headers, messageId, messageBody ?? new byte[0], transportTransaction, numberOfDeliveryAttempts, contextBag);
-
-                        try
+                        var result = await onError(errorContext).ConfigureAwait(false);
+                        if (result == ErrorHandleResult.RetryRequired)
                         {
-                            errorHandled = await onError(errorContext).ConfigureAwait(false) == ErrorHandleResult.Handled;
-
-                            if (!errorHandled)
-                            {
-                                headers = messageConverter.RetrieveHeaders(message);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
                             await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
-
                             return;
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{messageId}`", ex);
+                        await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+
+                        return;
+                    }
                 }
 
-                if (processed && tokenSource.IsCancellationRequested)
+                if (tokenSource.IsCancellationRequested)
                 {
                     await consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                 }
@@ -408,10 +403,40 @@
                     }
                     catch (AlreadyClosedException ex)
                     {
-                        Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                        if (Regex.IsMatch(ex.ShutdownReason.ReplyText, @"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more"))
+                        {
+                            Logger.Warn($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
+                        }
+                        else
+                        {
+                            Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                        }
                     }
                 }
             }
+        }
+
+        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageId)
+        {
+            var attempts = 1;
+
+            if (!message.Redelivered)
+            {
+                return attempts;
+            }
+
+            if (message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
+            {
+                attempts = Convert.ToInt32(headerValue) + 1;
+            }
+            else
+            {
+                attempts = deliveryAttempts.GetOrAdd(messageId, k => 1);
+                attempts++;
+                deliveryAttempts.AddOrUpdate(messageId, attempts);
+            }
+
+            return attempts;
         }
 
         async Task MovePoisonMessage(EventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue)
