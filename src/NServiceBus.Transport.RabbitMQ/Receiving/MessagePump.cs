@@ -378,6 +378,8 @@
                 return;
             }
 
+            var messageIdKey = CreateMessageIdKey(headers, messageId);
+
             var processingContext = new ContextBag();
             processingContext.Set(message);
 
@@ -388,7 +390,7 @@
             }
             catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
             {
-                var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
+                var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageIdKey);
                 headers = messageConverter.RetrieveHeaders(message);
                 var errorContext = new ErrorContext(ex, headers, messageId, message.Body, transportTransaction, numberOfDeliveryAttempts, ReceiveAddress, processingContext);
 
@@ -428,7 +430,17 @@
             }
         }
 
-        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageId)
+        static string CreateMessageIdKey(Dictionary<string, string> headers, string messageId)
+        {
+            if (!headers.TryGetValue(NServiceBus.Headers.DelayedRetries, out var delayedRetries))
+            {
+                delayedRetries = "0";
+            }
+
+            return $"{messageId}-{delayedRetries}";
+        }
+
+        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageIdKey)
         {
             var attempts = 1;
 
@@ -443,9 +455,10 @@
             }
             else
             {
-                attempts = deliveryAttempts.GetOrAdd(messageId, k => 1);
+
+                attempts = deliveryAttempts.GetOrAdd(messageIdKey, k => 1);
                 attempts++;
-                deliveryAttempts.AddOrUpdate(messageId, attempts);
+                deliveryAttempts.AddOrUpdate(messageIdKey, attempts);
             }
 
             return attempts;
