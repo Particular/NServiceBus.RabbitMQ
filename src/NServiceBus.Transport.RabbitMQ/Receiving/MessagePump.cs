@@ -27,6 +27,7 @@
         readonly ushort overriddenPrefetchCount;
         readonly TimeSpan retryDelay;
         readonly FastConcurrentLru<string, int> deliveryAttempts = new FastConcurrentLru<string, int>(100);
+        readonly FastConcurrentLru<string, bool> markedAsConsumed = new FastConcurrentLru<string, bool>(100);
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -353,6 +354,22 @@
                 return;
             }
 
+            if (markedAsConsumed.TryGet(messageId, out _))
+            {
+                try
+                {
+                    markedAsConsumed.TryRemove(messageId);
+                    //Forget about this message's immediate attempts
+                    deliveryAttempts.TryRemove(messageId);
+                    await consumer.Model.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                }
+                catch (AlreadyClosedException ex)
+                {
+                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                }
+                return;
+            }
+
             using (var tokenSource = new CancellationTokenSource())
             {
                 try
@@ -400,6 +417,7 @@
                 {
                     try
                     {
+                        markedAsConsumed.AddOrUpdate(messageId, true);
                         await consumer.Model.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
                     }
                     catch (AlreadyClosedException ex)
