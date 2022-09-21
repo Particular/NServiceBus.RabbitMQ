@@ -29,6 +29,7 @@
         readonly TimeSpan retryDelay;
         readonly string name;
         readonly FastConcurrentLru<string, int> deliveryAttempts = new(100);
+        readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new(100);
 
         bool disposed;
         OnMessage onMessage;
@@ -380,6 +381,20 @@
 
             var messageIdKey = CreateMessageIdKey(headers, messageId);
 
+            if (failedBasicAckMessages.TryGet(messageIdKey, out _))
+            {
+                try
+                {
+                    consumer.Model.BasicAckSingle(message.DeliveryTag);
+                }
+                catch (AlreadyClosedException ex)
+                {
+                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                }
+
+                return;
+            }
+
             var processingContext = new ContextBag();
             processingContext.Set(message);
 
@@ -419,6 +434,8 @@
             }
             catch (AlreadyClosedException ex)
             {
+                failedBasicAckMessages.AddOrUpdate(messageIdKey, true);
+
                 if (Regex.IsMatch(ex.ShutdownReason.ReplyText, @"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more"))
                 {
                     Logger.Warn($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
