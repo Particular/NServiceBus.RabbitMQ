@@ -27,6 +27,7 @@
         readonly ushort overriddenPrefetchCount;
         readonly TimeSpan retryDelay;
         readonly FastConcurrentLru<string, int> deliveryAttempts = new FastConcurrentLru<string, int>(100);
+        readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new FastConcurrentLru<string, bool>(100);
 
         // Init
         Func<MessageContext, Task> onMessage;
@@ -353,6 +354,22 @@
                 return;
             }
 
+            var messageIdKey = CreateMessageIdKey(headers, messageId);
+
+            if (failedBasicAckMessages.TryGet(messageIdKey, out _))
+            {
+                try
+                {
+                    await consumer.Model.BasicAckSingle(message.DeliveryTag, exclusiveScheduler).ConfigureAwait(false);
+                }
+                catch (AlreadyClosedException ex)
+                {
+                    Logger.Warn($"Failed to acknowledge message '{messageId}' because the channel was closed. The message was returned to the queue.", ex);
+                }
+
+                return;
+            }
+
             using (var tokenSource = new CancellationTokenSource())
             {
                 try
@@ -366,7 +383,7 @@
                 }
                 catch (Exception exception)
                 {
-                    var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageId);
+                    var numberOfDeliveryAttempts = GetDeliveryAttempts(message, messageIdKey);
                     headers = messageConverter.RetrieveHeaders(message);
                     var contextBag = new ContextBag();
                     contextBag.Set(message);
@@ -403,9 +420,11 @@
                     }
                     catch (AlreadyClosedException ex)
                     {
+                        failedBasicAckMessages.AddOrUpdate(messageIdKey, true);
+
                         if (Regex.IsMatch(ex.ShutdownReason.ReplyText, @"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more"))
                         {
-                            Logger.Warn($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
+                            Logger.Error($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
                         }
                         else
                         {
@@ -416,7 +435,17 @@
             }
         }
 
-        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageId)
+        static string CreateMessageIdKey(Dictionary<string, string> headers, string messageId)
+        {
+            if (!headers.TryGetValue(NServiceBus.Headers.DelayedRetries, out var delayedRetries))
+            {
+                delayedRetries = "0";
+            }
+
+            return $"{messageId}-{delayedRetries}";
+        }
+
+        int GetDeliveryAttempts(BasicDeliverEventArgs message, string messageIdKey)
         {
             var attempts = 1;
 
@@ -424,16 +453,16 @@
             {
                 return attempts;
             }
-
             if (message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
             {
                 attempts = Convert.ToInt32(headerValue) + 1;
             }
             else
             {
-                attempts = deliveryAttempts.GetOrAdd(messageId, k => 1);
+
+                attempts = deliveryAttempts.GetOrAdd(messageIdKey, k => 1);
                 attempts++;
-                deliveryAttempts.AddOrUpdate(messageId, attempts);
+                deliveryAttempts.AddOrUpdate(messageIdKey, attempts);
             }
 
             return attempts;
