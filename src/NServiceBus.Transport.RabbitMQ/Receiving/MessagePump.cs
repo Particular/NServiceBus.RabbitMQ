@@ -217,31 +217,31 @@
         {
             try
             {
-                var oldConnection = connection;
-
                 while (true)
                 {
-                    Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
-
-                    await Task.Delay(retryDelay, messageProcessing.Token).ConfigureAwait(false);
-
                     try
                     {
+                        if (connection.IsOpen)
+                        {
+                            connection.Close();
+                        }
+
+                        connection.Dispose();
+
+                        Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
+
+                        await Task.Delay(retryDelay, messageProcessing.Token).ConfigureAwait(false);
+
                         ConnectToBroker();
                         break;
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) when (!(ex is OperationCanceledException && messageProcessing.Token.IsCancellationRequested))
                     {
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
                 }
-                Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
 
-                if (oldConnection.IsOpen)
-                {
-                    oldConnection.Close();
-                    oldConnection.Dispose();
-                }
+                Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
             }
             catch (OperationCanceledException ex) when (messageProcessing.Token.IsCancellationRequested)
             {
