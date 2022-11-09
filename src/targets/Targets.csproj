@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Bullseye" Version="4.1.1" />
+    <PackageReference Include="Bullseye" Version="4.2.0" />
   </ItemGroup>
 
   <ItemGroup>
