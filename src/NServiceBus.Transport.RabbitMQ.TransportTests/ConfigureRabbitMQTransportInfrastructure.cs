@@ -15,12 +15,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         var result = new TransportConfigurationResult();
         var transport = new RabbitMQTransport();
 
-        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-        }
+        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
         connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 

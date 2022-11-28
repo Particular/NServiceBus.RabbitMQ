@@ -54,10 +54,7 @@
 
             PrepareTestEndpoint(endpointName);
 
-            ExecuteBrokerCommand(channel =>
-            {
-                channel.QueueUnbind(endpointName, endpointName, string.Empty);
-            });
+            ExecuteBrokerCommand(channel => channel.QueueUnbind(endpointName, endpointName, string.Empty));
 
             await ExecuteMigration(endpointName);
 
@@ -110,10 +107,10 @@
             PrepareTestEndpoint(endpointName);
 
             CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages, properties =>
-            {
-                properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, "duplicate" } };
-            });
+            AddMessages(
+                holdingQueueName,
+                numExistingMessages,
+                properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, "duplicate" } });
 
             await ExecuteMigration(endpointName);
 
@@ -189,11 +186,9 @@
 
             var numExistingMessages = 5;
 
-            CreateExchange(endpointName);
+            PrepareTestEndpoint(endpointName, true);
 
-            CreateQueue(endpointName, quorum: true);
             CreateQueue(holdingQueueName, quorum: true);
-
             AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
@@ -211,14 +206,10 @@
             var numExistingMessages = 5;
             var expectedMessageCount = 10;
 
-            CreateExchange(endpointName);
-
-            CreateQueue(endpointName, quorum: true);
-
+            PrepareTestEndpoint(endpointName, true);
             AddMessages(endpointName, numExistingMessages);
 
             CreateQueue(holdingQueueName, quorum: true);
-
             AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
@@ -259,7 +250,10 @@
         [TearDown]
         public void TearDown()
         {
-            connection.Close();
+            if (connection.IsOpen)
+            {
+                connection.Close();
+            }
             connection.Dispose();
         }
 
@@ -283,29 +277,26 @@
             }
         }
 
-        void PrepareTestEndpoint(string endpointName)
+        void PrepareTestEndpoint(string endpointName, bool asQuorumQueue = false)
         {
             TryDeleteQueue(endpointName);
             TryDeleteQueue(GetHoldingQueueName(endpointName));
 
-            CreateQueue(endpointName, quorum: false);
+            CreateQueue(endpointName, quorum: asQuorumQueue);
             CreateExchange(endpointName);
             BindQueue(endpointName, endpointName);
         }
 
-        void TryDeleteQueue(string queueName)
+        void TryDeleteQueue(string queueName) => ExecuteBrokerCommand(channel =>
         {
-            ExecuteBrokerCommand(channel =>
+            try
             {
-                try
-                {
-                    channel.QueueDelete(queueName);
-                }
-                catch (Exception)
-                {
-                }
-            });
-        }
+                channel.QueueDelete(queueName);
+            }
+            catch (Exception)
+            {
+            }
+        });
 
         void CreateQueue(string queueName, bool quorum)
         {
@@ -322,20 +313,11 @@
             });
         }
 
-        void CreateExchange(string exchangeName)
-        {
-            ExecuteBrokerCommand(channel =>
-            {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
-            });
-        }
+        void CreateExchange(string exchangeName) => ExecuteBrokerCommand(channel => channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true));
 
         void BindQueue(string queueName, string exchangeName)
         {
-            ExecuteBrokerCommand(channel =>
-            {
-                channel.QueueBind(queueName, exchangeName, string.Empty);
-            });
+            ExecuteBrokerCommand(channel => channel.QueueBind(queueName, exchangeName, string.Empty));
         }
 
         void AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
@@ -360,10 +342,7 @@
         {
             uint messageCount = 0;
 
-            ExecuteBrokerCommand(channel =>
-            {
-                messageCount = channel.MessageCount(queueName);
-            });
+            ExecuteBrokerCommand(channel => messageCount = channel.MessageCount(queueName));
 
             return messageCount;
         }
@@ -390,16 +369,11 @@
 
         void ExecuteBrokerCommand(Action<IModel> command)
         {
-            using (var channel = connection.CreateModel())
-            {
-                command(channel);
-            }
+            using var channel = connection.CreateModel();
+            command(channel);
         }
 
-        string GetHoldingQueueName(string endpointName)
-        {
-            return $"{endpointName}-migration-temp";
-        }
+        static string GetHoldingQueueName(string endpointName) => $"{endpointName}-migration-temp";
 
         BrokerConnection brokerConnection;
         IConnection connection;
