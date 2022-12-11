@@ -18,12 +18,7 @@
             routingTopology = new ConventionalRoutingTopology(true, QueueType.Classic);
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
-            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-            }
+            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
             var config = ConnectionConfiguration.Create(connectionString);
 

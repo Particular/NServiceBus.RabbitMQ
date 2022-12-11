@@ -14,13 +14,6 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
-        var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-        }
-
         transport = configuration.UseTransport<RabbitMQTransport>();
         transport.ConnectionString(ConnectionHelper.ConnectionString);
         transport.UseConventionalRoutingTopology(QueueType.Classic);

@@ -7,14 +7,7 @@
     {
         static Lazy<string> connectionString = new Lazy<string>(() =>
         {
-            var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString");
-
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception("The 'RabbitMQTransport_ConnectionString' environment variable is not set.");
-            }
-
-            return connectionString;
+            return Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         });
 
         static Lazy<ConnectionFactory> connectionFactory = new Lazy<ConnectionFactory>(() =>
