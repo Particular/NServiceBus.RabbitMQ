@@ -52,11 +52,11 @@ jobs:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
       - name: Setup RabbitMQ
-        uses: Particular/setup-rabbitmq-action@v1.2.0
+        uses: Particular/setup-rabbitmq-action@v.1.3.0
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
       - name: Run tests
-        uses: Particular/run-tests-action@v1.3.0
+        uses: Particular/run-tests-action@v1.4.0
         with:
           reset-script: dotnet run --project src/targets
