@@ -84,10 +84,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
-            if (connection != null)
-            {
-                connection.Dispose();
-            }
+            connection?.Dispose();
 
             foreach (var channel in channels)
             {
