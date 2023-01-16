@@ -266,7 +266,7 @@
         {
             try
             {
-                while (true)
+                while (!messageProcessingCancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
@@ -522,6 +522,7 @@
             }
 
             circuitBreaker?.Dispose();
+            messagePumpCancellationTokenSource?.Cancel();
             messagePumpCancellationTokenSource?.Dispose();
             messageProcessingCancellationTokenSource?.Dispose();
 
