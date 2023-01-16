@@ -524,6 +524,7 @@
             circuitBreaker?.Dispose();
             messagePumpCancellationTokenSource?.Cancel();
             messagePumpCancellationTokenSource?.Dispose();
+            messageProcessingCancellationTokenSource?.Cancel();
             messageProcessingCancellationTokenSource?.Dispose();
 
             connection?.Dispose();
