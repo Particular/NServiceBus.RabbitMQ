@@ -268,6 +268,10 @@
             {
                 while (!messagePumpCancellationTokenSource.IsCancellationRequested)
                 {
+                    if (disposed)
+                    {
+                        throw new InvalidOperationException("Disposed, terminating reconnect");
+                    }
                     try
                     {
                         if (connection.IsOpen)
