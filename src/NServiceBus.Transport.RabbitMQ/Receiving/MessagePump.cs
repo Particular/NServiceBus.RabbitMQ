@@ -264,9 +264,9 @@
         async Task Reconnect()
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
+            var cancellationToken = messagePumpCancellationTokenSource.Token;  // Will throw ObjectDisposedException if already disposed, obtain token once outside of loop
             try
             {
-                var cancellationToken = messagePumpCancellationTokenSource.Token;  // Will throw ObjectDisposedException if already disposed, obtain token once outside of loop
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
