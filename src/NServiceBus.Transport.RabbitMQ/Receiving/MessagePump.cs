@@ -266,7 +266,7 @@
         {
             try
             {
-                while (!messageProcessingCancellationTokenSource.IsCancellationRequested)
+                while (!messagePumpCancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
@@ -279,12 +279,12 @@
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
-                        await Task.Delay(retryDelay, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                        await Task.Delay(retryDelay, messagePumpCancellationTokenSource.Token).ConfigureAwait(false);
 
                         ConnectToBroker();
                         break;
                     }
-                    catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationTokenSource.Token))
+                    catch (Exception ex) when (!ex.IsCausedBy(messagePumpCancellationTokenSource.Token))
                     {
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
@@ -292,7 +292,7 @@
 
                 Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
             }
-            catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationTokenSource.Token))
+            catch (Exception ex) when (ex.IsCausedBy(messagePumpCancellationTokenSource.Token))
             {
                 Logger.DebugFormat("'{0}': Reconnection canceled since the transport is being stopped: {1}", name, ex);
             }
