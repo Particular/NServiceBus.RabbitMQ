@@ -505,6 +505,8 @@
         {
             circuitBreaker?.Dispose();
             semaphore?.Dispose();
+            // This makes sure that if the stop token hasn't been canceled the processing source is canceled
+            // so that any possible reconnect attempt has the possibility to gracefully stop too.
             messageProcessing?.Cancel();
             messageProcessing?.Dispose();
             connection?.Dispose();
