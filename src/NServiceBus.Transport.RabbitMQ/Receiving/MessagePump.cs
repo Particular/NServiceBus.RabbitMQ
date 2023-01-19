@@ -162,7 +162,7 @@
             {
                 //log entry handled by event handler registered in ConnectionFactory
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                _ = Task.Run(() => Reconnect(messageProcessing.Token));
             }
             else
             {
@@ -186,7 +186,7 @@
             {
                 Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                _ = Task.Run(() => Reconnect(messageProcessing.Token));
             }
             else
             {
@@ -204,7 +204,7 @@
                 {
                     Logger.WarnFormat("'{0}' consumer canceled by broker", name);
                     circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                    _ = Task.Run(() => Reconnect());
+                    _ = Task.Run(() => Reconnect(messageProcessing.Token));
                 }
                 else
                 {
@@ -213,11 +213,11 @@
             }
         }
 
-        async Task Reconnect()
+        async Task Reconnect(CancellationToken cancellationToken)
         {
             try
             {
-                while (true)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
@@ -230,12 +230,12 @@
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
-                        await Task.Delay(retryDelay, messageProcessing.Token).ConfigureAwait(false);
+                        await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
 
                         ConnectToBroker();
                         break;
                     }
-                    catch (Exception ex) when (!(ex is OperationCanceledException && messageProcessing.Token.IsCancellationRequested))
+                    catch (Exception ex) when (!(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
                     {
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
@@ -243,7 +243,7 @@
 
                 Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
             }
-            catch (OperationCanceledException ex) when (messageProcessing.Token.IsCancellationRequested)
+            catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
             {
                 Logger.DebugFormat("'{0}': Reconnection canceled since the transport is being stopped: {1}", name, ex);
             }
@@ -506,6 +506,9 @@
         {
             circuitBreaker?.Dispose();
             semaphore?.Dispose();
+            // This makes sure that if the stop token hasn't been canceled the processing source is canceled
+            // so that any possible reconnect attempt has the possibility to gracefully stop too.
+            messageProcessing?.Cancel();
             messageProcessing?.Dispose();
             connection?.Dispose();
         }
