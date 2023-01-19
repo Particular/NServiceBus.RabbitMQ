@@ -117,7 +117,7 @@
         {
             maxConcurrency = limitations.MaxConcurrency;
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
-            _ = Task.Run(() => Reconnect(), cancellationToken);
+            _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token), cancellationToken);
             return Task.CompletedTask;
         }
 
@@ -152,7 +152,6 @@
 
             using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
-
                 while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
                 {
                     // We are deliberately not forwarding the cancellation token here because
@@ -205,7 +204,7 @@
             {
                 //log entry handled by event handler registered in ConnectionFactory
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
             }
             else
             {
@@ -229,7 +228,7 @@
             {
                 Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
             }
             else
             {
@@ -249,7 +248,7 @@
                 {
                     Logger.WarnFormat("'{0}' consumer canceled by broker", name);
                     circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                    _ = Task.Run(() => Reconnect());
+                    _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
                 }
                 else
                 {
@@ -260,20 +259,13 @@
             return Task.CompletedTask;
         }
 
-#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        async Task Reconnect()
-#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        async Task Reconnect(CancellationToken cancellationToken)
         {
-            var cancellationToken = messagePumpCancellationTokenSource.Token;  // Will throw ObjectDisposedException if already disposed, obtain token once outside of loop
             try
             {
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (disposed)
-                    {
-                        throw new InvalidOperationException("Disposed, terminating reconnect");
-                    }
                     try
                     {
                         if (connection.IsOpen)
@@ -530,6 +522,8 @@
             circuitBreaker?.Dispose();
             messagePumpCancellationTokenSource?.Cancel();
             messagePumpCancellationTokenSource?.Dispose();
+            // This makes sure that if the stop token hasn't been canceled the processing source is canceled
+            // so that any possible reconnect attempt has the possibility to gracefully stop too.
             messageProcessingCancellationTokenSource?.Cancel();
             messageProcessingCancellationTokenSource?.Dispose();
 
