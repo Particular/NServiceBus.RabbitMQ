@@ -117,7 +117,7 @@
         {
             maxConcurrency = limitations.MaxConcurrency;
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
-            _ = Task.Run(() => Reconnect(), cancellationToken);
+            _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token), cancellationToken);
             return Task.CompletedTask;
         }
 
@@ -152,7 +152,6 @@
 
             using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
-
                 while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
                 {
                     // We are deliberately not forwarding the cancellation token here because
@@ -184,6 +183,10 @@
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
             }
+
+            // This makes sure that if the stop token hasn't been canceled the processing source is canceled
+            // so that any possible reconnect attempt has the possibility to gracefully stop too.
+            messageProcessingCancellationTokenSource?.Cancel();
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
@@ -205,7 +208,7 @@
             {
                 //log entry handled by event handler registered in ConnectionFactory
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
             }
             else
             {
@@ -229,7 +232,7 @@
             {
                 Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect());
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
             }
             else
             {
@@ -249,7 +252,7 @@
                 {
                     Logger.WarnFormat("'{0}' consumer canceled by broker", name);
                     circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                    _ = Task.Run(() => Reconnect());
+                    _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
                 }
                 else
                 {
@@ -260,13 +263,11 @@
             return Task.CompletedTask;
         }
 
-#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        async Task Reconnect()
-#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        async Task Reconnect(CancellationToken cancellationToken)
         {
             try
             {
-                while (true)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
@@ -279,12 +280,12 @@
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
-                        await Task.Delay(retryDelay, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                        await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
 
                         ConnectToBroker();
                         break;
                     }
-                    catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationTokenSource.Token))
+                    catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                     {
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
@@ -292,7 +293,7 @@
 
                 Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
             }
-            catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationTokenSource.Token))
+            catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
             {
                 Logger.DebugFormat("'{0}': Reconnection canceled since the transport is being stopped: {1}", name, ex);
             }
