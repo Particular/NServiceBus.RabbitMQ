@@ -56,6 +56,6 @@ jobs:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.1
         with:
           reset-script: dotnet run --project src/targets
