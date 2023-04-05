@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
 
     class RabbitMqContext
@@ -34,14 +35,35 @@
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
+            CustomErrorHandling = new Dictionary<string, Func<ErrorContext, ErrorHandleResult>>();
 
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
                 (messageContext, cancellationToken) =>
                 {
+                    var deliverArgs = messageContext.Extensions.Get<BasicDeliverEventArgs>();
+
+                    if (deliverArgs.BasicProperties.AppId == "fail")
+                    {
+                        throw new Exception("Simulated exception");
+                    }
+
                     receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
                         messageContext.Body), cancellationToken);
                     return Task.CompletedTask;
-                }, (_, __) => Task.FromResult(ErrorHandleResult.Handled)
+                }, (errorContext, __) =>
+                {
+                    if (string.IsNullOrEmpty(errorContext.Message.MessageId))
+                    {
+                        return Task.FromResult(ErrorHandleResult.Handled);
+                    }
+
+                    if (!CustomErrorHandling.TryGetValue(errorContext.Message.MessageId, out var customHandler))
+                    {
+                        return Task.FromResult(ErrorHandleResult.Handled);
+                    }
+
+                    return Task.FromResult(customHandler(errorContext));
+                }
             );
 
             await messagePump.StartReceive();
@@ -77,6 +99,8 @@
             receivedMessages.TryTake(out message, timeout);
 
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
+
+        protected IDictionary<string, Func<ErrorContext, ErrorHandleResult>> CustomErrorHandling;
 
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";

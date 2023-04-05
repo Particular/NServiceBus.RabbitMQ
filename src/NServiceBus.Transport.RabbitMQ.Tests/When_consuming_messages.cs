@@ -58,7 +58,44 @@
 
                 var result = channel.BasicGet(ErrorQueue, true);
 
-                Assert.False(messageWasReceived, "Message should not be processed processed successfully.");
+                Assert.False(messageWasReceived, "Message should not be processed successfully.");
+                Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
+            }
+        }
+
+        [Test]
+        public void Should_handle_retries_for_messages_without_headers()
+        {
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
+            var numRetries = 0;
+
+            CustomErrorHandling[message.MessageId] = (ec) =>
+            {
+                if (numRetries == 0)
+                {
+                    numRetries++;
+                    return ErrorHandleResult.RetryRequired;
+                }
+
+                return ErrorHandleResult.Handled;
+            };
+
+            using (var connection = connectionFactory.CreatePublishConnection())
+            using (var channel = connection.CreateModel())
+            {
+                var properties = channel.CreateBasicProperties();
+
+                properties.AppId = "fail";
+                properties.MessageId = message.MessageId;
+
+                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+
+                var messageWasReceived = TryWaitForMessageReceipt();
+
+                var result = channel.BasicGet(ErrorQueue, true);
+
+                Assert.False(messageWasReceived, "Message should not be processed successfully.");
+                Assert.AreEqual(1, numRetries, "Message should be retried once");
                 Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
             }
         }
