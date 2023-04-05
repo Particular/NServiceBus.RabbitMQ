@@ -68,6 +68,7 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
             var numRetries = 0;
+            var handled = false;
 
             CustomErrorHandling[message.MessageId] = (ec) =>
             {
@@ -76,7 +77,7 @@
                     numRetries++;
                     return ErrorHandleResult.RetryRequired;
                 }
-
+                handled = true;
                 return ErrorHandleResult.Handled;
             };
 
@@ -96,7 +97,7 @@
 
                 Assert.False(messageWasReceived, "Message should not be processed successfully.");
                 Assert.AreEqual(1, numRetries, "Message should be retried once");
-                Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
+                Assert.True(handled, "Error handler should be called after retry");
             }
         }
 
