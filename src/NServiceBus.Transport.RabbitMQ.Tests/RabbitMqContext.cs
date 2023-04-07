@@ -6,7 +6,6 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
 
     class RabbitMqContext
