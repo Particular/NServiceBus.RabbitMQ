@@ -70,6 +70,8 @@
             var numRetries = 0;
             var handled = false;
 
+            OnMessage = (_, __) => throw new Exception("Simulated exception");
+
             OnError = (ec) =>
             {
                 if (numRetries == 0)
@@ -86,14 +88,11 @@
             {
                 var properties = channel.CreateBasicProperties();
 
-                properties.AppId = "fail";
                 properties.MessageId = message.MessageId;
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 var messageWasReceived = TryWaitForMessageReceipt();
-
-                var result = channel.BasicGet(ErrorQueue, true);
 
                 Assert.False(messageWasReceived, "Message should not be processed successfully.");
                 Assert.AreEqual(1, numRetries, "Message should be retried once");

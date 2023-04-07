@@ -4,6 +4,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
@@ -35,22 +36,17 @@
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
+            OnMessage = (messageContext, cancellationToken) =>
+            {
+                receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
+                    messageContext.Body), cancellationToken);
+                return Task.CompletedTask;
+            };
+
             OnError = (_) => ErrorHandleResult.Handled;
 
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
-                (messageContext, cancellationToken) =>
-                {
-                    var deliverArgs = messageContext.Extensions.Get<BasicDeliverEventArgs>();
-
-                    if (deliverArgs.BasicProperties.AppId == "fail")
-                    {
-                        throw new Exception("Simulated exception");
-                    }
-
-                    receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
-                        messageContext.Body), cancellationToken);
-                    return Task.CompletedTask;
-                },
+                (messageContext, cancellationToken) => OnMessage(messageContext, cancellationToken),
                 (errorContext, __) => Task.FromResult(OnError(errorContext))
             );
 
@@ -88,6 +84,7 @@
 
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
+        protected Func<MessageContext, CancellationToken, Task> OnMessage;
         protected Func<ErrorContext, ErrorHandleResult> OnError;
 
         protected const string ReceiverQueue = "testreceiver";
