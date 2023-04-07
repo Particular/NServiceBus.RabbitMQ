@@ -70,7 +70,7 @@
             var numRetries = 0;
             var handled = false;
 
-            CustomErrorHandling[message.MessageId] = (ec) =>
+            OnError = (ec) =>
             {
                 if (numRetries == 0)
                 {

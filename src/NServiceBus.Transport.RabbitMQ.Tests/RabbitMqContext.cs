@@ -35,7 +35,7 @@
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
-            CustomErrorHandling = new Dictionary<string, Func<ErrorContext, ErrorHandleResult>>();
+            OnError = (_) => ErrorHandleResult.Handled;
 
             await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
                 (messageContext, cancellationToken) =>
@@ -50,20 +50,8 @@
                     receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
                         messageContext.Body), cancellationToken);
                     return Task.CompletedTask;
-                }, (errorContext, __) =>
-                {
-                    if (string.IsNullOrEmpty(errorContext.Message.MessageId))
-                    {
-                        return Task.FromResult(ErrorHandleResult.Handled);
-                    }
-
-                    if (!CustomErrorHandling.TryGetValue(errorContext.Message.MessageId, out var customHandler))
-                    {
-                        return Task.FromResult(ErrorHandleResult.Handled);
-                    }
-
-                    return Task.FromResult(customHandler(errorContext));
-                }
+                },
+                (errorContext, __) => Task.FromResult(OnError(errorContext))
             );
 
             await messagePump.StartReceive();
@@ -100,7 +88,7 @@
 
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
-        protected IDictionary<string, Func<ErrorContext, ErrorHandleResult>> CustomErrorHandling;
+        protected Func<ErrorContext, ErrorHandleResult> OnError;
 
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";
