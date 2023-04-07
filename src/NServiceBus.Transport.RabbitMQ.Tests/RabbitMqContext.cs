@@ -43,12 +43,12 @@
                 return Task.CompletedTask;
             };
 
-            OnError = (_) => ErrorHandleResult.Handled;
+            OnError = (_, __) => Task.FromResult(ErrorHandleResult.Handled);
 
-            await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
+            await messagePump.Initialize(
+                new PushRuntimeSettings(MaximumConcurrency),
                 (messageContext, cancellationToken) => OnMessage(messageContext, cancellationToken),
-                (errorContext, __) => Task.FromResult(OnError(errorContext))
-            );
+                (errorContext, cancellationToken) => OnError(errorContext, cancellationToken));
 
             await messagePump.StartReceive();
         }
@@ -85,7 +85,7 @@
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
         protected Func<MessageContext, CancellationToken, Task> OnMessage;
-        protected Func<ErrorContext, ErrorHandleResult> OnError;
+        protected Func<ErrorContext, CancellationToken, Task<ErrorHandleResult>> OnError;
 
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";

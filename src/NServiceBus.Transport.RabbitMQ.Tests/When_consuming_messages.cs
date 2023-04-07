@@ -64,23 +64,25 @@
         }
 
         [Test]
-        public void Should_handle_retries_for_messages_without_headers()
+        public async Task Should_handle_retries_for_messages_without_headers()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
             var numRetries = 0;
-            var handled = false;
+            var handled = new TaskCompletionSource<bool>();
 
             OnMessage = (_, __) => throw new Exception("Simulated exception");
 
-            OnError = (ec) =>
+            OnError = (ec, __) =>
             {
                 if (numRetries == 0)
                 {
                     numRetries++;
-                    return ErrorHandleResult.RetryRequired;
+                    return Task.FromResult(ErrorHandleResult.RetryRequired);
                 }
-                handled = true;
-                return ErrorHandleResult.Handled;
+
+                handled.SetResult(true);
+
+                return Task.FromResult(ErrorHandleResult.Handled);
             };
 
             using (var connection = connectionFactory.CreatePublishConnection())
@@ -92,11 +94,10 @@
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
 
-                var messageWasReceived = TryWaitForMessageReceipt();
+                var wasHandled = await handled.Task;
 
-                Assert.False(messageWasReceived, "Message should not be processed successfully.");
                 Assert.AreEqual(1, numRetries, "Message should be retried once");
-                Assert.True(handled, "Error handler should be called after retry");
+                Assert.True(wasHandled, "Error handler should be called after retry");
             }
         }
 
