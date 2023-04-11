@@ -94,10 +94,14 @@
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
 
-                var wasHandled = await handled.Task;
+                if (await Task.WhenAny(handled.Task, Task.Delay(IncomingMessageTimeout)) != handled.Task)
+                {
+                    Assert.Fail("Message receive timed out");
+                }
 
-                Assert.AreEqual(1, numRetries, "Message should be retried once");
+                var wasHandled = await handled.Task;
                 Assert.True(wasHandled, "Error handler should be called after retry");
+                Assert.AreEqual(1, numRetries, "Message should be retried once");
             }
         }
 

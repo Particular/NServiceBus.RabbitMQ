@@ -95,7 +95,7 @@
 
         BlockingCollection<IncomingMessage> receivedMessages;
 
-        static readonly TimeSpan IncomingMessageTimeout = TimeSpan.FromSeconds(5);
+        protected static readonly TimeSpan IncomingMessageTimeout = TimeSpan.FromSeconds(5);
         TransportInfrastructure infra;
     }
 }
