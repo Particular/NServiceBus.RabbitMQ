@@ -4,6 +4,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
 
@@ -34,15 +35,19 @@
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
+            OnMessage = (messageContext, cancellationToken) =>
+            {
+                receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
+                    messageContext.Body), cancellationToken);
+                return Task.CompletedTask;
+            };
 
-            await messagePump.Initialize(new PushRuntimeSettings(MaximumConcurrency),
-                (messageContext, cancellationToken) =>
-                {
-                    receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
-                        messageContext.Body), cancellationToken);
-                    return Task.CompletedTask;
-                }, (_, __) => Task.FromResult(ErrorHandleResult.Handled)
-            );
+            OnError = (_, __) => Task.FromResult(ErrorHandleResult.Handled);
+
+            await messagePump.Initialize(
+                new PushRuntimeSettings(MaximumConcurrency),
+                (messageContext, cancellationToken) => OnMessage(messageContext, cancellationToken),
+                (errorContext, cancellationToken) => OnError(errorContext, cancellationToken));
 
             await messagePump.StartReceive();
         }
@@ -78,6 +83,9 @@
 
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
+        protected Func<MessageContext, CancellationToken, Task> OnMessage;
+        protected Func<ErrorContext, CancellationToken, Task<ErrorHandleResult>> OnError;
+
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";
         protected ConnectionFactory connectionFactory;
@@ -87,7 +95,7 @@
 
         BlockingCollection<IncomingMessage> receivedMessages;
 
-        static readonly TimeSpan IncomingMessageTimeout = TimeSpan.FromSeconds(5);
+        protected static readonly TimeSpan IncomingMessageTimeout = TimeSpan.FromSeconds(5);
         TransportInfrastructure infra;
     }
 }
