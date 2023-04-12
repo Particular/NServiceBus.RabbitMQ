@@ -454,7 +454,8 @@
             {
                 return attempts;
             }
-            if (message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
+
+            if (message.BasicProperties.Headers != null && message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
             {
                 attempts = Convert.ToInt32(headerValue) + 1;
             }
