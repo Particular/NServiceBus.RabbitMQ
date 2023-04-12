@@ -4,6 +4,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Support;
@@ -35,13 +36,18 @@
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
             subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
-
-            messagePump.Init(messageContext =>
+            
+            OnMessage = messageContext =>
             {
-                receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers, messageContext.Body));
+                receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers, messageContext.Body));
                 return Task.CompletedTask;
-            },
-                ErrorContext => Task.FromResult(ErrorHandleResult.Handled),
+            };
+
+            OnError = _ => Task.FromResult(ErrorHandleResult.Handled);
+
+            messagePump.Init(
+                messageContext => OnMessage(messageContext),
+                errorContext => OnError(errorContext),
                 new CriticalError(_ => Task.CompletedTask),
                 new PushSettings(ReceiverQueue, ErrorQueue, true, TransportTransactionMode.ReceiveOnly)
             ).GetAwaiter().GetResult();
@@ -74,6 +80,9 @@
 
         protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
 
+        protected Func<MessageContext, Task> OnMessage;
+        protected Func<ErrorContext, Task<ErrorHandleResult>> OnError;
+
         protected const string ReceiverQueue = "testreceiver";
         protected const string ErrorQueue = "error";
         protected MessageDispatcher messageDispatcher;
@@ -85,6 +94,6 @@
         BlockingCollection<IncomingMessage> receivedMessages;
         ConventionalRoutingTopology routingTopology;
 
-        static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(5);
+        protected static readonly TimeSpan incomingMessageTimeout = TimeSpan.FromSeconds(5);
     }
 }
