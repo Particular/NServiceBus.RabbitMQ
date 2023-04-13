@@ -107,17 +107,30 @@
         }
 
         [Test]
-        public async Task Header_collection_is_not_null_for_headerless_messages()
+        public async Task Header_collection_is_not_null_after_redelivery_for_headerless_messages()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-            var headerCollectionWasNull = new TaskCompletionSource<bool>();
+            var headerCollectionWasNullOnFirstDelivery = false;
+            var headerCollectionWasNullOnRedelivery = new TaskCompletionSource<bool>();
 
             OnMessage = (mc, __) =>
             {
                 var basicDeliverEventArgs = mc.Extensions.Get<BasicDeliverEventArgs>();
-                headerCollectionWasNull.SetResult(basicDeliverEventArgs.BasicProperties.Headers == null);
+
+                if (!basicDeliverEventArgs.Redelivered)
+                {
+                    headerCollectionWasNullOnFirstDelivery = basicDeliverEventArgs.BasicProperties.Headers == null;
+                    throw new Exception("Some failure");
+                }
+
+                headerCollectionWasNullOnRedelivery.SetResult(basicDeliverEventArgs.BasicProperties.Headers == null);
 
                 return Task.CompletedTask;
+            };
+
+            OnError = (ec, __) =>
+            {
+                return Task.FromResult(ErrorHandleResult.RetryRequired);
             };
 
             using (var connection = connectionFactory.CreatePublishConnection())
@@ -129,13 +142,15 @@
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
 
-                if (await Task.WhenAny(headerCollectionWasNull.Task, Task.Delay(IncomingMessageTimeout)) != headerCollectionWasNull.Task)
+                if (await Task.WhenAny(headerCollectionWasNullOnRedelivery.Task, Task.Delay(IncomingMessageTimeout)) != headerCollectionWasNullOnRedelivery.Task)
                 {
                     Assert.Fail("Message receive timed out");
                 }
 
-                var headersWasNull = await headerCollectionWasNull.Task;
-                Assert.False(headersWasNull, "Header collection should not be null even if message has no headers");
+                var headersWasNullOnRedelivery = await headerCollectionWasNullOnRedelivery.Task;
+
+                Assert.True(headerCollectionWasNullOnFirstDelivery, "Header collection should be null on the first delivery");
+                Assert.False(headersWasNullOnRedelivery, "Header collection should not null after a redelivery since broker headers are added to quorum queue messages");
             }
         }
 
