@@ -59,8 +59,50 @@
 
                 var result = channel.BasicGet(ErrorQueue, true);
 
-                Assert.False(messageWasReceived, "Message should not be processed processed successfully.");
+                Assert.False(messageWasReceived, "Message should not be processed successfully.");
                 Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
+            }
+        }
+
+        [Test]
+        public async Task Should_handle_retries_for_messages_without_headers()
+        {
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
+            var numRetries = 0;
+            var handled = new TaskCompletionSource<bool>();
+
+            OnMessage = _ => throw new Exception("Simulated exception");
+
+            OnError = ec =>
+            {
+                if (numRetries == 0)
+                {
+                    numRetries++;
+                    return Task.FromResult(ErrorHandleResult.RetryRequired);
+                }
+
+                handled.SetResult(true);
+
+                return Task.FromResult(ErrorHandleResult.Handled);
+            };
+
+            using (var connection = connectionFactory.CreatePublishConnection())
+            using (var channel = connection.CreateModel())
+            {
+                var properties = channel.CreateBasicProperties();
+
+                properties.MessageId = message.MessageId;
+
+                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+
+                if (await Task.WhenAny(handled.Task, Task.Delay(incomingMessageTimeout)) != handled.Task)
+                {
+                    Assert.Fail("Message receive timed out");
+                }
+
+                var wasHandled = await handled.Task;
+                Assert.True(wasHandled, "Error handler should be called after retry");
+                Assert.AreEqual(1, numRetries, "Message should be retried once");
             }
         }
 
