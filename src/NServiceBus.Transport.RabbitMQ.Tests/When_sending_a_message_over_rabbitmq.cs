@@ -129,12 +129,7 @@
             using (var connection = connectionFactory.CreateConnection("Consume"))
             using (var channel = connection.CreateModel())
             {
-                var message = channel.BasicGet(queueToReceiveOn, false);
-
-                if (message == null)
-                {
-                    throw new InvalidOperationException("No message found in queue");
-                }
+                var message = channel.BasicGet(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");
 
                 if (message.BasicProperties.MessageId != id)
                 {

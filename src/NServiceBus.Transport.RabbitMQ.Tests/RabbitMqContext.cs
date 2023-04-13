@@ -89,10 +89,7 @@
         protected string ReceiverQueue => GetTestQueueName("testreceiver");
         protected string ErrorQueue => GetTestQueueName("error");
 
-        protected string GetTestQueueName(string queueName)
-        {
-            return $"{queueName}-{queueType}";
-        }
+        protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
 
         protected QueueType queueType = QueueType.Quorum;
         protected ConnectionFactory connectionFactory;
