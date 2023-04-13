@@ -71,9 +71,9 @@
             var numRetries = 0;
             var handled = new TaskCompletionSource<bool>();
 
-            OnMessage = (_, __) => throw new Exception("Simulated exception");
+            OnMessage = _ => throw new Exception("Simulated exception");
 
-            OnError = (ec, __) =>
+            OnError = ec =>
             {
                 if (numRetries == 0)
                 {
@@ -95,7 +95,7 @@
 
                 channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
 
-                if (await Task.WhenAny(handled.Task, Task.Delay(IncomingMessageTimeout)) != handled.Task)
+                if (await Task.WhenAny(handled.Task, Task.Delay(incomingMessageTimeout)) != handled.Task)
                 {
                     Assert.Fail("Message receive timed out");
                 }

@@ -39,7 +39,7 @@
             
             OnMessage = messageContext =>
             {
-                receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers, messageContext.Body));
+                receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers, messageContext.Body));
                 return Task.CompletedTask;
             };
 
