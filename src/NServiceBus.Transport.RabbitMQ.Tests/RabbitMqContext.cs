@@ -36,7 +36,7 @@
             routingTopology.Reset(connectionFactory, new[] { ReceiverQueue }.Concat(AdditionalReceiverQueues), new[] { ErrorQueue });
 
             subscriptionManager = new SubscriptionManager(connectionFactory, routingTopology, ReceiverQueue);
-            
+
             OnMessage = messageContext =>
             {
                 receivedMessages.Add(new IncomingMessage(messageContext.MessageId, messageContext.Headers, messageContext.Body));
