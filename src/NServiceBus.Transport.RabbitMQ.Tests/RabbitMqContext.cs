@@ -13,7 +13,7 @@
         public virtual int MaximumConcurrency => 1;
 
         [SetUp]
-        public async Task SetUp()
+        public virtual async Task SetUp()
         {
             receivedMessages = new BlockingCollection<IncomingMessage>();
 
@@ -21,7 +21,7 @@
 
             var useTls = connectionString.StartsWith("https", StringComparison.InvariantCultureIgnoreCase) || connectionString.StartsWith("amqps", StringComparison.InvariantCultureIgnoreCase);
 
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Classic), connectionString);
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(queueType), connectionString);
             var connectionConfig = transport.ConnectionConfiguration;
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig, null, true, false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);
@@ -29,7 +29,7 @@
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
                 (_, __, ___) => { }, true), new[]
             {
-                new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, "error")
+                new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)
             }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray());
 
             messageDispatcher = infra.Dispatcher;
@@ -81,13 +81,17 @@
         bool TryReceiveMessage(out IncomingMessage message, TimeSpan timeout) =>
             receivedMessages.TryTake(out message, timeout);
 
-        protected virtual IEnumerable<string> AdditionalReceiverQueues => Enumerable.Empty<string>();
+        protected IList<string> AdditionalReceiverQueues = new List<string>();
 
         protected Func<MessageContext, CancellationToken, Task> OnMessage;
         protected Func<ErrorContext, CancellationToken, Task<ErrorHandleResult>> OnError;
 
-        protected const string ReceiverQueue = "testreceiver";
-        protected const string ErrorQueue = "error";
+        protected string ReceiverQueue => GetTestQueueName("testreceiver");
+        protected string ErrorQueue => GetTestQueueName("error");
+
+        protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
+
+        protected QueueType queueType = QueueType.Quorum;
         protected ConnectionFactory connectionFactory;
         protected IMessageDispatcher messageDispatcher;
         protected IMessageReceiver messagePump;

@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Text;
     using System.Threading;
@@ -12,7 +11,16 @@
     [TestFixture]
     class When_sending_a_message_over_rabbitmq : RabbitMqContext
     {
-        const string QueueToReceiveOn = "testEndPoint";
+        string QueueToReceiveOn;
+
+        [SetUp]
+        public override Task SetUp()
+        {
+            QueueToReceiveOn = GetTestQueueName("testendpoint");
+            AdditionalReceiverQueues.Add(QueueToReceiveOn);
+
+            return base.SetUp();
+        }
 
         [Test]
         public Task Should_populate_the_body()
@@ -93,8 +101,6 @@
                 });
         }
 
-        protected override IEnumerable<string> AdditionalReceiverQueues => new[] { QueueToReceiveOn };
-
         async Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion, CancellationToken cancellationToken = default)
         {
             var operations = builder.SendTo(QueueToReceiveOn).Build();
@@ -123,12 +129,7 @@
             using (var connection = connectionFactory.CreateConnection("Consume"))
             using (var channel = connection.CreateModel())
             {
-                var message = channel.BasicGet(queueToReceiveOn, false);
-
-                if (message == null)
-                {
-                    throw new InvalidOperationException("No message found in queue");
-                }
+                var message = channel.BasicGet(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");
 
                 if (message.BasicProperties.MessageId != id)
                 {
