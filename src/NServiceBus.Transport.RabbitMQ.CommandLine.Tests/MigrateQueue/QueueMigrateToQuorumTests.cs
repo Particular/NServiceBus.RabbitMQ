@@ -78,6 +78,22 @@
         }
 
         [Test]
+        public async Task Should_preserve_existing_messages_with_messageIds()
+        {
+            var endpointName = "EndpointWithExistingMessages";
+            var numExistingMessages = 10;
+
+            PrepareTestEndpoint(endpointName);
+
+            AddMessages(endpointName, numExistingMessages, properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, Guid.NewGuid().ToString() } });
+
+            await ExecuteMigration(endpointName);
+
+            Assert.True(QueueIsQuorum(endpointName));
+            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+        }
+
+        [Test]
         public async Task Should_preserve_existing_messages_in_holding_queue()
         {
             var endpointName = "EndpointWithExistingMessagesInHolding";
