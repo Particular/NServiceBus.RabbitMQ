@@ -89,11 +89,11 @@
 
             // bind the holding queue to the exchange of the queue under migration
             // this will throw if the exchange for the queue doesn't exist
-            channel.QueueBind(holdingQueueName, queueName, emptyRoutingKey);
+            channel.QueueBind(holdingQueueName, queueName, string.Empty);
             console.WriteLine($"Bound '{holdingQueueName}' to exchange '{queueName}'");
 
             // unbind the queue under migration to stop more messages from coming in
-            channel.QueueUnbind(queueName, queueName, emptyRoutingKey);
+            channel.QueueUnbind(queueName, queueName, string.Empty);
             console.WriteLine($"Unbound '{queueName}' from exchange '{queueName}' ");
 
             // move all existing messages to the holding queue
@@ -104,7 +104,7 @@
                 queueName,
                 message =>
                 {
-                    channel.BasicPublish(emptyRoutingKey, holdingQueueName, message.BasicProperties, message.Body);
+                    channel.BasicPublish(string.Empty, holdingQueueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
                 },
                 cancellationToken);
@@ -144,10 +144,10 @@
         {
             using var channel = connection.CreateModel();
 
-            channel.QueueBind(queueName, queueName, emptyRoutingKey);
+            channel.QueueBind(queueName, queueName, string.Empty);
             console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
 
-            channel.QueueUnbind(holdingQueueName, queueName, emptyRoutingKey);
+            channel.QueueUnbind(holdingQueueName, queueName, string.Empty);
             console.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
 
             var messageIds = new Dictionary<string, string>();
@@ -175,7 +175,7 @@
                         }
                     }
 
-                    channel.BasicPublish(emptyRoutingKey, queueName, message.BasicProperties, message.Body);
+                    channel.BasicPublish(string.Empty, queueName, message.BasicProperties, message.Body);
                     channel.WaitForConfirmsOrDie();
 
                     if (messageIdString != null)
@@ -235,7 +235,6 @@
         readonly IConsole console;
         readonly MigrationState migrationState;
 
-        static string emptyRoutingKey = string.Empty;
         static Dictionary<string, object> quorumQueueArguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
 
         enum MigrationStage
