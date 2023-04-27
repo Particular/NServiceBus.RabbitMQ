@@ -2,6 +2,7 @@
 {
     using System;
     using System.CommandLine;
+    using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
 
@@ -163,7 +164,10 @@
 
                     if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
                     {
-                        messageIdString = messageId?.ToString();
+                        if (messageId is byte[] bytes)
+                        {
+                            messageIdString = Encoding.UTF8.GetString(bytes);
+                        }
 
                         if (messageIdString != null && messageIds.ContainsKey(messageIdString))
                         {
