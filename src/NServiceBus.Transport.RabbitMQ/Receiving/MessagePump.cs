@@ -275,16 +275,15 @@
 
                         connection.Dispose();
 
-                        Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
-
-                        await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
-
                         ConnectToBroker();
                         break;
                     }
                     catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                     {
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
+
+                        Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
+                        await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
                     }
                 }
 
