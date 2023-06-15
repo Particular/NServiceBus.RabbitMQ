@@ -117,7 +117,11 @@
         {
             maxConcurrency = limitations.MaxConcurrency;
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
-            _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token), cancellationToken);
+            _ = Task.Run(async () =>
+            {
+                await StopReceive(messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                await StartReceive(CancellationToken.None).ConfigureAwait(false);
+            }, cancellationToken);
             return Task.CompletedTask;
         }
 
@@ -180,6 +184,7 @@
                 {
                     connectionShutdownCompleted.SetResult(true);
                 }
+                connection.Dispose();
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
             }
