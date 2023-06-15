@@ -119,7 +119,7 @@
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
             _ = Task.Run(async () =>
             {
-                await StopReceive(messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+                await StopReceive(cancellationToken).ConfigureAwait(false);
                 await StartReceive(CancellationToken.None).ConfigureAwait(false);
             }, cancellationToken);
             return Task.CompletedTask;
