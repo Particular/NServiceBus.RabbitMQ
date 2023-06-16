@@ -13,6 +13,21 @@
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.TransactionScope)]
+        public async Task Should_handle_multiple_stop_calls_to_started_receiver(TransportTransactionMode transactionMode)
+        {
+            await StartPump(
+                (context, token) => Task.CompletedTask,
+                (context, token) => Task.FromResult(ErrorHandleResult.Handled),
+                transactionMode);
+
+            await receiver.StopReceive();
+            await receiver.StopReceive();
+        }
+
+        [TestCase(TransportTransactionMode.None)]
+        [TestCase(TransportTransactionMode.ReceiveOnly)]
+        [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
+        [TestCase(TransportTransactionMode.TransactionScope)]
         public async Task Should_allow_restarting_receivers(TransportTransactionMode transactionMode)
         {
             var messageReceived = CreateTaskCompletionSource();
