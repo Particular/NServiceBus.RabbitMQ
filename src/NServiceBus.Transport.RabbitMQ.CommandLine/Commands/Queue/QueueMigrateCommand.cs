@@ -162,7 +162,7 @@
                 {
                     string messageIdString = null;
 
-                    if (message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
+                    if (message.BasicProperties.Headers != null && message.BasicProperties.Headers.TryGetValue("NServiceBus.MessageId", out var messageId))
                     {
                         if (messageId is byte[] bytes)
                         {
