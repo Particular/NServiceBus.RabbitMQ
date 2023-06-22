@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client;
     using Logging;
 
-    sealed class ChannelProvider : IDisposable
+    sealed class ChannelProvider : IAsyncDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
         {
@@ -38,7 +38,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 var connection = (IConnection)sender;
 
                 // Task.Run() to clarify intent that the call MUST return immediately and not rely on current async call stack behavior
-                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
+                reconnectTask = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
             }
         }
 
@@ -92,10 +92,14 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        public void Dispose()
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        public async ValueTask DisposeAsync()
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
             stoppingTokenSource.Cancel();
             stoppingTokenSource.Dispose();
+
+            await reconnectTask.ConfigureAwait(false);
 
             connection?.Dispose();
 
@@ -110,6 +114,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         readonly CancellationTokenSource stoppingTokenSource = new();
+        Task reconnectTask = Task.CompletedTask;
         IConnection connection;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
