@@ -21,7 +21,13 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void CreateConnection()
         {
-            connection = connectionFactory.CreatePublishConnection();
+            if (connection is not null)
+            {
+                connection.ConnectionShutdown -= Connection_ConnectionShutdown;
+                connection.Dispose();
+                connection = null;
+            }
+            connection = connectionFactory.CreatePublishConnection(); // Can take over 5 seconds
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
         }
 
@@ -31,25 +37,27 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 var connection = (IConnection)sender;
 
-                // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
-                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName), CancellationToken.None);
+                // Task.Run() to clarify intent that the call MUST return immediately and not rely on current async call stack behavior
+                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
             }
         }
 
-#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        async Task ReconnectSwallowingExceptions(string connectionName)
-#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
         {
             while (true)
             {
                 Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", connectionName, retryDelay.TotalSeconds);
 
-                await Task.Delay(retryDelay).ConfigureAwait(false);
-
                 try
                 {
+                    await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
                     CreateConnection();
                     break;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.InfoFormat("'{0}': Stopped trying to reconnecting to the broker due to shutdown", connectionName);
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -86,6 +94,9 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
+            stoppingTokenSource.Cancel();
+            stoppingTokenSource.Dispose();
+
             connection?.Dispose();
 
             foreach (var channel in channels)
@@ -98,6 +109,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly TimeSpan retryDelay;
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
+        readonly CancellationTokenSource stoppingTokenSource = new();
         IConnection connection;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
