@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="8.0.3" />
+    <PackageReference Include="NServiceBus" Version="8.1.1" />
     <PackageReference Include="Particular.Approvals" Version="0.5.0" />
     <PackageReference Include="PublicApiGenerator" Version="11.0.0" />
     <PackageReference Include="RabbitMQ.Client" Version="6.4.0" />
