@@ -29,6 +29,7 @@
             {
                 throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
             }
+            channel.QueueDelete("nsb.v2.verify-stream-flag-enabled");
         }
     }
 }
