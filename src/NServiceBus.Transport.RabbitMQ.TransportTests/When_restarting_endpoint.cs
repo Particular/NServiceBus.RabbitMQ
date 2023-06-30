@@ -21,7 +21,7 @@
                 transactionMode);
 
             await receiver.StopReceive();
-            await receiver.StopReceive();
+            Assert.DoesNotThrowAsync(() => receiver.StopReceive());
         }
 
         [TestCase(TransportTransactionMode.None)]
@@ -33,10 +33,10 @@
             var messageReceived = CreateTaskCompletionSource();
 
             await StartPump((context, token) =>
-            {
-                messageReceived.SetResult();
-                return Task.CompletedTask;
-            },
+                {
+                    messageReceived.SetResult();
+                    return Task.CompletedTask;
+                },
                 (context, token) => Task.FromResult(ErrorHandleResult.Handled), transactionMode);
 
             await receiver.StopReceive();
@@ -53,6 +53,7 @@
         public async Task Should_gracefully_restart_processing(TransportTransactionMode transactionMode)
         {
             var receivedMessages = new ConcurrentQueue<string>();
+            var pumpStopTriggered = CreateTaskCompletionSource();
             var followupMessageReceived = CreateTaskCompletionSource();
             await StartPump(async (context, token) =>
             {
@@ -67,13 +68,15 @@
                         // run async because the pump might block the return until all inflight messages are processed.
                         var stopTask = Task.Run(async () =>
                         {
-                            await receiver.StopReceive(token);
+                            var t = receiver.StopReceive(token);
+                            pumpStopTriggered.SetResult();
+                            await t;
                             TestContext.WriteLine("Stopped receiver");
                         }, token);
 
                         await SendMessage(InputQueueName, new Dictionary<string, string>() { { "Type", "Followup" } },
                             context.TransportTransaction, cancellationToken: token);
-                        await Task.Yield();
+                        await pumpStopTriggered.Task;
 
                         _ = stopTask.ContinueWith(async _ =>
                         {
@@ -97,6 +100,7 @@
 
             await SendMessage(InputQueueName, new Dictionary<string, string>() { { "Type", "Start" } });
             await followupMessageReceived.Task;
+            await StopPump();
 
             Assert.AreEqual(2, receivedMessages.Count);
             Assert.IsTrue(receivedMessages.TryDequeue(out var firstMessageType));
