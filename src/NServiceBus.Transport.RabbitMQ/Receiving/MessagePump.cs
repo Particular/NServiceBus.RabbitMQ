@@ -112,16 +112,13 @@
             return Task.CompletedTask;
         }
 
-        public Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
+        public async Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
         {
-            maxConcurrency = limitations.MaxConcurrency;
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
-            _ = Task.Run(async () =>
-            {
-                await StopReceive(cancellationToken).ConfigureAwait(false);
-                await StartReceive(CancellationToken.None).ConfigureAwait(false);
-            }, cancellationToken);
-            return Task.CompletedTask;
+
+            await StopReceive(cancellationToken).ConfigureAwait(false);
+            maxConcurrency = limitations.MaxConcurrency;
+            await StartReceive(CancellationToken.None).ConfigureAwait(false);
         }
 
         void ConnectToBroker()
