@@ -10,65 +10,75 @@
     public class Changing_concurrency : NServiceBusTransportTest
     {
         [TestCase(TransportTransactionMode.ReceiveOnly)]
-        public async Task ImmediateRetries(TransportTransactionMode transactionMode)
+        [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
+        [TestCase(TransportTransactionMode.TransactionScope)]
+        public async Task Should_complete_current_message(TransportTransactionMode transactionMode)
         {
-            var messageRetries = new TaskCompletionSource<MessageContext>();
+            var triggeredChangeConcurrency = CreateTaskCompletionSource();
+            var concurrencyChanged = CreateTaskCompletionSource();
             int invocationCounter = 0;
 
             await StartPump(async (context, ct) =>
                 {
                     Interlocked.Increment(ref invocationCounter);
 
-                    await receiver.ChangeConcurrency(new PushRuntimeSettings(1), ct);
-                    await Task.Delay(500, ct);
+                    _ = Task.Run(async () =>
+                    {
+                        var task = receiver.ChangeConcurrency(new PushRuntimeSettings(1), ct);
+                        triggeredChangeConcurrency.SetResult();
+                        await task;
+                        concurrencyChanged.SetResult();
+                    }, ct);
 
-                    messageRetries.SetResult(context);
+                    await triggeredChangeConcurrency.Task;
+
                 }, (_, ct) =>
                 {
-                    Assert.Fail();
+                    Assert.Fail("Message processing should not fail");
                     return Task.FromResult(ErrorHandleResult.RetryRequired);
                 },
                 transactionMode);
 
             await SendMessage(InputQueueName);
-            await messageRetries.Task;
-            await Task.Delay(1000); // take some time to process any remaining message
-            Assert.AreEqual(1, invocationCounter);
+            await concurrencyChanged.Task;
+            await StopPump();
+            Assert.AreEqual(1, invocationCounter, "message should successfully complete on first processing attempt");
         }
 
         [TestCase(TransportTransactionMode.ReceiveOnly)]
-        public async Task DelayedRetries(TransportTransactionMode transactionMode)
+        [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
+        [TestCase(TransportTransactionMode.TransactionScope)]
+        public async Task Should_dispatch_delayed_retries(TransportTransactionMode transactionMode)
         {
-            var firstInvocation = true;
             int invocationCounter = 0;
 
-            var errorPipelineMessageReceived = CreateTaskCompletionSource();
+            var triggeredChangeConcurrency = CreateTaskCompletionSource();
+            var sentMessageReceived = CreateTaskCompletionSource();
 
             await StartPump((context, _) =>
                 {
                     Interlocked.Increment(ref invocationCounter);
                     if (context.Headers.TryGetValue("FromOnError", out var value) && value == bool.TrueString)
                     {
-                        errorPipelineMessageReceived.SetResult();
-                    }
-                    else if (firstInvocation)
-                    {
-                        firstInvocation = false;
-                        throw new Exception("some exception");
+                        sentMessageReceived.SetResult();
                     }
                     else
                     {
-                        Assert.Fail("input message should be completed after onError");
+                        throw new Exception("triggering recoverability pipeline");
                     }
 
                     return Task.CompletedTask;
                 }, async (context, ct) =>
                 {
-                    TestContext.WriteLine(context.Exception);
-
                     // same behavior as delayed retries
-                    await receiver.ChangeConcurrency(new PushRuntimeSettings(1), ct);
-                    await Task.Yield();
+                    _ = Task.Run(async () =>
+                    {
+                        var task = receiver.ChangeConcurrency(new PushRuntimeSettings(1), ct);
+                        triggeredChangeConcurrency.SetResult();
+                        await task;
+                    }, ct);
+
+                    await triggeredChangeConcurrency.Task;
                     await SendMessage(InputQueueName,
                         new Dictionary<string, string>() { { "FromOnError", bool.TrueString } },
                         context.TransportTransaction, cancellationToken: ct);
@@ -78,9 +88,9 @@
 
             await SendMessage(InputQueueName);
 
-            await errorPipelineMessageReceived.Task;
-            await Task.Delay(1000); // take some time to process any remaining message
-            Assert.AreEqual(2, invocationCounter);
+            await sentMessageReceived.Task;
+            await StopPump();
+            Assert.AreEqual(2, invocationCounter, "there should be exactly 2 messages (initial message and new message from recoverability pipeline)");
         }
     }
 }
