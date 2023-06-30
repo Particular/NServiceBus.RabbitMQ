@@ -74,9 +74,9 @@
                             TestContext.WriteLine("Stopped receiver");
                         }, token);
 
+                        await pumpStopTriggered.Task;
                         await SendMessage(InputQueueName, new Dictionary<string, string>() { { "Type", "Followup" } },
                             context.TransportTransaction, cancellationToken: token);
-                        await pumpStopTriggered.Task;
 
                         _ = stopTask.ContinueWith(async _ =>
                         {
