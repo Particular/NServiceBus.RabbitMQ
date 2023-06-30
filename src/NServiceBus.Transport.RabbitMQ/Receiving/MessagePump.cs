@@ -186,16 +186,15 @@
                 {
                     connectionShutdownCompleted.SetResult(true);
                 }
-                connection.Dispose();
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
             }
 
-            circuitBreaker?.Dispose();
             messagePumpCancellationTokenSource?.Dispose();
             messagePumpCancellationTokenSource = null;
             messageProcessingCancellationTokenSource?.Dispose();
-            messageProcessingCancellationTokenSource = null;
+            connection.Dispose();
+            circuitBreaker?.Dispose();
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
