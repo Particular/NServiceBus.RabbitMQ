@@ -21,12 +21,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void CreateConnection()
         {
-            if (connection is not null)
-            {
-                connection.ConnectionShutdown -= Connection_ConnectionShutdown;
-                connection.Dispose();
-                connection = null;
-            }
+            connection?.Dispose();
             connection = connectionFactory.CreatePublishConnection(); // Can take over 5 seconds
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
         }
@@ -44,7 +39,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
         {
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", connectionName, retryDelay.TotalSeconds);
 
@@ -52,12 +47,19 @@ namespace NServiceBus.Transport.RabbitMQ
                 {
                     await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
                     CreateConnection();
+
+                    // A  race condition is possible where CreateConnection is invoked during Dispose
+                    // where the returned connection isn't disposed so invoking Dispose to be sure
+                    if(cancellationToken.IsCancellationRequested)
+                    {
+                        connection.Dispose();
+                    }
                     break;
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     Logger.InfoFormat("'{0}': Stopped trying to reconnecting to the broker due to shutdown", connectionName);
-                    return;
+                    break;
                 }
                 catch (Exception ex)
                 {
