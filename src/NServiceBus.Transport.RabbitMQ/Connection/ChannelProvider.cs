@@ -50,7 +50,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                     // A  race condition is possible where CreateConnection is invoked during Dispose
                     // where the returned connection isn't disposed so invoking Dispose to be sure
-                    if(cancellationToken.IsCancellationRequested)
+                    if (cancellationToken.IsCancellationRequested)
                     {
                         connection.Dispose();
                     }
