@@ -184,15 +184,6 @@
             return Task.FromResult<TransportInfrastructure>(infra);
         }
 
-#pragma warning disable CS0672 // Member overrides obsolete member
-        /// <inheritdoc />
-        [ObsoleteEx(
-            Message = "Inject the ITransportAddressResolver type to access the address translation mechanism at runtime. See the NServiceBus version 8 upgrade guide for further details.",
-            TreatAsErrorFromVersion = "9",
-            RemoveInVersion = "10")]
-        public override string ToTransportAddress(QueueAddress address) => RabbitMQTransportInfrastructure.TranslateAddress(address);
-#pragma warning restore CS0672 // Member overrides obsolete member
-
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
 
