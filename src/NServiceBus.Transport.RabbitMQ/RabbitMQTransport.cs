@@ -195,5 +195,44 @@
 
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
+
+
+        // Legacy API stuff below
+
+        internal string LegacyApiConnectionString { get; set; }
+
+        internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
+
+        internal bool UseDurableExchangesAndQueues { get; set; } = true;
+
+        bool legacyMode;
+
+        internal RabbitMQTransport() : base(TransportTransactionMode.ReceiveOnly, true, true, true)
+        {
+            legacyMode = true;
+        }
+
+        void ValidateAndApplyLegacyConfiguration()
+        {
+            if (!legacyMode)
+            {
+                return;
+            }
+
+            if (TopologyFactory == null)
+            {
+                throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods. Most new projects should use the Conventional routing topology.");
+            }
+
+            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
+
+            if (string.IsNullOrEmpty(LegacyApiConnectionString))
+            {
+                throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
+            }
+
+            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
+        }
+
     }
 }
