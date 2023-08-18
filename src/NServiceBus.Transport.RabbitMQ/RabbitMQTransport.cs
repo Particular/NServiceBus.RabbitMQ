@@ -187,8 +187,7 @@
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
 
-
-        // Legacy API stuff below
+        // Remove all Legacy API stuff below when PreObsoletes are converted 
 
         internal string LegacyApiConnectionString { get; set; }
 
@@ -224,6 +223,5 @@
 
             ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
         }
-
     }
 }
