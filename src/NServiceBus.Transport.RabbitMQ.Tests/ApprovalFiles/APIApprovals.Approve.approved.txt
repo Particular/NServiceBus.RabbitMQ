@@ -29,11 +29,6 @@ namespace NServiceBus
         public void AddClusterNode(string hostName, int port, bool useTls) { }
         public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
-        [System.Obsolete("Inject the ITransportAddressResolver type to access the address translation mecha" +
-            "nism at runtime. See the NServiceBus version 8 upgrade guide for further details" +
-            ". The member currently throws a NotImplementedException. Will be removed in vers" +
-            "ion 10.0.0.", true)]
-        public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
     public static class RabbitMQTransportSettingsExtensions
     {

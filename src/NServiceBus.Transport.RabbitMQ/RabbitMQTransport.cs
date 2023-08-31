@@ -13,7 +13,7 @@
     /// <summary>
     /// Transport definition for RabbitMQ.
     /// </summary>
-    public partial class RabbitMQTransport : TransportDefinition
+    public class RabbitMQTransport : TransportDefinition
     {
         TimeSpan heartbeatInterval = TimeSpan.FromSeconds(60);
         TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
@@ -187,7 +187,7 @@
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
 
-        // Remove all Legacy API stuff below when PreObsoletes are converted 
+        // Remove all Legacy API stuff below when PreObsoletes are converted
 
         internal string LegacyApiConnectionString { get; set; }
 
