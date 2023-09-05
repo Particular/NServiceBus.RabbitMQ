@@ -16,8 +16,8 @@
         public async Task Should_handle_multiple_stop_calls_to_started_receiver(TransportTransactionMode transactionMode)
         {
             await StartPump(
-                (context, token) => Task.CompletedTask,
-                (context, token) => Task.FromResult(ErrorHandleResult.Handled),
+                (_, _) => Task.CompletedTask,
+                (_, _) => Task.FromResult(ErrorHandleResult.Handled),
                 transactionMode);
 
             await receiver.StopReceive();
@@ -32,12 +32,12 @@
         {
             var messageReceived = CreateTaskCompletionSource();
 
-            await StartPump((context, token) =>
+            await StartPump((_, _) =>
                 {
                     messageReceived.SetResult();
                     return Task.CompletedTask;
                 },
-                (context, token) => Task.FromResult(ErrorHandleResult.Handled), transactionMode);
+                (_, _) => Task.FromResult(ErrorHandleResult.Handled), transactionMode);
 
             await receiver.StopReceive();
             await receiver.StartReceive();
@@ -55,44 +55,48 @@
             var receivedMessages = new ConcurrentQueue<string>();
             var pumpStopTriggered = CreateTaskCompletionSource();
             var followupMessageReceived = CreateTaskCompletionSource();
+
             await StartPump(async (context, token) =>
-            {
-                var messageType = context.Headers["Type"];
-                receivedMessages.Enqueue(messageType);
-                TestContext.WriteLine("Received message " + messageType);
-
-                switch (messageType)
                 {
-                    case "Start":
+                    var messageType = context.Headers["Type"];
+                    receivedMessages.Enqueue(messageType);
+                    TestContext.WriteLine("Received message " + messageType);
 
-                        // run async because the pump might block the return until all inflight messages are processed.
-                        var stopTask = Task.Run(async () =>
-                        {
-                            var t = receiver.StopReceive(token);
-                            pumpStopTriggered.SetResult();
-                            await t;
-                            TestContext.WriteLine("Stopped receiver");
-                        }, token);
+                    switch (messageType)
+                    {
+                        case "Start":
 
-                        await pumpStopTriggered.Task;
-                        await SendMessage(InputQueueName, new Dictionary<string, string>() { { "Type", "Followup" } },
-                            context.TransportTransaction, cancellationToken: token);
+                            // run async because the pump might block the return until all inflight messages are processed.
+                            var stopTask = Task.Run(async () =>
+                            {
+                                var t = receiver.StopReceive(token);
+                                pumpStopTriggered.SetResult();
+                                await t;
+                                TestContext.WriteLine("Stopped receiver");
+                            }, token);
 
-                        _ = stopTask.ContinueWith(async _ =>
-                        {
-                            await receiver.StartReceive(token);
-                            TestContext.WriteLine("Started receiver");
-                        }, token);
+                            await pumpStopTriggered.Task;
+                            // send message after StopReceive has been called
+                            await SendMessage(InputQueueName,
+                                new Dictionary<string, string>() { { "Type", "Followup" } },
+                                context.TransportTransaction, cancellationToken: token);
 
-                        break;
-                    case "Followup":
-                        followupMessageReceived.SetResult();
-                        break;
-                    default:
-                        throw new ArgumentException();
-                }
-            },
-                (context, token) =>
+                            // restart pump after endpoint has been stopped and the message has been sent
+                            _ = stopTask.ContinueWith(async _ =>
+                            {
+                                await receiver.StartReceive(token);
+                                TestContext.WriteLine("Started receiver");
+                            }, token);
+
+                            break;
+                        case "Followup":
+                            followupMessageReceived.SetResult();
+                            break;
+                        default:
+                            throw new ArgumentException();
+                    }
+                },
+                (context, _) =>
                 {
                     Assert.Fail($"Message failed processing: {context.Exception}");
                     return Task.FromResult(ErrorHandleResult.Handled);

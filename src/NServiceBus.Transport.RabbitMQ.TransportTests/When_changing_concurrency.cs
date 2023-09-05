@@ -7,32 +7,32 @@
     using NServiceBus.TransportTests;
     using NUnit.Framework;
 
-    public class Changing_concurrency : NServiceBusTransportTest
+    public class When_changing_concurrency : NServiceBusTransportTest
     {
+        [TestCase(TransportTransactionMode.None)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.TransactionScope)]
         public async Task Should_complete_current_message(TransportTransactionMode transactionMode)
         {
             var triggeredChangeConcurrency = CreateTaskCompletionSource();
-            var concurrencyChanged = CreateTaskCompletionSource();
+            Task concurrencyChanged = null;
             int invocationCounter = 0;
 
             await StartPump(async (context, ct) =>
                 {
                     Interlocked.Increment(ref invocationCounter);
 
-                    _ = Task.Run(async () =>
+                    concurrencyChanged = Task.Run(async () =>
                     {
                         var task = receiver.ChangeConcurrency(new PushRuntimeSettings(1), ct);
                         triggeredChangeConcurrency.SetResult();
                         await task;
-                        concurrencyChanged.SetResult();
                     }, ct);
 
                     await triggeredChangeConcurrency.Task;
 
-                }, (_, ct) =>
+                }, (_, _) =>
                 {
                     Assert.Fail("Message processing should not fail");
                     return Task.FromResult(ErrorHandleResult.RetryRequired);
@@ -40,15 +40,16 @@
                 transactionMode);
 
             await SendMessage(InputQueueName);
-            await concurrencyChanged.Task;
+            await concurrencyChanged;
             await StopPump();
             Assert.AreEqual(1, invocationCounter, "message should successfully complete on first processing attempt");
         }
 
+        [TestCase(TransportTransactionMode.None)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.TransactionScope)]
-        public async Task Should_dispatch_delayed_retries(TransportTransactionMode transactionMode)
+        public async Task Should_dispatch_messages_from_on_error(TransportTransactionMode transactionMode)
         {
             int invocationCounter = 0;
 
@@ -62,12 +63,8 @@
                     {
                         sentMessageReceived.SetResult();
                     }
-                    else
-                    {
-                        throw new Exception("triggering recoverability pipeline");
-                    }
 
-                    return Task.CompletedTask;
+                    throw new Exception("triggering recoverability pipeline");
                 }, async (context, ct) =>
                 {
                     // same behavior as delayed retries
@@ -90,7 +87,7 @@
 
             await sentMessageReceived.Task;
             await StopPump();
-            Assert.AreEqual(2, invocationCounter, "there should be exactly 2 messages (initial message and new message from recoverability pipeline)");
+            Assert.AreEqual(2, invocationCounter, "there should be exactly 2 messages (initial message and new message from onError pipeline)");
         }
     }
 }
