@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTesting.EndpointTemplates;
 
     class QuorumEndpoint : DefaultServer
     {

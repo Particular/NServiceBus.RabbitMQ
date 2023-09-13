@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.0.0-alpha.2" />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.0.0-alpha.2.28" />
     <PackageReference Include="RabbitMQ.Client" Version="6.5.0" />
   </ItemGroup>
 

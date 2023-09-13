@@ -1,5 +1,5 @@
 ﻿using NServiceBus;
-using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NServiceBus.AcceptanceTesting.EndpointTemplates;
 
 static class ConfigurationHelpers
 {

@@ -6,8 +6,7 @@
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using Configuration.AdvancedExtensibility;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTesting.EndpointTemplates;
     using NUnit.Framework;
     using Settings;
 

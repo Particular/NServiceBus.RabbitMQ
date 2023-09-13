@@ -3,8 +3,7 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using global::RabbitMQ.Client.Events;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTesting.EndpointTemplates;
     using NUnit.Framework;
 
     class When_requesting_non_persistent_delivery : NServiceBusAcceptanceTest

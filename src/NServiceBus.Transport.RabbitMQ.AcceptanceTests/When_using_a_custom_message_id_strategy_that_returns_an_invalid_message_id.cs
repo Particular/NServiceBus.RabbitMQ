@@ -2,8 +2,7 @@
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTesting.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_using_a_custom_message_id_strategy_that_returns_an_invalid_message_id : NServiceBusAcceptanceTest

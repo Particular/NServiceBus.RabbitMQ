@@ -5,8 +5,7 @@
     using AcceptanceTesting;
     using Features;
     using Logging;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.AcceptanceTesting.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_publishing_message_implementing_interface_in_direct_topology : NServiceBusAcceptanceTest
