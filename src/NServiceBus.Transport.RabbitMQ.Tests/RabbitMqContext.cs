@@ -15,7 +15,7 @@
         [SetUp]
         public virtual async Task SetUp()
         {
-            receivedMessages = new BlockingCollection<IncomingMessage>();
+            receivedMessages = [];
 
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
