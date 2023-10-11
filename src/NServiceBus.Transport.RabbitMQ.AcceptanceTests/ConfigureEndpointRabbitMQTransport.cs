@@ -74,6 +74,6 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             return infrastructure;
         }
 
-        public List<string> QueuesToCleanup { get; } = new List<string>();
+        public List<string> QueuesToCleanup { get; } = [];
     }
 }

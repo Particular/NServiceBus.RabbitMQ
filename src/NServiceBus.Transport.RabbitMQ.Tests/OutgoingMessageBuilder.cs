@@ -78,8 +78,8 @@
         Type eventType;
         string messageId = Guid.NewGuid().ToString();
         byte[] body;
-        Dictionary<string, string> headers = new Dictionary<string, string>();
-        DispatchProperties constraints = new DispatchProperties();
+        Dictionary<string, string> headers = [];
+        DispatchProperties constraints = [];
         DispatchConsistency dispatchConsistency = DispatchConsistency.Default;
     }
 }

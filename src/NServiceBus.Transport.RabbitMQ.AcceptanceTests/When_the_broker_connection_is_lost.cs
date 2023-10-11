@@ -70,7 +70,7 @@
                     {
                         try
                         {
-                            var outgoingMessage = new OutgoingMessage("Foo", new Dictionary<string, string>(), new byte[0]);
+                            var outgoingMessage = new OutgoingMessage("Foo", [], new byte[0]);
                             var props = new DispatchProperties
                             {
                                 DiscardIfNotReceivedBefore =

@@ -16,7 +16,7 @@
 
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
-        readonly List<AmqpTcpEndpoint> endpoints = new();
+        readonly List<AmqpTcpEndpoint> endpoints = [];
         readonly object lockObject = new();
 
         public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)

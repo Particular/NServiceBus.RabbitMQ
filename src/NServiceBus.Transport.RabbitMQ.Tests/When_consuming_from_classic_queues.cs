@@ -19,7 +19,7 @@
         [Test]
         public async Task Header_collection_is_null_after_redelivery_for_headerless_messages()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
             var headerCollectionWasNullOnFirstDelivery = false;
             var headerCollectionWasNullOnRedelivery = new TaskCompletionSource<bool>();
 
