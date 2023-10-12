@@ -21,7 +21,7 @@
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
 
-        readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = new();
+        readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
         /// <summary>
         /// Creates a new instance of the RabbitMQ transport.

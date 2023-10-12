@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
     using System.Text;
@@ -16,7 +15,7 @@
                 properties.MessageId = message.MessageId;
             }
 
-            var messageHeaders = message.Headers ?? new Dictionary<string, string>();
+            var messageHeaders = message.Headers ?? [];
 
             var delayed = CalculateDelay(dispatchProperties, out var delay);
 

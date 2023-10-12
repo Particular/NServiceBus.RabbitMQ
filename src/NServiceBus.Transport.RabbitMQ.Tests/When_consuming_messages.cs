@@ -13,7 +13,7 @@
         [Test]
         public async Task Should_block_until_a_message_is_available()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
             var transportOperations = new TransportOperations(new TransportOperation(message, new UnicastAddressTag(ReceiverQueue)));
 
             await messageDispatcher.Dispatch(transportOperations, new TransportTransaction());
@@ -26,7 +26,7 @@
         [Test]
         public void Should_be_able_to_receive_messages_without_headers()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
             using (var connection = connectionFactory.CreatePublishConnection())
             using (var channel = connection.CreateModel())
@@ -46,7 +46,7 @@
         [Test]
         public void Should_move_message_without_message_id_to_error_queue()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
             using (var connection = connectionFactory.CreatePublishConnection())
             using (var channel = connection.CreateModel())
@@ -67,7 +67,7 @@
         [Test]
         public async Task Should_handle_retries_for_messages_without_headers()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
             var numRetries = 0;
             var handled = new TaskCompletionSource<bool>();
 
@@ -109,7 +109,7 @@
         [Test]
         public async Task Header_collection_is_not_null_after_redelivery_for_headerless_messages()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
             var headerCollectionWasNullOnFirstDelivery = false;
             var headerCollectionWasNullOnRedelivery = new TaskCompletionSource<bool>();
 
@@ -154,7 +154,7 @@
         [Test]
         public void Should_up_convert_the_native_type_to_the_enclosed_message_types_header_if_empty()
         {
-            var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), Array.Empty<byte>());
+            var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
             var typeName = typeof(MyMessage).FullName;
 
