@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="BitFaster.Caching" Version="[2.2.0, 3.0.0)" />
     <PackageReference Include="NServiceBus" Version="9.0.0-alpha.9" />
-    <PackageReference Include="RabbitMQ.Client" Version="[6.5.0, 7.0.0)" />
+    <PackageReference Include="RabbitMQ.Client" Version="[6.6.0, 7.0.0)" />
   </ItemGroup>
 
   <ItemGroup>
