@@ -40,7 +40,6 @@
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = heartbeatInterval,
                 NetworkRecoveryInterval = networkRecoveryInterval,
-                UseBackgroundThreadsForIO = true,
                 DispatchConsumersAsync = true,
             };
 

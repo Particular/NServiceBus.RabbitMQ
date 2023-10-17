@@ -19,7 +19,6 @@ public class ConnectionHelper
         var factory = new ConnectionFactory
         {
             AutomaticRecoveryEnabled = true,
-            UseBackgroundThreadsForIO = true,
             HostName = connectionStringParser.Host,
             Port = connectionStringParser.Port,
             VirtualHost = connectionStringParser.VirtualHost,

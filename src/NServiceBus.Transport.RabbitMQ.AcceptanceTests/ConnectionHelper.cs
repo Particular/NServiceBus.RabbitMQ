@@ -20,7 +20,6 @@
             var factory = new ConnectionFactory
             {
                 AutomaticRecoveryEnabled = true,
-                UseBackgroundThreadsForIO = true,
                 HostName = connectionConfiguration.Host,
                 Port = connectionConfiguration.Port,
                 VirtualHost = connectionConfiguration.VirtualHost,
