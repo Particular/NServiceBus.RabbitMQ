@@ -31,6 +31,8 @@ jobs:
           tenant-id: ${{ secrets.AZURE_KEY_VAULT_TENANT_ID }}
           client-secret: ${{ secrets.AZURE_KEY_VAULT_CLIENT_SECRET }}
           certificate-name: ${{ secrets.AZURE_KEY_VAULT_CERTIFICATE_NAME }}
+      - name: test next step after signing
+        run: echo "Hello world"
       #- name: Publish artifacts
       #  uses: actions/upload-artifact@v3.1.3
       #  with:
