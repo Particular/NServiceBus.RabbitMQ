@@ -40,8 +40,8 @@ jobs:
       - name: Sign NuGet packages
         uses: Particular/sign-nuget-packages-action@v1.0.0
         with:
-          #client-id: ${{ secrets.AZURE_KEY_VAULT_CLIENT_ID }}
-          client-id: 123456
+          client-id: ${{ secrets.AZURE_KEY_VAULT_CLIENT_ID }}
+          #client-id: 123456
           tenant-id: ${{ secrets.AZURE_KEY_VAULT_TENANT_ID }}
           client-secret: ${{ secrets.AZURE_KEY_VAULT_CLIENT_SECRET }}
           certificate-name: ${{ secrets.AZURE_KEY_VAULT_CERTIFICATE_NAME }}
@@ -55,12 +55,14 @@ jobs:
             --timestamp-rfc3161 http://timestamp.digicert.com `
             --timestamp-digest sha256 `
             --azure-key-vault-url https://particularcodesigning.vault.azure.net `
-            --azure-key-vault-client-id ${{ inputs.client-id }} `
+            --azure-key-vault-client-id 123456 `
             --azure-key-vault-tenant-id ${{ inputs.tenant-id }} `
             --azure-key-vault-client-secret ${{ inputs.client-secret }} `
             --azure-key-vault-certificate ${{ inputs.certificate-name }}
   
           }
+
+      # --azure-key-vault-client-id ${{ inputs.client-id }} `
       - name: test next step after signing
         run: echo "Hello world"
       #- name: Upload packages
