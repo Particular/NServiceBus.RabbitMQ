@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
-            name: Windows
+          #- os: windows-2022
+          #  name: Windows
           - os: ubuntu-22.04
             name: Linux
       fail-fast: false
@@ -44,6 +44,22 @@ jobs:
           tenant-id: ${{ secrets.AZURE_KEY_VAULT_TENANT_ID }}
           client-secret: ${{ secrets.AZURE_KEY_VAULT_CLIENT_SECRET }}
           certificate-name: ${{ secrets.AZURE_KEY_VAULT_CERTIFICATE_NAME }}
+      - name: Verify Signed NuGet Packages
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path nugets -Filter *.nupkg | ForEach-Object {
+  
+            NuGetKeyVaultSignTool verify $_.FullName `
+            --file-digest sha256 `
+            --timestamp-rfc3161 http://timestamp.digicert.com `
+            --timestamp-digest sha256 `
+            --azure-key-vault-url https://particularcodesigning.vault.azure.net `
+            --azure-key-vault-client-id ${{ inputs.client-id }} `
+            --azure-key-vault-tenant-id ${{ inputs.tenant-id }} `
+            --azure-key-vault-client-secret ${{ inputs.client-secret }} `
+            --azure-key-vault-certificate ${{ inputs.certificate-name }}
+  
+          }
       - name: test next step after signing
         run: echo "Hello world"
       #- name: Upload packages
