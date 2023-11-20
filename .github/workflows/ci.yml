@@ -50,7 +50,7 @@ jobs:
         run: |
           Get-ChildItem -Path nugets -Filter *.nupkg | ForEach-Object {
   
-            donet nuget verify $_.FullName
+            dotnet nuget verify $_.FullName
             # `--file-digest sha256 `
             # --timestamp-rfc3161 http://timestamp.digicert.com `
             # --timestamp-digest sha256 `
