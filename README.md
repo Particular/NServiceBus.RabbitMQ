@@ -1,8 +1,10 @@
-# RabbitMQ Transport for NServiceBus
+# NServiceBus.RabbitMQ
 
-The [NServiceBus.RabbitMQ NuGet package](https://www.nuget.org/packages/NServiceBus.RabbitMQ) provides support for sending messages over [RabbitMQ](http://www.rabbitmq.com/).
+NServiceBus.RabbitMQ supports sending messages over [RabbitMQ](http://www.rabbitmq.com/).
 
-For more information, see the [documentation](https://docs.particular.net/nservicebus/rabbitmq/).
+It is part of the [Particular Service Platform](https://particular.net/service-platform), which includes [NServiceBus](https://particular.net/nservicebus) and tools to build, monitor, and debug distributed systems.
+
+See the [RabbitMQ Transport documentation](https://docs.particular.net/nservicebus/bridge) for more details on how to use it.
 
 ## Running tests locally
 
