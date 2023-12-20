@@ -1,6 +1,6 @@
 # NServiceBus.RabbitMQ
 
-NServiceBus.RabbitMQ supports sending messages over [RabbitMQ](http://www.rabbitmq.com/).
+NServiceBus.RabbitMQ supports sending messages over [RabbitMQ](http://www.rabbitmq.com/) using the [RabbitMQ .NET Client](https://www.nuget.org/packages/RabbitMQ.Client/).
 
 It is part of the [Particular Service Platform](https://particular.net/service-platform), which includes [NServiceBus](https://particular.net/nservicebus) and tools to build, monitor, and debug distributed systems.
 
