@@ -34,8 +34,8 @@
                 supportsPublishSubscribe: true,
                 supportsTTBR: true)
         {
-            Guard.AgainstNull(nameof(routingTopology), routingTopology);
-            Guard.AgainstNull(nameof(connectionString), connectionString);
+            ArgumentNullException.ThrowIfNull(routingTopology);
+            ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
@@ -54,7 +54,7 @@
             get => messageIdStrategy;
             set
             {
-                Guard.AgainstNull("value", value);
+                ArgumentNullException.ThrowIfNull(value);
                 messageIdStrategy = value;
             }
         }
@@ -67,7 +67,7 @@
             get => timeToWaitBeforeTriggeringCircuitBreaker;
             set
             {
-                Guard.AgainstNegativeAndZero("value", value);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 timeToWaitBeforeTriggeringCircuitBreaker = value;
             }
         }
@@ -80,7 +80,7 @@
             get => prefetchCountCalculation;
             set
             {
-                Guard.AgainstNull("value", value);
+                ArgumentNullException.ThrowIfNull(value);
                 prefetchCountCalculation = value;
             }
         }
@@ -108,7 +108,7 @@
             get => heartbeatInterval;
             set
             {
-                Guard.AgainstNegativeAndZero("value", value);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 heartbeatInterval = value;
             }
         }
@@ -121,7 +121,7 @@
             get => networkRecoveryInterval;
             set
             {
-                Guard.AgainstNegativeAndZero("value", value);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 networkRecoveryInterval = value;
             }
         }
@@ -133,7 +133,7 @@
         /// <param name="useTls">Indicates if the connection to the node should be secured with TLS.</param>
         public void AddClusterNode(string hostName, bool useTls)
         {
-            Guard.AgainstNullAndEmpty(nameof(hostName), hostName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(hostName);
 
             additionalClusterNodes.Add((hostName, -1, useTls));
         }
@@ -146,8 +146,8 @@
         /// <param name="useTls">Indicates if the connection to the node should be secured with TLS.</param>
         public void AddClusterNode(string hostName, int port, bool useTls)
         {
-            Guard.AgainstNullAndEmpty(nameof(hostName), hostName);
-            Guard.AgainstNegativeAndZero(nameof(port), port);
+            ArgumentException.ThrowIfNullOrWhiteSpace(hostName);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(port);
 
             additionalClusterNodes.Add((hostName, port, useTls));
         }

@@ -4,12 +4,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
+    <PackageId>NServiceBus.RabbitMQ</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BitFaster.Caching" Version="[2.2.0, 3.0.0)" />
-    <PackageReference Include="NServiceBus" Version="9.0.0-alpha.9" />
-    <PackageReference Include="RabbitMQ.Client" Version="[6.7.0, 7.0.0)" />
+    <PackageReference Include="BitFaster.Caching" Version="[2.4.1, 3.0.0)" />
+    <PackageReference Include="NServiceBus" Version="[9.0.0, 10.0.0)" />
+    <PackageReference Include="RabbitMQ.Client" Version="[6.8.1, 7.0.0)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,11 +18,6 @@
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="4.0.0" PrivateAssets="All" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <PackageId>NServiceBus.RabbitMQ</PackageId>
-    <Description>RabbitMQ support for NServiceBus</Description>
-  </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.AcceptanceTests" Key="$(NServiceBusTestsKey)" />

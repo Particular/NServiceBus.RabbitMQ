@@ -18,8 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.0.0-alpha.9" GeneratePathProperty="true" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.7.0" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
   </ItemGroup>
 
   <ItemGroup>
