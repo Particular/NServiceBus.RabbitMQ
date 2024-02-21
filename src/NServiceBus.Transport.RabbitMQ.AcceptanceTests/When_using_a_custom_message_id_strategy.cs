@@ -59,7 +59,7 @@
                     protected override Task OnStart(IMessageSession session, CancellationToken cancellationToken = default)
                     {
                         //Use feature to send message that has no message id
-                        var messageBody = "<MyRequest></MyRequest>";
+                        var messageBody = "{}";
 
                         var message = new OutgoingMessage(
                             string.Empty,
