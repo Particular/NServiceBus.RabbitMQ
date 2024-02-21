@@ -81,7 +81,7 @@
         bool TryReceiveMessage(out IncomingMessage message, TimeSpan timeout) =>
             receivedMessages.TryTake(out message, timeout);
 
-        protected IList<string> AdditionalReceiverQueues = new List<string>();
+        protected IList<string> AdditionalReceiverQueues = [];
 
         protected Func<MessageContext, CancellationToken, Task> OnMessage;
         protected Func<ErrorContext, CancellationToken, Task<ErrorHandleResult>> OnError;
