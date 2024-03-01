@@ -28,8 +28,8 @@
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
         readonly string name;
-        readonly FastConcurrentLru<string, int> deliveryAttempts = new(100);
-        readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new(100);
+        readonly FastConcurrentLru<string, int> deliveryAttempts = new(1_000);
+        readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new(1_000);
 
         OnMessage onMessage;
         OnError onError;

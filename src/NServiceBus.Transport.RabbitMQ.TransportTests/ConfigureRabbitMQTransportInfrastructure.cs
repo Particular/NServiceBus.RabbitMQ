@@ -27,11 +27,12 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             "mainReceiver",
             inputQueue,
             true,
-            true, errorQueueName);
+            false,
+            errorQueueName);
 
-        var transport = await transportDefinition.Initialize(hostSettings, new[] { mainReceiverSettings }, new[] { errorQueueName }, cancellationToken);
+        var transport = await transportDefinition.Initialize(hostSettings, [mainReceiverSettings], [errorQueueName], cancellationToken);
 
-        queuesToCleanUp = new[] { transport.ToTransportAddress(inputQueue), errorQueueName };
+        queuesToCleanUp = [transport.ToTransportAddress(inputQueue), errorQueueName];
         return transport;
     }
 
