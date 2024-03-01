@@ -1,10 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
-    <PackageId>NServiceBus.RabbitMQ</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +17,11 @@
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="4.0.0" PrivateAssets="All" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>NServiceBus.RabbitMQ</PackageId>
+    <Description>RabbitMQ support for NServiceBus</Description>
+  </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
