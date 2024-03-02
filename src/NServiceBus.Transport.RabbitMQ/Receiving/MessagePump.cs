@@ -12,7 +12,7 @@
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
 
-    sealed class MessagePump : IMessageReceiver, IDisposable
+    sealed class MessagePump : IMessageReceiver, IAsyncDisposable
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new();
@@ -40,6 +40,7 @@
         CancellationTokenSource messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection connection;
+        Task reconnectTask = Task.CompletedTask;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -117,7 +118,7 @@
         {
             maxConcurrency = limitations.MaxConcurrency;
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
-            _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token), cancellationToken);
+            reconnectTask = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token), cancellationToken);
             return Task.CompletedTask;
         }
 
@@ -512,7 +513,9 @@
             }
         }
 
-        public void Dispose()
+#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        public async ValueTask DisposeAsync()
+#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
             if (disposed)
             {
@@ -526,6 +529,8 @@
             // so that any possible reconnect attempt has the possibility to gracefully stop too.
             messageProcessingCancellationTokenSource?.Cancel();
             messageProcessingCancellationTokenSource?.Dispose();
+
+            await reconnectTask.ConfigureAwait(false);
 
             connection?.Dispose();
             disposed = true;
