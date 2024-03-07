@@ -8,3 +8,6 @@ dotnet_diagnostic.PS0018.severity = none  # A task-returning method should have 
 
 # Justification: Tests don't support cancellation and don't need to forward IMessageHandlerContext.CancellationToken
 dotnet_diagnostic.NSB0002.severity = suggestion
+
+# IDE0028: Simplify collection initialization
+dotnet_diagnostic.IDE0028.severity = suggestion
