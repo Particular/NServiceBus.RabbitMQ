@@ -35,5 +35,9 @@
   <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.CommandLine.Tests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
+  
+  <ItemGroup Label="Pinned transitive dependencies">
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>
