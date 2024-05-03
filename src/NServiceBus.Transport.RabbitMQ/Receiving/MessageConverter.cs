@@ -110,7 +110,7 @@
         {
             if (value is byte[] bytes)
             {
-                return Encoding.UTF8.GetString(bytes);
+                return Encoding.UTF8.GetString(bytes.AsSpan());
             }
 
             if (value is Dictionary<string, object> dictionary)
