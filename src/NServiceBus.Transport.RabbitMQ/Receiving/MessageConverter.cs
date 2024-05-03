@@ -120,9 +120,9 @@
                 foreach (var kvp in dictionary)
                 {
                     sb.Append(kvp.Key);
-                    sb.Append("=");
+                    sb.Append('=');
                     sb.Append(ValueToString(kvp.Value));
-                    sb.Append(",");
+                    sb.Append(',');
                 }
 
                 if (sb.Length > 0)
@@ -140,7 +140,7 @@
                 foreach (var entry in list)
                 {
                     sb.Append(ValueToString(entry));
-                    sb.Append(";");
+                    sb.Append(';');
                 }
 
                 if (sb.Length > 0)
