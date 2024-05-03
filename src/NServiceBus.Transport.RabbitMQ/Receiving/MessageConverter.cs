@@ -39,7 +39,12 @@
                 messageHeaders.Remove(BasicPropertiesExtensions.ConfirmationIdHeader);
             }
 
-            var deserializedHeaders = DeserializeHeaders(messageHeaders);
+            // Leaving space for ReplyTo, CorrelationId, DeliveryMode, EnclosedMessageTypes and CallbackQueue conditionally
+            // added below. This is a bit cumbersome and need to be changed when things are conditionally added below
+            // but it prevents the header dictionary from growing and relocating which creates quite a bit of
+            // memory allocations and eats up CPU cycles.
+            const int extraCapacity = 5;
+            var deserializedHeaders = DeserializeHeaders(messageHeaders, extraCapacity);
 
             if (properties.IsReplyToPresent())
             {
@@ -86,18 +91,18 @@
             return properties.MessageId;
         }
 
-        static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers)
+        static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers, int extraCapacity)
         {
-            var deserializedHeaders = new Dictionary<string, string>();
-
-            if (headers is Dictionary<string, object> messageHeaders)
+            if (headers is null)
             {
-                foreach (var header in messageHeaders)
-                {
-                    deserializedHeaders.Add(header.Key, ValueToString(header.Value));
-                }
+                return new Dictionary<string, string>(extraCapacity);
             }
 
+            var deserializedHeaders = new Dictionary<string, string>(headers.Count + extraCapacity);
+            foreach (var header in headers)
+            {
+                deserializedHeaders.Add(header.Key, ValueToString(header.Value));
+            }
             return deserializedHeaders;
         }
 
