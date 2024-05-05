@@ -156,7 +156,7 @@
 
             messagePumpCancellationTokenSource?.Cancel();
 
-            using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
+            await using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
                 while (Interlocked.Read(ref numberOfMessagesBeingProcessed) > 0)
                 {
