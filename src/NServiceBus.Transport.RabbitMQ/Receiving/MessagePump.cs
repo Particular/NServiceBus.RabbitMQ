@@ -459,10 +459,7 @@
 
         static string CreateMessageIdKey(Dictionary<string, string> headers, string messageId)
         {
-            if (!headers.TryGetValue(NServiceBus.Headers.DelayedRetries, out var delayedRetries))
-            {
-                delayedRetries = "0";
-            }
+            var delayedRetries = headers.GetValueOrDefault(NServiceBus.Headers.DelayedRetries, "0");
 
             return $"{messageId}-{delayedRetries}";
         }
