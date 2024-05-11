@@ -39,11 +39,11 @@
                 messageHeaders.Remove(BasicPropertiesExtensions.ConfirmationIdHeader);
             }
 
-            // Leaving space for ReplyTo, CorrelationId, DeliveryMode, EnclosedMessageTypes and CallbackQueue conditionally
+            // Leaving space for ReplyTo, CorrelationId, DeliveryMode, EnclosedMessageTypes conditionally
             // added below. This is a bit cumbersome and need to be changed when things are conditionally added below
             // but it prevents the header dictionary from growing and relocating which creates quite a bit of
             // memory allocations and eats up CPU cycles.
-            const int extraCapacity = 5;
+            const int extraCapacity = 4;
             var deserializedHeaders = DeserializeHeaders(messageHeaders, extraCapacity);
 
             if (properties.IsReplyToPresent())
