@@ -51,6 +51,11 @@
                 deserializedHeaders[Headers.ReplyToAddress] = properties.ReplyTo;
             }
 
+            if (deserializedHeaders.TryGetValue("NServiceBus.RabbitMQ.CallbackQueue", out var callbackQueue))
+            {
+                deserializedHeaders[Headers.ReplyToAddress] = callbackQueue;
+            }
+
             if (properties.IsCorrelationIdPresent())
             {
                 deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId;
@@ -65,11 +70,6 @@
             if (!deserializedHeaders.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
                 deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type;
-            }
-
-            if (deserializedHeaders.TryGetValue("NServiceBus.RabbitMQ.CallbackQueue", out var callbackQueue))
-            {
-                deserializedHeaders[Headers.ReplyToAddress] = callbackQueue;
             }
 
             //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
