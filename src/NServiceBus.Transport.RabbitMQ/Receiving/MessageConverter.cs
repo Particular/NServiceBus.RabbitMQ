@@ -67,9 +67,9 @@
                 deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type;
             }
 
-            if (deserializedHeaders.ContainsKey("NServiceBus.RabbitMQ.CallbackQueue"))
+            if (deserializedHeaders.TryGetValue("NServiceBus.RabbitMQ.CallbackQueue", out var callbackQueue))
             {
-                deserializedHeaders[Headers.ReplyToAddress] = deserializedHeaders["NServiceBus.RabbitMQ.CallbackQueue"];
+                deserializedHeaders[Headers.ReplyToAddress] = callbackQueue;
             }
 
             //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
