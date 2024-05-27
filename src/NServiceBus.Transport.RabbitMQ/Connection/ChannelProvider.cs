@@ -53,7 +53,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", connectionName, ex);
+                    Logger.WarnFormat("'{0}': Reconnecting to the broker failed: {1}", connectionName, ex);
                 }
             }
 
