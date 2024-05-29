@@ -54,15 +54,14 @@
             }
         }
 
-        public override Task Shutdown(CancellationToken cancellationToken = default)
+        public override async Task Shutdown(CancellationToken cancellationToken = default)
         {
             foreach (IMessageReceiver receiver in Receivers.Values)
             {
-                ((MessagePump)receiver).Dispose();
+                await ((MessagePump)receiver).DisposeAsync().ConfigureAwait(false);
             }
 
-            channelProvider.Dispose();
-            return Task.CompletedTask;
+            await channelProvider.DisposeAsync().ConfigureAwait(false);
         }
 
         public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);
