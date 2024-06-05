@@ -96,8 +96,15 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
-            stoppingTokenSource.Cancel();
-            stoppingTokenSource.Dispose();
+            try
+            {
+                stoppingTokenSource.Cancel();
+                stoppingTokenSource.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // .Cancel can throw if already disposed
+            }
 
             connection?.Dispose();
 
