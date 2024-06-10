@@ -126,7 +126,8 @@
 
         BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
         {
-            using (var connection = connectionFactory.CreateConnection("Consume"))
+            var (connection, _) = connectionFactory.CreateConnection("Consume");
+            using (connection)
             using (var channel = connection.CreateModel())
             {
                 var message = channel.BasicGet(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");

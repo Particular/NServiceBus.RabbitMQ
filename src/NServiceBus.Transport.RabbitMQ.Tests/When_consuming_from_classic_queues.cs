@@ -40,7 +40,9 @@
 
             OnError = (ec, __) => Task.FromResult(ErrorHandleResult.RetryRequired);
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            var (connection, unregister) = connectionFactory.CreatePublishConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();

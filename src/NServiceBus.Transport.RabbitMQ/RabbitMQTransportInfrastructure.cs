@@ -36,21 +36,24 @@
 
         internal void SetupInfrastructure(string[] sendingQueues)
         {
-            using var connection = connectionFactory.CreateAdministrationConnection();
-
-            connection.VerifyBrokerRequirements();
-
-            using var channel = connection.CreateModel();
-
-            DelayInfrastructure.Build(channel);
-
-            var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
-
-            routingTopology.Initialize(channel, receivingQueues, sendingQueues);
-
-            foreach (string receivingAddress in receivingQueues)
+            var (connection, unregister) = connectionFactory.CreateAdministrationConnection();
+            using (connection)
+            using (unregister)
             {
-                routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                connection.VerifyBrokerRequirements();
+
+                using var channel = connection.CreateModel();
+
+                DelayInfrastructure.Build(channel);
+
+                var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
+
+                routingTopology.Initialize(channel, receivingQueues, sendingQueues);
+
+                foreach (string receivingAddress in receivingQueues)
+                {
+                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                }
             }
         }
 

@@ -39,6 +39,7 @@
         CancellationTokenSource messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection connection;
+        IDisposable scope;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -123,7 +124,12 @@
 
         void ConnectToBroker()
         {
-            connection = connectionFactory.CreateConnection(name, false, maxConcurrency);
+            if (connection != null)
+            {
+                connection.ConnectionShutdown -= Connection_ConnectionShutdown;
+            }
+
+            (connection, scope) = connectionFactory.CreateConnection(name, false, maxConcurrency);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
@@ -193,6 +199,8 @@
             messagePumpCancellationTokenSource?.Dispose();
             messagePumpCancellationTokenSource = null;
             messageProcessingCancellationTokenSource?.Dispose();
+            connection.ConnectionShutdown -= Connection_ConnectionShutdown;
+            scope.Dispose();
             connection.Dispose();
             circuitBreaker?.Dispose();
         }

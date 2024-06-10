@@ -21,8 +21,14 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void CreateConnection()
         {
+            if (connection != null)
+            {
+                connection.ConnectionShutdown -= Connection_ConnectionShutdown;
+            }
+
+            unregister?.Dispose();
             connection?.Dispose();
-            connection = connectionFactory.CreatePublishConnection(); // Can take over 5 seconds
+            (connection, unregister) = connectionFactory.CreatePublishConnection(); // Can take over 5 seconds
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
         }
 
@@ -106,6 +112,11 @@ namespace NServiceBus.Transport.RabbitMQ
                 // .Cancel can throw if already disposed
             }
 
+            if (connection != null)
+            {
+                connection.ConnectionShutdown -= Connection_ConnectionShutdown;
+            }
+            unregister?.Dispose();
             connection?.Dispose();
 
             foreach (var channel in channels)
@@ -120,6 +131,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         readonly CancellationTokenSource stoppingTokenSource = new();
         IConnection connection;
+        IDisposable unregister;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
     }
