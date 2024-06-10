@@ -124,11 +124,6 @@
 
         void ConnectToBroker()
         {
-            if (connection != null)
-            {
-                connection.ConnectionShutdown -= Connection_ConnectionShutdown;
-            }
-
             (connection, scope) = connectionFactory.CreateConnection(name, false, maxConcurrency);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
@@ -293,6 +288,7 @@
                             connection.Close();
                         }
 
+                        connection.ConnectionShutdown -= Connection_ConnectionShutdown;
                         connection.Dispose();
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
