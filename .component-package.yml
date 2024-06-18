@@ -1,0 +1,4 @@
+ComponentType: Transport
+ComponentPackages:
+  - Name: NServiceBus.RabbitMQ
+  - Name: NServiceBus.Transport.RabbitMQ.CommandLine
