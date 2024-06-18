@@ -21,7 +21,9 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
+            var (connection, unregister) = connectionFactory.CreateAdministrationConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 foreach (var eventType in eventTypes)
@@ -34,7 +36,9 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
+            var (connection, unregister) = connectionFactory.CreateAdministrationConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 routingTopology.TeardownSubscription(channel, eventType, localQueue);

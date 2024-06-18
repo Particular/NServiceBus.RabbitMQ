@@ -39,6 +39,7 @@
         CancellationTokenSource messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection connection;
+        IDisposable scope;
 
         // Stop
         TaskCompletionSource<bool> connectionShutdownCompleted;
@@ -123,7 +124,7 @@
 
         void ConnectToBroker()
         {
-            connection = connectionFactory.CreateConnection(name, false, maxConcurrency);
+            (connection, scope) = connectionFactory.CreateConnection(name, false, maxConcurrency);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
@@ -193,6 +194,8 @@
             messagePumpCancellationTokenSource?.Dispose();
             messagePumpCancellationTokenSource = null;
             messageProcessingCancellationTokenSource?.Dispose();
+            connection.ConnectionShutdown -= Connection_ConnectionShutdown;
+            scope.Dispose();
             connection.Dispose();
             circuitBreaker?.Dispose();
         }
@@ -285,6 +288,7 @@
                             connection.Close();
                         }
 
+                        connection.ConnectionShutdown -= Connection_ConnectionShutdown;
                         connection.Dispose();
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);

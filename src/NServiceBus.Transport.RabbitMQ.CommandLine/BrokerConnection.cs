@@ -12,7 +12,7 @@
 
         public IConnection Create()
         {
-            var connection = connectionFactory.CreateAdministrationConnection();
+            var (connection, _) = connectionFactory.CreateAdministrationConnection();
             connection.VerifyBrokerRequirements();
 
             return connection;

@@ -28,7 +28,9 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            var (connection, unregister) = connectionFactory.CreatePublishConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();
@@ -48,7 +50,9 @@
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            var (connection, unregister) = connectionFactory.CreatePublishConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();
@@ -86,7 +90,9 @@
                 return Task.FromResult(ErrorHandleResult.Handled);
             };
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            var (connection, unregister) = connectionFactory.CreatePublishConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();
@@ -130,7 +136,9 @@
 
             OnError = (ec, __) => Task.FromResult(ErrorHandleResult.RetryRequired);
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            var (connection, unregister) = connectionFactory.CreatePublishConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();
@@ -158,7 +166,9 @@
 
             var typeName = typeof(MyMessage).FullName;
 
-            using (var connection = connectionFactory.CreatePublishConnection())
+            var (connection, unregister) = connectionFactory.CreatePublishConnection();
+            using (connection)
+            using (unregister)
             using (var channel = connection.CreateModel())
             {
                 var properties = channel.CreateBasicProperties();

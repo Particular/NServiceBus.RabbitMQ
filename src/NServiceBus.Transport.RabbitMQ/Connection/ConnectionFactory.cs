@@ -7,6 +7,7 @@
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
     using Logging;
     using Support;
 
@@ -110,12 +111,26 @@
             connectionFactory.ClientProperties.Add("endpoint_name", endpointName);
         }
 
-        public IConnection CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);
+        public (IConnection, IDisposable) CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);
 
-        public IConnection CreateAdministrationConnection() => CreateConnection($"{endpointName} Administration", false);
+        public (IConnection, IDisposable) CreateAdministrationConnection() => CreateConnection($"{endpointName} Administration", false);
 
-        public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1)
+        public (IConnection, IDisposable) CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1)
         {
+            void OnConnectionOnConnectionBlocked(object sender, ConnectionBlockedEventArgs e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
+            void OnConnectionOnConnectionUnblocked(object sender, EventArgs e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
+
+            void OnConnectionOnConnectionShutdown(object sender, ShutdownEventArgs e)
+            {
+                if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
+                {
+                    return;
+                }
+
+                Logger.WarnFormat("'{0}' connection shutdown: {1}", connectionName, e);
+            }
+
+
             lock (lockObject)
             {
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
@@ -123,21 +138,24 @@
 
                 var connection = connectionFactory.CreateConnection(endpoints, connectionName);
 
-                connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
-                connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
-
-                connection.ConnectionShutdown += (sender, e) =>
+                void UnregisterEvents()
                 {
-                    if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
-                    {
-                        return;
-                    }
+                    connection.ConnectionBlocked -= OnConnectionOnConnectionBlocked;
+                    connection.ConnectionUnblocked -= OnConnectionOnConnectionUnblocked;
+                    connection.ConnectionShutdown -= OnConnectionOnConnectionShutdown;
+                }
 
-                    Logger.WarnFormat("'{0}' connection shutdown: {1}", connectionName, e);
-                };
+                connection.ConnectionBlocked += OnConnectionOnConnectionBlocked;
+                connection.ConnectionUnblocked += OnConnectionOnConnectionUnblocked;
+                connection.ConnectionShutdown += OnConnectionOnConnectionShutdown;
 
-                return connection;
+                return (connection, new Unregister(UnregisterEvents));
             }
+        }
+
+        sealed class Unregister(Action action) : IDisposable
+        {
+            public void Dispose() => action();
         }
     }
 }
