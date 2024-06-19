@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
+    using System.Collections.Specialized;
     using System.Text;
     using global::RabbitMQ.Client;
 
@@ -85,22 +85,23 @@
                 delayInSeconds = 0;
             }
 
-            var bitArray = new BitArray(new[] { delayInSeconds });
+            var bitVector = new BitVector32(delayInSeconds);
             var sb = new StringBuilder();
             startingDelayLevel = 0;
 
+            var mask = BitVector32.CreateMask();
             for (var level = MaxLevel; level >= 0; level--)
             {
-                if (startingDelayLevel == 0 && bitArray[level])
+                bool flag = bitVector[mask << level];
+                if (startingDelayLevel == 0 && flag)
                 {
                     startingDelayLevel = level;
                 }
 
-                sb.Append(bitArray[level] ? "1." : "0.");
+                sb.Append(flag ? "1." : "0.");
             }
 
             sb.Append(address);
-
             return sb.ToString();
         }
     }
