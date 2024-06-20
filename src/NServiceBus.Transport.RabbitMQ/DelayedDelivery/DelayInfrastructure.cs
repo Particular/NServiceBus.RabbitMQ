@@ -87,7 +87,7 @@
 
             startingDelayLevel = 0;
 
-            IntPtr addr = (IntPtr)Unsafe.AsPointer(ref startingDelayLevel);
+            var addr = (IntPtr)Unsafe.AsPointer(ref startingDelayLevel);
             return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
 
             static void Action(Span<char> span, (string address, int, IntPtr) state)
@@ -99,16 +99,16 @@
 
                 var bitVector = new BitVector32(delayInSeconds);
 
-                int index = 0;
+                var index = 0;
                 for (var level = MaxLevel; level >= 0; level--)
                 {
-                    bool flag = bitVector[mask << level];
-                    if (startingDelayLevel == 0 && flag)
+                    var bitFlag = bitVector[mask << level];
+                    if (startingDelayLevel == 0 && bitFlag)
                     {
                         startingDelayLevel = level;
                     }
 
-                    span[index++] = flag ? '1' : '0';
+                    span[index++] = bitFlag ? '1' : '0';
                     span[index++] = '.';
                 }
 
