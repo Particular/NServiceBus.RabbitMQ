@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Collections.Specialized;
-    using System.Text;
+    using System.Runtime.CompilerServices;
     using global::RabbitMQ.Client;
 
     static class DelayInfrastructure
@@ -85,24 +85,44 @@
                 delayInSeconds = 0;
             }
 
-            var bitVector = new BitVector32(delayInSeconds);
-            var sb = new StringBuilder();
             startingDelayLevel = 0;
 
-            var mask = BitVector32.CreateMask();
-            for (var level = MaxLevel; level >= 0; level--)
+            unsafe
             {
-                bool flag = bitVector[mask << level];
-                if (startingDelayLevel == 0 && flag)
+                fixed (int* startingDelayLevelPtr = &startingDelayLevel)
                 {
-                    startingDelayLevel = level;
+                    IntPtr addr = (IntPtr)startingDelayLevelPtr;
+
+                    return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
+
+                    static void Action(Span<char> span, (string address, int, IntPtr) state)
+                    {
+                        var (address, delayInSeconds, startingDelayLevelPtr) = state;
+
+                        var startingDelayLevel = 0;
+                        var mask = BitVector32.CreateMask();
+
+                        var bitVector = new BitVector32(delayInSeconds);
+
+                        int index = 0;
+                        for (var level = MaxLevel; level >= 0; level--)
+                        {
+                            bool flag = bitVector[mask << level];
+                            if (startingDelayLevel == 0 && flag)
+                            {
+                                startingDelayLevel = level;
+                            }
+
+                            span[index++] = flag ? '1' : '0';
+                            span[index++] = '.';
+                        }
+
+                        address.AsSpan().CopyTo(span[index..]);
+
+                        Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
+                    }
                 }
-
-                sb.Append(flag ? "1." : "0.");
             }
-
-            sb.Append(address);
-            return sb.ToString();
         }
     }
 }
