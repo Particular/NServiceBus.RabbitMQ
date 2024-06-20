@@ -86,35 +86,38 @@
             }
 
             startingDelayLevel = 0;
-
-            var addr = (IntPtr)Unsafe.AsPointer(ref startingDelayLevel);
-            return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
-
-            static void Action(Span<char> span, (string address, int, IntPtr) state)
+            fixed (int* startingDelayLevelPtr = &startingDelayLevel)
             {
-                var (address, delayInSeconds, startingDelayLevelPtr) = state;
+                var addr = (IntPtr)startingDelayLevelPtr;
 
-                var startingDelayLevel = 0;
-                var mask = BitVector32.CreateMask();
+                return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
 
-                var bitVector = new BitVector32(delayInSeconds);
-
-                var index = 0;
-                for (var level = MaxLevel; level >= 0; level--)
+                static void Action(Span<char> span, (string address, int, IntPtr) state)
                 {
-                    var bitFlag = bitVector[mask << level];
-                    if (startingDelayLevel == 0 && bitFlag)
+                    var (address, delayInSeconds, startingDelayLevelPtr) = state;
+
+                    var startingDelayLevel = 0;
+                    var mask = BitVector32.CreateMask();
+
+                    var bitVector = new BitVector32(delayInSeconds);
+
+                    var index = 0;
+                    for (var level = MaxLevel; level >= 0; level--)
                     {
-                        startingDelayLevel = level;
+                        var flag = bitVector[mask << level];
+                        if (startingDelayLevel == 0 && flag)
+                        {
+                            startingDelayLevel = level;
+                        }
+
+                        span[index++] = flag ? '1' : '0';
+                        span[index++] = '.';
                     }
 
-                    span[index++] = bitFlag ? '1' : '0';
-                    span[index++] = '.';
+                    address.AsSpan().CopyTo(span[index..]);
+
+                    Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
                 }
-
-                address.AsSpan().CopyTo(span[index..]);
-
-                Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
             }
         }
     }
