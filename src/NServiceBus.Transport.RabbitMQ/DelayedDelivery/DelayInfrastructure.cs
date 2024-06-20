@@ -78,7 +78,7 @@
             }
         }
 
-        public static string CalculateRoutingKey(int delayInSeconds, string address, out int startingDelayLevel)
+        public static unsafe string CalculateRoutingKey(int delayInSeconds, string address, out int startingDelayLevel)
         {
             if (delayInSeconds < 0)
             {
@@ -87,41 +87,34 @@
 
             startingDelayLevel = 0;
 
-            unsafe
+            IntPtr addr = (IntPtr)Unsafe.AsPointer(ref startingDelayLevel);
+            return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
+
+            static void Action(Span<char> span, (string address, int, IntPtr) state)
             {
-                fixed (int* startingDelayLevelPtr = &startingDelayLevel)
+                var (address, delayInSeconds, startingDelayLevelPtr) = state;
+
+                var startingDelayLevel = 0;
+                var mask = BitVector32.CreateMask();
+
+                var bitVector = new BitVector32(delayInSeconds);
+
+                int index = 0;
+                for (var level = MaxLevel; level >= 0; level--)
                 {
-                    IntPtr addr = (IntPtr)startingDelayLevelPtr;
-
-                    return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
-
-                    static void Action(Span<char> span, (string address, int, IntPtr) state)
+                    bool flag = bitVector[mask << level];
+                    if (startingDelayLevel == 0 && flag)
                     {
-                        var (address, delayInSeconds, startingDelayLevelPtr) = state;
-
-                        var startingDelayLevel = 0;
-                        var mask = BitVector32.CreateMask();
-
-                        var bitVector = new BitVector32(delayInSeconds);
-
-                        int index = 0;
-                        for (var level = MaxLevel; level >= 0; level--)
-                        {
-                            bool flag = bitVector[mask << level];
-                            if (startingDelayLevel == 0 && flag)
-                            {
-                                startingDelayLevel = level;
-                            }
-
-                            span[index++] = flag ? '1' : '0';
-                            span[index++] = '.';
-                        }
-
-                        address.AsSpan().CopyTo(span[index..]);
-
-                        Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
+                        startingDelayLevel = level;
                     }
+
+                    span[index++] = flag ? '1' : '0';
+                    span[index++] = '.';
                 }
+
+                address.AsSpan().CopyTo(span[index..]);
+
+                Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
             }
         }
     }
