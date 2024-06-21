@@ -86,10 +86,15 @@
             }
 
             startingDelayLevel = 0;
+            // Pinning the address of the startingDelayLevel so that we can safely write back to the address of the local
+            // This trickery is done because when string.Create returns there is no way to pass state outside of the lambda
+            // without doing a closure over a local variable which would create DisplayClass allocations for every call.
             fixed (int* startingDelayLevelPtr = &startingDelayLevel)
             {
                 var addr = (IntPtr)startingDelayLevelPtr;
 
+                // The length of the string is determined by the max level taking into account the number of dots, the address length
+                // and additional space since we are zero based.
                 return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
 
                 static void Action(Span<char> span, (string address, int, IntPtr) state)
@@ -116,6 +121,7 @@
 
                     address.AsSpan().CopyTo(span[index..]);
 
+                    // Write back the startingDelayLevel to the address of the local
                     Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
                 }
             }
