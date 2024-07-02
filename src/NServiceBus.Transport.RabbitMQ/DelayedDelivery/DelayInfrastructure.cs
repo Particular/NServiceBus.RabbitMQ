@@ -86,20 +86,20 @@
             }
 
             startingDelayLevel = 0;
-            // Pinning the address of the startingDelayLevel so that we can safely write back to the address of the local
-            // This trickery is done because when string.Create returns there is no way to pass state outside of the lambda
-            // without doing a closure over a local variable which would create DisplayClass allocations for every call.
-            fixed (int* startingDelayLevelPtr = &startingDelayLevel)
+            // Pinning the address of the startingDelayLevel so that we can safely write back to the address of the local.
+            // This trickery is done because when string.Create returns, there is no way to pass state outside of the lambda
+            // without doing a closure over a local variable, which would create DisplayClass allocations for every call.
+            fixed (int* pinnedStartingDelayLevel = &startingDelayLevel)
             {
-                var addr = (IntPtr)startingDelayLevelPtr;
+                var startingDelayLevelPtr = (nint)pinnedStartingDelayLevel;
 
-                // The length of the string is determined by the max level taking into account the number of dots, the address length
+                // The length of the string is determined by the max level, taking into account the number of dots, the address length
                 // and additional space since we are zero based.
-                return string.Create((2 * MaxLevel) + 2 + address.Length, (address, delayInSeconds, addr), Action);
+                return string.Create((2 * MaxLevel) + 2 + address.Length, (delayInSeconds, address, startingDelayLevelPtr), Action);
 
-                static void Action(Span<char> span, (string address, int, IntPtr) state)
+                static void Action(Span<char> span, (int, string, nint) state)
                 {
-                    var (address, delayInSeconds, startingDelayLevelPtr) = state;
+                    var (delayInSeconds, address, startingDelayLevelPtr) = state;
 
                     var startingDelayLevel = 0;
                     var mask = BitVector32.CreateMask();
