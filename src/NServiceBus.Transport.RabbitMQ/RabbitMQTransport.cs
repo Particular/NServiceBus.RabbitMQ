@@ -5,10 +5,12 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
+
 
     /// <summary>
     /// Transport definition for RabbitMQ.
@@ -90,6 +92,11 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = value;
             }
         }
+
+        /// <summary>
+        /// The callback to use when customizing the message before dispatching it to the broker.
+        /// </summary>
+        public Action<IOutgoingTransportOperation, IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
 
         /// <summary>
         /// The calculation method for the prefetch count. The default is 3 times the maximum concurrency value.
@@ -192,7 +199,7 @@
             var converter = new MessageConverter(MessageIdStrategy);
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
-                RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
+                RoutingTopology, channelProvider, converter, OutgoingNativeMessageCustomization, TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
 
             if (hostSettings.SetupInfrastructure)
