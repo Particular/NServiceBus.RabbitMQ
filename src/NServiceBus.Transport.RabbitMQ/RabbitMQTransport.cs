@@ -41,6 +41,26 @@
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
+        /// <summary>
+        /// Creates a new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="routingTopology">The routing topology to use.</param>
+        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
+        /// <param name="enableDelayedDelivery"></param>
+        /// <param name="enablePublishSubscribe"></param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, bool enablePublishSubscribe)
+            : base(TransportTransactionMode.ReceiveOnly,
+                supportsDelayedDelivery: enableDelayedDelivery,
+                supportsPublishSubscribe: enablePublishSubscribe,
+                supportsTTBR: true)
+        {
+            ArgumentNullException.ThrowIfNull(routingTopology);
+            ArgumentNullException.ThrowIfNull(connectionString);
+
+            RoutingTopology = routingTopology.Create();
+            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+        }
+
         internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
         internal IRoutingTopology RoutingTopology { get; set; }
@@ -174,7 +194,7 @@
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, NetworkRecoveryInterval);
+                PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
 
             if (hostSettings.SetupInfrastructure)
             {

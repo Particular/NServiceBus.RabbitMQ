@@ -12,17 +12,21 @@
         readonly ChannelProvider channelProvider;
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
+        readonly bool supportsDelayedDelivery;
 
-        public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings, ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
+        public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
+            ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
-            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation, TimeSpan networkRecoveryInterval)
+            TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
+            TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
             this.networkRecoveryInterval = networkRecoveryInterval;
+            this.supportsDelayedDelivery = supportsDelayedDelivery;
 
-            Dispatcher = new MessageDispatcher(channelProvider);
+            Dispatcher = new MessageDispatcher(channelProvider, supportsDelayedDelivery);
             Receivers = receiverSettings.Select(x => CreateMessagePump(hostSettings, x, messageConverter, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation))
                 .ToDictionary(x => x.Id, x => x);
         }
@@ -42,15 +46,22 @@
 
             using var channel = connection.CreateModel();
 
-            DelayInfrastructure.Build(channel);
+            if (supportsDelayedDelivery)
+            {
+                DelayInfrastructure.Build(channel);
+            }
 
             var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
 
             routingTopology.Initialize(channel, receivingQueues, sendingQueues);
 
-            foreach (string receivingAddress in receivingQueues)
+            if (supportsDelayedDelivery)
             {
-                routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                foreach (string receivingAddress in receivingQueues)
+                {
+                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
+                        DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                }
             }
         }
 
