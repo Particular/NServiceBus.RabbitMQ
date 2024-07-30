@@ -5,6 +5,8 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Logging;
     using Unicast.Messages;
@@ -25,20 +27,24 @@ namespace NServiceBus.Transport.RabbitMQ
             this.exchangeNameConvention = exchangeNameConvention;
         }
 
-        public void SetupSubscription(IModel channel, MessageMetadata type, string subscriberName)
+        public async Task SetupSubscription(IChannel channel, MessageMetadata type, string subscriberName, CancellationToken cancellationToken = default)
         {
             // Make handlers for IEvent handle all events whether they extend IEvent or not
             var typeToSubscribe = type.MessageType == typeof(IEvent) ? typeof(object) : type.MessageType;
 
-            SetupTypeSubscriptions(channel, typeToSubscribe);
-            channel.ExchangeBind(subscriberName, exchangeNameConvention(typeToSubscribe), string.Empty);
+            await SetupTypeSubscriptions(channel, typeToSubscribe, cancellationToken).ConfigureAwait(false);
+            await channel.ExchangeBindAsync(subscriberName, exchangeNameConvention(typeToSubscribe), string.Empty, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public void TeardownSubscription(IModel channel, MessageMetadata type, string subscriberName)
+        public async Task TeardownSubscription(IChannel channel, MessageMetadata type, string subscriberName, CancellationToken cancellationToken = default)
         {
             try
             {
-                channel.ExchangeUnbind(subscriberName, exchangeNameConvention(type.MessageType), string.Empty, null);
+                await channel.ExchangeUnbindAsync(subscriberName, exchangeNameConvention(type.MessageType), string.Empty, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when(cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception)
             {
@@ -46,23 +52,23 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
+        public async Task Publish(IChannel channel, Type type, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
-            SetupTypeSubscriptions(channel, type);
+            await SetupTypeSubscriptions(channel, type, cancellationToken).ConfigureAwait(false);
             channel.BasicPublish(exchangeNameConvention(type), string.Empty, false, properties, message.Body);
         }
 
-        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
+        public Task Send(IChannel channel, string address, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
             channel.BasicPublish(address, string.Empty, true, properties, message.Body);
         }
 
-        public void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
+        public Task RawSendInCaseOfFailure(IChannel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
-            channel.BasicPublish(address, string.Empty, true, properties, body);
+            return channel.BasicPublishAsync(address, string.Empty, true, properties, body);
         }
 
-        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
+        public async Task Initialize(IChannel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, CancellationToken cancellationToken = default)
         {
             Dictionary<string, object> arguments = null;
             var createDurableQueue = durable;
@@ -86,12 +92,12 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        public void BindToDelayInfrastructure(IModel channel, string address, string deliveryExchange, string routingKey)
+        public Task BindToDelayInfrastructure(IChannel channel, string address, string deliveryExchange, string routingKey, CancellationToken cancellationToken = default)
         {
-            channel.ExchangeBind(address, deliveryExchange, routingKey);
+            return channel.ExchangeBindAsync(address, deliveryExchange, routingKey, cancellationToken: cancellationToken);
         }
 
-        void SetupTypeSubscriptions(IModel channel, Type type)
+        async Task SetupTypeSubscriptions(IChannel channel, Type type, CancellationToken cancellationToken)
         {
             if (type == typeof(object) || IsTypeTopologyKnownConfigured(type))
             {
@@ -105,7 +111,7 @@ namespace NServiceBus.Transport.RabbitMQ
             while (baseType != null)
             {
                 CreateExchange(channel, exchangeNameConvention(baseType));
-                channel.ExchangeBind(exchangeNameConvention(baseType), exchangeNameConvention(typeToProcess), string.Empty);
+                await channel.ExchangeBindAsync(exchangeNameConvention(baseType), exchangeNameConvention(typeToProcess), string.Empty);
                 typeToProcess = baseType;
                 baseType = typeToProcess.BaseType;
             }
@@ -128,11 +134,15 @@ namespace NServiceBus.Transport.RabbitMQ
 
         bool IsTypeTopologyKnownConfigured(Type eventType) => typeTopologyConfiguredSet.ContainsKey(eventType);
 
-        void CreateExchange(IModel channel, string exchangeName)
+        async Task CreateExchange(IChannel channel, string exchangeName, CancellationToken cancellationToken)
         {
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, durable);
+                await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, durable, autoDelete: false, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when(cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception)
             {

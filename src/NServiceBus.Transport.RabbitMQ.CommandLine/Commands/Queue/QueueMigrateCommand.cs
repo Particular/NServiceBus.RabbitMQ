@@ -41,7 +41,7 @@
             migrationState = new MigrationState();
         }
 
-        public Task Run(CancellationToken cancellationToken = default)
+        public async Task Run(CancellationToken cancellationToken = default)
         {
             console.WriteLine($"Starting migration of '{queueName}'");
 
@@ -54,7 +54,7 @@
                 switch (migrationState.CurrentStage)
                 {
                     case MigrationStage.Starting:
-                        migrationState.CurrentStage = MoveMessagesToHoldingQueue(connection, cancellationToken);
+                        migrationState.CurrentStage = await MoveMessagesToHoldingQueue(connection, cancellationToken).ConfigureAwait(false);
                         break;
                     case MigrationStage.MessagesMovedToHoldingQueue:
                         migrationState.CurrentStage = DeleteMainQueue(connection);
@@ -73,18 +73,16 @@
                         break;
                 }
             }
-
-            return Task.CompletedTask;
         }
 
-        MigrationStage MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
+        async Task<MigrationStage> MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = connection.CreateModel();
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
             console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
             // does the holding queue need to be quorum?
-            channel.QueueDeclare(holdingQueueName, true, false, false, quorumQueueArguments);
+            await channel.QueueDeclareAsync(holdingQueueName, true, false, false, quorumQueueArguments).ConfigureAwait(false);
             console.WriteLine($"Created queue '{holdingQueueName}'");
 
             // bind the holding queue to the exchange of the queue under migration

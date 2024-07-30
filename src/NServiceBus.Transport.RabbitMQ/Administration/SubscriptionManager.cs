@@ -19,17 +19,14 @@ namespace NServiceBus.Transport.RabbitMQ
             this.localQueue = localQueue;
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
+        public async Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var eventType in eventTypes)
             {
-                foreach (var eventType in eventTypes)
-                {
-                    routingTopology.SetupSubscription(channel, eventType, localQueue);
-                }
+                routingTopology.SetupSubscription(channel, eventType, localQueue);
             }
-            return Task.CompletedTask;
         }
 
         public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)

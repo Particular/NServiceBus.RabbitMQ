@@ -60,7 +60,7 @@
             return Task.CompletedTask;
         }
 
-        void MigrateQueue(IModel channel, int delayLevel, CancellationToken cancellationToken)
+        void MigrateQueue(IChannel channel, int delayLevel, CancellationToken cancellationToken)
         {
             var currentDelayQueue = $"nsb.delay-level-{delayLevel:00}";
             var messageCount = channel.MessageCount(currentDelayQueue);

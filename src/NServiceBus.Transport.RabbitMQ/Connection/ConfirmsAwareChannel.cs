@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.RabbitMQ
     {
         public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology)
         {
-            channel = connection.CreateModel();
+            channel = connection.CreateChannelAsync().GetAwaiter().GetResult();
             channel.BasicAcks += Channel_BasicAcks;
             channel.BasicNacks += Channel_BasicNacks;
             channel.BasicReturn += Channel_BasicReturn;
@@ -32,7 +32,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public bool IsClosed => channel.IsClosed;
 
-        public Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
+        public async Task SendMessage(string address, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
             var task = GetConfirmationTask(cancellationToken);
             properties.SetConfirmationId(channel.NextPublishSeqNo);
@@ -41,28 +41,28 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
-                routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address));
-                channel.BasicPublish(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body);
+                await routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address), cancellationToken).ConfigureAwait(false);
+                await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body).ConfigureAwait(false);
             }
             else
             {
-                routingTopology.Send(channel, address, message, properties);
+                await routingTopology.Send(channel, address, message, properties, cancellationToken).ConfigureAwait(false);
             }
 
-            return task;
+            await task.ConfigureAwait(false);
         }
 
-        public Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
+        public async Task PublishMessage(Type type, OutgoingMessage message, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
             var task = GetConfirmationTask(cancellationToken);
             properties.SetConfirmationId(channel.NextPublishSeqNo);
 
-            routingTopology.Publish(channel, type, message, properties);
+            await routingTopology.Publish(channel, type, message, properties, cancellationToken).ConfigureAwait(false);
 
-            return task;
+            await task.ConfigureAwait(false);
         }
 
-        public Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, IBasicProperties properties, CancellationToken cancellationToken = default)
+        public async Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, IBasicProperties properties, CancellationToken cancellationToken = default)
         {
             var task = GetConfirmationTask(cancellationToken);
 
@@ -70,9 +70,9 @@ namespace NServiceBus.Transport.RabbitMQ
 
             properties.SetConfirmationId(channel.NextPublishSeqNo);
 
-            routingTopology.RawSendInCaseOfFailure(channel, address, body, properties);
+            await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken).ConfigureAwait(false);
 
-            return task;
+            await task.ConfigureAwait(false);
         }
 
         Task GetConfirmationTask(CancellationToken cancellationToken)
@@ -171,7 +171,7 @@ namespace NServiceBus.Transport.RabbitMQ
             channel?.Dispose();
         }
 
-        IModel channel;
+        IChannel channel;
 
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource<bool>> messages;

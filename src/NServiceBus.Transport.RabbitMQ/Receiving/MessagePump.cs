@@ -83,7 +83,7 @@
 
         public string ReceiveAddress { get; }
 
-        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
             this.onMessage = onMessage;
             this.onError = onError;
@@ -91,10 +91,8 @@
 
             if (settings.PurgeOnStartup)
             {
-                queuePurger.Purge(ReceiveAddress);
+                await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task StartReceive(CancellationToken cancellationToken = default)
