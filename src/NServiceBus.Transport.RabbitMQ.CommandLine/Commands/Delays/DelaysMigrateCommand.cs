@@ -46,21 +46,19 @@
             this.console = console;
         }
 
-        public Task Run(CancellationToken cancellationToken = default)
+        public async Task Run(CancellationToken cancellationToken = default)
         {
-            using var connection = brokerConnection.Create();
-            using var channel = connection.CreateModel();
-            channel.ConfirmSelect();
+            using var connection = await brokerConnection.Create(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            await channel.ConfirmSelectAsync(cancellationToken).ConfigureAwait(false);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
                 MigrateQueue(channel, currentDelayLevel, cancellationToken);
             }
-
-            return Task.CompletedTask;
         }
 
-        void MigrateQueue(IModel channel, int delayLevel, CancellationToken cancellationToken)
+        void MigrateQueue(IChannel channel, int delayLevel, CancellationToken cancellationToken)
         {
             var currentDelayQueue = $"nsb.delay-level-{delayLevel:00}";
             var messageCount = channel.MessageCount(currentDelayQueue);

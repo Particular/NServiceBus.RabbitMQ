@@ -3,7 +3,10 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using Headers = NServiceBus.Headers;
+
     class MessageConverter
     {
         public MessageConverter(Func<BasicDeliverEventArgs, string> messageIdStrategy)
@@ -61,7 +64,7 @@
                 deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId;
             }
 
-            if (properties.IsDeliveryModePresent() && properties.DeliveryMode == 1)
+            if (properties.IsDeliveryModePresent() && properties.DeliveryMode == DeliveryModes.Transient)
             {
                 deserializedHeaders[BasicPropertiesExtensions.UseNonPersistentDeliveryHeader] = bool.TrueString;
             }

@@ -19,28 +19,22 @@ namespace NServiceBus.Transport.RabbitMQ
             this.localQueue = localQueue;
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
+        public async Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            // TODO: Parallelize?
+            foreach (var eventType in eventTypes)
             {
-                foreach (var eventType in eventTypes)
-                {
-                    routingTopology.SetupSubscription(channel, eventType, localQueue);
-                }
+                await routingTopology.SetupSubscription(channel, eventType, localQueue, cancellationToken).ConfigureAwait(false);
             }
-            return Task.CompletedTask;
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
+        public async Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                routingTopology.TeardownSubscription(channel, eventType, localQueue);
-            }
-
-            return Task.CompletedTask;
+            using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            await routingTopology.TeardownSubscription(channel, eventType, localQueue, cancellationToken).ConfigureAwait(false);
         }
     }
 }

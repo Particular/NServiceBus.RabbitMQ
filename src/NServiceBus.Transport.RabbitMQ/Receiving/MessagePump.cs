@@ -83,7 +83,7 @@
 
         public string ReceiveAddress { get; }
 
-        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
             this.onMessage = onMessage;
             this.onError = onError;
@@ -91,13 +91,11 @@
 
             if (settings.PurgeOnStartup)
             {
-                queuePurger.Purge(ReceiveAddress);
+                await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task StartReceive(CancellationToken cancellationToken = default)
+        public async Task StartReceive(CancellationToken cancellationToken = default)
         {
             messagePumpCancellationTokenSource = new CancellationTokenSource();
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
@@ -107,9 +105,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker,
                 (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
 
-            ConnectToBroker();
-
-            return Task.CompletedTask;
+            await ConnectToBroker(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
@@ -121,9 +117,9 @@
             await StartReceive(CancellationToken.None).ConfigureAwait(false);
         }
 
-        void ConnectToBroker()
+        async Task ConnectToBroker(CancellationToken cancellationToken)
         {
-            connection = connectionFactory.CreateConnection(name, false, maxConcurrency);
+            connection = await connectionFactory.CreateConnection(name, false, maxConcurrency, cancellationToken).ConfigureAwait(false);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
@@ -134,16 +130,16 @@
                 prefetchCount = maxConcurrency;
             }
 
-            var channel = connection.CreateModel();
-            channel.ModelShutdown += Channel_ModelShutdown;
-            channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
+            var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            channel.ChannelShutdown += Channel_ModelShutdown;
+            await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
             consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
 
-            channel.BasicConsume(ReceiveAddress, false, consumerTag, consumer);
+            await channel.BasicConsumeAsync(ReceiveAddress, false, consumerTag, consumer, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
@@ -180,7 +176,7 @@
 
                 if (connection.IsOpen)
                 {
-                    connection.Close();
+                    await connection.CloseAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -254,7 +250,7 @@
         {
             var consumer = (AsyncEventingBasicConsumer)sender;
 
-            if (consumer.Model.IsOpen && connection.IsOpen)
+            if (consumer.Channel.IsOpen && connection.IsOpen)
             {
                 if (circuitBreaker.Disarmed)
                 {
@@ -282,7 +278,7 @@
                     {
                         if (connection.IsOpen)
                         {
-                            connection.Close();
+                            await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
                         }
 
                         connection.Dispose();
@@ -291,7 +287,7 @@
 
                         await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
 
-                        ConnectToBroker();
+                        await ConnectToBroker(cancellationToken).ConfigureAwait(false);
                         break;
                     }
                     catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
@@ -341,7 +337,7 @@
 #pragma warning restore PS0019 // Do not catch Exception without considering OperationCanceledException
                 {
                     Logger.Debug("Returning message to queue...", ex);
-                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                    await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
                     throw;
                 }
             }
@@ -395,7 +391,7 @@
             {
                 try
                 {
-                    consumer.Model.BasicAckSingle(message.DeliveryTag);
+                    await consumer.Channel.BasicAckSingle(message.DeliveryTag, messageProcessingCancellationToken).ConfigureAwait(false);
                 }
                 catch (AlreadyClosedException ex)
                 {
@@ -425,14 +421,14 @@
 
                     if (result == ErrorHandleResult.RetryRequired)
                     {
-                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                        await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, messageProcessingCancellationToken).ConfigureAwait(false);
                         return;
                     }
                 }
                 catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
                 {
                     criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx, messageProcessingCancellationToken);
-                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                    await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, messageProcessingCancellationToken).ConfigureAwait(false);
 
                     return;
                 }
@@ -440,7 +436,7 @@
 
             try
             {
-                consumer.Model.BasicAckSingle(message.DeliveryTag);
+                await consumer.Channel.BasicAckSingle(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
             }
             catch (AlreadyClosedException ex)
             {
@@ -496,7 +492,8 @@
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties, messageProcessingCancellationToken).ConfigureAwait(false);
+                    // TODO Would it be better to use the readonly property interface on the method? But then the sending method require TProperty again which has to be a concrete type.
+                    await channel.RawSendInCaseOfFailure(queue, message.Body, new BasicProperties(message.BasicProperties), messageProcessingCancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -506,14 +503,14 @@
             catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
             {
                 Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
-                consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
 
             try
             {
-                consumer.Model.BasicAckSingle(message.DeliveryTag);
+                await consumer.Channel.BasicAckSingle(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
             }
             catch (AlreadyClosedException ex)
             {

@@ -21,13 +21,13 @@ namespace NServiceBus.Transport.RabbitMQ
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
         }
 
-        public void CreateConnection() => connection = CreateConnectionWithShutdownListener();
+        public async Task<IConnection> CreateConnection(CancellationToken cancellationToken = default) => connection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
 
-        protected virtual IConnection CreatePublishConnection() => connectionFactory.CreatePublishConnection();
+        protected virtual Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default) => connectionFactory.CreatePublishConnection(cancellationToken);
 
-        IConnection CreateConnectionWithShutdownListener()
+        async Task<IConnection> CreateConnectionWithShutdownListener(CancellationToken cancellationToken)
         {
-            var newConnection = CreatePublishConnection();
+            var newConnection = await CreatePublishConnection(cancellationToken).ConfigureAwait(false);
             newConnection.ConnectionShutdown += Connection_ConnectionShutdown;
             return newConnection;
         }
@@ -54,7 +54,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 {
                     await DelayReconnect(cancellationToken).ConfigureAwait(false);
 
-                    var newConnection = CreateConnectionWithShutdownListener();
+                    var newConnection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
 
                     // A  race condition is possible where CreatePublishConnection is invoked during Dispose
                     // where the returned connection isn't disposed so invoking Dispose to be sure
