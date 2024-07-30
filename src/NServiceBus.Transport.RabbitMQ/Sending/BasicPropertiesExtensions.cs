@@ -107,7 +107,7 @@
             properties.Headers[ConfirmationIdHeader] = confirmationId.ToString();
         }
 
-        public static bool TryGetConfirmationId(this IBasicProperties properties, out ulong confirmationId)
+        public static bool TryGetConfirmationId(this IReadOnlyBasicProperties properties, out ulong confirmationId)
         {
             confirmationId = 0;
 

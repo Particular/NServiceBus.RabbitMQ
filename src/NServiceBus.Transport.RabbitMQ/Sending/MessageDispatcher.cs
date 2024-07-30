@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
 
     class MessageDispatcher : IMessageDispatcher
     {
@@ -57,7 +58,7 @@
 
             var message = transportOperation.Message;
 
-            var properties = channel.CreateBasicProperties();
+            var properties = new BasicProperties();
             properties.Fill(message, transportOperation.Properties);
 
             return channel.SendMessage(transportOperation.Destination, message, properties, cancellationToken);
@@ -69,7 +70,7 @@
 
             var message = transportOperation.Message;
 
-            var properties = channel.CreateBasicProperties();
+            var properties = new BasicProperties();
             properties.Fill(message, transportOperation.Properties);
 
             return channel.PublishMessage(transportOperation.MessageType, message, properties, cancellationToken);

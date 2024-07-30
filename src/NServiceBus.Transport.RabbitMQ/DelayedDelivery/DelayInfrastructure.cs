@@ -4,6 +4,8 @@
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Runtime.CompilerServices;
+    using System.Threading;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
     static class DelayInfrastructure
@@ -23,7 +25,7 @@
 
         public static string BindingKey(string address) => $"#.{address}";
 
-        public static void Build(IModel channel)
+        public static async Task Build(IChannel channel, CancellationToken cancellationToken = default)
         {
             var bindingKey = "1.#";
 
@@ -32,7 +34,7 @@
                 var currentLevel = LevelName(level);
                 var nextLevel = LevelName(level - 1);
 
-                channel.ExchangeDeclare(currentLevel, ExchangeType.Topic, true);
+                await channel.ExchangeDeclareAsync(currentLevel, ExchangeType.Topic, true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 var arguments = new Dictionary<string, object>
                 {
@@ -43,8 +45,8 @@
                     { "x-dead-letter-exchange", level > 0 ? nextLevel : DeliveryExchange }
                 };
 
-                channel.QueueDeclare(currentLevel, true, false, false, arguments);
-                channel.QueueBind(currentLevel, currentLevel, bindingKey);
+                await channel.QueueDeclareAsync(currentLevel, true, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await channel.QueueBindAsync(currentLevel, currentLevel, bindingKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 bindingKey = "*." + bindingKey;
             }
@@ -56,25 +58,26 @@
                 var currentLevel = LevelName(level);
                 var nextLevel = LevelName(level - 1);
 
-                channel.ExchangeBind(nextLevel, currentLevel, bindingKey);
+                await channel.ExchangeBindAsync(nextLevel, currentLevel, bindingKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 bindingKey = "*." + bindingKey;
             }
 
-            channel.ExchangeDeclare(DeliveryExchange, ExchangeType.Topic, true);
-            channel.ExchangeBind(DeliveryExchange, LevelName(0), bindingKey);
+            // TODO cancellation token
+            await channel.ExchangeDeclareAsync(DeliveryExchange, ExchangeType.Topic, true, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await channel.ExchangeBindAsync(DeliveryExchange, LevelName(0), bindingKey, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public static void TearDown(IModel channel)
+        public static async Task TearDown(IChannel channel, CancellationToken cancellationToken = default)
         {
-            channel.ExchangeDelete(DeliveryExchange);
+            await channel.ExchangeDeleteAsync(DeliveryExchange, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             for (var level = MaxLevel; level >= 0; level--)
             {
                 var name = LevelName(level);
-
-                channel.QueueDelete(name);
-                channel.ExchangeDelete(name);
+                // TODO cancellation token
+                await channel.QueueDeleteAsync(name, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await channel.ExchangeDeleteAsync(name, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
         }
 

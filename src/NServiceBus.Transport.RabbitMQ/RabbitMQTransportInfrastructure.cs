@@ -38,29 +38,30 @@
             return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
-        internal void SetupInfrastructure(string[] sendingQueues)
+        internal async Task SetupInfrastructure(string[] sendingQueues, CancellationToken cancellationToken = default)
         {
-            using var connection = connectionFactory.CreateAdministrationConnection();
+            using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
 
-            connection.VerifyBrokerRequirements();
+            await connection.VerifyBrokerRequirements(cancellationToken).ConfigureAwait(false);
 
-            using var channel = connection.CreateModel();
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
             if (supportsDelayedDelivery)
             {
-                DelayInfrastructure.Build(channel);
+                await DelayInfrastructure.Build(channel, cancellationToken).ConfigureAwait(false);
             }
 
             var receivingQueues = Receivers.Select(r => r.Value.ReceiveAddress).ToArray();
 
-            routingTopology.Initialize(channel, receivingQueues, sendingQueues);
+            await routingTopology.Initialize(channel, receivingQueues, sendingQueues, cancellationToken).ConfigureAwait(false);
 
             if (supportsDelayedDelivery)
             {
+                // TODO Parallelize?
                 foreach (string receivingAddress in receivingQueues)
                 {
-                    routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
-                        DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                    await routingTopology.BindToDelayInfrastructure(channel, receivingAddress,
+                        DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress), cancellationToken).ConfigureAwait(false);
                 }
             }
         }

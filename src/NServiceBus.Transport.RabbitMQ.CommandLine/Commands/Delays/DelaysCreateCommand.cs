@@ -26,18 +26,16 @@
             this.console = console;
         }
 
-        public Task Run(CancellationToken cancellationToken = default)
+        public async Task Run(CancellationToken cancellationToken = default)
         {
             console.WriteLine($"Creating v2 delay infrastructure queues and exchanges...");
 
-            using var connection = brokerConnection.Create();
-            using var channel = connection.CreateModel();
+            using var connection = await brokerConnection.Create(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
-            DelayInfrastructure.Build(channel);
+            await DelayInfrastructure.Build(channel, cancellationToken).ConfigureAwait(false);
 
             console.WriteLine("Queues and exchanges created successfully");
-
-            return Task.CompletedTask;
         }
 
         readonly BrokerConnection brokerConnection;

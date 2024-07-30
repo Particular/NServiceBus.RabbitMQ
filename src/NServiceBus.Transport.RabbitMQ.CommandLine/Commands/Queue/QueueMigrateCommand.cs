@@ -41,7 +41,7 @@
             migrationState = new MigrationState();
         }
 
-        public Task Run(CancellationToken cancellationToken = default)
+        public async Task Run(CancellationToken cancellationToken = default)
         {
             console.WriteLine($"Starting migration of '{queueName}'");
 
@@ -54,7 +54,7 @@
                 switch (migrationState.CurrentStage)
                 {
                     case MigrationStage.Starting:
-                        migrationState.CurrentStage = MoveMessagesToHoldingQueue(connection, cancellationToken);
+                        migrationState.CurrentStage = await MoveMessagesToHoldingQueue(connection, cancellationToken).ConfigureAwait(false);
                         break;
                     case MigrationStage.MessagesMovedToHoldingQueue:
                         migrationState.CurrentStage = DeleteMainQueue(connection);
@@ -73,18 +73,16 @@
                         break;
                 }
             }
-
-            return Task.CompletedTask;
         }
 
-        MigrationStage MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
+        async Task<MigrationStage> MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = connection.CreateModel();
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
             console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
             // does the holding queue need to be quorum?
-            channel.QueueDeclare(holdingQueueName, true, false, false, quorumQueueArguments);
+            await channel.QueueDeclareAsync(holdingQueueName, true, false, false, quorumQueueArguments).ConfigureAwait(false);
             console.WriteLine($"Created queue '{holdingQueueName}'");
 
             // bind the holding queue to the exchange of the queue under migration
@@ -140,25 +138,25 @@
             return MigrationStage.QuorumQueueCreated;
         }
 
-        MigrationStage RestoreMessages(IConnection connection, CancellationToken cancellationToken)
+        async Task<MigrationStage> RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = connection.CreateModel();
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
-            channel.QueueBind(queueName, queueName, string.Empty);
+            await channel.QueueBindAsync(queueName, queueName, string.Empty, cancellationToken: cancellationToken).ConfigureAwait(false);
             console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
 
-            channel.QueueUnbind(holdingQueueName, queueName, string.Empty);
+            await channel.QueueUnbindAsync(holdingQueueName, queueName, string.Empty, cancellationToken: cancellationToken).ConfigureAwait(false);
             console.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
 
             var messageIds = new Dictionary<string, string>();
 
             // move all messages in the holding queue back to the main queue
-            channel.ConfirmSelect();
+            await channel.ConfirmSelectAsync(cancellationToken).ConfigureAwait(false);
 
-            var numMessageMovedBackToMain = ProcessMessages(
+            var numMessageMovedBackToMain = await ProcessMessages(
                 channel,
                 holdingQueueName,
-                message =>
+                async (message, token) =>
                 {
                     string? messageIdString = null;
 
@@ -175,45 +173,45 @@
                         }
                     }
 
-                    channel.BasicPublish(string.Empty, queueName, message.BasicProperties, message.Body);
-                    channel.WaitForConfirmsOrDie();
+                    await channel.BasicPublishAsync(string.Empty, queueName, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token).ConfigureAwait(false);
+                    await channel.WaitForConfirmsOrDieAsync(token).ConfigureAwait(false);
 
                     if (messageIdString != null)
                     {
                         messageIds.Add(messageIdString, string.Empty);
                     }
                 },
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
             console.WriteLine($"Moved {numMessageMovedBackToMain} messages from '{holdingQueueName}' to '{queueName}'");
 
             return MigrationStage.MessagesMovedToQuorumQueue;
         }
 
-        MigrationStage CleanUpHoldingQueue(IConnection connection)
+        async Task<MigrationStage> CleanUpHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = connection.CreateModel();
+            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
-            if (channel.MessageCount(holdingQueueName) != 0)
+            if (await channel.MessageCountAsync(holdingQueueName, cancellationToken).ConfigureAwait(false) != 0)
             {
                 throw new Exception($"'{holdingQueueName}' is not empty and was not deleted. Run the command again to retry message processing.");
             }
 
-            channel.QueueDelete(holdingQueueName);
+            await channel.QueueDeleteAsync(holdingQueueName, cancellationToken: cancellationToken).ConfigureAwait(false);
             console.WriteLine($"Removed '{holdingQueueName}'");
 
             return MigrationStage.CleanUpCompleted;
         }
 
-        uint ProcessMessages(IModel channel, string sourceQueue, Action<BasicGetResult> onMoveMessage, CancellationToken cancellationToken)
+        async Task<uint> ProcessMessages(IChannel channel, string sourceQueue, Func<BasicGetResult, CancellationToken, Task> onMoveMessage, CancellationToken cancellationToken)
         {
-            var messageCount = channel.MessageCount(sourceQueue);
+            var messageCount = await channel.MessageCountAsync(sourceQueue, cancellationToken).ConfigureAwait(false);
 
             for (var i = 0; i < messageCount; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var message = channel.BasicGet(sourceQueue, false);
+                var message = await channel.BasicGetAsync(sourceQueue, false, cancellationToken).ConfigureAwait(false);
 
                 if (message == null)
                 {
@@ -221,9 +219,9 @@
                     break;
                 }
 
-                onMoveMessage(message);
+                await onMoveMessage(message, cancellationToken).ConfigureAwait(false);
 
-                channel.BasicAck(message.DeliveryTag, false);
+                await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken).ConfigureAwait(false);
             }
 
             return messageCount;

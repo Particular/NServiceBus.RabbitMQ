@@ -6,6 +6,8 @@
     using System.IO;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
+    using System.Threading;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using Logging;
     using Support;
@@ -17,7 +19,7 @@
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly List<AmqpTcpEndpoint> endpoints = [];
-        readonly object lockObject = new();
+        readonly SemaphoreSlim lockObject = new(1);
 
         public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
         {
@@ -40,12 +42,12 @@
                 Password = connectionConfiguration.Password,
                 RequestedHeartbeat = heartbeatInterval,
                 NetworkRecoveryInterval = networkRecoveryInterval,
-                DispatchConsumersAsync = true,
+                // What do we do with the consumer dispatch concurrency?
             };
 
             if (useExternalAuthMechanism)
             {
-                connectionFactory.AuthMechanisms = new[] { new ExternalMechanismFactory() };
+                connectionFactory.AuthMechanisms = [new ExternalMechanismFactory()];
             }
 
             SetClientProperties(endpointName, connectionConfiguration.UserName);
@@ -110,18 +112,20 @@
             connectionFactory.ClientProperties.Add("endpoint_name", endpointName);
         }
 
-        public IConnection CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);
+        public Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default) => CreateConnection($"{endpointName} Publish", false, cancellationToken: cancellationToken);
 
-        public IConnection CreateAdministrationConnection() => CreateConnection($"{endpointName} Administration", false);
+        public Task<IConnection> CreateAdministrationConnection(CancellationToken cancellationToken = default) => CreateConnection($"{endpointName} Administration", false, cancellationToken: cancellationToken);
 
-        public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1)
+        public async Task<IConnection> CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1, CancellationToken cancellationToken = default)
         {
-            lock (lockObject)
+            try
             {
+                await lockObject.WaitAsync(cancellationToken).ConfigureAwait(false);
+
                 connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
                 connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
 
-                var connection = connectionFactory.CreateConnection(endpoints, connectionName);
+                var connection = await connectionFactory.CreateConnectionAsync(endpoints, connectionName, cancellationToken).ConfigureAwait(false);
 
                 connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
                 connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
@@ -137,6 +141,10 @@
                 };
 
                 return connection;
+            }
+            finally
+            {
+                lockObject.Release();
             }
         }
     }
