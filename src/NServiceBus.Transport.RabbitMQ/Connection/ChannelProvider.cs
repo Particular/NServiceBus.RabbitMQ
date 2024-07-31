@@ -21,20 +21,23 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void CreateConnection()
         {
-            connection?.Dispose();
             connection = connectionFactory.CreatePublishConnection(); // Can take over 5 seconds
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
         }
 
         void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
         {
-            if (e.Initiator != ShutdownInitiator.Application)
+            if (e.Initiator == ShutdownInitiator.Application)
             {
-                var connection = (IConnection)sender;
-
-                // Task.Run() to clarify intent that the call MUST return immediately and not rely on current async call stack behavior
-                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
+                return;
             }
+
+            var connectionThatWasShutdown = (IConnection)sender;
+            var connectionName = connectionThatWasShutdown.ClientProvidedName;
+            connectionThatWasShutdown.Dispose();
+
+            // Task.Run() to clarify intent that the call MUST return immediately and not rely on current async call stack behavior
+            _ = Task.Run(() => ReconnectSwallowingExceptions(connectionName, stoppingTokenSource.Token), CancellationToken.None);
         }
 
         async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
@@ -96,15 +99,13 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
-            try
+            if (disposed)
             {
-                stoppingTokenSource.Cancel();
-                stoppingTokenSource.Dispose();
+                return;
             }
-            catch (ObjectDisposedException)
-            {
-                // .Cancel can throw if already disposed
-            }
+
+            stoppingTokenSource.Cancel();
+            stoppingTokenSource.Dispose();
 
             connection?.Dispose();
 
@@ -112,6 +113,8 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 channel.Dispose();
             }
+
+            disposed = true;
         }
 
         readonly ConnectionFactory connectionFactory;
@@ -120,6 +123,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         readonly CancellationTokenSource stoppingTokenSource = new();
         IConnection connection;
+        bool disposed;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
     }
