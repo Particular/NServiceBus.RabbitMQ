@@ -46,12 +46,11 @@
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
-        /// <param name="enableDelayedDelivery"></param>
-        /// <param name="enablePublishSubscribe"></param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, bool enablePublishSubscribe)
+        /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: enableDelayedDelivery,
-                supportsPublishSubscribe: enablePublishSubscribe,
+                supportsPublishSubscribe: true,
                 supportsTTBR: true)
         {
             ArgumentNullException.ThrowIfNull(routingTopology);
