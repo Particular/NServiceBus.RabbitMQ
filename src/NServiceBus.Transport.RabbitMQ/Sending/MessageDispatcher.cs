@@ -53,7 +53,7 @@
 
         Task SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
         {
-            ThrowIfDelayedDeliveryDisabled(transportOperation);
+            ThrowIfDelayedDeliveryIsDisabledAndMessageIsDelayed(transportOperation);
 
             var message = transportOperation.Message;
 
@@ -65,7 +65,7 @@
 
         Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
         {
-            ThrowIfDelayedDeliveryDisabled(transportOperation);
+            ThrowIfDelayedDeliveryIsDisabledAndMessageIsDelayed(transportOperation);
 
             var message = transportOperation.Message;
 
@@ -75,7 +75,7 @@
             return channel.PublishMessage(transportOperation.MessageType, message, properties, cancellationToken);
         }
 
-        void ThrowIfDelayedDeliveryDisabled(IOutgoingTransportOperation transportOperation)
+        void ThrowIfDelayedDeliveryIsDisabledAndMessageIsDelayed(IOutgoingTransportOperation transportOperation)
         {
             if (!supportsDelayedDelivery &&
                 (transportOperation.Properties.DelayDeliveryWith != null ||
