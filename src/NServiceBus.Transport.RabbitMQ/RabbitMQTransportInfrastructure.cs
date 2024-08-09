@@ -13,20 +13,19 @@
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
-        readonly bool disableDelayedDelivery;
 
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
-            TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery, bool disableDelayedDelivery)
+            TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
             this.networkRecoveryInterval = networkRecoveryInterval;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
-            this.disableDelayedDelivery = disableDelayedDelivery;
+
             Dispatcher = new MessageDispatcher(channelProvider, supportsDelayedDelivery);
             Receivers = receiverSettings.Select(x => CreateMessagePump(hostSettings, x, messageConverter, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation))
                 .ToDictionary(x => x.Id, x => x);
@@ -47,8 +46,7 @@
 
             using var channel = connection.CreateModel();
 
-            // Create the necessary infrastructure for delayed delivery only if it's not disabled
-            if (supportsDelayedDelivery && !disableDelayedDelivery)
+            if (supportsDelayedDelivery)
             {
                 DelayInfrastructure.Build(channel);
             }

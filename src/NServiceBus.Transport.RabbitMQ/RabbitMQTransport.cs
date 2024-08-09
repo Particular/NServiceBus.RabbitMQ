@@ -21,11 +21,6 @@
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
 
-        /// <summary>
-        /// Disable native delayed delivery infrastructure
-        /// </summary>
-        internal bool DisableDelayedDelivery { get; set; } = false;
-
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
         /// <summary>
@@ -198,7 +193,7 @@
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
                 RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery, DisableDelayedDelivery);
+                PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
 
             if (hostSettings.SetupInfrastructure)
             {
