@@ -51,7 +51,7 @@ jobs:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
       - name: Setup RabbitMQ
-        uses: Particular/setup-rabbitmq-action@c9ea3cce94912673ee2242c47d5c8fbf8c49218d
+        uses: Particular/setup-rabbitmq-action@54f80cb95e2f197ce88790aa2fc70e5c69ff5ac8
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
