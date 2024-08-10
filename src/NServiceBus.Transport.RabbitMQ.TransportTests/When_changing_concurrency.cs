@@ -16,6 +16,7 @@
         public async Task Should_complete_current_message(TransportTransactionMode transactionMode)
         {
             var triggeredChangeConcurrency = CreateTaskCompletionSource();
+            var sentMessageReceived = CreateTaskCompletionSource();
             Task concurrencyChanged = null;
             int invocationCounter = 0;
 
@@ -30,6 +31,7 @@
                         await task;
                     }, ct);
 
+                    sentMessageReceived.SetResult();
                     await triggeredChangeConcurrency.Task;
 
                 }, (_, _) =>
@@ -40,8 +42,10 @@
                 transactionMode);
 
             await SendMessage(InputQueueName);
+            await sentMessageReceived.Task;
             await concurrencyChanged;
             await StopPump();
+
             Assert.AreEqual(1, invocationCounter, "message should successfully complete on first processing attempt");
         }
 
@@ -62,6 +66,7 @@
                     if (context.Headers.TryGetValue("FromOnError", out var value) && value == bool.TrueString)
                     {
                         sentMessageReceived.SetResult();
+                        return Task.CompletedTask;
                     }
 
                     throw new Exception("triggering recoverability pipeline");
@@ -84,9 +89,9 @@
                 transactionMode);
 
             await SendMessage(InputQueueName);
-
             await sentMessageReceived.Task;
             await StopPump();
+
             Assert.AreEqual(2, invocationCounter, "there should be exactly 2 messages (initial message and new message from onError pipeline)");
         }
     }
