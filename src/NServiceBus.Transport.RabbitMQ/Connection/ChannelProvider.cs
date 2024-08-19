@@ -27,13 +27,15 @@ namespace NServiceBus.Transport.RabbitMQ
 
         void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
         {
-            if (e.Initiator != ShutdownInitiator.Application)
+            if (e.Initiator == ShutdownInitiator.Application)
             {
-                var connection = (IConnection)sender;
-
-                // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
-                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
+                return;
             }
+
+            var connection = (IConnection)sender;
+
+            // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
+            _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
         }
 
         async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
