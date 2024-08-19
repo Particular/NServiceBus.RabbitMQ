@@ -175,8 +175,8 @@
             var headers = converter.RetrieveHeaders(message);
             var messageId = converter.RetrieveMessageId(message, headers);
 
-            Assert.IsNotNull(messageId);
-            Assert.IsNotNull(headers);
+            Assert.That(messageId, Is.Not.Null);
+            Assert.That(headers, Is.Not.Null);
         }
 
         [Test]
