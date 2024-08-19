@@ -180,7 +180,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         {
             var messageWasReceived = TryWaitForMessageReceipt();
 
-            Assert.False(messageWasReceived);
+            Assert.That(messageWasReceived, Is.False);
         }
     }
 

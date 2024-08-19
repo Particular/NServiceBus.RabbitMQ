@@ -25,7 +25,7 @@
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            Assert.False(scenario.DeliveryModeWasPersistent);
+            Assert.That(scenario.DeliveryModeWasPersistent, Is.False);
         }
 
         public class Receiver : EndpointConfigurationBuilder

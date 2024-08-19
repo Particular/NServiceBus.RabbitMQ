@@ -59,7 +59,7 @@
 
                 var result = channel.BasicGet(ErrorQueue, true);
 
-                Assert.False(messageWasReceived, "Message should not be processed successfully.");
+                Assert.That(messageWasReceived, Is.False, "Message should not be processed successfully.");
                 Assert.NotNull(result, "Message should be considered poison and moved to the error queue.");
             }
         }
@@ -147,7 +147,7 @@
                 var headersWasNullOnRedelivery = await headerCollectionWasNullOnRedelivery.Task;
 
                 Assert.True(headerCollectionWasNullOnFirstDelivery, "Header collection should be null on the first delivery");
-                Assert.False(headersWasNullOnRedelivery, "Header collection should not null after a redelivery since broker headers are added to quorum queue messages");
+                Assert.That(headersWasNullOnRedelivery, Is.False, "Header collection should not null after a redelivery since broker headers are added to quorum queue messages");
             }
         }
 

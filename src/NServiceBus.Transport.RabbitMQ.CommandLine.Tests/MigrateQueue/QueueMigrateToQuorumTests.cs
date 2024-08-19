@@ -248,7 +248,7 @@
             await ExecuteMigration(endpointName);
 
             Assert.True(QueueIsQuorum(endpointName));
-            Assert.False(QueueExists(holdingQueueName));
+            Assert.That(QueueExists(holdingQueueName), Is.False);
         }
 
         [SetUp]
