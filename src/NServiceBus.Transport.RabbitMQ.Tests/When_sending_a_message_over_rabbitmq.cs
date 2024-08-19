@@ -66,8 +66,11 @@
             return Verify(new OutgoingMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
-                    Assert.That(t.Headers[Headers.ReplyToAddress], Is.EqualTo(address));
-                    Assert.That(r.BasicProperties.ReplyTo, Is.EqualTo(address));
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(t.Headers[Headers.ReplyToAddress], Is.EqualTo(address));
+                        Assert.That(r.BasicProperties.ReplyTo, Is.EqualTo(address));
+                    });
                 });
         }
 
@@ -84,9 +87,12 @@
         {
             return Verify(new OutgoingMessageBuilder().WithHeader(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader, true.ToString()), (message, basicDeliverEventArgs) =>
             {
-                Assert.That(basicDeliverEventArgs.BasicProperties.Persistent, Is.False);
-                Assert.That(basicDeliverEventArgs.BasicProperties.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.False, "Temp header should not be visible on the wire");
-                Assert.That(message.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.True, "Temp header should not removed to make sure that retries keeps the setting");
+                Assert.Multiple(() =>
+                {
+                    Assert.That(basicDeliverEventArgs.BasicProperties.Persistent, Is.False);
+                    Assert.That(basicDeliverEventArgs.BasicProperties.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.False, "Temp header should not be visible on the wire");
+                    Assert.That(message.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.True, "Temp header should not removed to make sure that retries keeps the setting");
+                });
             });
         }
 
@@ -96,8 +102,11 @@
             return Verify(new OutgoingMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
                 result =>
                 {
-                    Assert.That(result.Headers["h1"], Is.EqualTo("v1"));
-                    Assert.That(result.Headers["h2"], Is.EqualTo("v2"));
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(result.Headers["h1"], Is.EqualTo("v1"));
+                        Assert.That(result.Headers["h2"], Is.EqualTo("v2"));
+                    });
                 });
         }
 

@@ -16,11 +16,14 @@
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            Assert.That(connectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(5672));
-            Assert.That(connectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
-            Assert.That(connectionConfiguration.UserName, Is.EqualTo("Copa"));
-            Assert.That(connectionConfiguration.Password, Is.EqualTo("abc_xyz"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(connectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
+                Assert.That(connectionConfiguration.UserName, Is.EqualTo("Copa"));
+                Assert.That(connectionConfiguration.Password, Is.EqualTo("abc_xyz"));
+            });
         }
 
         [Test]
@@ -35,8 +38,11 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create($"{scheme}://guest:guest@localhost/");
 
-            Assert.That(useTls, Is.EqualTo(connectionConfiguration.UseTls));
-            Assert.That(port, Is.EqualTo(connectionConfiguration.Port));
+            Assert.Multiple(() =>
+            {
+                Assert.That(useTls, Is.EqualTo(connectionConfiguration.UseTls));
+                Assert.That(port, Is.EqualTo(connectionConfiguration.Port));
+            });
         }
 
         [Test]
@@ -51,8 +57,11 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("amqp://my.host.com/");
 
-            Assert.That(connectionConfiguration.Host, Is.EqualTo("my.host.com"));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(5672));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.Host, Is.EqualTo("my.host.com"));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(5672));
+            });
         }
 
         [Test]

@@ -73,8 +73,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            });
         }
 
         [Test]
@@ -89,8 +92,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            });
         }
 
         [Test]
@@ -108,8 +114,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            });
         }
 
         [Test]
@@ -130,8 +139,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(1));
+            });
         }
 
         [Test]
@@ -169,8 +181,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            });
         }
 
         [Test]
@@ -190,8 +205,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            });
         }
 
         [Test]
@@ -209,8 +227,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+            });
         }
 
         [Test]
@@ -230,8 +251,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(MessageCount(endpointName), Is.EqualTo(expectedMessageCount));
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(MessageCount(endpointName), Is.EqualTo(expectedMessageCount));
+            });
         }
 
         [Test]
@@ -247,8 +271,11 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(QueueExists(holdingQueueName), Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(QueueIsQuorum(endpointName), Is.True);
+                Assert.That(QueueExists(holdingQueueName), Is.False);
+            });
         }
 
         [SetUp]

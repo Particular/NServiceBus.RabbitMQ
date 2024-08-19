@@ -22,8 +22,11 @@
                 .Done(c => c.IncorrectHandlerInvoked || c.AuditMessageReceived)
                 .Run();
 
-            Assert.That(context.IncorrectHandlerInvoked, Is.False);
-            Assert.That(context.AuditMessageReceived, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.IncorrectHandlerInvoked, Is.False);
+                Assert.That(context.AuditMessageReceived, Is.True);
+            });
         }
 
         public class Request : IMessage

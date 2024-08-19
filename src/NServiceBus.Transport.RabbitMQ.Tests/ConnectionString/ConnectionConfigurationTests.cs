@@ -16,12 +16,15 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            Assert.That(connectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(1234));
-            Assert.That(connectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
-            Assert.That(connectionConfiguration.UserName, Is.EqualTo("Copa"));
-            Assert.That(connectionConfiguration.Password, Is.EqualTo("abc_xyz"));
-            Assert.That(connectionConfiguration.UseTls, Is.EqualTo(true));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(1234));
+                Assert.That(connectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
+                Assert.That(connectionConfiguration.UserName, Is.EqualTo("Copa"));
+                Assert.That(connectionConfiguration.Password, Is.EqualTo("abc_xyz"));
+                Assert.That(connectionConfiguration.UseTls, Is.EqualTo(true));
+            });
         }
 
         [Test]
@@ -35,8 +38,11 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=host.one:1001;port=1002");
 
-            Assert.That(connectionConfiguration.Host, Is.EqualTo("host.one"));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(1001));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.Host, Is.EqualTo("host.one"));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(1001));
+            });
         }
 
         [Test]
@@ -44,8 +50,11 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=my.host.com;port=1234");
 
-            Assert.That(connectionConfiguration.Host, Is.EqualTo("my.host.com"));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(1234));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.Host, Is.EqualTo("my.host.com"));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(1234));
+            });
         }
 
         [Test]
@@ -53,8 +62,11 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=my.host.com");
 
-            Assert.That(connectionConfiguration.Host, Is.EqualTo("my.host.com"));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(5672));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.Host, Is.EqualTo("my.host.com"));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(5672));
+            });
         }
 
         [Test]
@@ -102,8 +114,11 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;useTls=true");
 
-            Assert.That(connectionConfiguration.UseTls, Is.EqualTo(true));
-            Assert.That(connectionConfiguration.Port, Is.EqualTo(5671));
+            Assert.Multiple(() =>
+            {
+                Assert.That(connectionConfiguration.UseTls, Is.EqualTo(true));
+                Assert.That(connectionConfiguration.Port, Is.EqualTo(5671));
+            });
         }
 
         [Test]

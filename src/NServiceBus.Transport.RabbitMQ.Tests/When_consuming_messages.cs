@@ -59,8 +59,11 @@
 
                 var result = channel.BasicGet(ErrorQueue, true);
 
-                Assert.That(messageWasReceived, Is.False, "Message should not be processed successfully.");
-                Assert.That(result, Is.Not.Null, "Message should be considered poison and moved to the error queue.");
+                Assert.Multiple(() =>
+                {
+                    Assert.That(messageWasReceived, Is.False, "Message should not be processed successfully.");
+                    Assert.That(result, Is.Not.Null, "Message should be considered poison and moved to the error queue.");
+                });
             }
         }
 
@@ -101,8 +104,11 @@
                 }
 
                 var wasHandled = await handled.Task;
-                Assert.That(wasHandled, Is.True, "Error handler should be called after retry");
-                Assert.That(numRetries, Is.EqualTo(1), "Message should be retried once");
+                Assert.Multiple(() =>
+                {
+                    Assert.That(wasHandled, Is.True, "Error handler should be called after retry");
+                    Assert.That(numRetries, Is.EqualTo(1), "Message should be retried once");
+                });
             }
         }
 
@@ -146,8 +152,11 @@
 
                 var headersWasNullOnRedelivery = await headerCollectionWasNullOnRedelivery.Task;
 
-                Assert.That(headerCollectionWasNullOnFirstDelivery, Is.True, "Header collection should be null on the first delivery");
-                Assert.That(headersWasNullOnRedelivery, Is.False, "Header collection should not null after a redelivery since broker headers are added to quorum queue messages");
+                Assert.Multiple(() =>
+                {
+                    Assert.That(headerCollectionWasNullOnFirstDelivery, Is.True, "Header collection should be null on the first delivery");
+                    Assert.That(headersWasNullOnRedelivery, Is.False, "Header collection should not null after a redelivery since broker headers are added to quorum queue messages");
+                });
             }
         }
 
@@ -171,8 +180,11 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.That(receivedMessage.Headers[Headers.EnclosedMessageTypes], Is.EqualTo(typeName));
-            Assert.That(Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]), Is.EqualTo(typeof(MyMessage)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(receivedMessage.Headers[Headers.EnclosedMessageTypes], Is.EqualTo(typeName));
+                Assert.That(Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]), Is.EqualTo(typeof(MyMessage)));
+            });
         }
 
         class MyMessage
