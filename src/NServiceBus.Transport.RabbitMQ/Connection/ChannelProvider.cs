@@ -19,10 +19,13 @@ namespace NServiceBus.Transport.RabbitMQ
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
         }
 
-        public void CreateConnection()
+        public void CreateConnection() => connection = CreateWiredUpConnection();
+
+        IConnection CreateWiredUpConnection()
         {
-            connection = connectionFactory.CreatePublishConnection();
-            connection.ConnectionShutdown += Connection_ConnectionShutdown;
+            var newConnection = connectionFactory.CreatePublishConnection();
+            newConnection.ConnectionShutdown += Connection_ConnectionShutdown;
+            return newConnection;
         }
 
         void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
@@ -32,10 +35,10 @@ namespace NServiceBus.Transport.RabbitMQ
                 return;
             }
 
-            var connection = (IConnection)sender;
+            var connectionThatWasShutdown = (IConnection)sender;
 
             // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
-            _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
+            _ = Task.Run(() => ReconnectSwallowingExceptions(connectionThatWasShutdown.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
         }
 
         async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
@@ -47,7 +50,20 @@ namespace NServiceBus.Transport.RabbitMQ
                 try
                 {
                     await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
-                    CreateConnection();
+
+                    var newConnection = CreateWiredUpConnection();
+
+                    // A  race condition is possible where CreateWiredUpConnection is invoked during Dispose
+                    // where the returned connection isn't disposed so invoking Dispose to be sure
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        newConnection.Dispose();
+                    }
+                    else
+                    {
+                        var oldConnection = Interlocked.Exchange(ref connection, newConnection);
+                        oldConnection?.Dispose();
+                    }
                     break;
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -98,7 +114,8 @@ namespace NServiceBus.Transport.RabbitMQ
             stoppingTokenSource.Cancel();
             stoppingTokenSource.Dispose();
 
-            connection?.Dispose();
+            var oldConnection = Interlocked.Exchange(ref connection, null);
+            oldConnection?.Dispose();
 
             foreach (var channel in channels)
             {
@@ -113,7 +130,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         readonly CancellationTokenSource stoppingTokenSource = new();
-        IConnection connection;
+        volatile IConnection connection;
         bool disposed;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
