@@ -106,7 +106,7 @@
             await followupMessageReceived.Task;
             await StopPump();
 
-            Assert.That(receivedMessages.Count, Is.EqualTo(2));
+            Assert.That(receivedMessages, Has.Count.EqualTo(2));
             Assert.Multiple(() =>
             {
                 Assert.That(receivedMessages.TryDequeue(out var firstMessageType), Is.True);
