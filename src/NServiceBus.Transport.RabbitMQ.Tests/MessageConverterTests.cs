@@ -241,7 +241,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers["Foo"], Is.EqualTo("blah"));
         }
 
@@ -259,7 +259,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers[NServiceBus.Headers.ReplyToAddress], Is.EqualTo("myaddress"));
         }
 
@@ -281,7 +281,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers[NServiceBus.Headers.ReplyToAddress], Is.EqualTo("myaddress"));
         }
 
@@ -309,7 +309,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers["short"], Is.EqualTo("42"));
             Assert.That(headers["int"], Is.EqualTo("42"));
             Assert.That(headers["long"], Is.EqualTo("42"));
@@ -337,7 +337,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers["Foo"], Is.EqualTo("2038-01-19 03:14:07:000000 Z"));
         }
 
@@ -358,7 +358,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers["Foo"], Is.EqualTo("ni"));
         }
 
@@ -379,7 +379,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(headers["Foo"], Is.EqualTo("Bing"));
         }
 
@@ -400,7 +400,7 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
+            Assert.That(headers, Is.Not.Null);
             Assert.That(Convert.ToString(headers["Foo"]), Is.EqualTo("key1=value1,key2=value2"));
         }
     }
