@@ -58,12 +58,11 @@ namespace NServiceBus.Transport.RabbitMQ
                     if (cancellationToken.IsCancellationRequested)
                     {
                         newConnection.Dispose();
+                        break;
                     }
-                    else
-                    {
-                        var oldConnection = Interlocked.Exchange(ref connection, newConnection);
-                        oldConnection?.Dispose();
-                    }
+
+                    var oldConnection = Interlocked.Exchange(ref connection, newConnection);
+                    oldConnection?.Dispose();
                     break;
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
