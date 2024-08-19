@@ -22,7 +22,7 @@
                 .Done(c => c.IncorrectHandlerInvoked || c.AuditMessageReceived)
                 .Run();
 
-            Assert.IsFalse(context.IncorrectHandlerInvoked);
+            Assert.That(context.IncorrectHandlerInvoked, Is.False);
             Assert.IsTrue(context.AuditMessageReceived);
         }
 
