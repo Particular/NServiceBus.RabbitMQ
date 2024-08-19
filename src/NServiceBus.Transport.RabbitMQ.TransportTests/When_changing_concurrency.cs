@@ -46,7 +46,7 @@
             await concurrencyChanged;
             await StopPump();
 
-            Assert.AreEqual(1, invocationCounter, "message should successfully complete on first processing attempt");
+            Assert.That(invocationCounter, Is.EqualTo(1), "message should successfully complete on first processing attempt");
         }
 
         [TestCase(TransportTransactionMode.None)]
@@ -92,7 +92,7 @@
             await sentMessageReceived.Task;
             await StopPump();
 
-            Assert.AreEqual(2, invocationCounter, "there should be exactly 2 messages (initial message and new message from onError pipeline)");
+            Assert.That(invocationCounter, Is.EqualTo(2), "there should be exactly 2 messages (initial message and new message from onError pipeline)");
         }
     }
 }

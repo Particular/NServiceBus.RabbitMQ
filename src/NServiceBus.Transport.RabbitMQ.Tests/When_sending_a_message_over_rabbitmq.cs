@@ -33,13 +33,13 @@
         [Test]
         public Task Should_set_the_content_type()
         {
-            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"), received => Assert.AreEqual("application/json", received.BasicProperties.ContentType));
+            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.ContentType, "application/json"), received => Assert.That(received.BasicProperties.ContentType, Is.EqualTo("application/json")));
         }
 
         [Test]
         public Task Should_default_the_content_type_to_octet_stream_when_no_content_type_is_specified()
         {
-            return Verify(new OutgoingMessageBuilder(), received => Assert.AreEqual("application/octet-stream", received.BasicProperties.ContentType));
+            return Verify(new OutgoingMessageBuilder(), received => Assert.That(received.BasicProperties.ContentType, Is.EqualTo("application/octet-stream")));
         }
 
         [Test]
@@ -47,7 +47,7 @@
         {
             var messageType = typeof(MyMessage);
 
-            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.AreEqual(messageType.FullName, received.BasicProperties.Type));
+            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.That(received.BasicProperties.Type, Is.EqualTo(messageType.FullName)));
         }
 
         [Test]
@@ -55,7 +55,7 @@
         {
             var timeToBeReceived = TimeSpan.FromDays(1);
 
-            return Verify(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived), received => Assert.AreEqual(timeToBeReceived.TotalMilliseconds.ToString(), received.BasicProperties.Expiration));
+            return Verify(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived), received => Assert.That(received.BasicProperties.Expiration, Is.EqualTo(timeToBeReceived.TotalMilliseconds.ToString())));
         }
 
         [Test]
@@ -66,8 +66,8 @@
             return Verify(new OutgoingMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
-                    Assert.AreEqual(address, t.Headers[Headers.ReplyToAddress]);
-                    Assert.AreEqual(address, r.BasicProperties.ReplyTo);
+                    Assert.That(t.Headers[Headers.ReplyToAddress], Is.EqualTo(address));
+                    Assert.That(r.BasicProperties.ReplyTo, Is.EqualTo(address));
                 });
         }
 
@@ -76,7 +76,7 @@
         {
             var correlationId = Guid.NewGuid().ToString();
 
-            return Verify(new OutgoingMessageBuilder().CorrelationId(correlationId), result => Assert.AreEqual(correlationId, result.Headers[Headers.CorrelationId]));
+            return Verify(new OutgoingMessageBuilder().CorrelationId(correlationId), result => Assert.That(result.Headers[Headers.CorrelationId], Is.EqualTo(correlationId)));
         }
 
         [Test]
@@ -96,8 +96,8 @@
             return Verify(new OutgoingMessageBuilder().WithHeader("h1", "v1").WithHeader("h2", "v2"),
                 result =>
                 {
-                    Assert.AreEqual("v1", result.Headers["h1"]);
-                    Assert.AreEqual("v2", result.Headers["h2"]);
+                    Assert.That(result.Headers["h1"], Is.EqualTo("v1"));
+                    Assert.That(result.Headers["h2"], Is.EqualTo("v2"));
                 });
         }
 

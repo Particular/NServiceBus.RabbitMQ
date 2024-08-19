@@ -106,11 +106,11 @@
             await followupMessageReceived.Task;
             await StopPump();
 
-            Assert.AreEqual(2, receivedMessages.Count);
+            Assert.That(receivedMessages.Count, Is.EqualTo(2));
             Assert.That(receivedMessages.TryDequeue(out var firstMessageType), Is.True);
-            Assert.AreEqual("Start", firstMessageType);
+            Assert.That(firstMessageType, Is.EqualTo("Start"));
             Assert.That(receivedMessages.TryDequeue(out var secondMessageType), Is.True);
-            Assert.AreEqual("Followup", secondMessageType);
+            Assert.That(secondMessageType, Is.EqualTo("Followup"));
         }
     }
 }

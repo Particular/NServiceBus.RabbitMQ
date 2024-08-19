@@ -34,7 +34,7 @@
                    })
                    .Run(TimeSpan.FromSeconds(10));
 
-            Assert.AreEqual(1, context.Counter, "One of the scaled out instances should get the event");
+            Assert.That(context.Counter, Is.EqualTo(1), "One of the scaled out instances should get the event");
         }
 
         public class ScaledOutSubscriber : EndpointConfigurationBuilder

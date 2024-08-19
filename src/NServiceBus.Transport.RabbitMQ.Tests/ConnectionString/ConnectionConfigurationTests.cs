@@ -16,12 +16,12 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            Assert.AreEqual(connectionConfiguration.Host, "192.168.1.1");
-            Assert.AreEqual(connectionConfiguration.Port, 1234);
-            Assert.AreEqual(connectionConfiguration.VirtualHost, "Copa");
-            Assert.AreEqual(connectionConfiguration.UserName, "Copa");
-            Assert.AreEqual(connectionConfiguration.Password, "abc_xyz");
-            Assert.AreEqual(connectionConfiguration.UseTls, true);
+            Assert.That("192.168.1.1", Is.EqualTo(connectionConfiguration.Host));
+            Assert.That(1234, Is.EqualTo(connectionConfiguration.Port));
+            Assert.That("Copa", Is.EqualTo(connectionConfiguration.VirtualHost));
+            Assert.That("Copa", Is.EqualTo(connectionConfiguration.UserName));
+            Assert.That("abc_xyz", Is.EqualTo(connectionConfiguration.Password));
+            Assert.That(true, Is.EqualTo(connectionConfiguration.UseTls));
         }
 
         [Test]
@@ -35,8 +35,8 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=host.one:1001;port=1002");
 
-            Assert.AreEqual(connectionConfiguration.Host, "host.one");
-            Assert.AreEqual(connectionConfiguration.Port, 1001);
+            Assert.That("host.one", Is.EqualTo(connectionConfiguration.Host));
+            Assert.That(1001, Is.EqualTo(connectionConfiguration.Port));
         }
 
         [Test]
@@ -44,8 +44,8 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=my.host.com;port=1234");
 
-            Assert.AreEqual(connectionConfiguration.Host, "my.host.com");
-            Assert.AreEqual(connectionConfiguration.Port, 1234);
+            Assert.That("my.host.com", Is.EqualTo(connectionConfiguration.Host));
+            Assert.That(1234, Is.EqualTo(connectionConfiguration.Port));
         }
 
         [Test]
@@ -53,8 +53,8 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=my.host.com");
 
-            Assert.AreEqual(connectionConfiguration.Host, "my.host.com");
-            Assert.AreEqual(connectionConfiguration.Port, 5672);
+            Assert.That("my.host.com", Is.EqualTo(connectionConfiguration.Host));
+            Assert.That(5672, Is.EqualTo(connectionConfiguration.Port));
         }
 
         [Test]
@@ -62,7 +62,7 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=myHost");
 
-            Assert.AreEqual("myHost", connectionConfiguration.Host);
+            Assert.That(connectionConfiguration.Host, Is.EqualTo("myHost"));
         }
 
         [Test]
@@ -70,7 +70,7 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;password=test");
 
-            Assert.AreEqual("test", connectionConfiguration.Password);
+            Assert.That(connectionConfiguration.Password, Is.EqualTo("test"));
         }
 
         [Test]
@@ -78,7 +78,7 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;port=8181");
 
-            Assert.AreEqual(8181, connectionConfiguration.Port);
+            Assert.That(connectionConfiguration.Port, Is.EqualTo(8181));
         }
 
         [Test]
@@ -86,7 +86,7 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;username=test");
 
-            Assert.AreEqual("test", connectionConfiguration.UserName);
+            Assert.That(connectionConfiguration.UserName, Is.EqualTo("test"));
         }
 
         [Test]
@@ -94,7 +94,7 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;virtualHost=myVirtualHost");
 
-            Assert.AreEqual("myVirtualHost", connectionConfiguration.VirtualHost);
+            Assert.That(connectionConfiguration.VirtualHost, Is.EqualTo("myVirtualHost"));
         }
 
         [Test]
@@ -102,8 +102,8 @@
         {
             var connectionConfiguration = ConnectionConfiguration.Create("host=localhost;useTls=true");
 
-            Assert.AreEqual(true, connectionConfiguration.UseTls);
-            Assert.AreEqual(5671, connectionConfiguration.Port);
+            Assert.That(connectionConfiguration.UseTls, Is.EqualTo(true));
+            Assert.That(connectionConfiguration.Port, Is.EqualTo(5671));
         }
 
         [Test]
@@ -149,31 +149,31 @@
         [Test]
         public void Should_set_default_port()
         {
-            Assert.AreEqual(defaults.Port, 5672);
+            Assert.That(5672, Is.EqualTo(defaults.Port));
         }
 
         [Test]
         public void Should_set_default_virtual_host()
         {
-            Assert.AreEqual(defaults.VirtualHost, "/");
+            Assert.That("/", Is.EqualTo(defaults.VirtualHost));
         }
 
         [Test]
         public void Should_set_default_username()
         {
-            Assert.AreEqual(defaults.UserName, "guest");
+            Assert.That("guest", Is.EqualTo(defaults.UserName));
         }
 
         [Test]
         public void Should_set_default_password()
         {
-            Assert.AreEqual(defaults.Password, "guest");
+            Assert.That("guest", Is.EqualTo(defaults.Password));
         }
 
         [Test]
         public void Should_set_default_use_tls()
         {
-            Assert.AreEqual(defaults.UseTls, false);
+            Assert.That(false, Is.EqualTo(defaults.UseTls));
         }
     }
 }

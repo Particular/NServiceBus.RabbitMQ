@@ -20,9 +20,9 @@
 
             var (destinationQueue, newRoutingKey, newDelayLevel) = DelaysMigrateCommand.GetNewRoutingKey(originalDelayInSeconds, originalTimeSent, originalRoutingKey, utcNow);
 
-            Assert.AreEqual(expectedDestination, destinationQueue);
-            Assert.AreEqual(expectedRoutingKey, newRoutingKey);
-            Assert.AreEqual(expectedDelayLevel, newDelayLevel);
+            Assert.That(destinationQueue, Is.EqualTo(expectedDestination));
+            Assert.That(newRoutingKey, Is.EqualTo(expectedRoutingKey));
+            Assert.That(newDelayLevel, Is.EqualTo(expectedDelayLevel));
         }
 
         DateTimeOffset GetDateTimeOffsetFromValues(int[] values)

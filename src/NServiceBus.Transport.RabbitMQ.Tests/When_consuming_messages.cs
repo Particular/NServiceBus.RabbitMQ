@@ -20,7 +20,7 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.AreEqual(message.MessageId, receivedMessage.MessageId);
+            Assert.That(receivedMessage.MessageId, Is.EqualTo(message.MessageId));
         }
 
         [Test]
@@ -40,7 +40,7 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.AreEqual(message.MessageId, receivedMessage.MessageId);
+            Assert.That(receivedMessage.MessageId, Is.EqualTo(message.MessageId));
         }
 
         [Test]
@@ -102,7 +102,7 @@
 
                 var wasHandled = await handled.Task;
                 Assert.That(wasHandled, Is.True, "Error handler should be called after retry");
-                Assert.AreEqual(1, numRetries, "Message should be retried once");
+                Assert.That(numRetries, Is.EqualTo(1), "Message should be retried once");
             }
         }
 
@@ -171,8 +171,8 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.AreEqual(typeName, receivedMessage.Headers[Headers.EnclosedMessageTypes]);
-            Assert.AreEqual(typeof(MyMessage), Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]));
+            Assert.That(receivedMessage.Headers[Headers.EnclosedMessageTypes], Is.EqualTo(typeName));
+            Assert.That(Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]), Is.EqualTo(typeof(MyMessage)));
         }
 
         class MyMessage
