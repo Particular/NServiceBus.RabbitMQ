@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
@@ -28,9 +30,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return newConnection;
         }
 
-        void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
+        void Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
         {
-            if (e.Initiator == ShutdownInitiator.Application)
+            if (e.Initiator == ShutdownInitiator.Application || sender is null)
             {
                 return;
             }
@@ -129,7 +131,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         readonly CancellationTokenSource stoppingTokenSource = new();
-        volatile IConnection connection;
+        volatile IConnection? connection;
         bool disposed;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
