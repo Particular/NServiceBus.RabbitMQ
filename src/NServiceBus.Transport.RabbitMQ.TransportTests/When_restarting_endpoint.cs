@@ -60,7 +60,7 @@
                 {
                     var messageType = context.Headers["Type"];
                     receivedMessages.Enqueue(messageType);
-                    TestContext.WriteLine("Received message " + messageType);
+                    await TestContext.Out.WriteLineAsync("Received message " + messageType);
 
                     switch (messageType)
                     {
@@ -72,7 +72,7 @@
                                 var t = receiver.StopReceive(token);
                                 pumpStopTriggered.SetResult();
                                 await t;
-                                TestContext.WriteLine("Stopped receiver");
+                                await TestContext.Out.WriteLineAsync("Stopped receiver");
                             }, token);
 
                             await pumpStopTriggered.Task;
@@ -85,7 +85,7 @@
                             _ = stopTask.ContinueWith(async _ =>
                             {
                                 await receiver.StartReceive(token);
-                                TestContext.WriteLine("Started receiver");
+                                await TestContext.Out.WriteLineAsync("Started receiver");
                             }, token);
 
                             break;
