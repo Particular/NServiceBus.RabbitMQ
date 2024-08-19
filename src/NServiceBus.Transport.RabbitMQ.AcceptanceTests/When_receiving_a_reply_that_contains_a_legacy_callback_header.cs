@@ -23,7 +23,7 @@
                 .Run();
 
             Assert.That(context.IncorrectHandlerInvoked, Is.False);
-            Assert.IsTrue(context.AuditMessageReceived);
+            Assert.That(context.AuditMessageReceived, Is.True);
         }
 
         public class Request : IMessage

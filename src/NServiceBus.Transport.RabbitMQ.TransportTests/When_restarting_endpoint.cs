@@ -107,9 +107,9 @@
             await StopPump();
 
             Assert.AreEqual(2, receivedMessages.Count);
-            Assert.IsTrue(receivedMessages.TryDequeue(out var firstMessageType));
+            Assert.That(receivedMessages.TryDequeue(out var firstMessageType), Is.True);
             Assert.AreEqual("Start", firstMessageType);
-            Assert.IsTrue(receivedMessages.TryDequeue(out var secondMessageType));
+            Assert.That(receivedMessages.TryDequeue(out var secondMessageType), Is.True);
             Assert.AreEqual("Followup", secondMessageType);
         }
     }
