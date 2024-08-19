@@ -20,7 +20,7 @@
 
             var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
 
-            StringAssert.Contains(endpointName, ex.Message);
+            Assert.That(ex.Message, Does.Contain(endpointName));
         }
 
         [Test]
@@ -32,7 +32,7 @@
 
             var ex = Assert.ThrowsAsync<NotSupportedException>(async () => await ExecuteMigration(endpointName));
 
-            StringAssert.Contains(endpointName, ex.Message);
+            Assert.That(ex.Message, Does.Contain(endpointName));
         }
 
         [Test]
