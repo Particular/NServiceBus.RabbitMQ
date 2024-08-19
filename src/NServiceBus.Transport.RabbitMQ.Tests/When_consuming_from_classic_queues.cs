@@ -56,8 +56,8 @@
 
                 var headersWasNullOnRedelivery = await headerCollectionWasNullOnRedelivery.Task;
 
-                Assert.True(headerCollectionWasNullOnFirstDelivery, "Header collection should be null on the first delivery");
-                Assert.True(headersWasNullOnRedelivery, "Header collection should be null even after a redelivery");
+                Assert.That(headerCollectionWasNullOnFirstDelivery, Is.True, "Header collection should be null on the first delivery");
+                Assert.That(headersWasNullOnRedelivery, Is.True, "Header collection should be null even after a redelivery");
             }
         }
 

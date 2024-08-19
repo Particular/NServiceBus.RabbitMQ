@@ -29,7 +29,7 @@
                 .Done(c => c.GotTheMessage)
                 .Run();
 
-            Assert.True(context.Logs.Any(l => l.Level == LogLevel.Warn && l.Message.Contains("The direct routing topology cannot properly publish a message type that implements")));
+            Assert.That(context.Logs.Any(l => l.Level == LogLevel.Warn && l.Message.Contains("The direct routing topology cannot properly publish a message type that implements")), Is.True);
         }
 
         public class Publisher : EndpointConfigurationBuilder

@@ -27,7 +27,7 @@
                 .Done(c => c.GotTheMessage)
                 .Run();
 
-            Assert.True(context.GotTheMessage, "Should receive the message");
+            Assert.That(context.GotTheMessage, Is.True, "Should receive the message");
         }
 
         public class Receiver : EndpointConfigurationBuilder

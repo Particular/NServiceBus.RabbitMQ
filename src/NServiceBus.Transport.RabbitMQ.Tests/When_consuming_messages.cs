@@ -101,7 +101,7 @@
                 }
 
                 var wasHandled = await handled.Task;
-                Assert.True(wasHandled, "Error handler should be called after retry");
+                Assert.That(wasHandled, Is.True, "Error handler should be called after retry");
                 Assert.AreEqual(1, numRetries, "Message should be retried once");
             }
         }
@@ -146,7 +146,7 @@
 
                 var headersWasNullOnRedelivery = await headerCollectionWasNullOnRedelivery.Task;
 
-                Assert.True(headerCollectionWasNullOnFirstDelivery, "Header collection should be null on the first delivery");
+                Assert.That(headerCollectionWasNullOnFirstDelivery, Is.True, "Header collection should be null on the first delivery");
                 Assert.That(headersWasNullOnRedelivery, Is.False, "Header collection should not null after a redelivery since broker headers are added to quorum queue messages");
             }
         }
