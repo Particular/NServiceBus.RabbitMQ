@@ -221,7 +221,7 @@
 
             var messageId = customConverter.RetrieveMessageId(message, headers);
 
-            Assert.That("Blah", Is.EqualTo(messageId));
+            Assert.That(messageId, Is.EqualTo("Blah"));
         }
 
         [Test]

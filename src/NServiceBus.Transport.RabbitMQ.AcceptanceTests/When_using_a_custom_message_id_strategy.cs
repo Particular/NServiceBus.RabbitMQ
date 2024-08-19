@@ -26,7 +26,7 @@
                    .Run();
 
             Assert.That(context.GotTheMessage, Is.True, "Should receive the message");
-            Assert.That(CustomMessageId, Is.EqualTo(context.ReceivedMessageId), "Message id should equal custom id value");
+            Assert.That(context.ReceivedMessageId, Is.EqualTo(CustomMessageId), "Message id should equal custom id value");
         }
 
         public class Receiver : EndpointConfigurationBuilder
