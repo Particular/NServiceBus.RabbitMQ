@@ -32,23 +32,25 @@ namespace NServiceBus.Transport.RabbitMQ
                 var connection = (IConnection)sender;
 
                 // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
-                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName), CancellationToken.None);
+                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName, stoppingTokenSource.Token), CancellationToken.None);
             }
         }
 
-#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        async Task ReconnectSwallowingExceptions(string connectionName)
-#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
         {
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", connectionName, retryDelay.TotalSeconds);
 
-                await Task.Delay(retryDelay).ConfigureAwait(false);
-
                 try
                 {
+                    await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
                     CreateConnection();
+                    break;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.InfoFormat("'{0}': Stopped trying to reconnecting to the broker due to shutdown", connectionName);
                     break;
                 }
                 catch (Exception ex)
@@ -86,19 +88,31 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public void Dispose()
         {
+            if (disposed)
+            {
+                return;
+            }
+
+            stoppingTokenSource.Cancel();
+            stoppingTokenSource.Dispose();
+
             connection?.Dispose();
 
             foreach (var channel in channels)
             {
                 channel.Dispose();
             }
+
+            disposed = true;
         }
 
         readonly ConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
         readonly IRoutingTopology routingTopology;
         readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
+        readonly CancellationTokenSource stoppingTokenSource = new();
         IConnection connection;
+        bool disposed;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
     }
