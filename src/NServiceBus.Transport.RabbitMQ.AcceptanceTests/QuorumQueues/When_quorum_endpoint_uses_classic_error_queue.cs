@@ -22,8 +22,8 @@
                 .Done(c => c.EndpointsStarted)
                 .Run());
 
-            StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type' for queue 'rabbitmq.transport.tests.classic-error'", exception.Message);
-            StringAssert.Contains("received the value 'quorum' of type 'longstr' but current is none'", exception.Message);
+            Assert.That(exception.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type' for queue 'rabbitmq.transport.tests.classic-error'"));
+            Assert.That(exception.Message, Does.Contain("received the value 'quorum' of type 'longstr' but current is none'"));
         }
 
         class QuorumQueueEndpoint : EndpointConfigurationBuilder

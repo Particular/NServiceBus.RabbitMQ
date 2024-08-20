@@ -17,7 +17,7 @@
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            Assert.True(scenario.HandlerHasAccessToBasicDeliverEventArgs, "The handler should have access to BasicDeliverEventArgs");
+            Assert.That(scenario.HandlerHasAccessToBasicDeliverEventArgs, Is.True, "The handler should have access to BasicDeliverEventArgs");
         }
 
         public class Receiver : EndpointConfigurationBuilder

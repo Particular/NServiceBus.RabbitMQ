@@ -39,7 +39,7 @@
 
             var retriedMessage = await messageRetries.Task;
 
-            Assert.AreEqual("original", retriedMessage.Headers["test-header"]);
+            Assert.That(retriedMessage.Headers["test-header"], Is.EqualTo("original"));
         }
 
         [TestCase(TransportTransactionMode.None)]
@@ -70,7 +70,7 @@
 
             var errorContext = await errorHandled.Task;
 
-            Assert.AreEqual("original", errorContext.Message.Headers["test-header"]);
+            Assert.That(errorContext.Message.Headers["test-header"], Is.EqualTo("original"));
         }
 
         [TestCase(TransportTransactionMode.ReceiveOnly)]
@@ -107,7 +107,7 @@
 
             var retriedMessage = await messageRetries.Task;
 
-            Assert.AreEqual("original", retriedMessage.Headers["test-header"]);
+            Assert.That(retriedMessage.Headers["test-header"], Is.EqualTo("original"));
         }
     }
 }
