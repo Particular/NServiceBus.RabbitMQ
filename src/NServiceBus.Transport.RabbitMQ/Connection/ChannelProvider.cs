@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client;
     using Logging;
 
-    sealed class ChannelProvider : IDisposable
+    class ChannelProvider : IDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
         {
@@ -19,10 +19,15 @@ namespace NServiceBus.Transport.RabbitMQ
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
         }
 
-        public void CreateConnection()
+        public void CreateConnection() => connection = CreateConnectionWithShutdownListener();
+
+        protected virtual IConnection CreatePublishConnection() => connectionFactory.CreatePublishConnection();
+
+        IConnection CreateConnectionWithShutdownListener()
         {
-            connection = connectionFactory.CreatePublishConnection();
-            connection.ConnectionShutdown += Connection_ConnectionShutdown;
+            var newConnection = CreatePublishConnection();
+            newConnection.ConnectionShutdown += Connection_ConnectionShutdown;
+            return newConnection;
         }
 
         void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
@@ -34,6 +39,10 @@ namespace NServiceBus.Transport.RabbitMQ
                 // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
                 _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName), CancellationToken.None);
             }
+                return;
+            }
+
+            var connectionThatWasShutdown = (IConnection)sender;
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
@@ -44,7 +53,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", connectionName, retryDelay.TotalSeconds);
 
-                await Task.Delay(retryDelay).ConfigureAwait(false);
+                await DelayReconnect(cancellationToken).ConfigureAwait(false);
 
                 try
                 {
@@ -59,6 +68,12 @@ namespace NServiceBus.Transport.RabbitMQ
 
             Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", connectionName);
         }
+
+        protected virtual void FireAndForget(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default) =>
+            // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
+            _ = Task.Run(() => action(cancellationToken), CancellationToken.None);
+
+        protected virtual Task DelayReconnect(CancellationToken cancellationToken = default) => Task.Delay(retryDelay, cancellationToken);
 
         public ConfirmsAwareChannel GetPublishChannel()
         {
