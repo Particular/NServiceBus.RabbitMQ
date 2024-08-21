@@ -30,19 +30,15 @@ namespace NServiceBus.Transport.RabbitMQ
             return newConnection;
         }
 
+
         void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
         {
             if (e.Initiator != ShutdownInitiator.Application)
             {
                 var connection = (IConnection)sender;
 
-                // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
-                _ = Task.Run(() => ReconnectSwallowingExceptions(connection.ClientProvidedName), CancellationToken.None);
+                FireAndForget(_ => ReconnectSwallowingExceptions(connection.ClientProvidedName));
             }
-                return;
-            }
-
-            var connectionThatWasShutdown = (IConnection)sender;
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
@@ -53,7 +49,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", connectionName, retryDelay.TotalSeconds);
 
-                await DelayReconnect(cancellationToken).ConfigureAwait(false);
+                await DelayReconnect().ConfigureAwait(false);
 
                 try
                 {
