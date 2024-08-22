@@ -18,6 +18,10 @@
     <PackageReference Include="Particular.Packaging" Version="4.0.0" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup Label="Direct references to transitive dependencies to avoid versions with CVE">
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
+  </ItemGroup>
+
   <PropertyGroup>
     <PackageId>NServiceBus.RabbitMQ</PackageId>
     <Description>RabbitMQ support for NServiceBus</Description>
