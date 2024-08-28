@@ -1,21 +1,22 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
     static class ChannelExtensions
     {
-        public static void DeclareQuorumQueue(this IModel channel, string queueName)
+        public static Task<QueueDeclareOk> DeclareQuorumQueue(this IChannel channel, string queueName)
         {
-            channel.QueueDeclare(queueName, true, false, false, new Dictionary<string, object>
+            return channel.QueueDeclareAsync(queueName, true, false, false, new Dictionary<string, object>
             {
                 { "x-queue-type", "quorum" }
             });
         }
 
-        public static void DeclareClassicQueue(this IModel channel, string queueName)
+        public static Task<QueueDeclareOk> DeclareClassicQueue(this IChannel channel, string queueName)
         {
-            channel.QueueDeclare(queueName, true, false, false);
+            return channel.QueueDeclareAsync(queueName, true, false, false);
         }
     }
 }

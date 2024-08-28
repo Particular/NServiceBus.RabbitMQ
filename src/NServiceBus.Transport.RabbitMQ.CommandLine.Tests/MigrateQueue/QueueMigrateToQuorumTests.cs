@@ -279,7 +279,7 @@
         }
 
         [SetUp]
-        public void SetUp()
+        public async Task SetUp()
         {
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
@@ -287,15 +287,15 @@
 
             brokerConnection = new BrokerConnection(connectionFactory);
 
-            connection = brokerConnection.Create();
+            connection = await brokerConnection.Create();
         }
 
         [TearDown]
-        public void TearDown()
+        public async Task TearDown()
         {
             if (connection.IsOpen)
             {
-                connection.Close();
+                await connection.CloseAsync();
             }
             connection.Dispose();
         }
@@ -381,24 +381,24 @@
             });
         }
 
-        uint MessageCount(string queueName)
+        async Task<uint> MessageCount(string queueName)
         {
             uint messageCount = 0;
 
-            ExecuteBrokerCommand(channel => messageCount = channel.MessageCount(queueName));
+            await ExecuteBrokerCommand(async channel => messageCount = await channel.MessageCountAsync(queueName));
 
             return messageCount;
         }
 
-        bool QueueExists(string queueName)
+        async Task<bool> QueueExists(string queueName)
         {
             bool queueExists = false;
 
-            ExecuteBrokerCommand(channel =>
+            await ExecuteBrokerCommand(async channel =>
             {
                 try
                 {
-                    channel.QueueDeclarePassive(queueName);
+                    await channel.QueueDeclarePassiveAsync(queueName);
                     queueExists = true;
                 }
                 catch (OperationInterruptedException)
@@ -410,10 +410,10 @@
             return queueExists;
         }
 
-        void ExecuteBrokerCommand(Action<IModel> command)
+        async Task ExecuteBrokerCommand(Func<IChannel, Task> command)
         {
-            using var channel = connection.CreateModel();
-            command(channel);
+            using var channel = await connection.CreateChannelAsync();
+            await command(channel);
         }
 
         static string GetHoldingQueueName(string endpointName) => $"{endpointName}-migration-temp";

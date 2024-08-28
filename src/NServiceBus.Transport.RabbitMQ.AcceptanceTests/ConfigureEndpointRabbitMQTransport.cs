@@ -27,14 +27,12 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
         return Task.CompletedTask;
     }
 
-    public Task Cleanup()
+    public async Task Cleanup()
     {
-        PurgeQueues();
-
-        return Task.CompletedTask;
+        await PurgeQueues();
     }
 
-    void PurgeQueues()
+    async Task PurgeQueues()
     {
         if (transport == null)
         {
@@ -43,14 +41,14 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
         var queues = transport.QueuesToCleanup.Distinct().ToArray();
 
-        using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection("Test Queue Purger"))
-        using (var channel = connection.CreateModel())
+        using (var connection = await ConnectionHelper.ConnectionFactory.CreateConnectionAsync("Test Queue Purger"))
+        using (var channel = await connection.CreateChannelAsync())
         {
             foreach (var queue in queues)
             {
                 try
                 {
-                    channel.QueuePurge(queue);
+                    await channel.QueuePurgeAsync(queue);
                 }
                 catch (Exception ex)
                 {

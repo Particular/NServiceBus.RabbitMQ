@@ -35,7 +35,7 @@
             command.SetHandler(async (url, username, password, console, cancellationToken) =>
             {
                 var delaysVerify = new DelaysVerifyCommand(url, username, password, console);
-                await delaysVerify.Run(cancellationToken).ConfigureAwait(false);
+                await delaysVerify.Run(cancellationToken);
             },
             urlOption, usernameOption, passwordOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
@@ -57,7 +57,7 @@
             var authString = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authString);
 
-            var serverDetails = await GetServerDetails(httpClient, cancellationToken).ConfigureAwait(false);
+            var serverDetails = await GetServerDetails(httpClient, cancellationToken);
 
             if (Version.TryParse(serverDetails.Overview?.ProductVersion, out var version) && version < Version.Parse("3.10.0"))
             {
@@ -85,18 +85,18 @@
         {
             return new ServerDetails
             {
-                Overview = await MakeHttpRequest<Overview>(httpClient, "overview", cancellationToken).ConfigureAwait(false),
-                FeatureFlags = await MakeHttpRequest<FeatureFlag[]>(httpClient, "feature-flags", cancellationToken).ConfigureAwait(false)
+                Overview = await MakeHttpRequest<Overview>(httpClient, "overview", cancellationToken),
+                FeatureFlags = await MakeHttpRequest<FeatureFlag[]>(httpClient, "feature-flags", cancellationToken)
             };
         }
 
         async Task<T?> MakeHttpRequest<T>(HttpClient httpClient, string urlPart, CancellationToken cancellationToken)
         {
             var url = $"{baseUrl}/api/{urlPart}";
-            using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            using var response = await httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (string.IsNullOrEmpty(content))
             {

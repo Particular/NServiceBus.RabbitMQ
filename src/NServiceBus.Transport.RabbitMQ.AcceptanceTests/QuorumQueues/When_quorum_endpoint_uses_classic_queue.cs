@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
@@ -9,12 +10,12 @@
     public class When_quorum_endpoint_uses_classic_queue : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_fail_to_start()
+        public async Task Should_fail_to_start()
         {
-            using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await ConnectionHelper.ConnectionFactory.CreateConnectionAsync())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                channel.DeclareClassicQueue(Conventions.EndpointNamingConvention(typeof(QuorumQueueEndpoint)));
+                await channel.DeclareClassicQueue(Conventions.EndpointNamingConvention(typeof(QuorumQueueEndpoint)));
             }
 
             var exception = Assert.CatchAsync<Exception>(async () => await Scenario.Define<ScenarioContext>()

@@ -7,7 +7,7 @@ CreateDelaysCommand(rootCommand);
 CreateEndpointCommand(rootCommand);
 CreateQueueCommand(rootCommand);
 
-return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
+return await rootCommand.InvokeAsync(args);
 
 void CreateDelaysCommand(Command rootCommand)
 {

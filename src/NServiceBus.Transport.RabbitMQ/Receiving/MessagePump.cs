@@ -135,7 +135,9 @@
             await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
-            consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
+
+            // TODO figure out replacement for missing event
+            //consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
 

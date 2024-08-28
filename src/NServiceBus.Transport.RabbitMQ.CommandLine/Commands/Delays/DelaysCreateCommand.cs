@@ -13,7 +13,7 @@
             command.SetHandler(async (brokerConnection, console, cancellationToken) =>
             {
                 var delaysCreate = new DelaysCreateCommand(brokerConnection, console);
-                await delaysCreate.Run(cancellationToken).ConfigureAwait(false);
+                await delaysCreate.Run(cancellationToken);
             },
             brokerConnectionBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
@@ -30,10 +30,10 @@
         {
             console.WriteLine($"Creating v2 delay infrastructure queues and exchanges...");
 
-            using var connection = await brokerConnection.Create(cancellationToken).ConfigureAwait(false);
-            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            using var connection = await brokerConnection.Create(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken);
 
-            await DelayInfrastructure.Build(channel, cancellationToken).ConfigureAwait(false);
+            await DelayInfrastructure.Build(channel, cancellationToken);
 
             console.WriteLine("Queues and exchanges created successfully");
         }
