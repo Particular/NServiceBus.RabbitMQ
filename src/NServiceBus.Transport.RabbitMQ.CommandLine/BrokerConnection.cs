@@ -12,8 +12,8 @@
 
         public async Task<IConnection> Create(CancellationToken cancellationToken = default)
         {
-            var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-            await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken).ConfigureAwait(false);
+            var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
+            await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken);
 
             return connection;
         }

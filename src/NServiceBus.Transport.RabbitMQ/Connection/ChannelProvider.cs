@@ -44,7 +44,7 @@ namespace NServiceBus.Transport.RabbitMQ
             FireAndForget(cancellationToken => ReconnectSwallowingExceptions(connectionThatWasShutdown.ClientProvidedName, cancellationToken), stoppingTokenSource.Token);
         }
 
-        async Task ReconnectSwallowingExceptions(string connectionName, CancellationToken cancellationToken)
+        async Task ReconnectSwallowingExceptions(string? connectionName, CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {

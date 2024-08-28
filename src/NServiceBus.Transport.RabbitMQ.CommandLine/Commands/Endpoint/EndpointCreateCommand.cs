@@ -44,7 +44,7 @@
             command.SetHandler(async (endpointName, errorQueue, auditQueue, instanceDiscriminators, brokerConnection, routingTopology, console, cancellationToken) =>
             {
                 var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, console);
-                await queueCreate.Run(endpointName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken).ConfigureAwait(false);
+                await queueCreate.Run(endpointName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken);
             },
             endpointNameArgument, errorQueueOption, auditQueueOption, instanceDiscriminatorsOption, brokerConnectionBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
@@ -58,18 +58,18 @@
             this.console = console;
         }
 
-        public Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, CancellationToken cancellationToken = default)
+        public async Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, CancellationToken cancellationToken = default)
         {
             console.WriteLine("Connecting to broker");
 
-            using var connection = brokerConnection.Create();
-            using var channel = connection.CreateModel();
+            using var connection = await brokerConnection.Create(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken);
 
             console.WriteLine("Checking for v2 delay infrastructure");
 
             try
             {
-                channel.ExchangeDeclarePassive(DelayInfrastructure.DeliveryExchange);
+                await channel.ExchangeDeclarePassiveAsync(DelayInfrastructure.DeliveryExchange, cancellationToken);
             }
             catch (OperationInterruptedException)
             {
@@ -98,16 +98,14 @@
                 sendingAddresses.Add(auditQueue);
             }
 
-            routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+            await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, cancellationToken);
 
             foreach (var receivingAddress in receivingAddresses)
             {
-                routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress));
+                await routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress), cancellationToken);
             }
 
             console.WriteLine($"Completed successfully");
-
-            return Task.CompletedTask;
         }
     }
 }
