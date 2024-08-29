@@ -118,7 +118,7 @@
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
-            var result = await Consume(messageId, QueueToReceiveOn);
+            var result = await Consume(messageId, QueueToReceiveOn, cancellationToken);
 
             var converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
             var convertedHeaders = converter.RetrieveHeaders(result);
@@ -133,19 +133,19 @@
 
         Task Verify(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, CancellationToken cancellationToken = default) => Verify(builder, (t, r) => assertion(r), cancellationToken);
 
-        async Task<BasicDeliverEventArgs> Consume(string id, string queueToReceiveOn)
+        async Task<BasicDeliverEventArgs> Consume(string id, string queueToReceiveOn, CancellationToken cancellationToken)
         {
-            using (var connection = await connectionFactory.CreateConnection("Consume"))
-            using (var channel = await connection.CreateChannelAsync())
+            using (var connection = await connectionFactory.CreateConnection("Consume", cancellationToken: cancellationToken))
+            using (var channel = await connection.CreateChannelAsync(cancellationToken))
             {
-                var message = await channel.BasicGetAsync(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");
+                var message = await channel.BasicGetAsync(queueToReceiveOn, false, cancellationToken) ?? throw new InvalidOperationException("No message found in queue");
 
                 if (message.BasicProperties.MessageId != id)
                 {
                     throw new InvalidOperationException("Unexpected message found in queue");
                 }
 
-                await channel.BasicAckAsync(message.DeliveryTag, false);
+                await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
 
                 return new BasicDeliverEventArgs("", message.DeliveryTag, message.Redelivered, message.Exchange, message.RoutingKey, message.BasicProperties, message.Body);
             }

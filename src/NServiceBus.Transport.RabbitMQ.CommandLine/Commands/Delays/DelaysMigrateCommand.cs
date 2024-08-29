@@ -99,7 +99,19 @@
                     }
 
                     var messageHeaders = message.BasicProperties.Headers;
-                    var delayInSeconds = (int)messageHeaders[DelayInfrastructure.DelayHeader];
+
+                    var delayInSeconds = 0;
+
+                    if (messageHeaders is not null)
+                    {
+                        var headerValue = messageHeaders[DelayInfrastructure.DelayHeader];
+
+                        if (headerValue is not null)
+                        {
+                            delayInSeconds = (int)headerValue;
+                        }
+                    }
+
                     var timeSent = GetTimeSent(message);
 
                     var (destinationQueue, newRoutingKey, newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
@@ -148,7 +160,15 @@
 
         static DateTimeOffset GetTimeSent(BasicGetResult message)
         {
-            var timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
+            var timeSentHeaderValue = message.BasicProperties.Headers?[timeSentHeader];
+            var timeSentHeaderBytes = Array.Empty<byte>();
+
+            if (timeSentHeaderValue is not null)
+            {
+                timeSentHeaderBytes = (byte[])timeSentHeaderValue;
+            }
+
+            var timeSentString = Encoding.UTF8.GetString(timeSentHeaderBytes);
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 

@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     static class ConventionalRoutingTopologyExtensions
@@ -10,21 +11,22 @@
             this ConventionalRoutingTopology routingTopology,
             ConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
-            IEnumerable<string> sendingAddresses)
+            IEnumerable<string> sendingAddresses,
+            CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.CreateAdministrationConnection())
-            using (var channel = await connection.CreateChannelAsync())
+            using (var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken))
+            using (var channel = await connection.CreateChannelAsync(cancellationToken))
             {
                 foreach (var address in receivingAddresses.Concat(sendingAddresses))
                 {
-                    await channel.QueueDeleteAsync(address, false, false);
-                    await channel.ExchangeDeleteAsync(address, false);
+                    await channel.QueueDeleteAsync(address, false, false, cancellationToken: cancellationToken);
+                    await channel.ExchangeDeleteAsync(address, false, cancellationToken: cancellationToken);
                 }
 
-                await DelayInfrastructure.TearDown(channel);
-                await DelayInfrastructure.Build(channel);
+                await DelayInfrastructure.TearDown(channel, cancellationToken);
+                await DelayInfrastructure.Build(channel, cancellationToken);
 
-                await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+                await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, cancellationToken);
             }
         }
     }

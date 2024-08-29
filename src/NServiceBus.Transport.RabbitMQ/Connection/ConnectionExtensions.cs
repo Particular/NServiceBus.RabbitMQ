@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -12,7 +14,15 @@
         public static async Task VerifyBrokerRequirements(this IConnection connection, CancellationToken cancellationToken = default)
         {
             var minimumBrokerVersion = Version.Parse("3.10.0");
-            var brokerVersionString = Encoding.UTF8.GetString((byte[])connection.ServerProperties["version"]);
+            var versionValue = connection.ServerProperties?["version"];
+            var versionBytes = Array.Empty<byte>();
+
+            if (versionValue is not null)
+            {
+                versionBytes = (byte[])versionValue;
+            }
+
+            var brokerVersionString = Encoding.UTF8.GetString(versionBytes);
 
             if (Version.TryParse(brokerVersionString, out var brokerVersion) && brokerVersion < minimumBrokerVersion)
             {
@@ -21,13 +31,13 @@
 
             using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
 
-            var arguments = new Dictionary<string, object> { { "x-queue-type", "stream" } };
+            var arguments = new Dictionary<string, object?> { { "x-queue-type", "stream" } };
 
             try
             {
                 await channel.QueueDeclareAsync("nsb.v2.verify-stream-flag-enabled", true, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex.Message.Contains("the corresponding feature flag is disabled"))
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken) && ex.Message.Contains("the corresponding feature flag is disabled"))
             {
                 throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
             }

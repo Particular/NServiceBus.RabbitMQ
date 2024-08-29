@@ -162,11 +162,11 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             public event EventHandler<ConnectionBlockedEventArgs> ConnectionBlocked = (_, _) => { };
             public event EventHandler<ShutdownEventArgs> ConnectionShutdown = (_, _) => { };
             public event EventHandler<EventArgs> ConnectionUnblocked = (_, _) => { };
-            public event EventHandler<EventArgs> RecoverySucceeded;
-            public event EventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryError;
-            public event EventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecovery;
-            public event EventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecovery;
-            public event EventHandler<RecoveringConsumerEventArgs> RecoveringConsumer;
+            public event EventHandler<EventArgs> RecoverySucceeded = (_, _) => { };
+            public event EventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryError = (_, _) => { };
+            public event EventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecovery = (_, _) => { };
+            public event EventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecovery = (_, _) => { };
+            public event EventHandler<RecoveringConsumerEventArgs> RecoveringConsumer = (_, _) => { };
 
             public void RaiseConnectionShutdown(ShutdownEventArgs args) => ConnectionShutdown?.Invoke(this, args);
             public Task UpdateSecretAsync(string newSecret, string reason, CancellationToken cancellationToken = default) => throw new NotImplementedException();
