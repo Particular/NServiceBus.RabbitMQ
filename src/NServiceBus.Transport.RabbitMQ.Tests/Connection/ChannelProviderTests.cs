@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_recover_connection_and_dispose_old_one_when_connection_shutdown()
         {
             var channelProvider = new TestableChannelProvider();
-            channelProvider.CreateConnection();
+            await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
@@ -31,10 +31,10 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         }
 
         [Test]
-        public void Should_dispose_connection_when_disposed()
+        public async Task Should_dispose_connection_when_disposed()
         {
             var channelProvider = new TestableChannelProvider();
-            channelProvider.CreateConnection();
+            await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             channelProvider.Dispose();
@@ -46,7 +46,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_not_attempt_to_recover_during_dispose_when_retry_delay_still_pending()
         {
             var channelProvider = new TestableChannelProvider();
-            channelProvider.CreateConnection();
+            await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
@@ -65,7 +65,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_dispose_newly_established_connection()
         {
             var channelProvider = new TestableChannelProvider();
-            channelProvider.CreateConnection();
+            await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
@@ -93,11 +93,12 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public Func<CancellationToken, Task> FireAndForgetAction { get; private set; }
 
-            protected override IConnection CreatePublishConnection()
+            protected override Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default)
             {
                 var connection = new FakeConnection();
                 PublishConnections.Enqueue(connection);
-                return connection;
+
+                return Task.FromResult((IConnection)connection);
             }
 
             protected override void FireAndForget(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
@@ -113,6 +114,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         class FakeConnection : IConnection
         {
             public int LocalPort { get; }
+
             public int RemotePort { get; }
 
             public void Dispose() => WasDisposed = true;
@@ -137,8 +139,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public void Close(ushort reasonCode, string reasonText, TimeSpan timeout) => throw new NotImplementedException();
 
-            public IModel CreateModel() => throw new NotImplementedException();
-
             public void HandleConnectionBlocked(string reason) => throw new NotImplementedException();
 
             public void HandleConnectionUnblocked() => throw new NotImplementedException();
@@ -155,12 +155,23 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             public IDictionary<string, object> ServerProperties { get; }
             public IList<ShutdownReportEntry> ShutdownReport { get; }
             public string ClientProvidedName { get; } = $"FakeConnection{Interlocked.Increment(ref connectionCounter)}";
+
+            IEnumerable<ShutdownReportEntry> IConnection.ShutdownReport => throw new NotImplementedException();
+
             public event EventHandler<CallbackExceptionEventArgs> CallbackException = (_, _) => { };
             public event EventHandler<ConnectionBlockedEventArgs> ConnectionBlocked = (_, _) => { };
             public event EventHandler<ShutdownEventArgs> ConnectionShutdown = (_, _) => { };
             public event EventHandler<EventArgs> ConnectionUnblocked = (_, _) => { };
+            public event EventHandler<EventArgs> RecoverySucceeded;
+            public event EventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryError;
+            public event EventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecovery;
+            public event EventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecovery;
+            public event EventHandler<RecoveringConsumerEventArgs> RecoveringConsumer;
 
             public void RaiseConnectionShutdown(ShutdownEventArgs args) => ConnectionShutdown?.Invoke(this, args);
+            public Task UpdateSecretAsync(string newSecret, string reason, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task CloseAsync(ushort reasonCode, string reasonText, TimeSpan timeout, bool abort, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task<IChannel> CreateChannelAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
             static int connectionCounter;
         }

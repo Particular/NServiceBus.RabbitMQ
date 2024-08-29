@@ -36,21 +36,21 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         return transport;
     }
 
-    public Task Cleanup(CancellationToken cancellationToken = default)
+    public async Task Cleanup(CancellationToken cancellationToken = default)
     {
         if (queuesToCleanUp == null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        using (var connection = ConnectionHelper.ConnectionFactory.CreateConnection("Test Queue Purger"))
-        using (var channel = connection.CreateModel())
+        using (var connection = await ConnectionHelper.ConnectionFactory.CreateConnectionAsync("Test Queue Purger", cancellationToken))
+        using (var channel = await connection.CreateChannelAsync(cancellationToken))
         {
             foreach (var queue in queuesToCleanUp)
             {
                 try
                 {
-                    channel.QueuePurge(queue);
+                    await channel.QueuePurgeAsync(queue, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -58,7 +58,6 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
                 }
             }
         }
-        return Task.CompletedTask;
     }
 
     string[] queuesToCleanUp;

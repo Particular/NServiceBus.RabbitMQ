@@ -33,6 +33,10 @@
 
             public string ProtocolClassName => throw new NotSupportedException();
 
+            DeliveryModes IBasicProperties.DeliveryMode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            DeliveryModes IReadOnlyBasicProperties.DeliveryMode => throw new NotImplementedException();
+
             public void ClearAppId()
             {
                 throw new NotSupportedException();
@@ -164,13 +168,12 @@
         [Test]
         public void TestCanHandleNoInterestingProperties()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
-                {
-                    MessageId = "Blah"
-                }
+                MessageId = "Blah"
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
             var messageId = converter.RetrieveMessageId(message, headers);
@@ -185,10 +188,8 @@
         [Test]
         public void Should_throw_exception_when_no_message_id_is_set()
         {
-            var message = new BasicDeliverEventArgs
-            {
-                BasicProperties = new TestingBasicProperties()
-            };
+            var basicProperties = new TestingBasicProperties();
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = new Dictionary<string, string>();
 
@@ -200,10 +201,8 @@
         {
             var customConverter = new MessageConverter(args => "");
 
-            var message = new BasicDeliverEventArgs
-            {
-                BasicProperties = new TestingBasicProperties()
-            };
+            var basicProperties = new TestingBasicProperties();
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = new Dictionary<string, string>();
 
@@ -215,10 +214,8 @@
         {
             var customConverter = new MessageConverter(args => "");
 
-            var message = new BasicDeliverEventArgs
-            {
-                BasicProperties = new TestingBasicProperties()
-            };
+            var basicProperties = new TestingBasicProperties();
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = new Dictionary<string, string> { { NServiceBus.Headers.MessageId, "Blah" } };
 
@@ -230,17 +227,16 @@
         [Test]
         public void TestCanHandleByteArrayHeader()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                    {
-                        {"Foo", Encoding.UTF8.GetBytes("blah")}
-                    }
+                    {"Foo", Encoding.UTF8.GetBytes("blah")}
                 }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -251,14 +247,13 @@
         [Test]
         public void Should_set_replyto_header_if_native_replyto_is_present()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
-                {
-                    ReplyTo = "myaddress",
-                    MessageId = "Blah"
-                }
+                ReplyTo = "myaddress",
+                MessageId = "Blah"
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -269,18 +264,17 @@
         [Test]
         public void Should_override_replyto_header_if_native_replyto_is_present()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
+                ReplyTo = "myaddress",
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
-                    ReplyTo = "myaddress",
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                    {
-                        {NServiceBus.Headers.ReplyToAddress, Encoding.UTF8.GetBytes("nsb set address")}
-                    }
+                    {NServiceBus.Headers.ReplyToAddress, Encoding.UTF8.GetBytes("nsb set address")}
                 }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -291,24 +285,23 @@
         [Test]
         public void TestCanHandleHeadersWithAllAmqpFieldValues()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                    {
-                        {"short", (short)42},
-                        {"int", 42},
-                        {"long", 42L},
-                        {"decimal", 42m},
-                        {"sbyte", (sbyte)42},
-                        {"double", 42d},
-                        {"single", 42f},
-                        {"bool", true }
-                    }
+                    {"short", (short)42},
+                    {"int", 42},
+                    {"long", 42L},
+                    {"decimal", 42m},
+                    {"sbyte", (sbyte)42},
+                    {"double", 42d},
+                    {"single", 42f},
+                    {"bool", true }
                 }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -329,17 +322,16 @@
         [Test]
         public void TestCanHandleAmqpTimestampHeader()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                    {
-                        {"Foo", new global::RabbitMQ.Client.AmqpTimestamp(int.MaxValue) }
-                    }
+                    {"Foo", new AmqpTimestamp(int.MaxValue) }
                 }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -350,17 +342,16 @@
         [Test]
         public void TestCanHandleStringHeader()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                    {
-                        {"Foo", "ni"}
-                    }
+                    {"Foo", "ni"}
                 }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -371,17 +362,16 @@
         [Test]
         public void TestCanHandleStringObjectListHeader()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
-                    {
-                        {"Foo", new List<object> {"Bing"}}
-                    }
+                    {"Foo", new List<object> {"Bing"}}
                 }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -392,17 +382,16 @@
         [Test]
         public void TestCanHandleTablesListHeader()
         {
-            var message = new BasicDeliverEventArgs
+            var basicProperties = new TestingBasicProperties
             {
-                BasicProperties = new TestingBasicProperties
-                {
-                    MessageId = "Blah",
-                    Headers = new Dictionary<string, object>
+                MessageId = "Blah",
+                Headers = new Dictionary<string, object>
                 {
                     {"Foo", new List<object> {new Dictionary<string, object> {{"key1", Encoding.UTF8.GetBytes("value1")}, {"key2", Encoding.UTF8.GetBytes("value2")}}}}
                 }
-                }
             };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 

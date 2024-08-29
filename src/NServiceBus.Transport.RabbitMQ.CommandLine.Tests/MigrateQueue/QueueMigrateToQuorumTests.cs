@@ -12,11 +12,11 @@
     public class QueueMigrateToQuorumTests
     {
         [Test]
-        public void Should_blow_up_when_endpoint_queue_does_not_exist()
+        public async Task Should_blow_up_when_endpoint_queue_does_not_exist()
         {
             var endpointName = "NonExistingEndpoint";
 
-            CreateExchange(endpointName);
+            await CreateExchange(endpointName);
 
             var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
 
@@ -24,11 +24,11 @@
         }
 
         [Test]
-        public void Should_blow_up_when_no_default_exchange_exists()
+        public async Task Should_blow_up_when_no_default_exchange_exists()
         {
             var endpointName = "EndpointWithNoDefaultExchange";
 
-            CreateQueue(endpointName, quorum: false);
+            await CreateQueue(endpointName, quorum: false);
 
             var ex = Assert.ThrowsAsync<NotSupportedException>(async () => await ExecuteMigration(endpointName));
 
@@ -40,7 +40,7 @@
         {
             var endpointName = "EndpointWithClassicQueue";
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
             await ExecuteMigration(endpointName);
 
@@ -52,9 +52,9 @@
         {
             var endpointName = "FailureAfterUnbind";
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
-            ExecuteBrokerCommand(channel => channel.QueueUnbind(endpointName, endpointName, string.Empty));
+            await ExecuteBrokerCommand(async channel => await channel.QueueUnbindAsync(endpointName, endpointName, string.Empty));
 
             await ExecuteMigration(endpointName);
 
@@ -67,16 +67,16 @@
             var endpointName = "EndpointWithExistingMessages";
             var numExistingMessages = 10;
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
-            AddMessages(endpointName, numExistingMessages);
+            await AddMessages(endpointName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(numExistingMessages));
             });
         }
 
@@ -86,16 +86,16 @@
             var endpointName = "EndpointWithExistingMessages";
             var numExistingMessages = 10;
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
-            AddMessages(endpointName, numExistingMessages, properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, Guid.NewGuid().ToString() } });
+            await AddMessages(endpointName, numExistingMessages, properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, Guid.NewGuid().ToString() } });
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(numExistingMessages));
             });
         }
 
@@ -107,17 +107,17 @@
 
             var numExistingMessages = 10;
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages);
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(numExistingMessages));
             });
         }
 
@@ -129,20 +129,20 @@
 
             var numExistingMessages = 10;
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(
                 holdingQueueName,
                 numExistingMessages,
                 properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, "duplicate" } });
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(1));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(1));
             });
         }
 
@@ -155,15 +155,15 @@
             var numExistingMessages = 5;
             var expectedMessageCount = 10;
 
-            PrepareTestEndpoint(endpointName);
-            AddMessages(endpointName, numExistingMessages);
+            await PrepareTestEndpoint(endpointName);
+            await AddMessages(endpointName, numExistingMessages);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages);
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(MessageCount(endpointName), Is.EqualTo(expectedMessageCount));
+            Assert.That(await MessageCount(endpointName), Is.EqualTo(expectedMessageCount));
         }
 
         [Test]
@@ -174,17 +174,17 @@
 
             var numExistingMessages = 5;
 
-            PrepareTestEndpoint(endpointName);
+            await PrepareTestEndpoint(endpointName);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages);
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(numExistingMessages));
             });
         }
 
@@ -196,19 +196,19 @@
 
             var numExistingMessages = 5;
 
-            CreateExchange(endpointName);
+            await CreateExchange(endpointName);
 
-            TryDeleteQueue(endpointName);
+            await TryDeleteQueue(endpointName);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages);
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(numExistingMessages));
             });
         }
 
@@ -220,17 +220,17 @@
 
             var numExistingMessages = 5;
 
-            PrepareTestEndpoint(endpointName, true);
+            await PrepareTestEndpoint(endpointName, true);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages);
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(numExistingMessages));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(numExistingMessages));
             });
         }
 
@@ -243,18 +243,18 @@
             var numExistingMessages = 5;
             var expectedMessageCount = 10;
 
-            PrepareTestEndpoint(endpointName, true);
-            AddMessages(endpointName, numExistingMessages);
+            await PrepareTestEndpoint(endpointName, true);
+            await AddMessages(endpointName, numExistingMessages);
 
-            CreateQueue(holdingQueueName, quorum: true);
-            AddMessages(holdingQueueName, numExistingMessages);
+            await CreateQueue(holdingQueueName, quorum: true);
+            await AddMessages(holdingQueueName, numExistingMessages);
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(MessageCount(endpointName), Is.EqualTo(expectedMessageCount));
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await MessageCount(endpointName), Is.EqualTo(expectedMessageCount));
             });
         }
 
@@ -264,10 +264,10 @@
             var endpointName = "PartiallyMigratedEndpoint_QuorumMainEmptyHoldingQueue";
             var holdingQueueName = GetHoldingQueueName(endpointName);
 
-            CreateExchange(endpointName);
+            await CreateExchange(endpointName);
 
-            CreateQueue(endpointName, quorum: true);
-            CreateQueue(holdingQueueName, quorum: true);
+            await CreateQueue(endpointName, quorum: true);
+            await CreateQueue(holdingQueueName, quorum: true);
 
             await ExecuteMigration(endpointName);
 
@@ -307,11 +307,11 @@
             return migrationCommand.Run();
         }
 
-        bool QueueIsQuorum(string endpointName)
+        async Task<bool> QueueIsQuorum(string endpointName)
         {
             try
             {
-                CreateQueue(endpointName, quorum: false);
+                await CreateQueue(endpointName, quorum: false);
                 return false;
             }
             catch (OperationInterruptedException)
@@ -320,30 +320,30 @@
             }
         }
 
-        void PrepareTestEndpoint(string endpointName, bool asQuorumQueue = false)
+        async Task PrepareTestEndpoint(string endpointName, bool asQuorumQueue = false)
         {
-            TryDeleteQueue(endpointName);
-            TryDeleteQueue(GetHoldingQueueName(endpointName));
+            await TryDeleteQueue(endpointName);
+            await TryDeleteQueue(GetHoldingQueueName(endpointName));
 
-            CreateQueue(endpointName, quorum: asQuorumQueue);
-            CreateExchange(endpointName);
-            BindQueue(endpointName, endpointName);
+            await CreateQueue(endpointName, quorum: asQuorumQueue);
+            await CreateExchange(endpointName);
+            await BindQueue(endpointName, endpointName);
         }
 
-        void TryDeleteQueue(string queueName) => ExecuteBrokerCommand(channel =>
+        Task TryDeleteQueue(string queueName) => ExecuteBrokerCommand(async channel =>
         {
             try
             {
-                channel.QueueDelete(queueName);
+                await channel.QueueDeleteAsync(queueName);
             }
             catch (Exception)
             {
             }
         });
 
-        void CreateQueue(string queueName, bool quorum)
+        Task CreateQueue(string queueName, bool quorum)
         {
-            ExecuteBrokerCommand(channel =>
+            return ExecuteBrokerCommand(async channel =>
             {
                 var queueArguments = new Dictionary<string, object>();
 
@@ -352,31 +352,28 @@
                     queueArguments.Add("x-queue-type", "quorum");
                 }
 
-                channel.QueueDeclare(queueName, true, false, false, queueArguments);
+                await channel.QueueDeclareAsync(queueName, true, false, false, queueArguments);
             });
         }
 
-        void CreateExchange(string exchangeName) => ExecuteBrokerCommand(channel => channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true));
+        Task CreateExchange(string exchangeName) => ExecuteBrokerCommand(async channel => await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, true));
 
-        void BindQueue(string queueName, string exchangeName)
-        {
-            ExecuteBrokerCommand(channel => channel.QueueBind(queueName, exchangeName, string.Empty));
-        }
+        Task BindQueue(string queueName, string exchangeName) => ExecuteBrokerCommand(async channel => await channel.QueueBindAsync(queueName, exchangeName, string.Empty));
 
-        void AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
+        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
         {
-            ExecuteBrokerCommand(channel =>
+            return ExecuteBrokerCommand(async channel =>
             {
-                channel.ConfirmSelect();
+                await channel.ConfirmSelectAsync();
 
                 for (var i = 0; i < numMessages; i++)
                 {
-                    var properties = channel.CreateBasicProperties();
+                    var properties = new BasicProperties();
 
                     modifications?.Invoke(properties);
 
-                    channel.BasicPublish(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty);
-                    channel.WaitForConfirmsOrDie();
+                    await channel.BasicPublishAsync(string.Empty, queueName, properties, ReadOnlyMemory<byte>.Empty, true);
+                    await channel.WaitForConfirmsOrDieAsync();
                 }
             });
         }
