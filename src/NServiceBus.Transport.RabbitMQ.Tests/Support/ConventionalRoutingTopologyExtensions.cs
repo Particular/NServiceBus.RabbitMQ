@@ -2,28 +2,29 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
 
     static class ConventionalRoutingTopologyExtensions
     {
-        public static void Reset(
+        public static async Task ResetAsync(
             this ConventionalRoutingTopology routingTopology,
             ConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
             IEnumerable<string> sendingAddresses)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreateAdministrationConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
                 foreach (var address in receivingAddresses.Concat(sendingAddresses))
                 {
-                    channel.QueueDelete(address, false, false);
-                    channel.ExchangeDelete(address, false);
+                    await channel.QueueDeleteAsync(address, false, false);
+                    await channel.ExchangeDeleteAsync(address, false);
                 }
 
-                DelayInfrastructure.TearDown(channel);
-                DelayInfrastructure.Build(channel);
+                await DelayInfrastructure.TearDown(channel);
+                await DelayInfrastructure.Build(channel);
 
-                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+                await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
             }
         }
     }

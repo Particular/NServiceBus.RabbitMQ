@@ -118,7 +118,7 @@
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
-            var result = Consume(messageId, QueueToReceiveOn);
+            var result = await Consume(messageId, QueueToReceiveOn);
 
             var converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
             var convertedHeaders = converter.RetrieveHeaders(result);
@@ -133,19 +133,19 @@
 
         Task Verify(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, CancellationToken cancellationToken = default) => Verify(builder, (t, r) => assertion(r), cancellationToken);
 
-        BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
+        async Task<BasicDeliverEventArgs> Consume(string id, string queueToReceiveOn)
         {
-            using (var connection = connectionFactory.CreateConnection("Consume"))
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreateConnection("Consume"))
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var message = channel.BasicGet(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");
+                var message = await channel.BasicGetAsync(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");
 
                 if (message.BasicProperties.MessageId != id)
                 {
                     throw new InvalidOperationException("Unexpected message found in queue");
                 }
 
-                channel.BasicAck(message.DeliveryTag, false);
+                await channel.BasicAckAsync(message.DeliveryTag, false);
 
                 return new BasicDeliverEventArgs("", message.DeliveryTag, message.Redelivered, message.Exchange, message.RoutingKey, message.BasicProperties, message.Body);
             }
