@@ -52,7 +52,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
                 {
                     await channel.QueuePurgeAsync(queue, cancellationToken);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                 {
                     Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
                 }

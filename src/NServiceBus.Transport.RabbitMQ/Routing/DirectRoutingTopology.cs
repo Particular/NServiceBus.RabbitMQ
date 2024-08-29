@@ -74,7 +74,7 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Topic, durable, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 // TODO: Any better way to make this idempotent?
             }

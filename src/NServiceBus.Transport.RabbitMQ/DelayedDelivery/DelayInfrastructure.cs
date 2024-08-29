@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -36,7 +38,7 @@
 
                 await channel.ExchangeDeclareAsync(currentLevel, ExchangeType.Topic, true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                var arguments = new Dictionary<string, object>
+                var arguments = new Dictionary<string, object?>
                 {
                     { "x-queue-type", "quorum" },
                     { "x-dead-letter-strategy", "at-least-once" },
