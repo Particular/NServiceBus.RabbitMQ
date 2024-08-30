@@ -97,7 +97,7 @@
             // move all existing messages to the holding queue
             await channel.ConfirmSelectAsync(cancellationToken);
 
-            var numMessagesMovedToHolding = ProcessMessages(
+            var numMessagesMovedToHolding = await ProcessMessages(
                 channel,
                 queueName,
                 async (message, cancellationToken) =>
