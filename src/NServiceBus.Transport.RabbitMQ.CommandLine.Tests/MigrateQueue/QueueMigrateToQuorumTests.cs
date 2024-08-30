@@ -45,7 +45,7 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(await QueueIsQuorum(endpointName), Is.True);
         }
 
         [Test]
@@ -59,7 +59,7 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(await QueueIsQuorum(endpointName), Is.True);
         }
 
         [Test]
@@ -272,10 +272,10 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.Multiple(() =>
+            Assert.Multiple(async () =>
             {
-                Assert.That(QueueIsQuorum(endpointName), Is.True);
-                Assert.That(QueueExists(holdingQueueName), Is.False);
+                Assert.That(await QueueIsQuorum(endpointName), Is.True);
+                Assert.That(await QueueExists(holdingQueueName), Is.False);
             });
         }
 
