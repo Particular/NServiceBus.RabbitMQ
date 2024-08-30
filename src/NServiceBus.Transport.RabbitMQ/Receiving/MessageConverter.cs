@@ -5,7 +5,8 @@
     using System.Text;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using Headers = NServiceBus.Headers;
+
+    using Headers = Headers;
 
     class MessageConverter
     {
@@ -154,7 +155,7 @@
                 return sb.ToString();
             }
 
-            if (value is global::RabbitMQ.Client.AmqpTimestamp timestamp)
+            if (value is AmqpTimestamp timestamp)
             {
                 return DateTimeOffsetHelper.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.UnixTime));
             }
