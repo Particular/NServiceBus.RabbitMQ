@@ -33,19 +33,19 @@
             {
                 using (var channel = await connection.CreateChannelAsync())
                 {
-                    var mainQueueException = Assert.Catch<RabbitMQClientException>(async () => await channel.DeclareClassicQueue(endpointInputQueue));
+                    var mainQueueException = Assert.CatchAsync<RabbitMQClientException>(async () => await channel.DeclareClassicQueue(endpointInputQueue));
                     Assert.That(mainQueueException.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"));
                 }
 
                 using (var channel = await connection.CreateChannelAsync())
                 {
-                    var instanceSpecificQueueException = Assert.Catch<RabbitMQClientException>(async () => await channel.DeclareClassicQueue(endpointInputQueue + "-disc"));
+                    var instanceSpecificQueueException = Assert.CatchAsync<RabbitMQClientException>(async () => await channel.DeclareClassicQueue(endpointInputQueue + "-disc"));
                     Assert.That(instanceSpecificQueueException.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"));
                 }
 
                 using (var channel = await connection.CreateChannelAsync())
                 {
-                    var satelliteReceiver = Assert.Catch<RabbitMQClientException>(async () => await channel.DeclareClassicQueue("QuorumQueueSatelliteReceiver"));
+                    var satelliteReceiver = Assert.CatchAsync<RabbitMQClientException>(async () => await channel.DeclareClassicQueue("QuorumQueueSatelliteReceiver"));
                     Assert.That(satelliteReceiver.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"));
                 }
             }
