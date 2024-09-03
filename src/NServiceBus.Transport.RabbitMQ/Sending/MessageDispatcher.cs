@@ -18,9 +18,9 @@
             this.supportsDelayedDelivery = supportsDelayedDelivery;
         }
 
-        public Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default)
+        public async Task Dispatch(TransportOperations outgoingMessages, TransportTransaction transaction, CancellationToken cancellationToken = default)
         {
-            var channel = channelProvider.GetPublishChannel();
+            var channel = await channelProvider.GetPublishChannel(cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -41,7 +41,7 @@
 
                 channelProvider.ReturnPublishChannel(channel);
 
-                return tasks.Count == 1 ? tasks[0] : Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
             }
 #pragma warning disable PS0019 // When catching System.Exception, cancellation needs to be properly accounted for - justification:
             // the same action is appropriate when an operation was canceled

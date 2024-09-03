@@ -88,14 +88,17 @@ namespace NServiceBus.Transport.RabbitMQ
 
         protected virtual Task DelayReconnect(CancellationToken cancellationToken = default) => Task.Delay(retryDelay, cancellationToken);
 
-        public ConfirmsAwareChannel GetPublishChannel()
+        public async ValueTask<ConfirmsAwareChannel> GetPublishChannel(CancellationToken cancellationToken = default)
         {
-            if (!channels.TryDequeue(out var channel) || channel.IsClosed)
+            if (channels.TryDequeue(out var channel) && !channel.IsClosed)
             {
-                channel?.Dispose();
-
-                channel = new ConfirmsAwareChannel(connection, routingTopology);
+                return channel;
             }
+
+            channel?.Dispose();
+
+            channel = new ConfirmsAwareChannel(connection, routingTopology);
+            await channel.Initialize(cancellationToken).ConfigureAwait(false);
 
             return channel;
         }

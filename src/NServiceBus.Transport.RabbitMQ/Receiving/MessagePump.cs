@@ -490,7 +490,7 @@
         {
             try
             {
-                var channel = channelProvider.GetPublishChannel();
+                var channel = await channelProvider.GetPublishChannel(messageProcessingCancellationToken).ConfigureAwait(false);
 
                 try
                 {
