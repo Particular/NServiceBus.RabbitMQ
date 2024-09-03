@@ -6,20 +6,17 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    sealed class ConfirmsAwareChannel : IDisposable
+    sealed class ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology) : IDisposable
     {
-        public ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology)
-        {
-            // TODO This should move into some for of initialization method
-            channel = connection.CreateChannelAsync().GetAwaiter().GetResult();
-            channel.ConfirmSelectAsync().GetAwaiter().GetResult();
-
-            this.routingTopology = routingTopology;
-        }
-
         public bool IsOpen => channel.IsOpen;
 
         public bool IsClosed => channel.IsClosed;
+
+        public async Task Initialize(CancellationToken cancellationToken = default)
+        {
+            channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            await channel.ConfirmSelectAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         public async Task SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
         {
@@ -53,7 +50,6 @@ namespace NServiceBus.Transport.RabbitMQ
             channel?.Dispose();
         }
 
-        readonly IChannel channel;
-        readonly IRoutingTopology routingTopology;
+        IChannel channel;
     }
 }
