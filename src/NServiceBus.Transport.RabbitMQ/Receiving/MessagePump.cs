@@ -136,8 +136,7 @@
 
             var consumer = new AsyncEventingBasicConsumer(channel);
 
-            // TODO figure out replacement for missing event
-            //consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
+            consumer.Unregistered += Consumer_Unregistered;
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
 
@@ -247,23 +246,25 @@
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        Task Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
+        Task Consumer_Unregistered(object sender, ConsumerEventArgs e)
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
             var consumer = (AsyncEventingBasicConsumer)sender;
 
-            if (consumer.Channel.IsOpen && connection.IsOpen)
+            if (consumer.Channel is not { IsOpen: true } || !connection.IsOpen)
             {
-                if (circuitBreaker.Disarmed)
-                {
-                    Logger.WarnFormat("'{0}' consumer canceled by broker", name);
-                    circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                    _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
-                }
-                else
-                {
-                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
-                }
+                return Task.CompletedTask;
+            }
+
+            if (circuitBreaker.Disarmed)
+            {
+                Logger.WarnFormat("'{0}' consumer canceled by broker", name);
+                circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
+            }
+            else
+            {
+                Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
             }
 
             return Task.CompletedTask;
