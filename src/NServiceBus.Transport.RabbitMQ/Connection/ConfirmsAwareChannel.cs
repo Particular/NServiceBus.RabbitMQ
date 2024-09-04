@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
@@ -20,7 +19,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            if (properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
+            if (properties.Headers != null && properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
             {
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
@@ -40,8 +39,6 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            properties.Headers ??= new Dictionary<string, object>();
-
             await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken).ConfigureAwait(false);
         }
 
