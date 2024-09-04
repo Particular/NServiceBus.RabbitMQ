@@ -177,7 +177,7 @@
 
                 if (connection.IsOpen)
                 {
-                    await connection.CloseAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                    await connection.CloseAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 else
                 {
