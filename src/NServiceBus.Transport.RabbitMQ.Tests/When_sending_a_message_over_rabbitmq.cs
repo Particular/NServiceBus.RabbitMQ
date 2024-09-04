@@ -90,7 +90,7 @@
                 Assert.Multiple(() =>
                 {
                     Assert.That(basicDeliverEventArgs.BasicProperties.Persistent, Is.False);
-                    Assert.That(basicDeliverEventArgs.BasicProperties.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.False, "Temp header should not be visible on the wire");
+                    Assert.That(basicDeliverEventArgs.BasicProperties.Headers?.TryGetValue(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader, out _), Is.Null.Or.False, "Temp header should not be visible on the wire");
                     Assert.That(message.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.True, "Temp header should not removed to make sure that retries keeps the setting");
                 });
             });
