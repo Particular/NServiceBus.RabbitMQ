@@ -32,6 +32,7 @@
                            c.ServerBSubscribed = true;
                        });
                    })
+                   .Done(ctx => ctx.Counter > 0)
                    .Run(TimeSpan.FromSeconds(10));
 
             Assert.That(context.Counter, Is.EqualTo(1), "One of the scaled out instances should get the event");
