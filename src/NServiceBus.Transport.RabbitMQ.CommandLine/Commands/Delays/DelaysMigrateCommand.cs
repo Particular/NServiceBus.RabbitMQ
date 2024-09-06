@@ -50,7 +50,7 @@
         {
             using var connection = await brokerConnection.Create(cancellationToken);
             using var channel = await connection.CreateChannelAsync(cancellationToken);
-            await channel.ConfirmSelectAsync(cancellationToken);
+            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
@@ -91,7 +91,8 @@
                             poisonQueueCreated = true;
                         }
 
-                        await channel.BasicPublishAsync(string.Empty, poisonMessageQueue, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                        await channel.BasicPublishAsync(string.Empty, poisonMessageQueue,
+                            false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
                         await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                         await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
 
@@ -134,7 +135,8 @@
                         messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
                     }
 
-                    await channel.BasicPublishAsync(publishExchange, newRoutingKey, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                    await channel.BasicPublishAsync(publishExchange, newRoutingKey,
+                        false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
                     await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                     await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
                     processedMessages++;

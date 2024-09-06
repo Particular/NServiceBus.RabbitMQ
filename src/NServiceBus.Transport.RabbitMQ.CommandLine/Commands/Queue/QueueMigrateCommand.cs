@@ -95,14 +95,15 @@
             console.WriteLine($"Unbound '{queueName}' from exchange '{queueName}' ");
 
             // move all existing messages to the holding queue
-            await channel.ConfirmSelectAsync(cancellationToken);
+            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
 
             var numMessagesMovedToHolding = await ProcessMessages(
                 channel,
                 queueName,
                 async (message, cancellationToken) =>
                 {
-                    await channel.BasicPublishAsync(string.Empty, holdingQueueName, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                    await channel.BasicPublishAsync(string.Empty, holdingQueueName, false,
+                        new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
                     await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                 },
                 cancellationToken);
@@ -151,7 +152,7 @@
             var messageIds = new Dictionary<string, string>();
 
             // move all messages in the holding queue back to the main queue
-            await channel.ConfirmSelectAsync(cancellationToken);
+            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
 
             var numMessageMovedBackToMain = await ProcessMessages(
                 channel,
@@ -173,7 +174,8 @@
                         }
                     }
 
-                    await channel.BasicPublishAsync(string.Empty, queueName, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token);
+                    await channel.BasicPublishAsync(string.Empty, queueName, false,
+                        new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token);
                     await channel.WaitForConfirmsOrDieAsync(token);
 
                     if (messageIdString != null)

@@ -36,7 +36,7 @@
                     MessageId = message.MessageId
                 };
 
-                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, properties, message.Body, false);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
             }
 
             var receivedMessage = ReceiveMessage();
@@ -54,7 +54,7 @@
             {
                 var properties = new BasicProperties();
 
-                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, properties, message.Body, false);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 var messageWasReceived = TryWaitForMessageReceipt();
 
@@ -98,7 +98,7 @@
                     MessageId = message.MessageId
                 };
 
-                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, properties, message.Body, false);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 if (await Task.WhenAny(handled.Task, Task.Delay(IncomingMessageTimeout)) != handled.Task)
                 {
@@ -146,7 +146,7 @@
                     MessageId = message.MessageId
                 };
 
-                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, properties, message.Body, false);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 if (await Task.WhenAny(headerCollectionWasNullOnRedelivery.Task, Task.Delay(IncomingMessageTimeout)) != headerCollectionWasNullOnRedelivery.Task)
                 {
@@ -179,7 +179,7 @@
                     Type = typeName
                 };
 
-                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, properties, message.Body, false);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
             }
 
             var receivedMessage = ReceiveMessage();

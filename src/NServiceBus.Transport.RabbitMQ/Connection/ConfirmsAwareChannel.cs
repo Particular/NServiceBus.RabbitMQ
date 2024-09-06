@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.RabbitMQ
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
             channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
-            await channel.ConfirmSelectAsync(cancellationToken).ConfigureAwait(false);
+            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
@@ -24,7 +24,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
                 await routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address), cancellationToken).ConfigureAwait(false);
-                await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, properties, message.Body, true, cancellationToken).ConfigureAwait(false);
+                await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body, cancellationToken).ConfigureAwait(false);
             }
             else
             {
