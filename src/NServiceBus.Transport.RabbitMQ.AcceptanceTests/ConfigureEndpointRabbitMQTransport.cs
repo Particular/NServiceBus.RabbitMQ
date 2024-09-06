@@ -39,7 +39,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
             return;
         }
 
-        var queues = transport.QueuesToCleanup.Distinct().ToArray();
+        var queues = transport.QueuesToCleanup.ToHashSet();
 
         using (var connection = await ConnectionHelper.ConnectionFactory.CreateConnectionAsync("Test Queue Purger"))
         using (var channel = await connection.CreateChannelAsync())
