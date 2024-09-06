@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -19,26 +18,24 @@
         [Test]
         public async Task Should_reconnect()
         {
-            var context = await Scenario.Define<MyContext>(myContext =>
+            var context = await Scenario.Define<MyContext>(ctx =>
             {
-                myContext.MessageId = Guid.NewGuid().ToString();
+                ctx.MessageId = Guid.NewGuid().ToString();
             })
-                .WithEndpoint<Receiver>()
-                .Done(c => c.GotTheMessage)
-                .Run();
+            .WithEndpoint<Receiver>()
+            .Done(c => c.GotTheMessage)
+            .Run();
 
             Assert.That(context.GotTheMessage, Is.True, "Should receive the message");
         }
 
         public class Receiver : EndpointConfigurationBuilder
         {
-            public Receiver()
-            {
+            public Receiver() =>
                 EndpointSetup<DefaultServer>(e =>
                 {
                     e.EnableFeature<ConnectionKillerFeature>();
                 });
-            }
 
             class ConnectionKillerFeature : Feature
             {
@@ -48,15 +45,9 @@
                     context.RegisterStartupTask(b => b.GetRequiredService<ConnectionKiller>());
                 }
 
-                class ConnectionKiller : FeatureStartupTask
+                class ConnectionKiller(IMessageDispatcher sender, IReadOnlySettings settings, MyContext context)
+                    : FeatureStartupTask
                 {
-                    public ConnectionKiller(IMessageDispatcher sender, IReadOnlySettings settings, MyContext context)
-                    {
-                        this.context = context;
-                        this.sender = sender;
-                        this.settings = settings;
-                    }
-
                     protected override async Task OnStart(IMessageSession session, CancellationToken cancellationToken = default)
                     {
                         await BreakConnectionBySendingInvalidMessage(cancellationToken);
@@ -70,7 +61,7 @@
                     {
                         try
                         {
-                            var outgoingMessage = new OutgoingMessage("Foo", [], new byte[0]);
+                            var outgoingMessage = new OutgoingMessage("Foo", [], Array.Empty<byte>());
                             var props = new DispatchProperties
                             {
                                 DiscardIfNotReceivedBefore =
@@ -84,10 +75,6 @@
                             // Don't care
                         }
                     }
-
-                    readonly MyContext context;
-                    readonly IMessageDispatcher sender;
-                    readonly IReadOnlySettings settings;
                 }
             }
 
