@@ -179,11 +179,20 @@
 
                 if (connection.IsOpen)
                 {
-                    await connection.CloseAsync(CancellationToken.None).ConfigureAwait(false);
+                    try
+                    {
+                        await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        // We are catching the exception here to avoid the exception being thrown upwards
+                        // The connection will get disposed further down anyway.
+                        connectionShutdownCompleted.TrySetResult(true);
+                    }
                 }
                 else
                 {
-                    connectionShutdownCompleted.SetResult(true);
+                    connectionShutdownCompleted.TrySetResult(true);
                 }
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
