@@ -173,7 +173,9 @@
                     await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
                 }
 
-                connectionShutdownCompleted = new TaskCompletionSource<bool>();
+                // RunContinuationsAsynchronously was chosen to make sure the completed event handler can return and the continuation
+                // is not executed on the event handler thread
+                connectionShutdownCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 if (connection.IsOpen)
                 {
