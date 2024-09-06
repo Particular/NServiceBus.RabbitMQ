@@ -12,7 +12,7 @@
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
 
-    sealed class MessagePump : IMessageReceiver
+    sealed partial class MessagePump : IMessageReceiver
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new();
@@ -445,7 +445,7 @@
             {
                 failedBasicAckMessages.AddOrUpdate(messageIdKey, true);
 
-                if (Regex.IsMatch(ex.ShutdownReason.ReplyText, @"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more"))
+                if (PreconditionFailedRegex().IsMatch(ex.ShutdownReason.ReplyText))
                 {
                     Logger.Error($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
                 }
@@ -520,5 +520,8 @@
                 Logger.Warn($"Failed to acknowledge poison message because the channel was closed. The message was sent to queue '{queue}' but also returned to the original queue.", ex);
             }
         }
+
+        [GeneratedRegex(@"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more")]
+        private static partial Regex PreconditionFailedRegex();
     }
 }
