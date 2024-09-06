@@ -48,7 +48,7 @@
                     MessageId = message.MessageId
                 };
 
-                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, properties, message.Body, false);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 if (await Task.WhenAny(headerCollectionWasNullOnRedelivery.Task, Task.Delay(IncomingMessageTimeout)) != headerCollectionWasNullOnRedelivery.Task)
                 {

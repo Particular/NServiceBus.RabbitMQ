@@ -30,13 +30,13 @@ namespace NServiceBus.Transport.RabbitMQ
             => new(channel.QueueUnbindAsync(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType), null, cancellationToken));
 
         public ValueTask Publish(IChannel channel, Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
-            => channel.BasicPublishAsync(exchangeNameConvention(), GetRoutingKeyForPublish(type), properties, message.Body, false, cancellationToken);
+            => channel.BasicPublishAsync(exchangeNameConvention(), GetRoutingKeyForPublish(type), false, properties, message.Body, cancellationToken);
 
         public ValueTask Send(IChannel channel, string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
-            => channel.BasicPublishAsync(string.Empty, address, properties, message.Body, true, cancellationToken);
+            => channel.BasicPublishAsync(string.Empty, address, true, properties, message.Body, cancellationToken);
 
         public ValueTask RawSendInCaseOfFailure(IChannel channel, string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
-            => channel.BasicPublishAsync(string.Empty, address, properties, body, true, cancellationToken);
+            => channel.BasicPublishAsync(string.Empty, address, true, properties, body, cancellationToken);
 
         public async ValueTask Initialize(IChannel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, CancellationToken cancellationToken = default)
         {
