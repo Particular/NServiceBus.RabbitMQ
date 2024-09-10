@@ -91,8 +91,7 @@
                             poisonQueueCreated = true;
                         }
 
-                        await channel.BasicPublishAsync(string.Empty, poisonMessageQueue,
-                            false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                        await channel.BasicPublishAsync(string.Empty, poisonMessageQueue, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
                         await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                         await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
 
@@ -135,8 +134,7 @@
                         messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
                     }
 
-                    await channel.BasicPublishAsync(publishExchange, newRoutingKey,
-                        false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                    await channel.BasicPublishAsync(publishExchange, newRoutingKey, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
                     await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                     await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
                     processedMessages++;

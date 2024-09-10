@@ -102,8 +102,7 @@
                 queueName,
                 async (message, cancellationToken) =>
                 {
-                    await channel.BasicPublishAsync(string.Empty, holdingQueueName, false,
-                        new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                    await channel.BasicPublishAsync(string.Empty, holdingQueueName, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
                     await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                 },
                 cancellationToken);
@@ -174,8 +173,7 @@
                         }
                     }
 
-                    await channel.BasicPublishAsync(string.Empty, queueName, false,
-                        new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token);
+                    await channel.BasicPublishAsync(string.Empty, queueName, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token);
                     await channel.WaitForConfirmsOrDieAsync(token);
 
                     if (messageIdString != null)
