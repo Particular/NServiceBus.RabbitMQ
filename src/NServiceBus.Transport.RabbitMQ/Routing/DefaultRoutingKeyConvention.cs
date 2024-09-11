@@ -7,9 +7,10 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Linq;
     using Logging;
 
-    class DefaultRoutingKeyConvention
+    static class DefaultRoutingKeyConvention
     {
-        public static string GenerateRoutingKey(Type eventType) => GetRoutingKey(eventType);
+        public static string GenerateRoutingKey(Type eventType) =>
+            EventTypeToRoutingKeyCache.GetOrAdd(eventType, static eventType => GetRoutingKey(eventType));
 
         static string GetRoutingKey(Type type, string key = "")
         {
@@ -43,16 +44,12 @@ namespace NServiceBus.Transport.RabbitMQ
             return key + type.FullName.Replace(".", "-");
         }
 
-        static bool IsSystemType(Type type)
-        {
-            if (!IsSystemTypeCache.TryGetValue(type, out var result))
+        static bool IsSystemType(Type type) =>
+            IsSystemTypeCache.GetOrAdd(type, static type =>
             {
                 var nameOfContainingAssembly = type.Assembly.GetName().GetPublicKeyToken();
-                IsSystemTypeCache[type] = result = IsClrType(nameOfContainingAssembly);
-            }
-
-            return result;
-        }
+                return IsClrType(nameOfContainingAssembly);
+            });
 
         static bool IsClrType(byte[] a1)
         {
@@ -63,7 +60,8 @@ namespace NServiceBus.Transport.RabbitMQ
         static bool IsNServiceBusMarkerInterface(Type type) => type == typeof(IMessage) || type == typeof(ICommand) || type == typeof(IEvent);
 
         static readonly byte[] MsPublicKeyToken = typeof(string).Assembly.GetName().GetPublicKeyToken();
-        static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new ConcurrentDictionary<Type, bool>();
+        static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new();
+        static readonly ConcurrentDictionary<Type, string> EventTypeToRoutingKeyCache = new();
         static readonly ILog Logger = LogManager.GetLogger(typeof(DefaultRoutingKeyConvention));
     }
 }
