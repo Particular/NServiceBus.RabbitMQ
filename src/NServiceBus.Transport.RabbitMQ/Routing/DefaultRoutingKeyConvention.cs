@@ -9,7 +9,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class DefaultRoutingKeyConvention
     {
-        public static string GenerateRoutingKey(Type eventType) => GetRoutingKey(eventType);
+        public static string GenerateRoutingKey(Type eventType) =>
+            EventTypeToRoutingKeyCache.GetOrAdd(eventType, static eventType => GetRoutingKey(eventType));
 
         static string GetRoutingKey(Type type, string key = "")
         {
@@ -64,6 +65,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         static readonly byte[] MsPublicKeyToken = typeof(string).Assembly.GetName().GetPublicKeyToken();
         static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new ConcurrentDictionary<Type, bool>();
+        static readonly ConcurrentDictionary<Type, string> EventTypeToRoutingKeyCache = new ConcurrentDictionary<Type, string>();
         static readonly ILog Logger = LogManager.GetLogger(typeof(DefaultRoutingKeyConvention));
     }
 }
