@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -77,12 +78,18 @@
 
         void ThrowIfDelayedDeliveryIsDisabledAndMessageIsDelayed(IOutgoingTransportOperation transportOperation)
         {
-            if (!supportsDelayedDelivery &&
-                (transportOperation.Properties.DelayDeliveryWith != null ||
-                 transportOperation.Properties.DoNotDeliverBefore != null))
+            if (supportsDelayedDelivery)
             {
-                throw new Exception("Delayed delivery has been disabled in the transport settings.");
+                return;
+            }
+
+            if (transportOperation.Properties.DelayDeliveryWith != null || transportOperation.Properties.DoNotDeliverBefore != null)
+            {
+                ThrowDelayedDeliveryDisabled();
             }
         }
+
+        [DoesNotReturn]
+        static void ThrowDelayedDeliveryDisabled() => throw new Exception("Delayed delivery has been disabled in the transport settings.");
     }
 }
