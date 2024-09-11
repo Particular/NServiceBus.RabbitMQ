@@ -367,7 +367,7 @@
         {
             return ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
-                await channel.ConfirmSelectAsync(cancellationToken);
+                await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
 
                 for (var i = 0; i < numMessages; i++)
                 {
@@ -375,7 +375,7 @@
 
                     modifications?.Invoke(properties);
 
-                    await channel.BasicPublishAsync(string.Empty, queueName, properties, ReadOnlyMemory<byte>.Empty, true, cancellationToken);
+                    await channel.BasicPublishAsync(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty, cancellationToken);
                     await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                 }
             },
