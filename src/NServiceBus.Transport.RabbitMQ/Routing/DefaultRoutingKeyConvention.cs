@@ -60,8 +60,8 @@ namespace NServiceBus.Transport.RabbitMQ
         static bool IsNServiceBusMarkerInterface(Type type) => type == typeof(IMessage) || type == typeof(ICommand) || type == typeof(IEvent);
 
         static readonly byte[] MsPublicKeyToken = typeof(string).Assembly.GetName().GetPublicKeyToken();
-        static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new ConcurrentDictionary<Type, bool>();
-        static readonly ConcurrentDictionary<Type, string> EventTypeToRoutingKeyCache = new ConcurrentDictionary<Type, string>();
+        static readonly ConcurrentDictionary<Type, bool> IsSystemTypeCache = new();
+        static readonly ConcurrentDictionary<Type, string> EventTypeToRoutingKeyCache = new();
         static readonly ILog Logger = LogManager.GetLogger(typeof(DefaultRoutingKeyConvention));
     }
 }
