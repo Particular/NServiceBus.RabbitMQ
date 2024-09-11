@@ -142,7 +142,7 @@
 
                 if (message.BasicProperties.MessageId != id)
                 {
-                    throw new InvalidOperationException("Unexpected message found in queue");
+                    throw new InvalidOperationException($"Unexpected message found in queue. Expected MessageId: {id} Actual MessageId: {message.BasicProperties.MessageId}");
                 }
 
                 await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
