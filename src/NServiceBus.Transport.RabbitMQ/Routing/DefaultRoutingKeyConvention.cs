@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Linq;
     using Logging;
 
-    class DefaultRoutingKeyConvention
+    static class DefaultRoutingKeyConvention
     {
         public static string GenerateRoutingKey(Type eventType) =>
             EventTypeToRoutingKeyCache.GetOrAdd(eventType, static eventType => GetRoutingKey(eventType));
@@ -44,16 +44,12 @@ namespace NServiceBus.Transport.RabbitMQ
             return key + type.FullName.Replace(".", "-");
         }
 
-        static bool IsSystemType(Type type)
-        {
-            if (!IsSystemTypeCache.TryGetValue(type, out var result))
+        static bool IsSystemType(Type type) =>
+            IsSystemTypeCache.GetOrAdd(type, static type =>
             {
                 var nameOfContainingAssembly = type.Assembly.GetName().GetPublicKeyToken();
-                IsSystemTypeCache[type] = result = IsClrType(nameOfContainingAssembly);
-            }
-
-            return result;
-        }
+                return IsClrType(nameOfContainingAssembly);
+            });
 
         static bool IsClrType(byte[] a1)
         {
