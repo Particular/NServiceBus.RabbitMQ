@@ -138,7 +138,7 @@
             using (var connection = await connectionFactory.CreateConnection("Consume", cancellationToken: cancellationToken))
             using (var channel = await connection.CreateChannelAsync(cancellationToken))
             {
-                var message = await channel.BasicGetAsync(queueToReceiveOn, false, cancellationToken) ?? throw new InvalidOperationException("No message found in queue");
+                var message = await channel.BasicGetAsync(queueToReceiveOn, false, cancellationToken) ?? throw new InvalidOperationException($"No message found in queue. Expected MessageId: {id}");
 
                 if (message.BasicProperties.MessageId != id)
                 {
