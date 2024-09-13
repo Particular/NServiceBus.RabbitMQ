@@ -39,9 +39,9 @@
                     tasks.Add(PublishMessage(operation, channel, cancellationToken));
                 }
 
-                channelProvider.ReturnPublishChannel(channel);
-
                 await Task.WhenAll(tasks).ConfigureAwait(false);
+
+                channelProvider.ReturnPublishChannel(channel);
             }
 #pragma warning disable PS0019 // When catching System.Exception, cancellation needs to be properly accounted for - justification:
             // the same action is appropriate when an operation was canceled
