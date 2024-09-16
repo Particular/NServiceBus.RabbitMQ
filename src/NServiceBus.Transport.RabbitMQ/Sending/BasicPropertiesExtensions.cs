@@ -102,6 +102,19 @@
             return delayed;
         }
 
+        public static void SetConfirmationId(this IBasicProperties properties, ulong confirmationId)
+        {
+            properties.Headers[ConfirmationIdHeader] = confirmationId.ToString();
+        }
+
+        public static bool TryGetConfirmationId(this IReadOnlyBasicProperties properties, out ulong confirmationId)
+        {
+            confirmationId = 0;
+
+            return properties.Headers.TryGetValue(ConfirmationIdHeader, out var value) &&
+                ulong.TryParse(value as byte[] ?? [], out confirmationId);
+        }
+
         public const string ConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
         public const string UseNonPersistentDeliveryHeader = "NServiceBus.Transport.RabbitMQ.UseNonPersistentDelivery";
     }
