@@ -32,19 +32,34 @@ namespace NServiceBus.Transport.RabbitMQ
             var (taskCompletionSource, registration) = GetCancellableTaskCompletionSource(cancellationToken);
             await using var _ = registration.ConfigureAwait(false);
 
-            properties.SetConfirmationId(channel.NextPublishSeqNo);
-
-            if (properties.Headers != null && properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
+            try
             {
-                var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
+                await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                await routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address), cancellationToken).ConfigureAwait(false);
-                // The channel is used here directly because it is not the routing topologies concern to know about the sends to the delay infrastructure
-                await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body, cancellationToken).ConfigureAwait(false);
+                properties.SetConfirmationId(channel.NextPublishSeqNo);
+
+                if (properties.Headers != null &&
+                    properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
+                {
+                    var routingKey =
+                        DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
+
+                    await routingTopology.BindToDelayInfrastructure(channel, address,
+                        DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address),
+                        cancellationToken).ConfigureAwait(false);
+                    // The channel is used here directly because it is not the routing topologies concern to know about the sends to the delay infrastructure
+                    await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true,
+                        properties, message.Body, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await routingTopology.Send(channel, address, message, properties, cancellationToken)
+                        .ConfigureAwait(false);
+                }
             }
-            else
+            finally
             {
-                await routingTopology.Send(channel, address, message, properties, cancellationToken).ConfigureAwait(false);
+                sequenceNumberSemaphore.Release();
             }
 
             await taskCompletionSource.Task.ConfigureAwait(false);
@@ -55,9 +70,19 @@ namespace NServiceBus.Transport.RabbitMQ
             var (taskCompletionSource, registration) = GetCancellableTaskCompletionSource(cancellationToken);
             await using var _ = registration.ConfigureAwait(false);
 
-            properties.SetConfirmationId(channel.NextPublishSeqNo);
+            try
+            {
+                await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            await routingTopology.Publish(channel, type, message, properties, cancellationToken).ConfigureAwait(false);
+                properties.SetConfirmationId(channel.NextPublishSeqNo);
+
+                await routingTopology.Publish(channel, type, message, properties, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                sequenceNumberSemaphore.Release();
+            }
 
             await taskCompletionSource.Task.ConfigureAwait(false);
         }
@@ -68,9 +93,19 @@ namespace NServiceBus.Transport.RabbitMQ
             await using var _ = registration.ConfigureAwait(false);
 
             properties.Headers ??= new Dictionary<string, object>();
-            properties.SetConfirmationId(channel.NextPublishSeqNo);
+            try
+            {
+                await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken).ConfigureAwait(false);
+                properties.SetConfirmationId(channel.NextPublishSeqNo);
+
+                await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                sequenceNumberSemaphore.Release();
+            }
 
             await taskCompletionSource.Task.ConfigureAwait(false);
         }
@@ -176,6 +211,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         IChannel channel;
         readonly ConcurrentDictionary<ulong, TaskCompletionSource> messages = new();
+        readonly SemaphoreSlim sequenceNumberSemaphore = new(1, 1);
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConfirmsAwareChannel));
     }
