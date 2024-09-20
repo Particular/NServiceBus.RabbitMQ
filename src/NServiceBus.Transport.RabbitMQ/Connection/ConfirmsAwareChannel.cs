@@ -29,12 +29,14 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            var (taskCompletionSource, registration) = GetCancellableTaskCompletionSource(cancellationToken);
-            await using var _ = registration.ConfigureAwait(false);
+            TaskCompletionSource taskCompletionSource;
 
             try
             {
                 await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                (taskCompletionSource, var registration) = GetCancellableTaskCompletionSource(cancellationToken);
+                await using var _ = registration.ConfigureAwait(false);
 
                 properties.SetConfirmationId(channel.NextPublishSeqNo);
 
@@ -67,12 +69,14 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task PublishMessage(Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            var (taskCompletionSource, registration) = GetCancellableTaskCompletionSource(cancellationToken);
-            await using var _ = registration.ConfigureAwait(false);
+            TaskCompletionSource taskCompletionSource;
 
             try
             {
                 await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                (taskCompletionSource, var registration) = GetCancellableTaskCompletionSource(cancellationToken);
+                await using var _ = registration.ConfigureAwait(false);
 
                 properties.SetConfirmationId(channel.NextPublishSeqNo);
 
@@ -89,13 +93,17 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            var (taskCompletionSource, registration) = GetCancellableTaskCompletionSource(cancellationToken);
-            await using var _ = registration.ConfigureAwait(false);
-
             properties.Headers ??= new Dictionary<string, object>();
+
+            TaskCompletionSource taskCompletionSource;
+
             try
             {
                 await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                (taskCompletionSource, var registration) = GetCancellableTaskCompletionSource(cancellationToken);
+
+                await using var _ = registration.ConfigureAwait(false);
 
                 properties.SetConfirmationId(channel.NextPublishSeqNo);
 
@@ -113,12 +121,14 @@ namespace NServiceBus.Transport.RabbitMQ
         (TaskCompletionSource, IAsyncDisposable) GetCancellableTaskCompletionSource(CancellationToken cancellationToken)
         {
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
             // TODO Should we use UnsafeRegister instead?
             var registration = cancellationToken.Register(static state =>
             {
                 var (tcs, cancellationToken) = ((TaskCompletionSource, CancellationToken))state!;
                 tcs.TrySetCanceled(cancellationToken);
             }, (tcs, cancellationToken));
+
             var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
 
             if (!added)
