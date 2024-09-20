@@ -77,7 +77,7 @@
 
         async Task<MigrationStage> MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
@@ -114,7 +114,7 @@
 
         async Task<MigrationStage> DeleteMainQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             if (await channel.MessageCountAsync(queueName, cancellationToken) > 0)
             {
@@ -130,7 +130,7 @@
 
         async Task<MigrationStage> CreateMainQueueAsQuorum(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.QueueDeclareAsync(queueName, true, false, false, quorumQueueArguments, cancellationToken: cancellationToken);
             console.WriteLine($"Recreated '{queueName}' as a quorum queue");
@@ -140,7 +140,7 @@
 
         async Task<MigrationStage> RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.QueueBindAsync(queueName, queueName, string.Empty, cancellationToken: cancellationToken);
             console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
@@ -190,7 +190,7 @@
 
         async Task<MigrationStage> CleanUpHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             if (await channel.MessageCountAsync(holdingQueueName, cancellationToken) != 0)
             {
@@ -304,7 +304,7 @@
 
             async Task SetBrokerState(string queueName, string holdingQueueName, IConnection connection, CancellationToken cancellationToken)
             {
-                var channel = await connection.CreateChannelAsync(cancellationToken);
+                var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
                 try
                 {
@@ -331,7 +331,7 @@
                     await channel.CloseAsync(cancellationToken);
                     channel.Dispose();
 
-                    channel = await connection.CreateChannelAsync(cancellationToken);
+                    channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
                 }
 
                 try

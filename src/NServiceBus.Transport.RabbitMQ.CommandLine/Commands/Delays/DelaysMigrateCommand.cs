@@ -49,7 +49,7 @@
         public async Task Run(CancellationToken cancellationToken = default)
         {
             using var connection = await brokerConnection.Create(cancellationToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
             await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)

@@ -63,7 +63,7 @@
             console.WriteLine("Connecting to broker");
 
             using var connection = await brokerConnection.Create(cancellationToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             console.WriteLine("Checking for v2 delay infrastructure");
 

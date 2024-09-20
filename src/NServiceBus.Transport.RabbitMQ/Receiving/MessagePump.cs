@@ -119,7 +119,7 @@
 
         async Task ConnectToBroker(CancellationToken cancellationToken)
         {
-            connection = await connectionFactory.CreateConnection(name, false, maxConcurrency, cancellationToken).ConfigureAwait(false);
+            connection = await connectionFactory.CreateConnection(name, cancellationToken).ConfigureAwait(false);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
@@ -130,7 +130,7 @@
                 prefetchCount = maxConcurrency;
             }
 
-            var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            var channel = await connection.CreateChannelAsync((ushort)maxConcurrency, cancellationToken).ConfigureAwait(false);
             channel.ChannelShutdown += Channel_ModelShutdown;
             await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 

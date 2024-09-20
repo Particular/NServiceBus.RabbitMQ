@@ -43,19 +43,17 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
             return;
         }
 
-        using (var connection = await ConnectionHelper.ConnectionFactory.CreateConnectionAsync("Test Queue Purger", cancellationToken))
-        using (var channel = await connection.CreateChannelAsync(cancellationToken))
+        using var connection = await ConnectionHelper.ConnectionFactory.CreateConnectionAsync("Test Queue Purger", cancellationToken);
+        using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        foreach (var queue in queuesToCleanUp)
         {
-            foreach (var queue in queuesToCleanUp)
+            try
             {
-                try
-                {
-                    await channel.QueuePurgeAsync(queue, cancellationToken);
-                }
-                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
-                {
-                    Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
-                }
+                await channel.QueuePurgeAsync(queue, cancellationToken);
+            }
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            {
+                Console.WriteLine("Unable to clear queue {0}: {1}", queue, ex);
             }
         }
     }

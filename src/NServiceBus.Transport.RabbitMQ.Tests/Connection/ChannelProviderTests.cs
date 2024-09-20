@@ -143,6 +143,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public void HandleConnectionUnblocked() => throw new NotImplementedException();
 
+            public Task<IChannel> CreateChannelAsync(ushort? consumerDispatchConcurrency = null, CancellationToken cancellationToken = new CancellationToken()) => throw new NotImplementedException();
+
             public ushort ChannelMax { get; }
             public IDictionary<string, object> ClientProperties { get; }
             public ShutdownEventArgs CloseReason { get; }
@@ -171,7 +173,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             public void RaiseConnectionShutdown(ShutdownEventArgs args) => ConnectionShutdown?.Invoke(this, args);
             public Task UpdateSecretAsync(string newSecret, string reason, CancellationToken cancellationToken = default) => throw new NotImplementedException();
             public Task CloseAsync(ushort reasonCode, string reasonText, TimeSpan timeout, bool abort, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-            public Task<IChannel> CreateChannelAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
             static int connectionCounter;
         }

@@ -414,7 +414,7 @@
 
         async Task ExecuteBrokerCommand(Func<IChannel, CancellationToken, Task> command, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
             await command(channel, cancellationToken);
         }
 

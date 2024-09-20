@@ -29,7 +29,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 throw new Exception($"An unsupported broker version was detected: {brokerVersion}. The broker must be at least version {minimumBrokerVersion}.");
             }
 
-            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var arguments = new Dictionary<string, object?> { { "x-queue-type", "stream" } };
 

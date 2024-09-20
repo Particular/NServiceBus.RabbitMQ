@@ -14,20 +14,18 @@
             IEnumerable<string> sendingAddresses,
             CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken))
-            using (var channel = await connection.CreateChannelAsync(cancellationToken))
+            using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                foreach (var address in receivingAddresses.Concat(sendingAddresses))
-                {
-                    await channel.QueueDeleteAsync(address, false, false, cancellationToken: cancellationToken);
-                    await channel.ExchangeDeleteAsync(address, false, cancellationToken: cancellationToken);
-                }
-
-                await DelayInfrastructure.TearDown(channel, cancellationToken);
-                await DelayInfrastructure.Build(channel, cancellationToken);
-
-                await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, cancellationToken);
+                await channel.QueueDeleteAsync(address, false, false, cancellationToken: cancellationToken);
+                await channel.ExchangeDeleteAsync(address, false, cancellationToken: cancellationToken);
             }
+
+            await DelayInfrastructure.TearDown(channel, cancellationToken);
+            await DelayInfrastructure.Build(channel, cancellationToken);
+
+            await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, cancellationToken);
         }
     }
 }

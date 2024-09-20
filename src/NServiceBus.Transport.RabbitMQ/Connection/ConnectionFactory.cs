@@ -19,7 +19,6 @@
         readonly string endpointName;
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly List<AmqpTcpEndpoint> endpoints = [];
-        readonly SemaphoreSlim lockObject = new(1);
 
         public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
         {
@@ -112,40 +111,28 @@
             connectionFactory.ClientProperties.Add("endpoint_name", endpointName);
         }
 
-        public Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default) => CreateConnection($"{endpointName} Publish", false, cancellationToken: cancellationToken);
+        public Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default) => CreateConnection($"{endpointName} Publish", cancellationToken: cancellationToken);
 
-        public Task<IConnection> CreateAdministrationConnection(CancellationToken cancellationToken = default) => CreateConnection($"{endpointName} Administration", false, cancellationToken: cancellationToken);
+        public Task<IConnection> CreateAdministrationConnection(CancellationToken cancellationToken = default) => CreateConnection($"{endpointName} Administration", cancellationToken: cancellationToken);
 
-        public async Task<IConnection> CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1, CancellationToken cancellationToken = default)
+        public async Task<IConnection> CreateConnection(string connectionName, CancellationToken cancellationToken = default)
         {
-            try
+            var connection = await connectionFactory.CreateConnectionAsync(endpoints, connectionName, cancellationToken).ConfigureAwait(false);
+
+            connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
+            connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
+
+            connection.ConnectionShutdown += (sender, e) =>
             {
-                await lockObject.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                connectionFactory.AutomaticRecoveryEnabled = automaticRecoveryEnabled;
-                connectionFactory.ConsumerDispatchConcurrency = consumerDispatchConcurrency;
-
-                var connection = await connectionFactory.CreateConnectionAsync(endpoints, connectionName, cancellationToken).ConfigureAwait(false);
-
-                connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
-                connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
-
-                connection.ConnectionShutdown += (sender, e) =>
+                if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
                 {
-                    if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    Logger.WarnFormat("'{0}' connection shutdown: {1}", connectionName, e);
-                };
+                Logger.WarnFormat("'{0}' connection shutdown: {1}", connectionName, e);
+            };
 
-                return connection;
-            }
-            finally
-            {
-                lockObject.Release();
-            }
+            return connection;
         }
     }
 }

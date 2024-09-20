@@ -136,7 +136,7 @@
         async Task<BasicDeliverEventArgs> Consume(string id, string queueToReceiveOn, CancellationToken cancellationToken)
         {
             using var connection = await connectionFactory.CreateConnection("Consume", cancellationToken: cancellationToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             var message = await channel.BasicGetAsync(queueToReceiveOn, false, cancellationToken) ?? throw new InvalidOperationException($"No message found in queue. Expected MessageId: {id}");
 
@@ -150,9 +150,6 @@
             return new BasicDeliverEventArgs("", message.DeliveryTag, message.Redelivered, message.Exchange, message.RoutingKey, message.BasicProperties, message.Body);
         }
 
-        class MyMessage
-        {
-
-        }
+        class MyMessage;
     }
 }

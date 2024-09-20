@@ -44,7 +44,7 @@
 
             await connection.VerifyBrokerRequirements(cancellationToken).ConfigureAwait(false);
 
-            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (supportsDelayedDelivery)
             {

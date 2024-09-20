@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.RabbitMQ
         public async Task Purge(string queue, CancellationToken cancellationToken = default)
         {
             using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             await channel.QueuePurgeAsync(queue, cancellationToken).ConfigureAwait(false);
         }
     }

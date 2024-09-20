@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
-            channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken).ConfigureAwait(false);
         }
 

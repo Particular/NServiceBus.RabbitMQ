@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.RabbitMQ
         public async Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
             using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             // TODO: Parallelize?
             foreach (var eventType in eventTypes)
             {
@@ -33,7 +33,7 @@ namespace NServiceBus.Transport.RabbitMQ
         public async Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
         {
             using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-            using var channel = await connection.CreateChannelAsync(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             await routingTopology.TeardownSubscription(channel, eventType, localQueue, cancellationToken).ConfigureAwait(false);
         }
     }

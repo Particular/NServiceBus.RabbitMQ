@@ -31,7 +31,7 @@
             console.WriteLine($"Creating v2 delay infrastructure queues and exchanges...");
 
             using var connection = await brokerConnection.Create(cancellationToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await DelayInfrastructure.Build(channel, cancellationToken);
 
