@@ -39,7 +39,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 var routingKey = DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
 
                 await routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address), cancellationToken).ConfigureAwait(false);
-                // TODO: Seems to be off that we use here the channel directly instead of the routingTopology
+                // The channel is used here directly because it is not the routing topologies concern to know about the sends to the delay infrastructure
                 await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body, cancellationToken).ConfigureAwait(false);
             }
             else
