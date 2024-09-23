@@ -23,7 +23,6 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
             using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            // TODO: Parallelize?
             foreach (var eventType in eventTypes)
             {
                 await routingTopology.SetupSubscription(channel, eventType, localQueue, cancellationToken).ConfigureAwait(false);

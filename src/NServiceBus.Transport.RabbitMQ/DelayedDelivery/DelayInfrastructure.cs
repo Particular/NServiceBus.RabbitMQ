@@ -65,7 +65,6 @@ namespace NServiceBus.Transport.RabbitMQ
                 bindingKey = "*." + bindingKey;
             }
 
-            // TODO cancellation token
             await channel.ExchangeDeclareAsync(DeliveryExchange, ExchangeType.Topic, true, cancellationToken: cancellationToken).ConfigureAwait(false);
             await channel.ExchangeBindAsync(DeliveryExchange, LevelName(0), bindingKey, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
@@ -77,7 +76,6 @@ namespace NServiceBus.Transport.RabbitMQ
             for (var level = MaxLevel; level >= 0; level--)
             {
                 var name = LevelName(level);
-                // TODO cancellation token
                 await channel.QueueDeleteAsync(name, cancellationToken: cancellationToken).ConfigureAwait(false);
                 await channel.ExchangeDeleteAsync(name, cancellationToken: cancellationToken).ConfigureAwait(false);
             }

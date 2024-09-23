@@ -57,7 +57,6 @@
 
             if (supportsDelayedDelivery)
             {
-                // TODO Parallelize?
                 foreach (string receivingAddress in receivingQueues)
                 {
                     await routingTopology.BindToDelayInfrastructure(channel, receivingAddress,

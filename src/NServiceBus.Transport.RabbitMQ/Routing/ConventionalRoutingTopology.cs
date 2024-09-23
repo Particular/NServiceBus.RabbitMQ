@@ -80,7 +80,6 @@ namespace NServiceBus.Transport.RabbitMQ
                 }
             }
 
-            // TODO Can this be parallelized?
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
                 await channel.QueueDeclareAsync(address, createDurableQueue, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
