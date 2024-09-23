@@ -122,8 +122,8 @@ namespace NServiceBus.Transport.RabbitMQ
         {
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            // TODO Should we use UnsafeRegister instead?
-            var registration = cancellationToken.Register(static state =>
+            // There is no need to capture the execution context therefore using UnsafeRegister
+            var registration = cancellationToken.UnsafeRegister(static state =>
             {
                 var (tcs, cancellationToken) = ((TaskCompletionSource, CancellationToken))state!;
                 tcs.TrySetCanceled(cancellationToken);
