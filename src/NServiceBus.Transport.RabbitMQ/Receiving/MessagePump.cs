@@ -41,7 +41,7 @@
         IConnection connection;
 
         // Stop
-        TaskCompletionSource<bool> connectionShutdownCompleted;
+        TaskCompletionSource connectionShutdownCompleted;
 
         public MessagePump(
             ReceiveSettings settings,
@@ -175,7 +175,7 @@
 
                 // RunContinuationsAsynchronously was chosen to make sure the completed event handler can return and the continuation
                 // is not executed on the event handler thread
-                connectionShutdownCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                connectionShutdownCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 if (connection.IsOpen)
                 {
@@ -187,12 +187,12 @@
                     {
                         // We are catching the exception here to avoid the exception being thrown upwards
                         // The connection will get disposed further down anyway.
-                        connectionShutdownCompleted.TrySetResult(true);
+                        connectionShutdownCompleted.TrySetResult();
                     }
                 }
                 else
                 {
-                    connectionShutdownCompleted.TrySetResult(true);
+                    connectionShutdownCompleted.TrySetResult();
                 }
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
@@ -218,7 +218,7 @@
         {
             if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
             {
-                connectionShutdownCompleted?.TrySetResult(true);
+                connectionShutdownCompleted?.TrySetResult();
             }
             else if (circuitBreaker.Disarmed)
             {
