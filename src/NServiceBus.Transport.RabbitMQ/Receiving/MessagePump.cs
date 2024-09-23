@@ -506,7 +506,6 @@
 
                 try
                 {
-                    // TODO Would it be better to use the readonly property interface on the method? But then the sending method require TProperty again which has to be a concrete type.
                     await channel.RawSendInCaseOfFailure(queue, message.Body, new BasicProperties(message.BasicProperties), messageProcessingCancellationToken).ConfigureAwait(false);
                 }
                 finally
