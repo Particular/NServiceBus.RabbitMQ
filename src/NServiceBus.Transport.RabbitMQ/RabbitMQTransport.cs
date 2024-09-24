@@ -172,7 +172,7 @@
         }
 
         /// <inheritdoc />
-        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
+        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
 
@@ -187,7 +187,7 @@
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalClusterNodes);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
-            channelProvider.CreateConnection();
+            await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
 
             var converter = new MessageConverter(MessageIdStrategy);
 
@@ -197,10 +197,10 @@
 
             if (hostSettings.SetupInfrastructure)
             {
-                infra.SetupInfrastructure(sendingAddresses);
+                await infra.SetupInfrastructure(sendingAddresses, cancellationToken).ConfigureAwait(false);
             }
 
-            return Task.FromResult<TransportInfrastructure>(infra);
+            return infra;
         }
 
         /// <inheritdoc />

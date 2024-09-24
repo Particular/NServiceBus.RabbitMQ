@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
@@ -32,6 +33,7 @@
                            c.ServerBSubscribed = true;
                        });
                    })
+                   .Done(ctx => ctx.Counter > 0)
                    .Run(TimeSpan.FromSeconds(10));
 
             Assert.That(context.Counter, Is.EqualTo(1), "One of the scaled out instances should get the event");
@@ -39,52 +41,34 @@
 
         public class ScaledOutSubscriber : EndpointConfigurationBuilder
         {
-            public ScaledOutSubscriber()
+            public ScaledOutSubscriber() => EndpointSetup<DefaultPublisher>();
+
+            class MyEventHandler(MyContext myContext) : IHandleMessages<MyEvent>
             {
-                EndpointSetup<DefaultPublisher>();
-            }
-
-            class MyEventHandler : IHandleMessages<MyEvent>
-            {
-                readonly MyContext myContext;
-
-                public MyEventHandler(MyContext context)
-                {
-                    myContext = context;
-                }
-
                 public Task Handle(MyEvent message, IMessageHandlerContext context)
                 {
-                    lock (objLock)
-                    {
-                        myContext.Counter++;
-                    }
-
+                    myContext.IncrementCounter();
                     return Task.CompletedTask;
                 }
-
-                static object objLock = new object();
             }
         }
 
         public class Publisher : EndpointConfigurationBuilder
         {
-            public Publisher()
-            {
-                EndpointSetup<DefaultPublisher>();
-            }
+            public Publisher() => EndpointSetup<DefaultPublisher>();
         }
 
-        public class MyEvent : IEvent
-        {
-
-        }
+        public class MyEvent : IEvent;
 
         class MyContext : ScenarioContext
         {
             public bool ServerASubscribed { get; set; }
             public bool ServerBSubscribed { get; set; }
-            public int Counter { get; set; }
+            public int Counter => counter;
+
+            public void IncrementCounter() => Interlocked.Increment(ref counter);
+
+            int counter;
         }
     }
 }

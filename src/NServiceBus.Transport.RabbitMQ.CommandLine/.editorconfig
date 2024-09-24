@@ -1,0 +1,4 @@
+[*.cs]
+
+# Justification: Application
+dotnet_diagnostic.CA2007.severity = none

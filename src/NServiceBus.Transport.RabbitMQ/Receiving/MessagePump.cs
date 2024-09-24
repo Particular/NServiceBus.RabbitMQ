@@ -12,7 +12,7 @@
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
 
-    sealed class MessagePump : IMessageReceiver
+    sealed partial class MessagePump : IMessageReceiver
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new();
@@ -41,7 +41,7 @@
         IConnection connection;
 
         // Stop
-        TaskCompletionSource<bool> connectionShutdownCompleted;
+        TaskCompletionSource connectionShutdownCompleted;
 
         public MessagePump(
             ReceiveSettings settings,
@@ -83,7 +83,7 @@
 
         public string ReceiveAddress { get; }
 
-        public Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
             this.onMessage = onMessage;
             this.onError = onError;
@@ -91,13 +91,11 @@
 
             if (settings.PurgeOnStartup)
             {
-                queuePurger.Purge(ReceiveAddress);
+                await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task StartReceive(CancellationToken cancellationToken = default)
+        public async Task StartReceive(CancellationToken cancellationToken = default)
         {
             messagePumpCancellationTokenSource = new CancellationTokenSource();
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
@@ -107,9 +105,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker,
                 (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
 
-            ConnectToBroker();
-
-            return Task.CompletedTask;
+            await ConnectToBroker(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
@@ -121,9 +117,9 @@
             await StartReceive(CancellationToken.None).ConfigureAwait(false);
         }
 
-        void ConnectToBroker()
+        async Task ConnectToBroker(CancellationToken cancellationToken)
         {
-            connection = connectionFactory.CreateConnection(name, false, maxConcurrency);
+            connection = await connectionFactory.CreateConnection(name, cancellationToken).ConfigureAwait(false);
             connection.ConnectionShutdown += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
@@ -134,16 +130,17 @@
                 prefetchCount = maxConcurrency;
             }
 
-            var channel = connection.CreateModel();
-            channel.ModelShutdown += Channel_ModelShutdown;
-            channel.BasicQos(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false);
+            var channel = await connection.CreateChannelAsync((ushort)maxConcurrency, cancellationToken).ConfigureAwait(false);
+            channel.ChannelShutdown += Channel_ModelShutdown;
+            await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
-            consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
+
+            consumer.Unregistered += Consumer_Unregistered;
             consumer.Registered += Consumer_Registered;
             consumer.Received += Consumer_Received;
 
-            channel.BasicConsume(ReceiveAddress, false, consumerTag, consumer);
+            await channel.BasicConsumeAsync(ReceiveAddress, false, consumerTag, consumer, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
@@ -176,15 +173,26 @@
                     await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
                 }
 
-                connectionShutdownCompleted = new TaskCompletionSource<bool>();
+                // RunContinuationsAsynchronously was chosen to make sure the completed event handler can return and the continuation
+                // is not executed on the event handler thread
+                connectionShutdownCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 if (connection.IsOpen)
                 {
-                    connection.Close();
+                    try
+                    {
+                        await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        // We are catching the exception here to avoid the exception being thrown upwards
+                        // The connection will get disposed further down anyway.
+                        connectionShutdownCompleted.TrySetResult();
+                    }
                 }
                 else
                 {
-                    connectionShutdownCompleted.SetResult(true);
+                    connectionShutdownCompleted.TrySetResult();
                 }
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
@@ -210,7 +218,7 @@
         {
             if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
             {
-                connectionShutdownCompleted?.TrySetResult(true);
+                connectionShutdownCompleted?.TrySetResult();
             }
             else if (circuitBreaker.Disarmed)
             {
@@ -249,23 +257,25 @@
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        Task Consumer_ConsumerCancelled(object sender, ConsumerEventArgs e)
+        Task Consumer_Unregistered(object sender, ConsumerEventArgs e)
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
             var consumer = (AsyncEventingBasicConsumer)sender;
 
-            if (consumer.Model.IsOpen && connection.IsOpen)
+            if (consumer.Channel is not { IsOpen: true } || !connection.IsOpen)
             {
-                if (circuitBreaker.Disarmed)
-                {
-                    Logger.WarnFormat("'{0}' consumer canceled by broker", name);
-                    circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                    _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
-                }
-                else
-                {
-                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
-                }
+                return Task.CompletedTask;
+            }
+
+            if (circuitBreaker.Disarmed)
+            {
+                Logger.WarnFormat("'{0}' consumer canceled by broker", name);
+                circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
+            }
+            else
+            {
+                Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
             }
 
             return Task.CompletedTask;
@@ -282,7 +292,7 @@
                     {
                         if (connection.IsOpen)
                         {
-                            connection.Close();
+                            await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
                         }
 
                         connection.Dispose();
@@ -291,7 +301,7 @@
 
                         await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
 
-                        ConnectToBroker();
+                        await ConnectToBroker(cancellationToken).ConfigureAwait(false);
                         break;
                     }
                     catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
@@ -341,7 +351,7 @@
 #pragma warning restore PS0019 // Do not catch Exception without considering OperationCanceledException
                 {
                     Logger.Debug("Returning message to queue...", ex);
-                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                    await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
                     throw;
                 }
             }
@@ -395,7 +405,7 @@
             {
                 try
                 {
-                    consumer.Model.BasicAckSingle(message.DeliveryTag);
+                    await consumer.Channel.BasicAckSingle(message.DeliveryTag, messageProcessingCancellationToken).ConfigureAwait(false);
                 }
                 catch (AlreadyClosedException ex)
                 {
@@ -425,14 +435,14 @@
 
                     if (result == ErrorHandleResult.RetryRequired)
                     {
-                        consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                        await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, messageProcessingCancellationToken).ConfigureAwait(false);
                         return;
                     }
                 }
                 catch (Exception onErrorEx) when (!onErrorEx.IsCausedBy(messageProcessingCancellationToken))
                 {
                     criticalErrorAction($"Failed to execute recoverability policy for message with native ID: `{messageId}`", onErrorEx, messageProcessingCancellationToken);
-                    consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                    await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, messageProcessingCancellationToken).ConfigureAwait(false);
 
                     return;
                 }
@@ -440,13 +450,13 @@
 
             try
             {
-                consumer.Model.BasicAckSingle(message.DeliveryTag);
+                await consumer.Channel.BasicAckSingle(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
             }
             catch (AlreadyClosedException ex)
             {
                 failedBasicAckMessages.AddOrUpdate(messageIdKey, true);
 
-                if (Regex.IsMatch(ex.ShutdownReason.ReplyText, @"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more"))
+                if (PreconditionFailedRegex().IsMatch(ex.ShutdownReason.ReplyText))
                 {
                     Logger.Error($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
                 }
@@ -492,11 +502,11 @@
         {
             try
             {
-                var channel = channelProvider.GetPublishChannel();
+                var channel = await channelProvider.GetPublishChannel(messageProcessingCancellationToken).ConfigureAwait(false);
 
                 try
                 {
-                    await channel.RawSendInCaseOfFailure(queue, message.Body, message.BasicProperties, messageProcessingCancellationToken).ConfigureAwait(false);
+                    await channel.RawSendInCaseOfFailure(queue, message.Body, new BasicProperties(message.BasicProperties), messageProcessingCancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -506,19 +516,22 @@
             catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
             {
                 Logger.Error($"Failed to move poison message to queue '{queue}'. Returning message to original queue...", ex);
-                consumer.Model.BasicRejectAndRequeueIfOpen(message.DeliveryTag);
+                await consumer.Channel.BasicRejectAndRequeueIfOpen(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
 
                 return;
             }
 
             try
             {
-                consumer.Model.BasicAckSingle(message.DeliveryTag);
+                await consumer.Channel.BasicAckSingle(message.DeliveryTag, cancellationToken: messageProcessingCancellationToken).ConfigureAwait(false);
             }
             catch (AlreadyClosedException ex)
             {
                 Logger.Warn($"Failed to acknowledge poison message because the channel was closed. The message was sent to queue '{queue}' but also returned to the original queue.", ex);
             }
         }
+
+        [GeneratedRegex(@"PRECONDITION_FAILED - delivery acknowledgement on channel [0-9]+ timed out\. Timeout value used: [0-9]+ ms\. This timeout value can be configured, see consumers doc guide to learn more")]
+        private static partial Regex PreconditionFailedRegex();
     }
 }

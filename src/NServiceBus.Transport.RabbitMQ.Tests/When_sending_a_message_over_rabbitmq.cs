@@ -90,7 +90,7 @@
                 Assert.Multiple(() =>
                 {
                     Assert.That(basicDeliverEventArgs.BasicProperties.Persistent, Is.False);
-                    Assert.That(basicDeliverEventArgs.BasicProperties.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.False, "Temp header should not be visible on the wire");
+                    Assert.That(basicDeliverEventArgs.BasicProperties.Headers?.TryGetValue(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader, out _), Is.Null.Or.False, "Temp header should not be visible on the wire");
                     Assert.That(message.Headers.ContainsKey(BasicPropertiesExtensions.UseNonPersistentDeliveryHeader), Is.True, "Temp header should not removed to make sure that retries keeps the setting");
                 });
             });
@@ -118,7 +118,7 @@
 
             var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
 
-            var result = Consume(messageId, QueueToReceiveOn);
+            var result = await Consume(messageId, QueueToReceiveOn, cancellationToken);
 
             var converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
             var convertedHeaders = converter.RetrieveHeaders(result);
@@ -133,27 +133,23 @@
 
         Task Verify(OutgoingMessageBuilder builder, Action<BasicDeliverEventArgs> assertion, CancellationToken cancellationToken = default) => Verify(builder, (t, r) => assertion(r), cancellationToken);
 
-        BasicDeliverEventArgs Consume(string id, string queueToReceiveOn)
+        async Task<BasicDeliverEventArgs> Consume(string id, string queueToReceiveOn, CancellationToken cancellationToken)
         {
-            using (var connection = connectionFactory.CreateConnection("Consume"))
-            using (var channel = connection.CreateModel())
+            using var connection = await connectionFactory.CreateConnection("Consume", cancellationToken: cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+            var message = await channel.BasicGetAsync(queueToReceiveOn, false, cancellationToken) ?? throw new InvalidOperationException($"No message found in queue. Expected MessageId: {id}");
+
+            if (message.BasicProperties.MessageId != id)
             {
-                var message = channel.BasicGet(queueToReceiveOn, false) ?? throw new InvalidOperationException("No message found in queue");
-
-                if (message.BasicProperties.MessageId != id)
-                {
-                    throw new InvalidOperationException("Unexpected message found in queue");
-                }
-
-                channel.BasicAck(message.DeliveryTag, false);
-
-                return new BasicDeliverEventArgs("", message.DeliveryTag, message.Redelivered, message.Exchange, message.RoutingKey, message.BasicProperties, message.Body);
+                throw new InvalidOperationException($"Unexpected message found in queue. Expected MessageId: {id} Actual MessageId: {message.BasicProperties.MessageId}");
             }
+
+            await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
+
+            return new BasicDeliverEventArgs("", message.DeliveryTag, message.Redelivered, message.Exchange, message.RoutingKey, message.BasicProperties, message.Body);
         }
 
-        class MyMessage
-        {
-
-        }
+        class MyMessage;
     }
 }

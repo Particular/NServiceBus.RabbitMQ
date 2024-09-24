@@ -4,6 +4,8 @@ namespace NServiceBus.Transport.RabbitMQ
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NServiceBus.Logging;
     using Unicast.Messages;
@@ -18,33 +20,25 @@ namespace NServiceBus.Transport.RabbitMQ
             this.exchangeNameConvention = exchangeNameConvention ?? (() => amqpTopicExchange);
         }
 
-        public void SetupSubscription(IModel channel, MessageMetadata type, string subscriberName)
+        public async ValueTask SetupSubscription(IChannel channel, MessageMetadata type, string subscriberName, CancellationToken cancellationToken = default)
         {
-            CreateExchange(channel, exchangeNameConvention());
-            channel.QueueBind(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType));
+            await CreateExchange(channel, exchangeNameConvention(), cancellationToken).ConfigureAwait(false);
+            await channel.QueueBindAsync(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType), cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public void TeardownSubscription(IModel channel, MessageMetadata type, string subscriberName)
-        {
-            channel.QueueUnbind(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType), null);
-        }
+        public ValueTask TeardownSubscription(IChannel channel, MessageMetadata type, string subscriberName, CancellationToken cancellationToken = default)
+            => new(channel.QueueUnbindAsync(subscriberName, exchangeNameConvention(), GetRoutingKeyForBinding(type.MessageType), null, cancellationToken));
 
-        public void Publish(IModel channel, Type type, OutgoingMessage message, IBasicProperties properties)
-        {
-            channel.BasicPublish(exchangeNameConvention(), GetRoutingKeyForPublish(type), false, properties, message.Body);
-        }
+        public ValueTask Publish(IChannel channel, Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
+            => channel.BasicPublishAsync(exchangeNameConvention(), GetRoutingKeyForPublish(type), false, properties, message.Body, cancellationToken);
 
-        public void Send(IModel channel, string address, OutgoingMessage message, IBasicProperties properties)
-        {
-            channel.BasicPublish(string.Empty, address, true, properties, message.Body);
-        }
+        public ValueTask Send(IChannel channel, string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
+            => channel.BasicPublishAsync(string.Empty, address, true, properties, message.Body, cancellationToken);
 
-        public void RawSendInCaseOfFailure(IModel channel, string address, ReadOnlyMemory<byte> body, IBasicProperties properties)
-        {
-            channel.BasicPublish(string.Empty, address, true, properties, body);
-        }
+        public ValueTask RawSendInCaseOfFailure(IChannel channel, string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
+            => channel.BasicPublishAsync(string.Empty, address, true, properties, body, cancellationToken);
 
-        public void Initialize(IModel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses)
+        public async ValueTask Initialize(IChannel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, CancellationToken cancellationToken = default)
         {
             Dictionary<string, object> arguments = null;
             var createDurableQueue = durable;
@@ -62,16 +56,14 @@ namespace NServiceBus.Transport.RabbitMQ
 
             foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                channel.QueueDeclare(address, createDurableQueue, false, false, arguments);
+                await channel.QueueDeclareAsync(address, createDurableQueue, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public void BindToDelayInfrastructure(IModel channel, string address, string deliveryExchange, string routingKey)
-        {
-            channel.QueueBind(address, deliveryExchange, routingKey);
-        }
+        public ValueTask BindToDelayInfrastructure(IChannel channel, string address, string deliveryExchange, string routingKey, CancellationToken cancellationToken = default)
+            => new(channel.QueueBindAsync(address, deliveryExchange, routingKey, cancellationToken: cancellationToken));
 
-        void CreateExchange(IModel channel, string exchangeName)
+        async ValueTask CreateExchange(IChannel channel, string exchangeName, CancellationToken cancellationToken)
         {
             if (exchangeName == amqpTopicExchange)
             {
@@ -80,9 +72,9 @@ namespace NServiceBus.Transport.RabbitMQ
 
             try
             {
-                channel.ExchangeDeclare(exchangeName, ExchangeType.Topic, durable);
+                await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Topic, durable, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 // TODO: Any better way to make this idempotent?
             }

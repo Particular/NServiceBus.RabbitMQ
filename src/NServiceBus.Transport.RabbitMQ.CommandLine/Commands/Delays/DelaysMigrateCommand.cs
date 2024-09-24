@@ -32,7 +32,7 @@
                 };
 
                 var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, console);
-                await delaysMigrate.Run(cancellationToken).ConfigureAwait(false);
+                await delaysMigrate.Run(cancellationToken);
             },
             brokerConnectionBinder, routingTopologyTypeOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
 
@@ -46,24 +46,22 @@
             this.console = console;
         }
 
-        public Task Run(CancellationToken cancellationToken = default)
+        public async Task Run(CancellationToken cancellationToken = default)
         {
-            using var connection = brokerConnection.Create();
-            using var channel = connection.CreateModel();
-            channel.ConfirmSelect();
+            using var connection = await brokerConnection.Create(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
-                MigrateQueue(channel, currentDelayLevel, cancellationToken);
+                await MigrateQueue(channel, currentDelayLevel, cancellationToken);
             }
-
-            return Task.CompletedTask;
         }
 
-        void MigrateQueue(IModel channel, int delayLevel, CancellationToken cancellationToken)
+        async Task MigrateQueue(IChannel channel, int delayLevel, CancellationToken cancellationToken)
         {
             var currentDelayQueue = $"nsb.delay-level-{delayLevel:00}";
-            var messageCount = channel.MessageCount(currentDelayQueue);
+            var messageCount = await channel.MessageCountAsync(currentDelayQueue, cancellationToken);
             var declaredDestinationQueues = new HashSet<string>();
 
             if (messageCount > 0)
@@ -75,7 +73,7 @@
 
                 for (int i = 0; i < messageCount && !cancellationToken.IsCancellationRequested; i++)
                 {
-                    var message = channel.BasicGet(currentDelayQueue, false);
+                    var message = await channel.BasicGetAsync(currentDelayQueue, false, cancellationToken);
 
                     if (message == null)
                     {
@@ -89,19 +87,31 @@
 
                         if (!poisonQueueCreated)
                         {
-                            channel.QueueDeclare(poisonMessageQueue, true, false, false);
+                            await channel.QueueDeclareAsync(poisonMessageQueue, true, false, false, cancellationToken: cancellationToken);
                             poisonQueueCreated = true;
                         }
 
-                        channel.BasicPublish(string.Empty, poisonMessageQueue, message.BasicProperties, message.Body);
-                        channel.WaitForConfirmsOrDie();
-                        channel.BasicAck(message.DeliveryTag, false);
+                        await channel.BasicPublishAsync(string.Empty, poisonMessageQueue, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                        await channel.WaitForConfirmsOrDieAsync(cancellationToken);
+                        await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
 
                         continue;
                     }
 
                     var messageHeaders = message.BasicProperties.Headers;
-                    var delayInSeconds = (int)messageHeaders[DelayInfrastructure.DelayHeader];
+
+                    var delayInSeconds = 0;
+
+                    if (messageHeaders is not null)
+                    {
+                        var headerValue = messageHeaders[DelayInfrastructure.DelayHeader];
+
+                        if (headerValue is not null)
+                        {
+                            delayInSeconds = (int)headerValue;
+                        }
+                    }
+
                     var timeSent = GetTimeSent(message);
 
                     var (destinationQueue, newRoutingKey, newDelayLevel) = GetNewRoutingKey(delayInSeconds, timeSent, message.RoutingKey, DateTimeOffset.UtcNow);
@@ -109,7 +119,7 @@
                     // Make sure the destination queue is bound to the delivery exchange to ensure delivery
                     if (!declaredDestinationQueues.Contains(destinationQueue))
                     {
-                        routingTopology.BindToDelayInfrastructure(channel, destinationQueue, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(destinationQueue));
+                        await routingTopology.BindToDelayInfrastructure(channel, destinationQueue, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(destinationQueue), cancellationToken);
                         declaredDestinationQueues.Add(destinationQueue);
                     }
 
@@ -124,9 +134,9 @@
                         messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
                     }
 
-                    channel.BasicPublish(publishExchange, newRoutingKey, message.BasicProperties, message.Body);
-                    channel.WaitForConfirmsOrDie();
-                    channel.BasicAck(message.DeliveryTag, false);
+                    await channel.BasicPublishAsync(publishExchange, newRoutingKey, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
+                    await channel.WaitForConfirmsOrDieAsync(cancellationToken);
+                    await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
                     processedMessages++;
                 }
 
@@ -150,7 +160,15 @@
 
         static DateTimeOffset GetTimeSent(BasicGetResult message)
         {
-            var timeSentString = Encoding.UTF8.GetString((byte[])message.BasicProperties.Headers[timeSentHeader]);
+            var timeSentHeaderValue = message.BasicProperties.Headers?[timeSentHeader];
+            var timeSentHeaderBytes = Array.Empty<byte>();
+
+            if (timeSentHeaderValue is not null)
+            {
+                timeSentHeaderBytes = (byte[])timeSentHeaderValue;
+            }
+
+            var timeSentString = Encoding.UTF8.GetString(timeSentHeaderBytes);
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 

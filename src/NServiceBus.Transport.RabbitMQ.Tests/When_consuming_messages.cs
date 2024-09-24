@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
     using Routing;
@@ -24,18 +24,19 @@
         }
 
         [Test]
-        public void Should_be_able_to_receive_messages_without_headers()
+        public async Task Should_be_able_to_receive_messages_without_headers()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
-            using (var connection = connectionFactory.CreatePublishConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreatePublishConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var properties = channel.CreateBasicProperties();
+                var properties = new BasicProperties
+                {
+                    MessageId = message.MessageId
+                };
 
-                properties.MessageId = message.MessageId;
-
-                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
             }
 
             var receivedMessage = ReceiveMessage();
@@ -44,20 +45,20 @@
         }
 
         [Test]
-        public void Should_move_message_without_message_id_to_error_queue()
+        public async Task Should_move_message_without_message_id_to_error_queue()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
-            using (var connection = connectionFactory.CreatePublishConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreatePublishConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var properties = channel.CreateBasicProperties();
+                var properties = new BasicProperties();
 
-                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 var messageWasReceived = TryWaitForMessageReceipt();
 
-                var result = channel.BasicGet(ErrorQueue, true);
+                var result = await channel.BasicGetAsync(ErrorQueue, true);
 
                 Assert.Multiple(() =>
                 {
@@ -89,14 +90,15 @@
                 return Task.FromResult(ErrorHandleResult.Handled);
             };
 
-            using (var connection = connectionFactory.CreatePublishConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreatePublishConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var properties = channel.CreateBasicProperties();
+                var properties = new BasicProperties
+                {
+                    MessageId = message.MessageId
+                };
 
-                properties.MessageId = message.MessageId;
-
-                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 if (await Task.WhenAny(handled.Task, Task.Delay(IncomingMessageTimeout)) != handled.Task)
                 {
@@ -136,14 +138,15 @@
 
             OnError = (ec, __) => Task.FromResult(ErrorHandleResult.RetryRequired);
 
-            using (var connection = connectionFactory.CreatePublishConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreatePublishConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var properties = channel.CreateBasicProperties();
+                var properties = new BasicProperties
+                {
+                    MessageId = message.MessageId
+                };
 
-                properties.MessageId = message.MessageId;
-
-                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 if (await Task.WhenAny(headerCollectionWasNullOnRedelivery.Task, Task.Delay(IncomingMessageTimeout)) != headerCollectionWasNullOnRedelivery.Task)
                 {
@@ -161,29 +164,30 @@
         }
 
         [Test]
-        public void Should_up_convert_the_native_type_to_the_enclosed_message_types_header_if_empty()
+        public async Task Should_up_convert_the_native_type_to_the_enclosed_message_types_header_if_empty()
         {
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>());
 
             var typeName = typeof(MyMessage).FullName;
 
-            using (var connection = connectionFactory.CreatePublishConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreatePublishConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var properties = channel.CreateBasicProperties();
+                var properties = new BasicProperties
+                {
+                    MessageId = message.MessageId,
+                    Type = typeName
+                };
 
-                properties.MessageId = message.MessageId;
-                properties.Type = typeName;
-
-                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
             }
 
             var receivedMessage = ReceiveMessage();
 
             Assert.Multiple(() =>
             {
-                Assert.That(receivedMessage.Headers[Headers.EnclosedMessageTypes], Is.EqualTo(typeName));
-                Assert.That(Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]), Is.EqualTo(typeof(MyMessage)));
+                Assert.That(receivedMessage.Headers[NServiceBus.Headers.EnclosedMessageTypes], Is.EqualTo(typeName));
+                Assert.That(Type.GetType(receivedMessage.Headers[NServiceBus.Headers.EnclosedMessageTypes]), Is.EqualTo(typeof(MyMessage)));
             });
         }
 

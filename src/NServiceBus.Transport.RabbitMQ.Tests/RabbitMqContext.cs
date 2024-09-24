@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
@@ -26,23 +25,19 @@
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig, null, true, false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);
 
-            infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(),
-                (_, __, ___) => { }, true), new[]
-            {
-                new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)
-            }, AdditionalReceiverQueues.Concat(new[] { ErrorQueue }).ToArray());
+            infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(), (_, _, _) => { }, true),
+                [new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)], [.. AdditionalReceiverQueues, ErrorQueue]);
 
             messageDispatcher = infra.Dispatcher;
             messagePump = infra.Receivers[ReceiverQueue];
             subscriptionManager = messagePump.Subscriptions;
             OnMessage = (messageContext, cancellationToken) =>
             {
-                receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers,
-                    messageContext.Body), cancellationToken);
+                receivedMessages.Add(new IncomingMessage(messageContext.NativeMessageId, messageContext.Headers, messageContext.Body), cancellationToken);
                 return Task.CompletedTask;
             };
 
-            OnError = (_, __) => Task.FromResult(ErrorHandleResult.Handled);
+            OnError = (_, _) => Task.FromResult(ErrorHandleResult.Handled);
 
             await messagePump.Initialize(
                 new PushRuntimeSettings(MaximumConcurrency),

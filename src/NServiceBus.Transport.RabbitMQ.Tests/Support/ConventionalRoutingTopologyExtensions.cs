@@ -2,29 +2,30 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     static class ConventionalRoutingTopologyExtensions
     {
-        public static void Reset(
+        public static async Task ResetAsync(
             this ConventionalRoutingTopology routingTopology,
             ConnectionFactory connectionFactory,
             IEnumerable<string> receivingAddresses,
-            IEnumerable<string> sendingAddresses)
+            IEnumerable<string> sendingAddresses,
+            CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
+            using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            foreach (var address in receivingAddresses.Concat(sendingAddresses))
             {
-                foreach (var address in receivingAddresses.Concat(sendingAddresses))
-                {
-                    channel.QueueDelete(address, false, false);
-                    channel.ExchangeDelete(address, false);
-                }
-
-                DelayInfrastructure.TearDown(channel);
-                DelayInfrastructure.Build(channel);
-
-                routingTopology.Initialize(channel, receivingAddresses, sendingAddresses);
+                await channel.QueueDeleteAsync(address, false, false, cancellationToken: cancellationToken);
+                await channel.ExchangeDeleteAsync(address, false, cancellationToken: cancellationToken);
             }
+
+            await DelayInfrastructure.TearDown(channel, cancellationToken);
+            await DelayInfrastructure.Build(channel, cancellationToken);
+
+            await routingTopology.Initialize(channel, receivingAddresses, sendingAddresses, cancellationToken);
         }
     }
 }

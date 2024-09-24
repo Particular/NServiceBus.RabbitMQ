@@ -1,5 +1,8 @@
 namespace NServiceBus.Transport.RabbitMQ
 {
+    using System.Threading;
+    using System.Threading.Tasks;
+
     class QueuePurger
     {
         readonly ConnectionFactory connectionFactory;
@@ -9,13 +12,11 @@ namespace NServiceBus.Transport.RabbitMQ
             this.connectionFactory = connectionFactory;
         }
 
-        public void Purge(string queue)
+        public async Task Purge(string queue, CancellationToken cancellationToken = default)
         {
-            using (var connection = connectionFactory.CreateAdministrationConnection())
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueuePurge(queue);
-            }
+            using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await channel.QueuePurgeAsync(queue, cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -10,10 +10,10 @@
             this.connectionFactory = connectionFactory;
         }
 
-        public IConnection Create()
+        public async Task<IConnection> Create(CancellationToken cancellationToken = default)
         {
-            var connection = connectionFactory.CreateAdministrationConnection();
-            connection.VerifyBrokerRequirements();
+            var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
+            await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken);
 
             return connection;
         }

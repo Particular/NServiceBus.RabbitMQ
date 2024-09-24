@@ -3,7 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+
+    using Headers = Headers;
+
     class MessageConverter
     {
         public MessageConverter(Func<BasicDeliverEventArgs, string> messageIdStrategy)
@@ -61,7 +65,7 @@
                 deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId;
             }
 
-            if (properties.IsDeliveryModePresent() && properties.DeliveryMode == 1)
+            if (properties.IsDeliveryModePresent() && properties.DeliveryMode == DeliveryModes.Transient)
             {
                 deserializedHeaders[BasicPropertiesExtensions.UseNonPersistentDeliveryHeader] = bool.TrueString;
             }
@@ -151,7 +155,7 @@
                 return sb.ToString();
             }
 
-            if (value is global::RabbitMQ.Client.AmqpTimestamp timestamp)
+            if (value is AmqpTimestamp timestamp)
             {
                 return DateTimeOffsetHelper.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.UnixTime));
             }

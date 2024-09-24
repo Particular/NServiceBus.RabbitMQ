@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using NUnit.Framework;
 
@@ -40,14 +40,15 @@
 
             OnError = (ec, __) => Task.FromResult(ErrorHandleResult.RetryRequired);
 
-            using (var connection = connectionFactory.CreatePublishConnection())
-            using (var channel = connection.CreateModel())
+            using (var connection = await connectionFactory.CreatePublishConnection())
+            using (var channel = await connection.CreateChannelAsync())
             {
-                var properties = channel.CreateBasicProperties();
+                var properties = new BasicProperties
+                {
+                    MessageId = message.MessageId
+                };
 
-                properties.MessageId = message.MessageId;
-
-                channel.BasicPublish(string.Empty, ReceiverQueue, false, properties, message.Body);
+                await channel.BasicPublishAsync(string.Empty, ReceiverQueue, false, properties, message.Body);
 
                 if (await Task.WhenAny(headerCollectionWasNullOnRedelivery.Task, Task.Delay(IncomingMessageTimeout)) != headerCollectionWasNullOnRedelivery.Task)
                 {

@@ -56,8 +56,8 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
-        static ILog Logger = LogManager.GetLogger<MessagePumpConnectionFailedCircuitBreaker>();
+        static readonly TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
+        static readonly ILog Logger = LogManager.GetLogger<MessagePumpConnectionFailedCircuitBreaker>();
         string name;
         TimeSpan timeToWaitBeforeTriggering;
         Timer timer;
