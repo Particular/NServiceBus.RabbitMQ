@@ -1,5 +1,8 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ;
 
+/// <summary>
+/// Provides APIs useful for integrating with non-NServiceBus receivers.
+/// </summary>
 public static class NativeIntegrationDispatchPropertiesExtensions
 {
     internal static readonly string ContentTypeAttribute = "AMQP.content-type";
