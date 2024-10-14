@@ -57,7 +57,7 @@
                 }
             }
 
-            if (dispatchProperties.TryGetValue(NServiceBus.Headers.ContentType, out var contentType) && contentType != null)
+            if (dispatchProperties.TryGetValue(NativeIntegrationDispatchPropertiesExtensions.ContentTypeAttribute, out var contentType) && contentType != null)
             {
                 properties.ContentType = contentType;
             }
