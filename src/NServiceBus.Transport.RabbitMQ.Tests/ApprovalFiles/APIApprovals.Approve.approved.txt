@@ -73,4 +73,8 @@ namespace NServiceBus.Transport.RabbitMQ
         System.Threading.Tasks.ValueTask SetupSubscription(RabbitMQ.Client.IChannel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.ValueTask TeardownSubscription(RabbitMQ.Client.IChannel channel, NServiceBus.Unicast.Messages.MessageMetadata type, string subscriberName, System.Threading.CancellationToken cancellationToken = default);
     }
+    public static class NativeIntegrationDispatchPropertiesExtensions
+    {
+        public static void SetContentType(this NServiceBus.Transport.DispatchProperties dispatchProperties, string contentType) { }
+    }
 }
