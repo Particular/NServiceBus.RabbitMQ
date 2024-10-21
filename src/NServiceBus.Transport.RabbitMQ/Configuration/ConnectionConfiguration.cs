@@ -6,7 +6,10 @@
     using System.Linq;
     using System.Text;
 
-    class ConnectionConfiguration
+    /// <summary>
+    /// Configuration container for the RabbitMQ connection.
+    /// </summary>
+    public class ConnectionConfiguration
     {
         const bool defaultUseTls = false;
         const int defaultPort = 5672;
@@ -15,16 +18,34 @@
         const string defaultUserName = "guest";
         const string defaultPassword = "guest";
 
+        /// <summary>
+        /// Gets the broker host.
+        /// </summary>
         public string Host { get; }
 
+        /// <summary>
+        /// Gets the port the broker uses.
+        /// </summary>
         public int Port { get; }
 
+        /// <summary>
+        /// Gets the virtual host.
+        /// </summary>
         public string VirtualHost { get; }
 
+        /// <summary>
+        /// Gets the user name used for the connection.
+        /// </summary>
         public string UserName { get; }
 
+        /// <summary>
+        /// Gets the password used for the connection.
+        /// </summary>
         public string Password { get; }
 
+        /// <summary>
+        /// Gets whether TLS should be used.
+        /// </summary>
         public bool UseTls { get; }
 
         ConnectionConfiguration(
@@ -43,6 +64,11 @@
             UseTls = useTls;
         }
 
+        /// <summary>
+        /// Parses the connection string and returns the connection information.
+        /// </summary>
+        /// <param name="connectionString">The connection string to be parsed.</param>
+        /// <returns></returns>        
         public static ConnectionConfiguration Create(string connectionString)
         {
             Dictionary<string, string> dictionary;
