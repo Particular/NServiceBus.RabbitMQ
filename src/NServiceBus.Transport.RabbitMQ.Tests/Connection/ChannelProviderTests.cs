@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync();
 
             Assert.That(publishConnection.WasDisposed, Is.True);
         }
@@ -53,7 +53,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             // Deliberately not completing the delay task with channelProvider.DelayTaskCompletionSource.SetResult(); before disposing
             // to simulate a pending delay task
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync();
 
             await channelProvider.FireAndForgetAction(CancellationToken.None);
 
@@ -75,7 +75,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             // and await its completion after the channel provider has been disposed.
             var fireAndForgetTask = channelProvider.FireAndForgetAction(CancellationToken.None);
             channelProvider.DelayTaskCompletionSource.SetResult();
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync();
 
             await fireAndForgetTask;
 

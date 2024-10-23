@@ -509,7 +509,7 @@
             return attempts;
         }
 
-        async Task MovePoisonMessage(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
+        async ValueTask MovePoisonMessage(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, string queue, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -521,7 +521,8 @@
                 }
                 finally
                 {
-                    channelProvider.ReturnPublishChannel(channel);
+                    await channelProvider.ReturnPublishChannel(channel, messageProcessingCancellationToken)
+                        .ConfigureAwait(false);
                 }
             }
             catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))

@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    sealed class ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology) : IDisposable
+    sealed class ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology) : IAsyncDisposable
     {
         public bool IsOpen => channel.IsOpen;
 
@@ -55,7 +55,9 @@ namespace NServiceBus.Transport.RabbitMQ
                 .ConfigureAwait(false);
         }
 
-        public void Dispose() => channel?.Dispose();
+#pragma warning disable PS0018
+        public ValueTask DisposeAsync() => channel is not null ? channel.DisposeAsync() : ValueTask.CompletedTask;
+#pragma warning restore PS0018
 
         IChannel channel;
     }

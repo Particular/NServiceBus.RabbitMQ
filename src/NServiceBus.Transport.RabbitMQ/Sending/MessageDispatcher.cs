@@ -43,7 +43,8 @@
             }
             finally
             {
-                channelProvider.ReturnPublishChannel(channel);
+                await channelProvider.ReturnPublishChannel(channel, cancellationToken)
+                    .ConfigureAwait(false);
             }
         }
 

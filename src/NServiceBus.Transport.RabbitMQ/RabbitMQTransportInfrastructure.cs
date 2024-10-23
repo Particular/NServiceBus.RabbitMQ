@@ -70,7 +70,7 @@
             await Task.WhenAll(Receivers.Values.Select(r => r.StopReceive(cancellationToken)))
                 .ConfigureAwait(false);
 
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync().ConfigureAwait(false);
         }
 
         public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);

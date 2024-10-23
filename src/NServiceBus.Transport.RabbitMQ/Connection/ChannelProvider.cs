@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client.Events;
     using Logging;
 
-    class ChannelProvider : IDisposable
+    class ChannelProvider : IAsyncDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
         {
@@ -99,7 +99,11 @@ namespace NServiceBus.Transport.RabbitMQ
                 return channel;
             }
 
-            channel?.Dispose();
+            if (channel is not null)
+            {
+                await channel.DisposeAsync()
+                    .ConfigureAwait(false);
+            }
 
             channel = new ConfirmsAwareChannel(connection, routingTopology);
             await channel.Initialize(cancellationToken).ConfigureAwait(false);
@@ -107,26 +111,27 @@ namespace NServiceBus.Transport.RabbitMQ
             return channel;
         }
 
-        public void ReturnPublishChannel(ConfirmsAwareChannel channel)
+        public ValueTask ReturnPublishChannel(ConfirmsAwareChannel channel, CancellationToken cancellationToken = default)
         {
             if (channel.IsOpen)
             {
                 channels.Enqueue(channel);
+                return ValueTask.CompletedTask;
             }
-            else
-            {
-                channel.Dispose();
-            }
+
+            return channel.DisposeAsync();
         }
 
-        public void Dispose()
+#pragma warning disable PS0018
+        public async ValueTask DisposeAsync()
+#pragma warning restore PS0018
         {
             if (disposed)
             {
                 return;
             }
 
-            stoppingTokenSource.Cancel();
+            await stoppingTokenSource.CancelAsync().ConfigureAwait(false);
             stoppingTokenSource.Dispose();
 
             var oldConnection = Interlocked.Exchange(ref connection, null);
@@ -134,7 +139,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
             foreach (var channel in channels)
             {
-                channel.Dispose();
+                await channel.DisposeAsync().ConfigureAwait(false);
             }
 
             disposed = true;
