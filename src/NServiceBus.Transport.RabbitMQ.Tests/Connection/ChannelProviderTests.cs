@@ -137,15 +137,15 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             public IDictionary<string, object> ServerProperties { get; }
             public IList<ShutdownReportEntry> ShutdownReport { get; }
             public string ClientProvidedName { get; } = $"FakeConnection{Interlocked.Increment(ref connectionCounter)}";
-            public event AsyncEventHandler<CallbackExceptionEventArgs> CallbackExceptionAsync;
-            public event AsyncEventHandler<ShutdownEventArgs> ConnectionShutdownAsync;
-            public event AsyncEventHandler<AsyncEventArgs> RecoverySucceededAsync;
-            public event AsyncEventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryErrorAsync;
-            public event AsyncEventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecoveryAsync;
-            public event AsyncEventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecoveryAsync;
-            public event AsyncEventHandler<RecoveringConsumerEventArgs> RecoveringConsumerAsync;
-            public event AsyncEventHandler<ConnectionBlockedEventArgs> ConnectionBlockedAsync;
-            public event AsyncEventHandler<AsyncEventArgs> ConnectionUnblockedAsync;
+            public event AsyncEventHandler<CallbackExceptionEventArgs> CallbackExceptionAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ShutdownEventArgs> ConnectionShutdownAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<AsyncEventArgs> RecoverySucceededAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryErrorAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecoveryAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecoveryAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<RecoveringConsumerEventArgs> RecoveringConsumerAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ConnectionBlockedEventArgs> ConnectionBlockedAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<AsyncEventArgs> ConnectionUnblockedAsync = (_, _) => Task.CompletedTask;
 
             IEnumerable<ShutdownReportEntry> IConnection.ShutdownReport => throw new NotImplementedException();
 

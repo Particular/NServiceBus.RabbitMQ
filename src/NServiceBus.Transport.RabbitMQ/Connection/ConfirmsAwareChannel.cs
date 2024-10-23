@@ -141,7 +141,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return (tcs, registration);
         }
 
+#pragma warning disable PS0018
         Task Channel_BasicAcks(object sender, BasicAckEventArgs e)
+#pragma warning restore PS0018
         {
             if (!e.Multiple)
             {
@@ -161,7 +163,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return Task.CompletedTask;
         }
 
+#pragma warning disable PS0018
         Task Channel_BasicNacks(object sender, BasicNackEventArgs e)
+#pragma warning restore PS0018
         {
             if (!e.Multiple)
             {
@@ -181,7 +185,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return Task.CompletedTask;
         }
 
+#pragma warning disable PS0018
         Task Channel_BasicReturn(object sender, BasicReturnEventArgs e)
+#pragma warning restore PS0018
         {
             var message = $"Message could not be routed to {e.Exchange + e.RoutingKey}: {e.ReplyCode} {e.ReplyText}";
 
@@ -197,7 +203,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return Task.CompletedTask;
         }
 
+#pragma warning disable PS0018
         Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
+#pragma warning restore PS0018
         {
             do
             {

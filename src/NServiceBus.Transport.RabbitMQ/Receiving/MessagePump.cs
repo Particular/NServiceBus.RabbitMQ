@@ -217,7 +217,9 @@
             return Task.CompletedTask;
         }
 
+#pragma warning disable PS0018
         Task Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
+#pragma warning restore PS0018
         {
             if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
             {
@@ -237,7 +239,9 @@
             return Task.CompletedTask;
         }
 
+#pragma warning disable PS0018
         Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
+#pragma warning restore PS0018
         {
             if (e.Initiator == ShutdownInitiator.Application)
             {

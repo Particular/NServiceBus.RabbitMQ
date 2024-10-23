@@ -33,7 +33,9 @@ namespace NServiceBus.Transport.RabbitMQ
             return newConnection;
         }
 
+#pragma warning disable PS0018
         Task Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
+#pragma warning restore PS0018
         {
             if (e.Initiator == ShutdownInitiator.Application || sender is null)
             {
