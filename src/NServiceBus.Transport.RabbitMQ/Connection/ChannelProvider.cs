@@ -7,6 +7,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
     using Logging;
 
     class ChannelProvider : IDisposable
@@ -28,20 +29,21 @@ namespace NServiceBus.Transport.RabbitMQ
         async Task<IConnection> CreateConnectionWithShutdownListener(CancellationToken cancellationToken)
         {
             var newConnection = await CreatePublishConnection(cancellationToken).ConfigureAwait(false);
-            newConnection.ConnectionShutdown += Connection_ConnectionShutdown;
+            newConnection.ConnectionShutdownAsync += Connection_ConnectionShutdown;
             return newConnection;
         }
 
-        void Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
+        Task Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
         {
             if (e.Initiator == ShutdownInitiator.Application || sender is null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var connectionThatWasShutdown = (IConnection)sender;
 
             FireAndForget(cancellationToken => ReconnectSwallowingExceptions(connectionThatWasShutdown.ClientProvidedName, cancellationToken), stoppingTokenSource.Token);
+            return Task.CompletedTask;
         }
 
         async Task ReconnectSwallowingExceptions(string? connectionName, CancellationToken cancellationToken)

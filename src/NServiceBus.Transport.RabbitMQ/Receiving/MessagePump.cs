@@ -120,7 +120,7 @@
         async Task ConnectToBroker(CancellationToken cancellationToken)
         {
             connection = await connectionFactory.CreateConnection(name, cancellationToken).ConfigureAwait(false);
-            connection.ConnectionShutdown += Connection_ConnectionShutdown;
+            connection.ConnectionShutdownAsync += Connection_ConnectionShutdown;
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
 
@@ -130,15 +130,18 @@
                 prefetchCount = maxConcurrency;
             }
 
-            var channel = await connection.CreateChannelAsync((ushort)maxConcurrency, cancellationToken).ConfigureAwait(false);
-            channel.ChannelShutdown += Channel_ModelShutdown;
+            var channel = await connection.CreateChannelAsync(new CreateChannelOptions
+            {
+                ConsumerDispatchConcurrency = (ushort)maxConcurrency,
+            }, cancellationToken).ConfigureAwait(false);
+            channel.ChannelShutdownAsync += Channel_ModelShutdown;
             await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
 
-            consumer.Unregistered += Consumer_Unregistered;
-            consumer.Registered += Consumer_Registered;
-            consumer.Received += Consumer_Received;
+            consumer.UnregisteredAsync += Consumer_Unregistered;
+            consumer.RegisteredAsync += Consumer_Registered;
+            consumer.ReceivedAsync += Consumer_Received;
 
             await channel.BasicConsumeAsync(ReceiveAddress, false, consumerTag, consumer, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
@@ -214,7 +217,7 @@
             return Task.CompletedTask;
         }
 
-        void Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
+        Task Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
         {
             if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
             {
@@ -230,18 +233,20 @@
             {
                 Logger.WarnFormat("'{0}' connection shutdown while reconnect already in progress: {1}", name, e);
             }
+
+            return Task.CompletedTask;
         }
 
-        void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
+        Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
             if (e.Initiator == ShutdownInitiator.Application)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (e.Initiator == ShutdownInitiator.Peer && e.ReplyCode == 404)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (circuitBreaker.Disarmed)
@@ -254,6 +259,8 @@
             {
                 Logger.WarnFormat("'{0}' channel shutdown while reconnect already in progress: {1}", name, e);
             }
+
+            return Task.CompletedTask;
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext

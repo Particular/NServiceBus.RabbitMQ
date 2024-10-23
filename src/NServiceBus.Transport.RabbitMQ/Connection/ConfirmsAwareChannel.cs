@@ -17,14 +17,15 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
-            channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            channel = await connection.CreateChannelAsync(new CreateChannelOptions
+            {
+                PublisherConfirmationsEnabled = true,
+            }, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            channel.BasicAcks += Channel_BasicAcks;
-            channel.BasicNacks += Channel_BasicNacks;
-            channel.BasicReturn += Channel_BasicReturn;
-            channel.ChannelShutdown += Channel_ModelShutdown;
-
-            await channel.ConfirmSelectAsync(trackConfirmations: false, cancellationToken).ConfigureAwait(false);
+            channel.BasicAcksAsync += Channel_BasicAcks;
+            channel.BasicNacksAsync += Channel_BasicNacks;
+            channel.BasicReturnAsync += Channel_BasicReturn;
+            channel.ChannelShutdownAsync += Channel_ModelShutdown;
         }
 
         public async Task SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
@@ -35,10 +36,10 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                (taskCompletionSource, var registration) = GetCancellableTaskCompletionSource(cancellationToken);
+                (taskCompletionSource, var registration) = await GetCancellableTaskCompletionSource(cancellationToken).ConfigureAwait(false);
                 await using var _ = registration.ConfigureAwait(false);
 
-                properties.SetConfirmationId(channel.NextPublishSeqNo);
+                properties.SetConfirmationId(await channel.GetNextPublishSequenceNumberAsync(cancellationToken).ConfigureAwait(false));
 
                 if (properties.Headers != null &&
                     properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
@@ -75,10 +76,10 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                (taskCompletionSource, var registration) = GetCancellableTaskCompletionSource(cancellationToken);
+                (taskCompletionSource, var registration) = await GetCancellableTaskCompletionSource(cancellationToken).ConfigureAwait(false);
                 await using var _ = registration.ConfigureAwait(false);
 
-                properties.SetConfirmationId(channel.NextPublishSeqNo);
+                properties.SetConfirmationId(await channel.GetNextPublishSequenceNumberAsync(cancellationToken).ConfigureAwait(false));
 
                 await routingTopology.Publish(channel, type, message, properties, cancellationToken)
                     .ConfigureAwait(false);
@@ -101,11 +102,11 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 await sequenceNumberSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                (taskCompletionSource, var registration) = GetCancellableTaskCompletionSource(cancellationToken);
+                (taskCompletionSource, var registration) = await GetCancellableTaskCompletionSource(cancellationToken).ConfigureAwait(false);
 
                 await using var _ = registration.ConfigureAwait(false);
 
-                properties.SetConfirmationId(channel.NextPublishSeqNo);
+                properties.SetConfirmationId(await channel.GetNextPublishSequenceNumberAsync(cancellationToken).ConfigureAwait(false));
 
                 await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken)
                     .ConfigureAwait(false);
@@ -118,7 +119,7 @@ namespace NServiceBus.Transport.RabbitMQ
             await taskCompletionSource.Task.ConfigureAwait(false);
         }
 
-        (TaskCompletionSource, IAsyncDisposable) GetCancellableTaskCompletionSource(CancellationToken cancellationToken)
+        async ValueTask<(TaskCompletionSource, IAsyncDisposable)> GetCancellableTaskCompletionSource(CancellationToken cancellationToken)
         {
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -129,17 +130,18 @@ namespace NServiceBus.Transport.RabbitMQ
                 tcs.TrySetCanceled(cancellationToken);
             }, (tcs, cancellationToken));
 
-            var added = messages.TryAdd(channel.NextPublishSeqNo, tcs);
+            var nextPublishSequenceNumber = await channel.GetNextPublishSequenceNumberAsync(cancellationToken).ConfigureAwait(false);
+            var added = messages.TryAdd(nextPublishSequenceNumber, tcs);
 
             if (!added)
             {
-                throw new Exception($"Cannot publish a message with sequence number '{channel.NextPublishSeqNo}' on this channel. A message was already published on this channel with the same confirmation number.");
+                throw new Exception($"Cannot publish a message with sequence number '{nextPublishSequenceNumber}' on this channel. A message was already published on this channel with the same confirmation number.");
             }
 
             return (tcs, registration);
         }
 
-        void Channel_BasicAcks(object sender, BasicAckEventArgs e)
+        Task Channel_BasicAcks(object sender, BasicAckEventArgs e)
         {
             if (!e.Multiple)
             {
@@ -155,9 +157,11 @@ namespace NServiceBus.Transport.RabbitMQ
                     }
                 }
             }
+
+            return Task.CompletedTask;
         }
 
-        void Channel_BasicNacks(object sender, BasicNackEventArgs e)
+        Task Channel_BasicNacks(object sender, BasicNackEventArgs e)
         {
             if (!e.Multiple)
             {
@@ -173,9 +177,11 @@ namespace NServiceBus.Transport.RabbitMQ
                     }
                 }
             }
+
+            return Task.CompletedTask;
         }
 
-        void Channel_BasicReturn(object sender, BasicReturnEventArgs e)
+        Task Channel_BasicReturn(object sender, BasicReturnEventArgs e)
         {
             var message = $"Message could not be routed to {e.Exchange + e.RoutingKey}: {e.ReplyCode} {e.ReplyText}";
 
@@ -187,9 +193,11 @@ namespace NServiceBus.Transport.RabbitMQ
             {
                 Logger.Warn(message);
             }
+
+            return Task.CompletedTask;
         }
 
-        void Channel_ModelShutdown(object sender, ShutdownEventArgs e)
+        Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
         {
             do
             {
@@ -199,6 +207,8 @@ namespace NServiceBus.Transport.RabbitMQ
                 }
             }
             while (!messages.IsEmpty);
+
+            return Task.CompletedTask;
         }
 
         void SetResult(ulong key)

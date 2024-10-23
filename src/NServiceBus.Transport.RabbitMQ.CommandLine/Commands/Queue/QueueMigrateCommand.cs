@@ -77,7 +77,11 @@
 
         async Task<MigrationStage> MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions
+            {
+                PublisherConfirmationsEnabled = true,
+                PublisherConfirmationTrackingEnabled = true
+            }, cancellationToken: cancellationToken);
 
             console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
@@ -95,15 +99,12 @@
             console.WriteLine($"Unbound '{queueName}' from exchange '{queueName}' ");
 
             // move all existing messages to the holding queue
-            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
-
             var numMessagesMovedToHolding = await ProcessMessages(
                 channel,
                 queueName,
-                async (message, cancellationToken) =>
+                async (message, token) =>
                 {
-                    await channel.BasicPublishAsync(string.Empty, holdingQueueName, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
-                    await channel.WaitForConfirmsOrDieAsync(cancellationToken);
+                    await channel.BasicPublishAsync(string.Empty, holdingQueueName, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token);
                 },
                 cancellationToken);
 
@@ -114,7 +115,7 @@
 
         async Task<MigrationStage> DeleteMainQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             if (await channel.MessageCountAsync(queueName, cancellationToken) > 0)
             {
@@ -140,7 +141,11 @@
 
         async Task<MigrationStage> RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions
+            {
+                PublisherConfirmationsEnabled = true,
+                PublisherConfirmationTrackingEnabled = true,
+            }, cancellationToken: cancellationToken);
 
             await channel.QueueBindAsync(queueName, queueName, string.Empty, cancellationToken: cancellationToken);
             console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
@@ -151,8 +156,6 @@
             var messageIds = new Dictionary<string, string>();
 
             // move all messages in the holding queue back to the main queue
-            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
-
             var numMessageMovedBackToMain = await ProcessMessages(
                 channel,
                 holdingQueueName,
@@ -174,7 +177,6 @@
                     }
 
                     await channel.BasicPublishAsync(string.Empty, queueName, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: token);
-                    await channel.WaitForConfirmsOrDieAsync(token);
 
                     if (messageIdString != null)
                     {
