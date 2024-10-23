@@ -16,7 +16,9 @@ namespace NServiceBus.Transport.RabbitMQ
             channel = await connection.CreateChannelAsync(new CreateChannelOptions
             {
                 PublisherConfirmationsEnabled = true,
-                PublisherConfirmationTrackingEnabled = true
+                PublisherConfirmationTrackingEnabled = true,
+                // The client never had rate limiting enabled before so we want to first explore the impact of enabling it
+                OutstandingPublisherConfirmationsRateLimiter = null,
             }, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         public async ValueTask SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
