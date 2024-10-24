@@ -119,17 +119,27 @@
         {
             var connection = await connectionFactory.CreateConnectionAsync(endpoints, connectionName, cancellationToken).ConfigureAwait(false);
 
-            connection.ConnectionBlocked += (sender, e) => Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
-            connection.ConnectionUnblocked += (sender, e) => Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
+            connection.ConnectionBlockedAsync += (sender, e) =>
+            {
+                Logger.WarnFormat("'{0}' connection blocked: {1}", connectionName, e.Reason);
+                return Task.CompletedTask;
+            };
+            connection.ConnectionUnblockedAsync += (sender, e) =>
+            {
+                Logger.WarnFormat("'{0}' connection unblocked}", connectionName);
+                return Task.CompletedTask;
+            };
 
-            connection.ConnectionShutdown += (sender, e) =>
+            connection.ConnectionShutdownAsync += (sender, e) =>
             {
                 if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
                 {
-                    return;
+                    return Task.CompletedTask;
                 }
 
                 Logger.WarnFormat("'{0}' connection shutdown: {1}", connectionName, e);
+
+                return Task.CompletedTask;
             };
 
             return connection;

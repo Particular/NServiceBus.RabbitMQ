@@ -48,9 +48,12 @@
 
         public async Task Run(CancellationToken cancellationToken = default)
         {
-            using var connection = await brokerConnection.Create(cancellationToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
-            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
+            await using var connection = await brokerConnection.Create(cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions
+            {
+                PublisherConfirmationsEnabled = true,
+                PublisherConfirmationTrackingEnabled = true
+            }, cancellationToken: cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
@@ -92,7 +95,6 @@
                         }
 
                         await channel.BasicPublishAsync(string.Empty, poisonMessageQueue, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
-                        await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                         await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
 
                         continue;
@@ -135,7 +137,6 @@
                     }
 
                     await channel.BasicPublishAsync(publishExchange, newRoutingKey, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
-                    await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                     await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
                     processedMessages++;
                 }

@@ -40,7 +40,7 @@
                 messageHeaders.Remove(DelayInfrastructure.XFirstDeathExchangeHeader);
                 messageHeaders.Remove(DelayInfrastructure.XFirstDeathQueueHeader);
                 messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
-                messageHeaders.Remove(BasicPropertiesExtensions.ConfirmationIdHeader);
+                messageHeaders.Remove(Constants.PublishSequenceNumberHeader);
             }
 
             // Leaving space for ReplyTo, CorrelationId, DeliveryMode, EnclosedMessageTypes conditionally
