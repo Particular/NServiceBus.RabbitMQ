@@ -342,9 +342,8 @@
             }
         });
 
-        Task CreateQueue(string queueName, bool quorum)
-        {
-            return ExecuteBrokerCommand(async (channel, cancellationToken) =>
+        Task CreateQueue(string queueName, bool quorum) =>
+            ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
                 var queueArguments = new Dictionary<string, object>();
 
@@ -355,18 +354,13 @@
 
                 await channel.QueueDeclareAsync(queueName, true, false, false, queueArguments, cancellationToken: cancellationToken);
             });
-        }
 
         Task CreateExchange(string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, true, cancellationToken: cancellationToken));
 
         Task BindQueue(string queueName, string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken));
 
-        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
-        {
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
-                publisherConfirmationTrackingEnabled: true,
-                outstandingPublisherConfirmationsRateLimiter: null);
-            return ExecuteBrokerCommand(async (channel, cancellationToken) =>
+        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null) =>
+            ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
                 for (var i = 0; i < numMessages; i++)
                 {
@@ -376,8 +370,7 @@
 
                     await channel.BasicPublishAsync(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty, cancellationToken);
                 }
-            }, createChannelOptions: createChannelOptions);
-        }
+            }, new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null));
 
         async Task<uint> MessageCount(string queueName)
         {

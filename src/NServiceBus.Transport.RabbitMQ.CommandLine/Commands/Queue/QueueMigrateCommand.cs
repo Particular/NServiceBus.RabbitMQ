@@ -6,7 +6,7 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
 
-    class QueueMigrateCommand
+    class QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, IConsole console)
     {
         public static Command CreateCommand()
         {
@@ -32,20 +32,11 @@
             return command;
         }
 
-        public QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, IConsole console)
-        {
-            this.queueName = queueName;
-            this.brokerConnection = brokerConnection;
-            this.console = console;
-            holdingQueueName = $"{queueName}-migration-temp";
-            migrationState = new MigrationState();
-        }
-
         public async Task Run(CancellationToken cancellationToken = default)
         {
             console.WriteLine($"Starting migration of '{queueName}'");
 
-            using var connection = await brokerConnection.Create(cancellationToken);
+            await using var connection = await brokerConnection.Create(cancellationToken);
 
             await migrationState.SetInitialMigrationStage(queueName, holdingQueueName, connection, cancellationToken);
 
@@ -131,7 +122,7 @@
 
         async Task<MigrationStage> CreateMainQueueAsQuorum(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.QueueDeclareAsync(queueName, true, false, false, quorumQueueArguments, cancellationToken: cancellationToken);
             console.WriteLine($"Recreated '{queueName}' as a quorum queue");
@@ -141,9 +132,7 @@
 
         async Task<MigrationStage> RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
-                publisherConfirmationTrackingEnabled: true,
-                outstandingPublisherConfirmationsRateLimiter: null);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
             await using var channel = await connection.CreateChannelAsync(createChannelOptions,
                 cancellationToken: cancellationToken);
 
@@ -192,7 +181,7 @@
 
         async Task<MigrationStage> CleanUpHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             if (await channel.MessageCountAsync(holdingQueueName, cancellationToken) != 0)
             {
@@ -229,13 +218,10 @@
             return messageCount;
         }
 
-        readonly string queueName;
-        readonly string holdingQueueName;
-        readonly BrokerConnection brokerConnection;
-        readonly IConsole console;
-        readonly MigrationState migrationState;
+        readonly string holdingQueueName = $"{queueName}-migration-temp";
+        readonly MigrationState migrationState = new();
 
-        static Dictionary<string, object?> quorumQueueArguments = new() { { "x-queue-type", "quorum" } };
+        static readonly Dictionary<string, object?> quorumQueueArguments = new() { { "x-queue-type", "quorum" } };
 
         enum MigrationStage
         {

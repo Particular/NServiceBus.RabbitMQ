@@ -130,9 +130,7 @@
                 prefetchCount = maxConcurrency;
             }
 
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: false,
-                publisherConfirmationTrackingEnabled: false,
-                consumerDispatchConcurrency: (ushort)maxConcurrency);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false, consumerDispatchConcurrency: (ushort)maxConcurrency);
             var channel = await connection.CreateChannelAsync(createChannelOptions,
                 cancellationToken).ConfigureAwait(false);
             channel.ChannelShutdownAsync += Channel_ModelShutdown;

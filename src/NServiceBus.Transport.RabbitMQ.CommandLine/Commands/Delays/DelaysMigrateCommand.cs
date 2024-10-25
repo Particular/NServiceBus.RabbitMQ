@@ -7,7 +7,7 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    class DelaysMigrateCommand
+    class DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
     {
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
@@ -39,19 +39,10 @@
             return command;
         }
 
-        public DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
-        {
-            this.brokerConnection = brokerConnection;
-            this.routingTopology = routingTopology;
-            this.console = console;
-        }
-
-        public async Task Run(CancellationToken cancellationToken = default)
+        async Task Run(CancellationToken cancellationToken)
         {
             await using var connection = await brokerConnection.Create(cancellationToken);
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
-                publisherConfirmationTrackingEnabled: true,
-                outstandingPublisherConfirmationsRateLimiter: null);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
             await using var channel = await connection.CreateChannelAsync(createChannelOptions,
                 cancellationToken: cancellationToken);
 
@@ -173,18 +164,10 @@
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 
-        static bool MessageIsInvalid(BasicGetResult? message)
-        {
-            return message == null
-                || message.BasicProperties == null
-                || message.BasicProperties.Headers == null
-                || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
-                || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
-        }
-
-        readonly BrokerConnection brokerConnection;
-        readonly IRoutingTopology routingTopology;
-        readonly IConsole console;
+        static bool MessageIsInvalid(BasicGetResult? message) =>
+            message?.BasicProperties.Headers == null
+            || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
+            || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
 
         bool poisonQueueCreated = false;
     }

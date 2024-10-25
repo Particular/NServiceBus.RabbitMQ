@@ -14,11 +14,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
-                publisherConfirmationTrackingEnabled: true,
-                outstandingPublisherConfirmationsRateLimiter: null);
-            channel = await connection.CreateChannelAsync(createChannelOptions,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
+            channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
