@@ -49,11 +49,11 @@
         public async Task Run(CancellationToken cancellationToken = default)
         {
             await using var connection = await brokerConnection.Create(cancellationToken);
-            await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions
-            {
-                PublisherConfirmationsEnabled = true,
-                PublisherConfirmationTrackingEnabled = true
-            }, cancellationToken: cancellationToken);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
+                publisherConfirmationTrackingEnabled: true,
+                outstandingPublisherConfirmationsRateLimiter: null);
+            await using var channel = await connection.CreateChannelAsync(createChannelOptions,
+                cancellationToken: cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {

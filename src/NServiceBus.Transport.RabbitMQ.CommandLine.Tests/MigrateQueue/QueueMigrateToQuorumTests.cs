@@ -361,8 +361,12 @@
 
         Task BindQueue(string queueName, string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken));
 
-        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null) =>
-            ExecuteBrokerCommand(async (channel, cancellationToken) =>
+        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
+        {
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
+                publisherConfirmationTrackingEnabled: true,
+                outstandingPublisherConfirmationsRateLimiter: null);
+            return ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
                 for (var i = 0; i < numMessages; i++)
                 {
@@ -372,7 +376,8 @@
 
                     await channel.BasicPublishAsync(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty, cancellationToken);
                 }
-            }, createChannelOptions: new CreateChannelOptions { PublisherConfirmationsEnabled = true, PublisherConfirmationTrackingEnabled = true });
+            }, createChannelOptions: createChannelOptions);
+        }
 
         async Task<uint> MessageCount(string queueName)
         {
