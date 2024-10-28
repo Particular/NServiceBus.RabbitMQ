@@ -94,8 +94,18 @@
         }
 
         /// <summary>
-        /// The callback to use when customizing the message before dispatching it to the broker.
+        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/> 
+        /// just before it is dispatched to the rabbitmq client. 
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This customization is applied after any configured transport customizations, meaning that 
+        /// any changes made here may override or conflict with previous transport-level adjustments. 
+        /// Exercise caution, as modifying the message at this stage can lead to unintended behavior 
+        /// downstream if the message structure or properties are altered in ways that do not align 
+        /// with expectations elsewhere in the system.
+        /// </para>
+        /// </remarks>
         public Action<IOutgoingTransportOperation, IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
 
         /// <summary>
