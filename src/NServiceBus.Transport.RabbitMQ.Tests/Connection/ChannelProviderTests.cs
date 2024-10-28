@@ -18,7 +18,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
-            publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
+            await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
 
             channelProvider.DelayTaskCompletionSource.SetResult();
 
@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync();
 
             Assert.That(publishConnection.WasDisposed, Is.True);
         }
@@ -49,11 +49,11 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
-            publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
+            await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
 
             // Deliberately not completing the delay task with channelProvider.DelayTaskCompletionSource.SetResult(); before disposing
             // to simulate a pending delay task
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync();
 
             await channelProvider.FireAndForgetAction(CancellationToken.None);
 
@@ -68,14 +68,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             await channelProvider.CreateConnection();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
-            publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
+            await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
 
             // This simulates the race of the reconnection loop being fired off with the delay task completed during
             // the disposal of the channel provider. To achieve that it is necessary to kick off the reconnection loop
             // and await its completion after the channel provider has been disposed.
             var fireAndForgetTask = channelProvider.FireAndForgetAction(CancellationToken.None);
             channelProvider.DelayTaskCompletionSource.SetResult();
-            channelProvider.Dispose();
+            await channelProvider.DisposeAsync();
 
             await fireAndForgetTask;
 
@@ -121,29 +121,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public bool WasDisposed { get; private set; }
 
-            public void UpdateSecret(string newSecret, string reason) => throw new NotImplementedException();
-
-            public void Abort() => throw new NotImplementedException();
-
-            public void Abort(ushort reasonCode, string reasonText) => throw new NotImplementedException();
-
-            public void Abort(TimeSpan timeout) => throw new NotImplementedException();
-
-            public void Abort(ushort reasonCode, string reasonText, TimeSpan timeout) => throw new NotImplementedException();
-
-            public void Close() => throw new NotImplementedException();
-
-            public void Close(ushort reasonCode, string reasonText) => throw new NotImplementedException();
-
-            public void Close(TimeSpan timeout) => throw new NotImplementedException();
-
-            public void Close(ushort reasonCode, string reasonText, TimeSpan timeout) => throw new NotImplementedException();
-
-            public void HandleConnectionBlocked(string reason) => throw new NotImplementedException();
-
-            public void HandleConnectionUnblocked() => throw new NotImplementedException();
-
-            public Task<IChannel> CreateChannelAsync(ushort? consumerDispatchConcurrency = null, CancellationToken cancellationToken = new CancellationToken()) => throw new NotImplementedException();
+            public Task<IChannel> CreateChannelAsync(CreateChannelOptions options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
             public ushort ChannelMax { get; }
             public IDictionary<string, object> ClientProperties { get; }
@@ -157,24 +135,24 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             public IDictionary<string, object> ServerProperties { get; }
             public IList<ShutdownReportEntry> ShutdownReport { get; }
             public string ClientProvidedName { get; } = $"FakeConnection{Interlocked.Increment(ref connectionCounter)}";
+            public event AsyncEventHandler<CallbackExceptionEventArgs> CallbackExceptionAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ShutdownEventArgs> ConnectionShutdownAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<AsyncEventArgs> RecoverySucceededAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryErrorAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecoveryAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecoveryAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<RecoveringConsumerEventArgs> RecoveringConsumerAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<ConnectionBlockedEventArgs> ConnectionBlockedAsync = (_, _) => Task.CompletedTask;
+            public event AsyncEventHandler<AsyncEventArgs> ConnectionUnblockedAsync = (_, _) => Task.CompletedTask;
 
             IEnumerable<ShutdownReportEntry> IConnection.ShutdownReport => throw new NotImplementedException();
 
-            public event EventHandler<CallbackExceptionEventArgs> CallbackException = (_, _) => { };
-            public event EventHandler<ConnectionBlockedEventArgs> ConnectionBlocked = (_, _) => { };
-            public event EventHandler<ShutdownEventArgs> ConnectionShutdown = (_, _) => { };
-            public event EventHandler<EventArgs> ConnectionUnblocked = (_, _) => { };
-            public event EventHandler<EventArgs> RecoverySucceeded = (_, _) => { };
-            public event EventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryError = (_, _) => { };
-            public event EventHandler<ConsumerTagChangedAfterRecoveryEventArgs> ConsumerTagChangeAfterRecovery = (_, _) => { };
-            public event EventHandler<QueueNameChangedAfterRecoveryEventArgs> QueueNameChangedAfterRecovery = (_, _) => { };
-            public event EventHandler<RecoveringConsumerEventArgs> RecoveringConsumer = (_, _) => { };
-
-            public void RaiseConnectionShutdown(ShutdownEventArgs args) => ConnectionShutdown?.Invoke(this, args);
+            public Task RaiseConnectionShutdown(ShutdownEventArgs args) => ConnectionShutdownAsync.Invoke(this, args);
             public Task UpdateSecretAsync(string newSecret, string reason, CancellationToken cancellationToken = default) => throw new NotImplementedException();
             public Task CloseAsync(ushort reasonCode, string reasonText, TimeSpan timeout, bool abort, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
             static int connectionCounter;
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
         }
     }
 }

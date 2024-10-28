@@ -55,7 +55,7 @@
 
             await PrepareTestEndpoint(endpointName);
 
-            await ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueUnbindAsync(endpointName, endpointName, string.Empty, cancellationToken: cancellationToken), CancellationToken.None);
+            await ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueUnbindAsync(endpointName, endpointName, string.Empty, cancellationToken: cancellationToken));
 
             await ExecuteMigration(endpointName);
 
@@ -340,12 +340,10 @@
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
             }
-        },
-            CancellationToken.None);
+        });
 
-        Task CreateQueue(string queueName, bool quorum)
-        {
-            return ExecuteBrokerCommand(async (channel, cancellationToken) =>
+        Task CreateQueue(string queueName, bool quorum) =>
+            ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
                 var queueArguments = new Dictionary<string, object>();
 
@@ -355,20 +353,15 @@
                 }
 
                 await channel.QueueDeclareAsync(queueName, true, false, false, queueArguments, cancellationToken: cancellationToken);
-            },
-            CancellationToken.None);
-        }
+            });
 
-        Task CreateExchange(string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, true, cancellationToken: cancellationToken), CancellationToken.None);
+        Task CreateExchange(string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Fanout, true, cancellationToken: cancellationToken));
 
-        Task BindQueue(string queueName, string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken), CancellationToken.None);
+        Task BindQueue(string queueName, string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken));
 
-        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null)
-        {
-            return ExecuteBrokerCommand(async (channel, cancellationToken) =>
+        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null) =>
+            ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
-                await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
-
                 for (var i = 0; i < numMessages; i++)
                 {
                     var properties = new BasicProperties();
@@ -376,17 +369,14 @@
                     modifications?.Invoke(properties);
 
                     await channel.BasicPublishAsync(string.Empty, queueName, true, properties, ReadOnlyMemory<byte>.Empty, cancellationToken);
-                    await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                 }
-            },
-            CancellationToken.None);
-        }
+            }, new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null));
 
         async Task<uint> MessageCount(string queueName)
         {
             uint messageCount = 0;
 
-            await ExecuteBrokerCommand(async (channel, cancellationToken) => messageCount = await channel.MessageCountAsync(queueName, cancellationToken), CancellationToken.None);
+            await ExecuteBrokerCommand(async (channel, cancellationToken) => messageCount = await channel.MessageCountAsync(queueName, cancellationToken));
 
             return messageCount;
         }
@@ -406,15 +396,14 @@
                 {
                     queueExists = false;
                 }
-            },
-            CancellationToken.None);
+            });
 
             return queueExists;
         }
 
-        async Task ExecuteBrokerCommand(Func<IChannel, CancellationToken, Task> command, CancellationToken cancellationToken)
+        async Task ExecuteBrokerCommand(Func<IChannel, CancellationToken, Task> command, CreateChannelOptions createChannelOptions = default, CancellationToken cancellationToken = default)
         {
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken: cancellationToken);
             await command(channel, cancellationToken);
         }
 

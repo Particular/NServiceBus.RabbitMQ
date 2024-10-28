@@ -7,7 +7,7 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    class DelaysMigrateCommand
+    class DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
     {
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
@@ -39,18 +39,11 @@
             return command;
         }
 
-        public DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
+        async Task Run(CancellationToken cancellationToken)
         {
-            this.brokerConnection = brokerConnection;
-            this.routingTopology = routingTopology;
-            this.console = console;
-        }
-
-        public async Task Run(CancellationToken cancellationToken = default)
-        {
-            using var connection = await brokerConnection.Create(cancellationToken);
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
-            await channel.ConfirmSelectAsync(trackConfirmations: true, cancellationToken);
+            await using var connection = await brokerConnection.Create(cancellationToken);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
+            await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
@@ -92,7 +85,6 @@
                         }
 
                         await channel.BasicPublishAsync(string.Empty, poisonMessageQueue, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
-                        await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                         await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
 
                         continue;
@@ -135,7 +127,6 @@
                     }
 
                     await channel.BasicPublishAsync(publishExchange, newRoutingKey, false, new BasicProperties(message.BasicProperties), message.Body, cancellationToken: cancellationToken);
-                    await channel.WaitForConfirmsOrDieAsync(cancellationToken);
                     await channel.BasicAckAsync(message.DeliveryTag, false, cancellationToken);
                     processedMessages++;
                 }
@@ -172,18 +163,10 @@
             return DateTimeOffset.ParseExact(timeSentString, dateTimeOffsetWireFormat, CultureInfo.InvariantCulture);
         }
 
-        static bool MessageIsInvalid(BasicGetResult? message)
-        {
-            return message == null
-                || message.BasicProperties == null
-                || message.BasicProperties.Headers == null
-                || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
-                || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
-        }
-
-        readonly BrokerConnection brokerConnection;
-        readonly IRoutingTopology routingTopology;
-        readonly IConsole console;
+        static bool MessageIsInvalid(BasicGetResult? message) =>
+            message?.BasicProperties?.Headers == null
+            || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
+            || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
 
         bool poisonQueueCreated = false;
     }

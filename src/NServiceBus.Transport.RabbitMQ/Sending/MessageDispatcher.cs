@@ -31,23 +31,24 @@
 
                 foreach (var operation in unicastTransportOperations)
                 {
-                    tasks.Add(SendMessage(operation, channel, cancellationToken));
+                    tasks.Add(SendMessage(operation, channel, cancellationToken).AsTask());
                 }
 
                 foreach (var operation in multicastTransportOperations)
                 {
-                    tasks.Add(PublishMessage(operation, channel, cancellationToken));
+                    tasks.Add(PublishMessage(operation, channel, cancellationToken).AsTask());
                 }
 
                 await Task.WhenAll(tasks).ConfigureAwait(false);
             }
             finally
             {
-                channelProvider.ReturnPublishChannel(channel);
+                await channelProvider.ReturnPublishChannel(channel, cancellationToken)
+                    .ConfigureAwait(false);
             }
         }
 
-        Task SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
+        ValueTask SendMessage(UnicastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
         {
             ThrowIfDelayedDeliveryIsDisabledAndMessageIsDelayed(transportOperation);
 
@@ -59,7 +60,7 @@
             return channel.SendMessage(transportOperation.Destination, message, properties, cancellationToken);
         }
 
-        Task PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
+        ValueTask PublishMessage(MulticastTransportOperation transportOperation, ConfirmsAwareChannel channel, CancellationToken cancellationToken)
         {
             ThrowIfDelayedDeliveryIsDisabledAndMessageIsDelayed(transportOperation);
 

@@ -7,9 +7,10 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
     using Logging;
 
-    class ChannelProvider : IDisposable
+    class ChannelProvider : IAsyncDisposable
     {
         public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
         {
@@ -28,20 +29,23 @@ namespace NServiceBus.Transport.RabbitMQ
         async Task<IConnection> CreateConnectionWithShutdownListener(CancellationToken cancellationToken)
         {
             var newConnection = await CreatePublishConnection(cancellationToken).ConfigureAwait(false);
-            newConnection.ConnectionShutdown += Connection_ConnectionShutdown;
+            newConnection.ConnectionShutdownAsync += Connection_ConnectionShutdown;
             return newConnection;
         }
 
-        void Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
+#pragma warning disable PS0018
+        Task Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
+#pragma warning restore PS0018
         {
             if (e.Initiator == ShutdownInitiator.Application || sender is null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var connectionThatWasShutdown = (IConnection)sender;
 
             FireAndForget(cancellationToken => ReconnectSwallowingExceptions(connectionThatWasShutdown.ClientProvidedName, cancellationToken), stoppingTokenSource.Token);
+            return Task.CompletedTask;
         }
 
         async Task ReconnectSwallowingExceptions(string? connectionName, CancellationToken cancellationToken)
@@ -95,7 +99,11 @@ namespace NServiceBus.Transport.RabbitMQ
                 return channel;
             }
 
-            channel?.Dispose();
+            if (channel is not null)
+            {
+                await channel.DisposeAsync()
+                    .ConfigureAwait(false);
+            }
 
             channel = new ConfirmsAwareChannel(connection, routingTopology);
             await channel.Initialize(cancellationToken).ConfigureAwait(false);
@@ -103,26 +111,27 @@ namespace NServiceBus.Transport.RabbitMQ
             return channel;
         }
 
-        public void ReturnPublishChannel(ConfirmsAwareChannel channel)
+        public ValueTask ReturnPublishChannel(ConfirmsAwareChannel channel, CancellationToken cancellationToken = default)
         {
             if (channel.IsOpen)
             {
                 channels.Enqueue(channel);
+                return ValueTask.CompletedTask;
             }
-            else
-            {
-                channel.Dispose();
-            }
+
+            return channel.DisposeAsync();
         }
 
-        public void Dispose()
+#pragma warning disable PS0018
+        public async ValueTask DisposeAsync()
+#pragma warning restore PS0018
         {
             if (disposed)
             {
                 return;
             }
 
-            stoppingTokenSource.Cancel();
+            await stoppingTokenSource.CancelAsync().ConfigureAwait(false);
             stoppingTokenSource.Dispose();
 
             var oldConnection = Interlocked.Exchange(ref connection, null);
@@ -130,7 +139,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
             foreach (var channel in channels)
             {
-                channel.Dispose();
+                await channel.DisposeAsync().ConfigureAwait(false);
             }
 
             disposed = true;
