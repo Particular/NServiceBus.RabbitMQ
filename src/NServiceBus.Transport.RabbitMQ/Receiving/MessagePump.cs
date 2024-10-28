@@ -131,8 +131,7 @@
             }
 
             var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false, consumerDispatchConcurrency: (ushort)maxConcurrency);
-            var channel = await connection.CreateChannelAsync(createChannelOptions,
-                cancellationToken).ConfigureAwait(false);
+            var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken).ConfigureAwait(false);
             channel.ChannelShutdownAsync += Channel_ModelShutdown;
             await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 

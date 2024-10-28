@@ -40,6 +40,7 @@
                 messageHeaders.Remove(DelayInfrastructure.XFirstDeathExchangeHeader);
                 messageHeaders.Remove(DelayInfrastructure.XFirstDeathQueueHeader);
                 messageHeaders.Remove(DelayInfrastructure.XFirstDeathReasonHeader);
+                messageHeaders.Remove(LegacyConfirmationIdHeader);
                 messageHeaders.Remove(Constants.PublishSequenceNumberHeader);
             }
 
@@ -166,5 +167,7 @@
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;
 
         static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        public const string LegacyConfirmationIdHeader = "NServiceBus.Transport.RabbitMQ.ConfirmationId";
     }
 }

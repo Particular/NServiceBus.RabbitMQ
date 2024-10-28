@@ -121,9 +121,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public bool WasDisposed { get; private set; }
 
-            public Task<IChannel> CreateChannelAsync(CreateChannelOptions options = null,
-                CancellationToken cancellationToken = new CancellationToken()) =>
-                throw new NotImplementedException();
+            public Task<IChannel> CreateChannelAsync(CreateChannelOptions options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
             public ushort ChannelMax { get; }
             public IDictionary<string, object> ClientProperties { get; }

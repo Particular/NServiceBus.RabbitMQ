@@ -43,8 +43,7 @@
         {
             await using var connection = await brokerConnection.Create(cancellationToken);
             var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
-            await using var channel = await connection.CreateChannelAsync(createChannelOptions,
-                cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken);
 
             for (int currentDelayLevel = DelayInfrastructure.MaxLevel; currentDelayLevel >= 0 && !cancellationToken.IsCancellationRequested; currentDelayLevel--)
             {
@@ -165,7 +164,7 @@
         }
 
         static bool MessageIsInvalid(BasicGetResult? message) =>
-            message?.BasicProperties.Headers == null
+            message?.BasicProperties?.Headers == null
             || !message.BasicProperties.Headers.ContainsKey(DelayInfrastructure.DelayHeader)
             || !message.BasicProperties.Headers.ContainsKey(timeSentHeader);
 

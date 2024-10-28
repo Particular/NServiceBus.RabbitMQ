@@ -68,11 +68,8 @@
 
         async Task<MigrationStage> MoveMessagesToHoldingQueue(IConnection connection, CancellationToken cancellationToken)
         {
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true,
-                publisherConfirmationTrackingEnabled: true,
-                outstandingPublisherConfirmationsRateLimiter: null);
-            await using var channel = await connection.CreateChannelAsync(createChannelOptions,
-                cancellationToken: cancellationToken);
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
+            await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken);
 
             console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
@@ -133,8 +130,7 @@
         async Task<MigrationStage> RestoreMessages(IConnection connection, CancellationToken cancellationToken)
         {
             var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
-            await using var channel = await connection.CreateChannelAsync(createChannelOptions,
-                cancellationToken: cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken);
 
             await channel.QueueBindAsync(queueName, queueName, string.Empty, cancellationToken: cancellationToken);
             console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
