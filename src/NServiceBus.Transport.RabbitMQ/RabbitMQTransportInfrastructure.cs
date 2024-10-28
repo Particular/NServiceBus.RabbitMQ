@@ -5,6 +5,7 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
@@ -17,6 +18,7 @@
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
+            Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
         {
@@ -26,7 +28,7 @@
             this.networkRecoveryInterval = networkRecoveryInterval;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
 
-            Dispatcher = new MessageDispatcher(channelProvider, supportsDelayedDelivery);
+            Dispatcher = new MessageDispatcher(channelProvider, messageCustomization, supportsDelayedDelivery);
             Receivers = receiverSettings.Select(x => CreateMessagePump(hostSettings, x, messageConverter, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation))
                 .ToDictionary(x => x.Id, x => x);
         }
