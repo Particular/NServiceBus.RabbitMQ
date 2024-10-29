@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Net.Http;
+    using System.Text.Json;
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
@@ -97,7 +99,7 @@
             return Task.CompletedTask;
         }
 
-        public Task StartReceive(CancellationToken cancellationToken = default)
+        public async Task StartReceive(CancellationToken cancellationToken = default)
         {
             messagePumpCancellationTokenSource = new CancellationTokenSource();
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
@@ -108,8 +110,9 @@
                 (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
 
             ConnectToBroker();
-
-            return Task.CompletedTask;
+            var value = await QueryManagenmentApi("queues").ConfigureAwait(false);
+            _ = value;
+            //return Task.CompletedTask;
         }
 
         public async Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
@@ -119,6 +122,25 @@
             await StopReceive(cancellationToken).ConfigureAwait(false);
             maxConcurrency = limitations.MaxConcurrency;
             await StartReceive(CancellationToken.None).ConfigureAwait(false);
+        }
+
+        async Task<string> QueryManagenmentApi(string requestUri)
+        {
+            var client = connectionFactory.CreateManagementClient();
+            HttpResponseMessage response = await client.GetAsync(requestUri).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                var queueResponse = JsonSerializer.Deserialize<List<QueueResponse>>(data);
+                _ = queueResponse;
+                Console.WriteLine("Success: " + data);
+                return data;
+            }
+            else
+            {
+                Console.WriteLine("Error: " + response.StatusCode);
+                throw new Exception($"Error: {response.StatusCode}");
+            }
         }
 
         void ConnectToBroker()

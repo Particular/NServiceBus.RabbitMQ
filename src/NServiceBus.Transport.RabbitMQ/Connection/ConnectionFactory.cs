@@ -4,8 +4,11 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Text;
+    using System.Net.Http;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
+    using System.Net.Http.Headers;
     using global::RabbitMQ.Client;
     using Logging;
     using Support;
@@ -113,6 +116,19 @@
         public IConnection CreatePublishConnection() => CreateConnection($"{endpointName} Publish", false);
 
         public IConnection CreateAdministrationConnection() => CreateConnection($"{endpointName} Administration", false);
+
+        public HttpClient CreateManagementClient()
+        {
+            var client = new HttpClient
+            {
+                BaseAddress = new Uri("http://localhost:15672/api/")
+            };
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{connectionFactory.UserName}:{connectionFactory.Password}")));
+
+            return client;
+        }
 
         public IConnection CreateConnection(string connectionName, bool automaticRecoveryEnabled = true, int consumerDispatchConcurrency = 1)
         {
