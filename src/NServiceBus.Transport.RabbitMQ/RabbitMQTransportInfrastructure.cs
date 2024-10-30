@@ -5,6 +5,7 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
@@ -14,10 +15,12 @@
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
+        readonly IManagementApi managementApi;
 
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
+            IManagementApi managementApi,
             Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
@@ -25,6 +28,7 @@
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
+            this.managementApi = managementApi;
             this.networkRecoveryInterval = networkRecoveryInterval;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
 
