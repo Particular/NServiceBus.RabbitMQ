@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
@@ -186,13 +187,15 @@
             var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalClusterNodes);
 
+            var managementClient = new ManagementClient(ConnectionConfiguration);
+
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
 
             var converter = new MessageConverter(MessageIdStrategy);
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
-                RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
+                RoutingTopology, channelProvider, converter, managementClient, TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
 
             if (hostSettings.SetupInfrastructure)
