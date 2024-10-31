@@ -10,13 +10,13 @@ using NServiceBus.Transport.RabbitMQ.ManagementApi.Converters;
 class Queue
 {
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     [JsonPropertyName("delivery_limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int DeliveryLimit { get; set; }
 
     [JsonExtensionData]
-    public IReadOnlyDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
+    public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
 }
 
