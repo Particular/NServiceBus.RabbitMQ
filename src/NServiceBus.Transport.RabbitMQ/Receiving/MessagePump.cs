@@ -11,6 +11,7 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
+    using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
     sealed partial class MessagePump : IMessageReceiver
     {
@@ -22,6 +23,7 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
+        readonly IManagementApi managementApi;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
@@ -50,6 +52,7 @@
             MessageConverter messageConverter,
             string consumerTag,
             ChannelProvider channelProvider,
+            IManagementApi managementApi,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
             Action<string, Exception,
@@ -61,6 +64,7 @@
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
+            this.managementApi = managementApi;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.criticalErrorAction = criticalErrorAction;
@@ -92,6 +96,12 @@
             if (settings.PurgeOnStartup)
             {
                 await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
+            }
+
+            var queue = await managementApi.GetQueue(ReceiveAddress, cancellationToken).ConfigureAwait(false);
+            if (queue.DeliveryLimit != -1)
+            {
+                Logger.WarnFormat("Delivery limit set to {0}.", queue.DeliveryLimit);
             }
         }
 

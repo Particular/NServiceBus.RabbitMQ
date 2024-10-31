@@ -38,8 +38,11 @@
         IMessageReceiver CreateMessagePump(HostSettings hostSettings, ReceiveSettings settings, MessageConverter messageConverter, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
-            var receiveAddress = ToTransportAddress(settings.ReceiveAddress);
-            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+
+            return new MessagePump(
+                settings, connectionFactory, routingTopology, messageConverter,
+                consumerTag, channelProvider, managementApi,
+                timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
         internal async Task SetupInfrastructure(string[] sendingQueues, CancellationToken cancellationToken = default)
