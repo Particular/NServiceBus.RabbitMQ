@@ -7,23 +7,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using NServiceBus.Transport.RabbitMQ.ManagementApi.Converters;
 
-class Queue
+class PolicyDefinition
 {
-    [JsonPropertyName("name")]
-    public required string Name { get; set; }
-
-    [JsonPropertyName("delivery_limit")]
+    [JsonPropertyName("delivery-limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int DeliveryLimit { get; set; }
-
-    [JsonPropertyName("effective_policy_definition")]
-    public required PolicyDefinition EffectivePolicyDefinition { get; set; }
-
-    [JsonPropertyName("policy")]
-    public string? AppliedPolicyName { get; set; }
-
-    [JsonPropertyName("operator_policy")]
-    public string? AppliedOperatorPolicyName { get; set; }
 
     [JsonExtensionData]
     public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
