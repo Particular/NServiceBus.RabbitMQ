@@ -11,12 +11,12 @@
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-    <PackageReference Include="NUnit" Version="4.1.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.2.3 />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="8.2.4" />
   </ItemGroup>
 
   <ItemGroup>
