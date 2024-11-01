@@ -11,9 +11,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
     static class ConnectionExtensions
     {
-        public static async Task VerifyBrokerRequirements(this IConnection connection, CancellationToken cancellationToken = default)
+        public static Version GetBrokerVersion(this IConnection connection)
         {
-            var minimumBrokerVersion = Version.Parse("3.10.0");
             var versionValue = connection.ServerProperties?["version"];
             var versionBytes = Array.Empty<byte>();
 
@@ -24,7 +23,20 @@ namespace NServiceBus.Transport.RabbitMQ
 
             var brokerVersionString = Encoding.UTF8.GetString(versionBytes);
 
-            if (Version.TryParse(brokerVersionString, out var brokerVersion) && brokerVersion < minimumBrokerVersion)
+            if (!Version.TryParse(brokerVersionString, out var brokerVersion))
+            {
+                throw new FormatException($"Could not parse broker version: {brokerVersion}");
+            }
+
+            return brokerVersion;
+        }
+
+        public static async Task VerifyBrokerRequirements(this IConnection connection, CancellationToken cancellationToken = default)
+        {
+            var minimumBrokerVersion = Version.Parse("3.10.0");
+
+            var brokerVersion = connection.GetBrokerVersion();
+            if (brokerVersion < minimumBrokerVersion)
             {
                 throw new Exception($"An unsupported broker version was detected: {brokerVersion}. The broker must be at least version {minimumBrokerVersion}.");
             }
