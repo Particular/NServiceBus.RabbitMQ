@@ -18,7 +18,7 @@
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="2.3.0" PrivateAssets="All" />
   </ItemGroup>
-  
+
   <PropertyGroup>
     <PackageId>NServiceBus.RabbitMQ</PackageId>
     <Description>RabbitMQ support for NServiceBus</Description>
