@@ -8,5 +8,7 @@ using NServiceBus.Transport.RabbitMQ.ManagementApi.Models;
 
 interface IManagementApi
 {
-    Task<Queue?> GetQueue(string queueName, CancellationToken cancellationToken = default);
+    Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default);
+
+    Task<Response<Overview?>> GetOverview(CancellationToken cancellationToken = default);
 }
