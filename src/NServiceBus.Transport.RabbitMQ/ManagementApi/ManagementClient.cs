@@ -35,14 +35,39 @@ class ManagementClient : IManagementApi
             Convert.ToBase64String(Encoding.ASCII.GetBytes($"{connectionConfiguration.UserName}:{connectionConfiguration.Password}")));
     }
 
-    public async Task<Queue?> GetQueue(string queueName, CancellationToken cancellationToken = default)
+    public async Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default)
     {
+        Queue? value = null;
+
         var escapedQueueName = Uri.EscapeDataString(queueName);
         var response = await httpClient.GetAsync($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken)
             .ConfigureAwait(false);
 
-        return await response.EnsureSuccessStatusCode()
-            .Content.ReadFromJsonAsync<Queue>(cancellationToken)
-            .ConfigureAwait(false);
+        if (response.IsSuccessStatusCode)
+        {
+            value = await response.Content.ReadFromJsonAsync<Queue>(cancellationToken).ConfigureAwait(false);
+        }
+
+        return new Response<Queue?>(
+            response.StatusCode,
+            response.ReasonPhrase ?? string.Empty,
+            value);
+    }
+
+    public async Task<Response<Overview?>> GetOverview(CancellationToken cancellationToken = default)
+    {
+        Overview? value = null;
+
+        var response = await httpClient.GetAsync($"api/overview", cancellationToken).ConfigureAwait(false);
+
+        if (response.IsSuccessStatusCode)
+        {
+            value = await response.Content.ReadFromJsonAsync<Overview>(cancellationToken).ConfigureAwait(false);
+        }
+
+        return new Response<Overview?>(
+            response.StatusCode,
+            response.ReasonPhrase ?? string.Empty,
+            value);
     }
 }
