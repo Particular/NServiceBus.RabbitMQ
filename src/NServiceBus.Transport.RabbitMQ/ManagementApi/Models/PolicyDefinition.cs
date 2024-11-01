@@ -11,7 +11,7 @@ class PolicyDefinition
 {
     [JsonPropertyName("delivery-limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
-    public int DeliveryLimit { get; set; }
+    public int? DeliveryLimit { get; set; }
 
     [JsonExtensionData]
     public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();

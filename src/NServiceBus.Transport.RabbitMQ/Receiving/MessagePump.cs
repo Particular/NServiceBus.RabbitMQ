@@ -55,8 +55,7 @@
             IManagementApi managementApi,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
-            Action<string, Exception,
-            CancellationToken> criticalErrorAction,
+            Action<string, Exception, CancellationToken> criticalErrorAction,
             TimeSpan retryDelay)
         {
             this.settings = settings;
@@ -98,11 +97,31 @@
                 await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
 
-            var queue = await managementApi.GetQueue(ReceiveAddress, cancellationToken).ConfigureAwait(false);
-            if (queue.DeliveryLimit != -1)
+            await ValidateDeliveryLimit(cancellationToken).ConfigureAwait(false);
+        }
+
+        async Task ValidateDeliveryLimit(CancellationToken cancellationToken)
+        {
+            var response = await managementApi.GetQueue(ReceiveAddress, cancellationToken).ConfigureAwait(false);
+
+            if (!response.HasValue)
             {
-                Logger.WarnFormat("Delivery limit set to {0}.", queue.DeliveryLimit);
+                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
+                Logger.WarnFormat("Could not determine delivery limit for {0}. ({1}: {2})", ReceiveAddress, response.StatusCode, response.Reason);
+                return;
             }
+
+            var queue = response.Value;
+            if (queue.DeliveryLimit == -1)
+            {
+                return;
+            }
+
+            if (queue.EffectivePolicyDefinition.DeliveryLimit.HasValue &&
+                queue.EffectivePolicyDefinition.DeliveryLimit != -1)
+            {
+            }
+            Logger.WarnFormat("Delivery limit set to {0}.", queue.DeliveryLimit);
         }
 
         public async Task StartReceive(CancellationToken cancellationToken = default)
