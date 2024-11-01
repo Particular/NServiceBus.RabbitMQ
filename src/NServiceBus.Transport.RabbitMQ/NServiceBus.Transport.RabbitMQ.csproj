@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BitFaster.Caching" Version="[2.0.0, 3.0.0)" />
-    <PackageReference Include="NServiceBus" Version="8.0.0" />
+    <PackageReference Include="NServiceBus" Version="8.2.4" />
     <PackageReference Include="RabbitMQ.Client" Version="6.4.0" />
   </ItemGroup>
 
@@ -17,11 +17,6 @@
     <PackageReference Include="Fody" Version="6.6.3" PrivateAssets="All" />
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="2.3.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup Label="Direct references to transitive dependencies to avoid versions with CVE">
-    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
   </ItemGroup>
   
   <PropertyGroup>
