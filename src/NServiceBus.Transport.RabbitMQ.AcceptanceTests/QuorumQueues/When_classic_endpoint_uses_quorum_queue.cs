@@ -25,7 +25,7 @@
                 .Run());
 
             Assert.That(exception.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type' for queue 'ClassicEndpointUsesQuorumQueue.ClassicQueueEndpoint'"));
-            Assert.That(exception.Message, Does.Contain("received none but current is the value 'quorum'"));
+            Assert.That(exception.Message, Does.Contain("received 'classic' but current is 'quorum'"));
         }
 
         class ClassicQueueEndpoint : EndpointConfigurationBuilder
