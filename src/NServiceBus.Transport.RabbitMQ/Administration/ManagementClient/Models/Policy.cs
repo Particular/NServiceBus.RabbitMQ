@@ -9,21 +9,26 @@ using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class Policy
 {
+    [JsonRequired]
     [JsonPropertyName("vhost")]
     public string VirtualHost { get; set; } = "/";
 
+    [JsonRequired]
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public string? Name { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("pattern")]
     public required string Pattern { get; set; }
 
+    [JsonRequired]
     [JsonConverter(typeof(PolicyTargetConverter))]
     [JsonPropertyName("apply-to")]
-    public required PolicyTarget ApplyTo { get; set; }
+    public PolicyTarget? ApplyTo { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("definition")]
-    public required PolicyDefinition Definition { get; set; }
+    public PolicyDefinition? Definition { get; set; }
 
     [JsonPropertyName("priority")]
     public int Priority { get; set; }

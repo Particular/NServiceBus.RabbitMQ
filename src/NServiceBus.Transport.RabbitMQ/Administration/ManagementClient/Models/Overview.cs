@@ -10,26 +10,32 @@ using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class Overview
 {
+    [JsonRequired]
     [JsonPropertyName("product_name")]
-    public required string ProductName { get; set; }
+    public string? ProductName { get; set; }
 
+    [JsonRequired]
     [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("management_version")]
-    public required Version ManagementVersion { get; set; }
+    public Version? ManagementVersion { get; set; }
 
+    [JsonRequired]
     [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("product_version")]
-    public required Version ProductVersion { get; set; }
+    public Version? ProductVersion { get; set; }
 
+    [JsonRequired]
     [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("rabbitmq_version")]
-    public required Version RabbitMqVersion { get; set; }
+    public Version? RabbitMqVersion { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("cluster_name")]
-    public required string ClusterName { get; set; }
+    public string? ClusterName { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("node")]
-    public required string Node { get; set; }
+    public string? Node { get; set; }
 
     [JsonExtensionData]
     public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
