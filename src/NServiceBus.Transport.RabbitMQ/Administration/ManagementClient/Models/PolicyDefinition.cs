@@ -1,11 +1,11 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.ManagementApi.Models;
+namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
 
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using NServiceBus.Transport.RabbitMQ.ManagementApi.Converters;
+using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class PolicyDefinition
 {

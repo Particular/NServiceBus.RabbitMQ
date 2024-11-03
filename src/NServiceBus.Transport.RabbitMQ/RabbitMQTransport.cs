@@ -5,7 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.RabbitMQ.ManagementApi;
+    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
     using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
     using Transport;
