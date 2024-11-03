@@ -11,8 +11,8 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
-    using NServiceBus.Transport.RabbitMQ.ManagementApi;
-    using NServiceBus.Transport.RabbitMQ.ManagementApi.Models;
+    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
+    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
 
     sealed partial class MessagePump : IMessageReceiver
     {

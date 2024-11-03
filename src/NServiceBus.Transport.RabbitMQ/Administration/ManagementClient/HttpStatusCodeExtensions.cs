@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
+namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
 
 using System.Net;
 
