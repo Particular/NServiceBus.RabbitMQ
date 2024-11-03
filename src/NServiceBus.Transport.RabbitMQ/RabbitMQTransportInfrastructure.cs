@@ -5,7 +5,7 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.RabbitMQ.ManagementApi;
+    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
     using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
