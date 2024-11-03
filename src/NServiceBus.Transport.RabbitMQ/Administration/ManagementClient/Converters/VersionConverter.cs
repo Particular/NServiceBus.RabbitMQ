@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.ManagementApi.Converters;
+namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 using System;
 using System.Text.Json;
