@@ -224,7 +224,7 @@
             legacyMode = true;
         }
 
-        void ValidateAndApplyLegacyConfiguration()
+        internal void ValidateAndApplyLegacyConfiguration()
         {
             if (!legacyMode)
             {
