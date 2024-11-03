@@ -9,19 +9,23 @@ using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class Queue
 {
+    [JsonRequired]
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public string? Name { get; set; }
 
     [JsonPropertyName("delivery_limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int DeliveryLimit { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("effective_policy_definition")]
-    public required PolicyDefinition EffectivePolicyDefinition { get; set; }
+    public PolicyDefinition? EffectivePolicyDefinition { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("policy")]
     public string? AppliedPolicyName { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("operator_policy")]
     public string? AppliedOperatorPolicyName { get; set; }
 
