@@ -20,15 +20,12 @@ class Queue
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int DeliveryLimit { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("effective_policy_definition")]
     public PolicyDefinition? EffectivePolicyDefinition { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("policy")]
     public string? AppliedPolicyName { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("operator_policy")]
     public string? AppliedOperatorPolicyName { get; set; }
 
