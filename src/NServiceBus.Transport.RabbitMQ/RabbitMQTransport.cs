@@ -11,7 +11,6 @@
     using Transport.RabbitMQ;
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
-
     /// <summary>
     /// Transport definition for RabbitMQ.
     /// </summary>
