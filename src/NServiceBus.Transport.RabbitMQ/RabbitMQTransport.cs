@@ -199,17 +199,35 @@
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
-            var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalClusterNodes);
+            var connectionFactory = new ConnectionFactory(
+                hostSettings.Name,
+                ConnectionConfiguration,
+                certCollection,
+                !ValidateRemoteCertificate,
+                UseExternalAuthMechanism,
+                HeartbeatInterval,
+                NetworkRecoveryInterval,
+                additionalClusterNodes
+            );
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
 
             var converter = new MessageConverter(MessageIdStrategy);
 
-            var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
-                RoutingTopology, channelProvider, converter, OutgoingNativeMessageCustomization, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
+            var infra = new RabbitMQTransportInfrastructure(
+                hostSettings,
+                receivers,
+                connectionFactory,
+                RoutingTopology,
+                channelProvider,
+                converter,
+                OutgoingNativeMessageCustomization,
+                TimeToWaitBeforeTriggeringCircuitBreaker,
+                PrefetchCountCalculation,
+                NetworkRecoveryInterval,
+                SupportsDelayedDelivery
+            );
 
             if (hostSettings.SetupInfrastructure)
             {

@@ -13,7 +13,11 @@
         readonly Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization;
         readonly bool supportsDelayedDelivery;
 
-        public MessageDispatcher(ChannelProvider channelProvider, Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization, bool supportsDelayedDelivery)
+        public MessageDispatcher(
+            ChannelProvider channelProvider,
+            Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
+            bool supportsDelayedDelivery
+        )
         {
             this.channelProvider = channelProvider;
             this.messageCustomization = messageCustomization ?? (static (_, _) => { });
