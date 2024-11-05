@@ -9,26 +9,28 @@ using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class Policy
 {
-    [JsonRequired]
+    // This is because Fody is throwing an error when using the 'required' keyword that ctor has an obsoleteAttribute.
+    // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-11.0/required-members#metadata-representation
+    [DoNotWarnAboutObsoleteUsage]
+    public Policy()
+    {
+    }
+
     [JsonPropertyName("vhost")]
     public string VirtualHost { get; set; } = "/";
 
-    [JsonRequired]
     [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    public required string Name { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("pattern")]
     public required string Pattern { get; set; }
 
-    [JsonRequired]
     [JsonConverter(typeof(PolicyTargetConverter))]
     [JsonPropertyName("apply-to")]
-    public PolicyTarget? ApplyTo { get; set; }
+    public required PolicyTarget ApplyTo { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("definition")]
-    public PolicyDefinition? Definition { get; set; }
+    public required PolicyDefinition Definition { get; set; }
 
     [JsonPropertyName("priority")]
     public int Priority { get; set; }
