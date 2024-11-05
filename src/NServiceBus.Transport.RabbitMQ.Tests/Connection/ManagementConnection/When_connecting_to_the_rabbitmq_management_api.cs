@@ -41,18 +41,35 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
         }
 
         [Test]
-        public async Task GetQueue_Should_Return_Queue_When_Exists()
+        public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
         {
             var client = new ManagementClient(connectionConfiguration);
 
             var response = await client.GetQueue(ReceiverQueue);
 
-            // Assert
             Assert.Multiple(() =>
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(response.Value, Is.Not.Null);
                 Assert.That(response.Value?.Name, Is.EqualTo(ReceiverQueue));
+            });
+        }
+
+        [Test]
+        public async Task GetOverview_Should_Return_Broker_Information_When_Exists()
+        {
+            var client = new ManagementClient(connectionConfiguration);
+
+            var response = await client.GetOverview();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(response.Value, Is.Not.Null);
+                Assert.That(response.Value?.ProductName, Is.EqualTo("RabbitMQ"));
+                Assert.That(response.Value?.ManagementVersion, Is.GreaterThanOrEqualTo(Version.Parse("4.0.0")));
+                Assert.That(response.Value?.ProductVersion, Is.GreaterThanOrEqualTo(Version.Parse("4.0.0")));
+                Assert.That(response.Value?.RabbitMqVersion, Is.GreaterThanOrEqualTo(Version.Parse("4.0.0")));
             });
         }
     }
