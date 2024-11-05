@@ -10,32 +10,33 @@ using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class Overview
 {
-    [JsonRequired]
-    [JsonPropertyName("product_name")]
-    public string? ProductName { get; set; }
+    // This is because Fody is throwing an error when using the 'required' keyword that ctor has an obsoleteAttribute.
+    // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-11.0/required-members#metadata-representation
+    [DoNotWarnAboutObsoleteUsage]
+    public Overview()
+    {
+    }
 
-    [JsonRequired]
+    [JsonPropertyName("product_name")]
+    public required string ProductName { get; set; }
+
     [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("management_version")]
-    public Version? ManagementVersion { get; set; }
+    public required Version ManagementVersion { get; set; }
 
-    [JsonRequired]
     [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("product_version")]
-    public Version? ProductVersion { get; set; }
+    public required Version ProductVersion { get; set; }
 
-    [JsonRequired]
     [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("rabbitmq_version")]
-    public Version? RabbitMqVersion { get; set; }
+    public required Version RabbitMqVersion { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("cluster_name")]
-    public string? ClusterName { get; set; }
+    public required string ClusterName { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("node")]
-    public string? Node { get; set; }
+    public required string Node { get; set; }
 
     [JsonExtensionData]
     public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
