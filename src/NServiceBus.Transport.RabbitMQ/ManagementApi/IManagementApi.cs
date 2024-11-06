@@ -11,4 +11,6 @@ interface IManagementApi
     Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default);
 
     Task<Response<Overview?>> GetOverview(CancellationToken cancellationToken = default);
+
+    Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default);
 }

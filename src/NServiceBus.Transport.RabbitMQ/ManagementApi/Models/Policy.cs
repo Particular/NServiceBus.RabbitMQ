@@ -5,19 +5,18 @@ namespace NServiceBus.Transport.RabbitMQ.ManagementApi.Models;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using NServiceBus.Transport.RabbitMQ.ManagementApi.Converters;
 
 class Policy
 {
     [JsonPropertyName("vhost")]
-    public required string VirtualHost { get; set; }
+    public string VirtualHost { get; set; } = "/";
 
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
     [JsonPropertyName("pattern")]
-    public required Regex Pattern { get; set; }
+    public required string Pattern { get; set; }
 
     [JsonConverter(typeof(PolicyTargetConverter))]
     [JsonPropertyName("apply-to")]
