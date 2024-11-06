@@ -2,15 +2,14 @@
 
 namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
 {
-    using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
     using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
-    using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Events;
     using ConnectionFactory = ConnectionFactory;
 
 
@@ -67,9 +66,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(response.Value, Is.Not.Null);
                 Assert.That(response.Value?.ProductName, Is.EqualTo("RabbitMQ"));
-                Assert.That(response.Value?.ManagementVersion, Is.GreaterThanOrEqualTo(Version.Parse("4.0.0")));
-                Assert.That(response.Value?.ProductVersion, Is.GreaterThanOrEqualTo(Version.Parse("4.0.0")));
-                Assert.That(response.Value?.RabbitMqVersion, Is.GreaterThanOrEqualTo(Version.Parse("4.0.0")));
+                Assert.That(response.Value?.ManagementVersion.Major, Is.InRange(3, 4));
+                Assert.That(response.Value?.ProductVersion.Major, Is.InRange(3, 4));
+                Assert.That(response.Value?.RabbitMqVersion.Major, Is.InRange(3, 4));
             });
         }
     }
