@@ -17,9 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BitFaster.Caching" Version="2.5.2" />
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.2.2" />
-    <PackageReference Include="RabbitMQ.Client" Version="7.0.0-rc.14" />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.2.3" />
   </ItemGroup>
 
   <ItemGroup>

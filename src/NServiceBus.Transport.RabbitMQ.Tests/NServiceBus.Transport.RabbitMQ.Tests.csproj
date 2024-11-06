@@ -19,11 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BitFaster.Caching" Version="2.5.2" />
-    <PackageReference Include="NServiceBus" Version="9.2.2" />
     <PackageReference Include="Particular.Approvals" Version="2.0.0" />
     <PackageReference Include="PublicApiGenerator" Version="11.1.0" />
-    <PackageReference Include="RabbitMQ.Client" Version="7.0.0-rc.14" />
   </ItemGroup>
 
 </Project>
