@@ -5,9 +5,10 @@ namespace NServiceBus.Transport.RabbitMQ.Administration;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ManagementClient;
+using ManagementClient.Models;
 using NServiceBus.Logging;
-using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
-using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
+using Polly;
 
 class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFactory managementClientFactory) : IBrokerVerifier
 {
@@ -84,15 +85,14 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
             return;
         }
 
-        var response = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
-        if (!response.HasValue)
+        var queue = await GetFullQueueDetails(queueName, cancellationToken).ConfigureAwait(false);
+        if (queue is null)
         {
             // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
-            Logger.WarnFormat("Could not determine delivery limit for {0}. ({1}: {2})", queueName, response.StatusCode, response.Reason);
+            Logger.WarnFormat("Could not retrieve full queue details for {0}.", queueName);
             return;
         }
 
-        var queue = response.Value;
         if (queue.DeliveryLimit == -1)
         {
             return;
@@ -107,7 +107,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
             return;
         }
 
-        if (queue.EffectivePolicyDefinition.DeliveryLimit.HasValue &&
+        if (queue.EffectivePolicyDefinition!.DeliveryLimit.HasValue &&
             queue.EffectivePolicyDefinition.DeliveryLimit != -1)
         {
             // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
@@ -117,6 +117,36 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
         }
 
         await SetDeliveryLimitViaPolicy(queue, cancellationToken).ConfigureAwait(false);
+    }
+
+    async Task<Queue?> GetFullQueueDetails(string queueName, CancellationToken cancellationToken)
+    {
+        var retryPolicy = Polly.Policy
+            .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
+            .WaitAndRetryAsync(
+                5,
+                attempt => TimeSpan.FromMilliseconds(100 * Math.Pow(2, attempt - 1)),
+                onRetry: (outcome, timespan, retryCount, context) =>
+                {
+                    if (outcome.Exception is not null)
+                    {
+                        Logger.Error($"Failed to get {queueName} queue", outcome.Exception);
+                    }
+                    else if (!outcome.Result.HasValue)
+                    {
+                        var response = outcome.Result;
+                        Logger.WarnFormat("Could not get queue details for {0} - Attempt #{1}. ({2}: {3})", queueName, retryCount, response.StatusCode, response.Reason);
+                    }
+                    else
+                    {
+                        var response = outcome.Result;
+                        Logger.WarnFormat("Did not receive full queue details for {0} - Attempt #{1})", queueName, retryCount);
+                    }
+                });
+
+        var response = await retryPolicy.ExecuteAsync(() => managementClient.GetQueue(queueName, cancellationToken)).ConfigureAwait(false);
+
+        return response?.Value?.EffectivePolicyDefinition is not null ? response.Value : null;
     }
 
     async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
@@ -135,7 +165,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
             return;
         }
 
-        var policy = new Policy
+        var policy = new ManagementClient.Models.Policy
         {
             Name = $"nsb.{queue.Name}.delivery-limit",
             ApplyTo = PolicyTarget.QuorumQueues,
