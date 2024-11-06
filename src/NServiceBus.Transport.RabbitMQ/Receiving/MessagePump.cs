@@ -11,8 +11,7 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
-    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
-    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
+    using NServiceBus.Transport.RabbitMQ.Administration;
 
     sealed partial class MessagePump : IMessageReceiver
     {
@@ -24,7 +23,7 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
-        readonly IManagementClient managementApi;
+        readonly IBrokerVerifier brokerVerifier;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
@@ -42,8 +41,6 @@
         CancellationTokenSource messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection connection;
-        Overview overview;
-        Version brokerVersion;
 
         // Stop
         TaskCompletionSource connectionShutdownCompleted;
@@ -55,7 +52,7 @@
             MessageConverter messageConverter,
             string consumerTag,
             ChannelProvider channelProvider,
-            IManagementClient managementApi,
+            IBrokerVerifier brokerVerifier,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
             Action<string, Exception, CancellationToken> criticalErrorAction,
@@ -66,7 +63,7 @@
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
-            this.managementApi = managementApi;
+            this.brokerVerifier = brokerVerifier;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.criticalErrorAction = criticalErrorAction;
@@ -95,103 +92,12 @@
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
 
-            await CheckConnectivity(cancellationToken).ConfigureAwait(false);
-
             if (settings.PurgeOnStartup)
             {
                 await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
 
-            await ValidateDeliveryLimit(cancellationToken).ConfigureAwait(false);
-        }
-
-        internal async Task CheckConnectivity(CancellationToken cancellationToken = default)
-        {
-            var response = await managementApi.GetOverview(cancellationToken).ConfigureAwait(false);
-            if (response.HasValue)
-            {
-                overview = response.Value;
-                brokerVersion = overview.RabbitMqVersion;
-            }
-            else
-            {
-                // TODO: Need logic/config settings for determining which action to take if management API unavailable, e.g. should we throw an exception to refuse to start, or just log a warning
-                Logger.WarnFormat("Could not access RabbitMQ Management API. ({0}: {1})", response.StatusCode, response.Reason);
-
-                using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-                brokerVersion = connection.GetBrokerVersion();
-            }
-        }
-
-        bool HasManagementApiAccess => overview != null;
-
-        async Task ValidateDeliveryLimit(CancellationToken cancellationToken)
-        {
-            if (!HasManagementApiAccess)
-            {
-                return;
-            }
-
-            var response = await managementApi.GetQueue(ReceiveAddress, cancellationToken).ConfigureAwait(false);
-            if (!response.HasValue)
-            {
-                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
-                Logger.WarnFormat("Could not determine delivery limit for {0}. ({1}: {2})", ReceiveAddress, response.StatusCode, response.Reason);
-                return;
-            }
-
-            var queue = response.Value;
-            if (queue.DeliveryLimit == -1)
-            {
-                return;
-            }
-
-            if (queue.Arguments.DeliveryLimit.HasValue &&
-                queue.Arguments.DeliveryLimit != -1)
-            {
-                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
-                Logger.WarnFormat("The delivery limit for {0} is set to {1} by a queue argument. This can interfere with the transport's retry implementation",
-                    queue.Name, queue.Arguments.DeliveryLimit);
-                return;
-            }
-
-            if (queue.EffectivePolicyDefinition.DeliveryLimit.HasValue &&
-                queue.EffectivePolicyDefinition.DeliveryLimit != -1)
-            {
-                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
-                Logger.WarnFormat("The RabbitMQ policy {2} is setting delivery limit to {1} for {0}.",
-                    queue.Name, queue.EffectivePolicyDefinition.DeliveryLimit, queue.AppliedPolicyName);
-                return;
-            }
-
-            await SetDeliveryLimitViaPolicy(queue, cancellationToken).ConfigureAwait(false);
-        }
-
-        async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
-        {
-            if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
-            {
-                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
-                Logger.WarnFormat("The {0} queue already has an associated policy.", queue.Name, queue.AppliedPolicyName);
-                return;
-            }
-
-            if (brokerVersion.Major < 4)
-            {
-                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
-                Logger.WarnFormat("Cannot override delivery limit on the {0} queue by policy in RabbitMQ versions prior to 4.", queue.Name);
-                return;
-            }
-
-            var policy = new Policy
-            {
-                Name = $"nsb.{queue.Name}.delivery-limit",
-                ApplyTo = PolicyTarget.QuorumQueues,
-                Definition = new PolicyDefinition { DeliveryLimit = -1 },
-                Pattern = queue.Name,
-                Priority = 100
-            };
-            await managementApi.CreatePolicy(policy, cancellationToken).ConfigureAwait(false);
+            await brokerVerifier.ValidateDeliveryLimit(ReceiveAddress, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StartReceive(CancellationToken cancellationToken = default)

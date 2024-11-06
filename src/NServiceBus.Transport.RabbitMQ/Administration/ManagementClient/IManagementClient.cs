@@ -12,5 +12,7 @@ interface IManagementClient
 
     Task<Response<Overview?>> GetOverview(CancellationToken cancellationToken = default);
 
+    Task<Response<FeatureFlagList?>> GetFeatureFlags(CancellationToken cancellationToken = default);
+
     Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default);
 }

@@ -5,22 +5,22 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
+    using NServiceBus.Transport.RabbitMQ.Administration;
     using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
+        readonly IBrokerVerifier brokerVerifier;
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
-        readonly IManagementClient managementApi;
 
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
-            IManagementClient managementApi,
+            IBrokerVerifier brokerVerifier,
             Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
@@ -28,7 +28,7 @@
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
-            this.managementApi = managementApi;
+            this.brokerVerifier = brokerVerifier;
             this.networkRecoveryInterval = networkRecoveryInterval;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
 
@@ -43,7 +43,7 @@
 
             return new MessagePump(
                 settings, connectionFactory, routingTopology, messageConverter,
-                consumerTag, channelProvider, managementApi,
+                consumerTag, channelProvider, brokerVerifier,
                 timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
