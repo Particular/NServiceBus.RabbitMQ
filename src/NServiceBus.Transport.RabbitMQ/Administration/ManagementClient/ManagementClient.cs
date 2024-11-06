@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
 
-class ManagementClient : IManagementApi
+class ManagementClient : IManagementClient
 {
     readonly HttpClient httpClient;
     readonly string virtualHost;
