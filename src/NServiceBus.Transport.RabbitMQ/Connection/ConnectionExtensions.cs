@@ -41,6 +41,15 @@ namespace NServiceBus.Transport.RabbitMQ
                 throw new Exception($"An unsupported broker version was detected: {brokerVersion}. The broker must be at least version {minimumBrokerVersion}.");
             }
 
+            var streamsEnabled = await connection.TryCreateStream(cancellationToken).ConfigureAwait(false);
+            if (!streamsEnabled)
+            {
+                throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+            }
+        }
+
+        public static async Task<bool> TryCreateStream(this IConnection connection, CancellationToken cancellationToken = default)
+        {
             using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var arguments = new Dictionary<string, object?> { { "x-queue-type", "stream" } };
@@ -48,10 +57,11 @@ namespace NServiceBus.Transport.RabbitMQ
             try
             {
                 await channel.QueueDeclareAsync("nsb.v2.verify-stream-flag-enabled", true, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
+                return true;
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken) && ex.Message.Contains("the corresponding feature flag is disabled"))
             {
-                throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+                return false;
             }
         }
     }

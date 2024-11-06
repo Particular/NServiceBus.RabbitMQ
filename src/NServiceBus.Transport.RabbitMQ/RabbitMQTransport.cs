@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport.RabbitMQ.Administration;
     using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
     using RabbitMQ.Client.Events;
     using Transport;
@@ -187,7 +188,9 @@
             var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
                 UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalClusterNodes);
 
-            var managementClient = new ManagementClient(ConnectionConfiguration);
+            var managementClientFactory = new ManagementClientFactory(ConnectionConfiguration);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, managementClientFactory);
+            await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
@@ -195,7 +198,7 @@
             var converter = new MessageConverter(MessageIdStrategy);
 
             var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
-                RoutingTopology, channelProvider, converter, managementClient, TimeToWaitBeforeTriggeringCircuitBreaker,
+                RoutingTopology, channelProvider, converter, brokerVerifier, TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
 
             if (hostSettings.SetupInfrastructure)
