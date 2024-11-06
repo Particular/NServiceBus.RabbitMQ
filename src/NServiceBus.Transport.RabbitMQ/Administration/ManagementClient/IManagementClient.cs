@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
 
-interface IManagementApi
+interface IManagementClient
 {
     Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default);
 

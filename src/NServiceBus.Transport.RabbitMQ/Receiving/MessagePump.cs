@@ -24,7 +24,7 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
-        readonly IManagementApi managementApi;
+        readonly IManagementClient managementApi;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
@@ -55,7 +55,7 @@
             MessageConverter messageConverter,
             string consumerTag,
             ChannelProvider channelProvider,
-            IManagementApi managementApi,
+            IManagementClient managementApi,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
             Action<string, Exception, CancellationToken> criticalErrorAction,
