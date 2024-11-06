@@ -15,12 +15,12 @@
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
-        readonly IManagementApi managementApi;
+        readonly IManagementClient managementApi;
 
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
-            IManagementApi managementApi,
+            IManagementClient managementApi,
             Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
