@@ -11,16 +11,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BitFaster.Caching" Version="2.4.1" />
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.0.0" GeneratePathProperty="true" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.1.2" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
