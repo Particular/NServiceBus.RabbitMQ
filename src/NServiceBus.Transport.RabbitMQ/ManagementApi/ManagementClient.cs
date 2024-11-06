@@ -70,4 +70,15 @@ class ManagementClient : IManagementApi
             response.ReasonPhrase ?? string.Empty,
             value);
     }
+
+    public async Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default)
+    {
+        policy.VirtualHost = virtualHost;
+
+        var escapedPolicyName = Uri.EscapeDataString(policy.Name);
+        var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedPolicyName}", policy, cancellationToken)
+            .ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
+    }
 }

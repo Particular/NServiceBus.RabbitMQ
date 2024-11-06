@@ -146,17 +146,52 @@
                 return;
             }
 
+            if (queue.Arguments.DeliveryLimit.HasValue &&
+                queue.Arguments.DeliveryLimit != -1)
+            {
+                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
+                Logger.WarnFormat("The delivery limit for {0} is set to {1} by a queue argument. This can interfere with the transport's retry implementation",
+                    queue.Name, queue.Arguments.DeliveryLimit);
+                return;
+            }
+
             if (queue.EffectivePolicyDefinition.DeliveryLimit.HasValue &&
                 queue.EffectivePolicyDefinition.DeliveryLimit != -1)
             {
-                Logger.WarnFormat("The RabbitMQ policy {0} is setting delivery limit to {1} for {2}.",
-                    queue.AppliedPolicyName, queue.EffectivePolicyDefinition.DeliveryLimit, ReceiveAddress);
+                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
+                Logger.WarnFormat("The RabbitMQ policy {2} is setting delivery limit to {1} for {0}.",
+                    queue.Name, queue.EffectivePolicyDefinition.DeliveryLimit, queue.AppliedPolicyName);
+                return;
             }
 
-            if (string.IsNullOrEmpty(queue.AppliedPolicyName) && brokerVersion.Major >= 4)
+            await SetDeliveryLimitViaPolicy(queue, cancellationToken).ConfigureAwait(false);
+        }
+
+        async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
             {
-                // Create policy to set default deliver limit to -1
+                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
+                Logger.WarnFormat("The {0} queue already has an associated policy.", queue.Name, queue.AppliedPolicyName);
+                return;
             }
+
+            if (brokerVersion.Major < 4)
+            {
+                // TODO: Need logic/config settings for determining which action to take, e.g. should we throw an exception to refuse to start, or just log a warning
+                Logger.WarnFormat("Cannot override delivery limit on the {0} queue by policy in RabbitMQ versions prior to 4.", queue.Name);
+                return;
+            }
+
+            var policy = new Policy
+            {
+                Name = $"nsb.{queue.Name}.delivery-limit",
+                ApplyTo = PolicyTarget.QuorumQueues,
+                Definition = new PolicyDefinition { DeliveryLimit = -1 },
+                Pattern = queue.Name,
+                Priority = 100
+            };
+            await managementApi.CreatePolicy(policy, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StartReceive(CancellationToken cancellationToken = default)
