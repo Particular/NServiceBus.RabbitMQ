@@ -9,10 +9,9 @@ using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class QueueArguments
 {
-    [JsonRequired]
     [JsonPropertyName("x-queue-type")]
     [JsonConverter(typeof(QueueTypeConverter))]
-    public QueueType QueueType { get; set; }
+    public QueueType? QueueType { get; set; }
 
     [JsonPropertyName("x-delivery-limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
