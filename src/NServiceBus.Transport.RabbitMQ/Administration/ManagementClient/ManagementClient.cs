@@ -71,6 +71,23 @@ class ManagementClient : IManagementClient
             value);
     }
 
+    public async Task<Response<FeatureFlagList?>> GetFeatureFlags(CancellationToken cancellationToken = default)
+    {
+        FeatureFlagList? value = null;
+
+        var response = await httpClient.GetAsync($"api/feature-flags", cancellationToken).ConfigureAwait(false);
+
+        if (response.IsSuccessStatusCode)
+        {
+            value = await response.Content.ReadFromJsonAsync<FeatureFlagList>(cancellationToken).ConfigureAwait(false);
+        }
+
+        return new Response<FeatureFlagList?>(
+            response.StatusCode,
+            response.ReasonPhrase ?? string.Empty,
+            value);
+    }
+
     public async Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default)
     {
         policy.VirtualHost = virtualHost;
