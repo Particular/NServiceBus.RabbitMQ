@@ -76,7 +76,7 @@ class ManagementClient : IManagementApi
         policy.VirtualHost = virtualHost;
 
         var escapedPolicyName = Uri.EscapeDataString(policy.Name);
-        var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedPolicyName}", policy, cancellationToken)
+        var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken)
             .ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
