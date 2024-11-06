@@ -12,6 +12,9 @@ class Queue
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
+    [JsonPropertyName("arguments")]
+    public required QueueArguments Arguments { get; set; }
+
     [JsonPropertyName("delivery_limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int DeliveryLimit { get; set; }
