@@ -8,15 +8,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
-class Overview
+// This is to prevent Fody throwing an error on classes with `required` properties (since the compiler marks the default constructor with an `[Obsolete]` attribute)
+// https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-11.0/required-members#metadata-representation
+[method: DoNotWarnAboutObsoleteUsage]
+class Overview()
 {
-    // This is because Fody is throwing an error when using the 'required' keyword that ctor has an obsoleteAttribute.
-    // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-11.0/required-members#metadata-representation
-    [DoNotWarnAboutObsoleteUsage]
-    public Overview()
-    {
-    }
-
     [JsonPropertyName("product_name")]
     public required string ProductName { get; set; }
 

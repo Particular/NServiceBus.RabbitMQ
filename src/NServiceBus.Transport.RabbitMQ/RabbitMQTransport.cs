@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport.RabbitMQ.Administration;
     using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
     using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
@@ -212,7 +213,9 @@
                 additionalClusterNodes
             );
 
-            var managementClient = new ManagementClient(ConnectionConfiguration);
+            var managementClientFactory = new ManagementClientFactory(ConnectionConfiguration);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, managementClientFactory);
+            await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
@@ -226,7 +229,7 @@
                 RoutingTopology,
                 channelProvider,
                 converter,
-                managementClient,
+                brokerVerifier,
                 OutgoingNativeMessageCustomization,
                 TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation,
