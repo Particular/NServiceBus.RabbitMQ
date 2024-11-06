@@ -14,17 +14,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="8.0.0" />
+    <PackageReference Include="NServiceBus" Version="8.2.4" />
     <PackageReference Include="RabbitMQ.Client" Version="6.4.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Particular.Packaging" Version="2.3.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup Label="Direct references to transitive dependencies to avoid versions with CVE">
-    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
+    <PackageReference Include="Particular.Packaging" Version="4.2.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,10 +34,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.CommandLine.Tests" Key="$(NServiceBusTestsKey)" />
-  </ItemGroup>
-  
-  <ItemGroup Label="Pinned transitive dependencies">
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
