@@ -23,6 +23,8 @@
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
+        X509Certificate2Collection certCollection = null;
+        X509Certificate2Collection ManagementCertCollection = null;
 
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
@@ -42,6 +44,7 @@
 
             RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            ManagementConnectionConfiguration = ConnectionConfiguration;
         }
 
         /// <summary>
@@ -61,9 +64,12 @@
 
             RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            ManagementConnectionConfiguration = ConnectionConfiguration;
         }
 
         internal ConnectionConfiguration ConnectionConfiguration { get; set; }
+
+        internal ConnectionConfiguration ManagementConnectionConfiguration { get; set; }
 
         internal IRoutingTopology RoutingTopology { get; set; }
 
@@ -127,6 +133,11 @@
         /// The certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         public X509Certificate2 ClientCertificate { get; set; }
+
+        /// <summary>
+        /// The certificate to use for client authentication when connecting to the broker management API via TLS.
+        /// </summary>
+        public X509Certificate2 ManagementClientCertificate { get; set; }
 
         /// <summary>
         /// Should the client validate the broker certificate when connecting via TLS.
@@ -200,13 +211,7 @@
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
-
-            X509Certificate2Collection certCollection = null;
-
-            if (ClientCertificate != null)
-            {
-                certCollection = new X509Certificate2Collection(ClientCertificate);
-            }
+            ValidateAndApplyCertCollections();
 
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
@@ -219,6 +224,7 @@
                 additionalClusterNodes
             );
 
+            // var managementClient = new ManagementClient(ManagementConnectionConfiguration, ManagementCertCollection);
             var managementClientFactory = DoNotUseManagementClient ? null : new ManagementClientFactory(ConnectionConfiguration);
             var brokerVerifier = new BrokerVerifier(connectionFactory, managementClientFactory);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
@@ -251,12 +257,23 @@
             return infra;
         }
 
+        void ValidateAndApplyCertCollections()
+        {
+            certCollection ??= ClientCertificate != null
+                ? new X509Certificate2Collection(ClientCertificate) : null;
+
+            ManagementCertCollection = ManagementClientCertificate != null
+                ? new X509Certificate2Collection(ManagementClientCertificate) : certCollection;
+        }
+
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
 
         // Remove all Legacy API stuff below when PreObsoletes are converted
 
         internal string LegacyApiConnectionString { get; set; }
+
+        internal string LegacyManagementApiConnectionString { get; set; }
 
         internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
 
@@ -276,19 +293,31 @@
                 return;
             }
 
+            VaildateTopologyFactory();
+            ValidateConnectionString();
+
+            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
+            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
+
+            ManagementConnectionConfiguration = !string.IsNullOrEmpty(LegacyManagementApiConnectionString)
+                ? ConnectionConfiguration.Create(LegacyManagementApiConnectionString)
+                : ConnectionConfiguration;
+        }
+
+        void VaildateTopologyFactory()
+        {
             if (TopologyFactory == null)
             {
                 throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods. Most new projects should use the Conventional routing topology.");
             }
+        }
 
-            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
-
+        void ValidateConnectionString()
+        {
             if (string.IsNullOrEmpty(LegacyApiConnectionString))
             {
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
-
-            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
         }
     }
 }
