@@ -97,6 +97,36 @@
         }
 
         /// <summary>
+        /// The connection string to use when connecting to the broker management API.
+        /// </summary>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> ManagementConnectionString(this TransportExtensions<RabbitMQTransport> transportExtensions, string connectionString)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+
+            transportExtensions.Transport.LegacyManagementApiConnectionString = connectionString;
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// The connection string to use when connecting to the broker management API.
+        /// </summary>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> ManagementConnectionString(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<string> getConnectionString)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+            ArgumentNullException.ThrowIfNull(getConnectionString);
+
+            transportExtensions.Transport.LegacyManagementApiConnectionString = getConnectionString();
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Allows the user to control how the message ID is determined. Mostly useful when consuming native messages from non-NServiceBus endpoints.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
@@ -216,6 +246,8 @@
             transportExtensions.Transport.ClientCertificate = new X509Certificate2(path, password);
             return transportExtensions;
         }
+
+        //public static TransportExtensions<RabbitMQTransport> SetManagementClient(this TransportExtensions<RabbitMQTransport>)
 
         /// <summary>
         /// Sets the interval for heartbeats between the endpoint and the broker.
