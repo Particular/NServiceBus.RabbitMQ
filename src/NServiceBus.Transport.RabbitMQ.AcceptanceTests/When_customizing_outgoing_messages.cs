@@ -10,7 +10,7 @@
     class When_customizing_outgoing_messages : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Should_set_value()
+        public async Task Should_set_native_property_value()
         {
             var scenario = await Scenario.Define<Context>()
                 .WithEndpoint<Receiver>(b => b.When((bus, c) => bus.SendLocal(new Message())))
