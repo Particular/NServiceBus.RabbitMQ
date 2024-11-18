@@ -98,10 +98,10 @@
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This customization is applied after any configured transport customizations, meaning that 
-        /// any changes made here may override or conflict with previous transport-level adjustments. 
-        /// Exercise caution, as modifying the message at this stage can lead to unintended behavior 
-        /// downstream if the message structure or properties are altered in ways that do not align 
+        /// When provided the customization is called after all other transport customizations configured, meaning that 
+        /// any changes made by customization logic may override or conflict with previous transport-level adjustments. 
+        /// This extension point should be used with caution, as modifying a native message at this stage can lead to unintended behavior 
+        /// downstream if the message content or properties are altered in ways that do not align 
         /// with expectations elsewhere in the system.
         /// </para>
         /// </remarks>
