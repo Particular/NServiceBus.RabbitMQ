@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
@@ -90,6 +91,21 @@
                 timeToWaitBeforeTriggeringCircuitBreaker = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the action that allows customization of the native <see cref="IBasicProperties"/> 
+        /// just before it is dispatched to the rabbitmq client. 
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When provided the customization is called after all other transport customizations configured, meaning that 
+        /// any changes made by customization logic may override or conflict with previous transport-level adjustments. 
+        /// This extension point should be used with caution, as modifying a native message at this stage can lead to unintended behavior 
+        /// downstream if the message content or properties are altered in ways that do not align 
+        /// with expectations elsewhere in the system.
+        /// </para>
+        /// </remarks>
+        public Action<IOutgoingTransportOperation, IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
 
         /// <summary>
         /// The calculation method for the prefetch count. The default is 3 times the maximum concurrency value.
@@ -183,17 +199,35 @@
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
-            var connectionFactory = new ConnectionFactory(hostSettings.Name, ConnectionConfiguration, certCollection, !ValidateRemoteCertificate,
-                UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, additionalClusterNodes);
+            var connectionFactory = new ConnectionFactory(
+                hostSettings.Name,
+                ConnectionConfiguration,
+                certCollection,
+                !ValidateRemoteCertificate,
+                UseExternalAuthMechanism,
+                HeartbeatInterval,
+                NetworkRecoveryInterval,
+                additionalClusterNodes
+            );
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             channelProvider.CreateConnection();
 
             var converter = new MessageConverter(MessageIdStrategy);
 
-            var infra = new RabbitMQTransportInfrastructure(hostSettings, receivers, connectionFactory,
-                RoutingTopology, channelProvider, converter, TimeToWaitBeforeTriggeringCircuitBreaker,
-                PrefetchCountCalculation, NetworkRecoveryInterval, SupportsDelayedDelivery);
+            var infra = new RabbitMQTransportInfrastructure(
+                hostSettings,
+                receivers,
+                connectionFactory,
+                RoutingTopology,
+                channelProvider,
+                converter,
+                OutgoingNativeMessageCustomization,
+                TimeToWaitBeforeTriggeringCircuitBreaker,
+                PrefetchCountCalculation,
+                NetworkRecoveryInterval,
+                SupportsDelayedDelivery
+            );
 
             if (hostSettings.SetupInfrastructure)
             {

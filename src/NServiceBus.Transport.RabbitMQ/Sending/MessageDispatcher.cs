@@ -4,15 +4,22 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using global::RabbitMQ.Client;
 
     class MessageDispatcher : IMessageDispatcher
     {
         readonly ChannelProvider channelProvider;
+        readonly Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization;
         readonly bool supportsDelayedDelivery;
 
-        public MessageDispatcher(ChannelProvider channelProvider, bool supportsDelayedDelivery)
+        public MessageDispatcher(
+            ChannelProvider channelProvider,
+            Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
+            bool supportsDelayedDelivery
+        )
         {
             this.channelProvider = channelProvider;
+            this.messageCustomization = messageCustomization ?? (static (_, _) => { });
             this.supportsDelayedDelivery = supportsDelayedDelivery;
         }
 
@@ -59,6 +66,7 @@
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.Properties);
+            messageCustomization(transportOperation, properties);
 
             return channel.SendMessage(transportOperation.Destination, message, properties, cancellationToken);
         }
@@ -71,6 +79,7 @@
 
             var properties = channel.CreateBasicProperties();
             properties.Fill(message, transportOperation.Properties);
+            messageCustomization(transportOperation, properties);
 
             return channel.PublishMessage(transportOperation.MessageType, message, properties, cancellationToken);
         }
