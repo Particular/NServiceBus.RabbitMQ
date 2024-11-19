@@ -98,10 +98,11 @@
         /// </summary>
         /// <remarks>
         /// <para>
-        /// When provided the customization is called after all other transport customizations configured, meaning that 
-        /// any changes made by customization logic may override or conflict with previous transport-level adjustments. 
-        /// This extension point should be used with caution, as modifying a native message at this stage can lead to unintended behavior 
-        /// downstream if the message content or properties are altered in ways that do not align 
+        /// When provided, the action is invoked after all other transport customizations have executed.
+        /// This means that any changes made by the native customization logic can override or conflict
+        /// with previous transport-level adjustments. This extension point should be used with caution,
+        /// as modifying a native message at this stage can lead to unintended behavior if the message
+        /// content or properties are altered in ways that do not align with expectations.
         /// with expectations elsewhere in the system.
         /// </para>
         /// </remarks>
