@@ -127,7 +127,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
             .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
             .WaitAndRetryAsync(
                 5,
-                attempt => TimeSpan.FromMilliseconds(100 * Math.Pow(2, attempt - 1)),
+                attempt => TimeSpan.FromMilliseconds(3000 * Math.Pow(2, attempt - 1)),
                 onRetry: (outcome, timespan, retryCount, context) =>
                 {
                     if (outcome.Exception is not null)
