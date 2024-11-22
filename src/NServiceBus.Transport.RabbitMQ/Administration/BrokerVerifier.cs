@@ -99,8 +99,13 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
         }
     }
 
-    static bool ShouldOverrideDeliveryLimit(Queue queue)
+    bool ShouldOverrideDeliveryLimit(Queue queue)
     {
+        if (BrokerVersion < RabbitMqVersion4)
+        {
+            return false;
+        }
+
         if (queue.DeliveryLimit == -1)
         {
             return false;
