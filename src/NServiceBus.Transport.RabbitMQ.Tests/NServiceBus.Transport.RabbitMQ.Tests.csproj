@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit.Analyzers" Version="4.3.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
@@ -20,8 +20,8 @@
 
   <ItemGroup>
     <PackageReference Include="BitFaster.Caching" Version="2.5.2" />
-    <PackageReference Include="NServiceBus" Version="9.2.2" />
-    <PackageReference Include="Particular.Approvals" Version="1.0.0" />
+    <PackageReference Include="NServiceBus" Version="9.2.3" />
+    <PackageReference Include="Particular.Approvals" Version="2.0.0" />
     <PackageReference Include="PublicApiGenerator" Version="11.1.0" />
     <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
   </ItemGroup>
