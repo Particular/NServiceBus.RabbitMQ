@@ -139,6 +139,12 @@
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
+        /// Set this to prevent the transport from using the RabbitMQ Management API.
+        /// This is not recommended as it can prevent the transport from setting appropriate delivery limits for retry functionality.
+        /// </summary>
+        public bool DoNotUseManagementClient { get; set; } = false;
+
+        /// <summary>
         /// The interval for heartbeats between the endpoint and the broker.
         /// </summary>
         public TimeSpan HeartbeatInterval
@@ -213,7 +219,7 @@
                 additionalClusterNodes
             );
 
-            var managementClientFactory = new ManagementClientFactory(ConnectionConfiguration);
+            var managementClientFactory = DoNotUseManagementClient ? null : new ManagementClientFactory(ConnectionConfiguration);
             var brokerVerifier = new BrokerVerifier(connectionFactory, managementClientFactory);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 

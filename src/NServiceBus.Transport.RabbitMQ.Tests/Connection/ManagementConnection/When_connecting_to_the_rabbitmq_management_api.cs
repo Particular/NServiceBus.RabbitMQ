@@ -2,6 +2,7 @@
 
 namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
 {
+    using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
@@ -14,9 +15,10 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
 
 
     [TestFixture]
-    class When_connecting_to_the_rabbitmq_management_api : RabbitMQTransport
+    class When_connecting_to_the_rabbitmq_management_api
     {
-        ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create("host=localhost");
+        static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
+        readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
         protected QueueType queueType = QueueType.Quorum;
         protected string ReceiverQueue => GetTestQueueName("ManagementAPITestQueue");
         protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
@@ -24,7 +26,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
         [SetUp]
         public async Task SetUp()
         {
-            var connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfiguration, null, !ValidateRemoteCertificate, UseExternalAuthMechanism, HeartbeatInterval, NetworkRecoveryInterval, []);
+            var connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
             IConnection connection = await connectionFactory.CreateConnection(ReceiverQueue).ConfigureAwait(false);
             var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false);
             var channel = await connection.CreateChannelAsync(createChannelOptions).ConfigureAwait(false);
