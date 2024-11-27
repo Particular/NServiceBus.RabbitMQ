@@ -5,12 +5,14 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Transport.RabbitMQ.Administration;
     using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
+        readonly IBrokerVerifier brokerVerifier;
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
@@ -18,6 +20,7 @@
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
+            IBrokerVerifier brokerVerifier,
             Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
@@ -25,6 +28,7 @@
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
+            this.brokerVerifier = brokerVerifier;
             this.networkRecoveryInterval = networkRecoveryInterval;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
 
@@ -36,8 +40,11 @@
         IMessageReceiver CreateMessagePump(HostSettings hostSettings, ReceiveSettings settings, MessageConverter messageConverter, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
-            var receiveAddress = ToTransportAddress(settings.ReceiveAddress);
-            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+
+            return new MessagePump(
+                settings, connectionFactory, routingTopology, messageConverter,
+                consumerTag, channelProvider, brokerVerifier,
+                timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
         internal async Task SetupInfrastructure(string[] sendingQueues, CancellationToken cancellationToken = default)

@@ -42,7 +42,7 @@
             return brokerConnection;
         }
 
-        string GetConnectionString(string? connectionString, string? connectionStringEnv)
+        static string GetConnectionString(string? connectionString, string? connectionStringEnv)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
