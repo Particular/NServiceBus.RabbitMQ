@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
+namespace NServiceBus.Transport.RabbitMQ.Tests.ManagementConnection
 {
     using System;
     using System.Collections.Generic;
@@ -19,6 +19,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
     {
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
+        readonly ConnectionConfiguration managementConnectionConfiguration = ConnectionConfiguration.Create(connectionString, isManagementConnection: true);
         protected QueueType queueType = QueueType.Quorum;
         protected string ReceiverQueue => GetTestQueueName("ManagementAPITestQueue");
         protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
@@ -44,7 +45,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
         [Test]
         public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
         {
-            var client = new ManagementClient(connectionConfiguration);
+            var client = new ManagementClient(managementConnectionConfiguration);
 
             var response = await client.GetQueue(ReceiverQueue);
 
@@ -59,7 +60,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.Connection.ManagementConnection
         [Test]
         public async Task GetOverview_Should_Return_Broker_Information_When_Exists()
         {
-            var client = new ManagementClient(connectionConfiguration);
+            var client = new ManagementClient(managementConnectionConfiguration);
 
             var response = await client.GetOverview();
 
