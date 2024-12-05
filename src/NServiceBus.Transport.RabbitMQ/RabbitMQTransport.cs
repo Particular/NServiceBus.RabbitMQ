@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.Administration;
@@ -33,7 +34,8 @@
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
+        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, string managementConnectionString = null)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
@@ -44,7 +46,10 @@
 
             RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
-            ManagementConnectionConfiguration = ConnectionConfiguration;
+
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
+                ConnectionConfiguration.Create(BuildManagementConnectionString(ConnectionConfiguration), isManagementConnection: true) :
+                ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
         }
 
         /// <summary>
@@ -52,8 +57,9 @@
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
+        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
         /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery)
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, string managementConnectionString = null)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: enableDelayedDelivery,
                 supportsPublishSubscribe: true,
@@ -64,7 +70,9 @@
 
             RoutingTopology = routingTopology.Create();
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
-            ManagementConnectionConfiguration = ConnectionConfiguration;
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
+                ConnectionConfiguration.Create(BuildManagementConnectionString(ConnectionConfiguration), isManagementConnection: true) :
+                ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
         }
 
         internal ConnectionConfiguration ConnectionConfiguration { get; set; }
@@ -224,8 +232,13 @@
                 additionalClusterNodes
             );
 
-            // var managementClient = new ManagementClient(ManagementConnectionConfiguration, ManagementCertCollection);
-            var managementClientFactory = DoNotUseManagementClient ? null : new ManagementClientFactory(ConnectionConfiguration);
+            // Uses the legacy Management API connection string or default to the RabbitMQ broker connection credentials
+            if (!string.IsNullOrEmpty(LegacyManagementApiConnectionString))
+            {
+                ManagementConnectionConfiguration = ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true);
+            }
+
+            var managementClientFactory = DoNotUseManagementClient ? null : new ManagementClientFactory(ManagementConnectionConfiguration);
             var brokerVerifier = new BrokerVerifier(connectionFactory, managementClientFactory);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
@@ -299,9 +312,10 @@
             RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
             ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
 
+            // Uses the legacy management API connection string or build the string from the legacy broker connection configuration
             ManagementConnectionConfiguration = !string.IsNullOrEmpty(LegacyManagementApiConnectionString)
-                ? ConnectionConfiguration.Create(LegacyManagementApiConnectionString)
-                : ConnectionConfiguration;
+                ? ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true)
+                : ConnectionConfiguration.Create(BuildManagementConnectionString(ConnectionConfiguration), isManagementConnection: true);
         }
 
         void VaildateTopologyFactory()
@@ -318,6 +332,24 @@
             {
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
+
+            if (string.IsNullOrEmpty(LegacyManagementApiConnectionString))
+            {
+                throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementConnectionString()` method.");
+            }
+        }
+
+        string BuildManagementConnectionString(ConnectionConfiguration connectionConfiguration)
+        {
+            var managementConnectionString = new StringBuilder();
+
+            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.VirtualHost)}={connectionConfiguration.VirtualHost};");
+            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.Host)}={connectionConfiguration.Host};");
+            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.UserName)}={connectionConfiguration.UserName};");
+            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.Password)}={connectionConfiguration.Password};");
+            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.UseTls)}={connectionConfiguration.UseTls}");
+
+            return managementConnectionString.ToString();
         }
     }
 }
