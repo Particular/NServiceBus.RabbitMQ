@@ -25,7 +25,6 @@
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
         X509Certificate2Collection certCollection = null;
-        X509Certificate2Collection ManagementCertCollection = null;
 
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
@@ -109,8 +108,8 @@
         }
 
         /// <summary>
-        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/> 
-        /// just before it is dispatched to the rabbitmq client. 
+        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/>
+        /// just before it is dispatched to the rabbitmq client.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -141,11 +140,6 @@
         /// The certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
         public X509Certificate2 ClientCertificate { get; set; }
-
-        /// <summary>
-        /// The certificate to use for client authentication when connecting to the broker management API via TLS.
-        /// </summary>
-        public X509Certificate2 ManagementClientCertificate { get; set; }
 
         /// <summary>
         /// Should the client validate the broker certificate when connecting via TLS.
@@ -270,14 +264,8 @@
             return infra;
         }
 
-        void ValidateAndApplyCertCollections()
-        {
-            certCollection ??= ClientCertificate != null
+        void ValidateAndApplyCertCollections() => certCollection ??= ClientCertificate != null
                 ? new X509Certificate2Collection(ClientCertificate) : null;
-
-            ManagementCertCollection = ManagementClientCertificate != null
-                ? new X509Certificate2Collection(ManagementClientCertificate) : certCollection;
-        }
 
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
