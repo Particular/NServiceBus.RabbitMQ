@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Tests.ManagementConnection
+namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ManagementConnection
 
 
     [TestFixture]
-    class When_connecting_to_the_rabbitmq_management_api
+    class ManagementClientTests
     {
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
