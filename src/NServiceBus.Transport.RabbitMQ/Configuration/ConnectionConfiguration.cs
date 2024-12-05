@@ -9,8 +9,10 @@
     class ConnectionConfiguration
     {
         const bool defaultUseTls = false;
-        const int defaultPort = 5672;
-        const int defaultTlsPort = 5671;
+        const int defaultBrokerPort = 5672;
+        const int defaultBrokerTlsPort = 5671;
+        const int defaultManagementPort = 15672;
+        const int defaultManagementTlsPort = 15671;
         const string defaultVirtualHost = "/";
         const string defaultUserName = "guest";
         const string defaultPassword = "guest";
@@ -43,7 +45,7 @@
             UseTls = useTls;
         }
 
-        public static ConnectionConfiguration Create(string connectionString)
+        public static ConnectionConfiguration Create(string connectionString, bool isManagementConnection = false)
         {
             Dictionary<string, string> dictionary;
             var invalidOptionsMessage = new StringBuilder();
@@ -59,7 +61,10 @@
 
             var host = GetValue(dictionary, "host", string.Empty);
             var useTls = GetValue(dictionary, "useTls", bool.TryParse, defaultUseTls, invalidOptionsMessage);
-            var port = GetValue(dictionary, "port", int.TryParse, useTls ? defaultTlsPort : defaultPort, invalidOptionsMessage);
+            var port = GetValue(dictionary, "port", int.TryParse, useTls ?
+                (isManagementConnection ? defaultManagementTlsPort : defaultBrokerTlsPort) :
+                (isManagementConnection ? defaultManagementPort : defaultBrokerPort),
+                invalidOptionsMessage);
             var virtualHost = GetValue(dictionary, "virtualHost", defaultVirtualHost);
             var userName = GetValue(dictionary, "userName", defaultUserName);
             var password = GetValue(dictionary, "password", defaultPassword);
