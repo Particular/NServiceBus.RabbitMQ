@@ -1,15 +1,32 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using global::RabbitMQ.Client.Exceptions;
     using NUnit.Framework;
     using RabbitMQ;
 
     [TestFixture]
-    public class ConnectionConfigurationTests
+    class ConnectionConfigurationTests
     {
         const string connectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
+        protected string ReceiverQueue => GetTestQueueName("testreceiver");
+        protected string ErrorQueue => GetTestQueueName("error");
+        protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
+        protected IList<string> AdditionalReceiverQueues = [];
+        protected string[] SendingAddresses => [.. AdditionalReceiverQueues, ErrorQueue];
+        protected QueueType queueType = QueueType.Quorum;
 
-        ConnectionConfiguration defaults = ConnectionConfiguration.Create("host=localhost");
+        protected HostSettings HostSettings => new(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(), (_, _, _) => { }, true);
+        protected ReceiveSettings[] ReceiveSettings =>
+        [
+           new ReceiveSettings( ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)
+        ];
+
+        readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
+        readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost", isManagementConnection: true);
+
 
         [Test]
         public void Should_correctly_parse_full_connection_string()
@@ -164,31 +181,198 @@
         [Test]
         public void Should_set_default_port()
         {
-            Assert.That(defaults.Port, Is.EqualTo(5672));
+            Assert.Multiple(() =>
+            {
+                Assert.That(brokerDefaults.Port, Is.EqualTo(5672));
+                Assert.That(managementDefaults.Port, Is.EqualTo(15672));
+            });
         }
 
         [Test]
         public void Should_set_default_virtual_host()
         {
-            Assert.That(defaults.VirtualHost, Is.EqualTo("/"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(brokerDefaults.VirtualHost, Is.EqualTo("/"));
+                Assert.That(managementDefaults.VirtualHost, Is.EqualTo("/"));
+            });
         }
 
         [Test]
         public void Should_set_default_username()
         {
-            Assert.That(defaults.UserName, Is.EqualTo("guest"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(brokerDefaults.UserName, Is.EqualTo("guest"));
+                Assert.That(managementDefaults.UserName, Is.EqualTo("guest"));
+            });
         }
 
         [Test]
         public void Should_set_default_password()
         {
-            Assert.That(defaults.Password, Is.EqualTo("guest"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(brokerDefaults.Password, Is.EqualTo("guest"));
+                Assert.That(managementDefaults.Password, Is.EqualTo("guest"));
+            });
         }
 
         [Test]
         public void Should_set_default_use_tls()
         {
-            Assert.That(defaults.UseTls, Is.EqualTo(false));
+            Assert.Multiple(() =>
+            {
+                Assert.That(brokerDefaults.UseTls, Is.EqualTo(false));
+                Assert.That(managementDefaults.UseTls, Is.EqualTo(false));
+            });
+        }
+
+        [Test]
+        public void Should_configure_broker_and_management_connection_configurations_with_single_connection_string()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;host=localhost;username=guest;password=guest;port=5672;useTls=false");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(transport.ConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
+                Assert.That(transport.ConnectionConfiguration.Host, Is.EqualTo("localhost"));
+                Assert.That(transport.ConnectionConfiguration.UserName, Is.EqualTo("guest"));
+                Assert.That(transport.ConnectionConfiguration.Password, Is.EqualTo("guest"));
+                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.ConnectionConfiguration.UseTls, Is.EqualTo(false));
+
+                Assert.That(transport.ManagementConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
+                Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("localhost"));
+                Assert.That(transport.ManagementConnectionConfiguration.UserName, Is.EqualTo("guest"));
+                Assert.That(transport.ManagementConnectionConfiguration.Password, Is.EqualTo("guest"));
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));  // This should be set to the default management port
+                Assert.That(transport.ManagementConnectionConfiguration.UseTls, Is.EqualTo(false));
+            });
+        }
+
+        [Test]
+        public void Should_configure_broker_and_management_connection_configurations_with_respective_connection_strings()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;host=localhost;username=guest;password=guest;port=5672;useTls=false", connectionString);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(transport.ConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
+                Assert.That(transport.ConnectionConfiguration.Host, Is.EqualTo("localhost"));
+                Assert.That(transport.ConnectionConfiguration.UserName, Is.EqualTo("guest"));
+                Assert.That(transport.ConnectionConfiguration.Password, Is.EqualTo("guest"));
+                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.ConnectionConfiguration.UseTls, Is.EqualTo(false));
+
+                Assert.That(transport.ManagementConnectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
+                Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
+                Assert.That(transport.ManagementConnectionConfiguration.UserName, Is.EqualTo("Copa"));
+                Assert.That(transport.ManagementConnectionConfiguration.Password, Is.EqualTo("abc_xyz"));
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(1234));
+                Assert.That(transport.ManagementConnectionConfiguration.UseTls, Is.EqualTo(true));
+            });
+        }
+
+        [Test]
+        public void Should_throw_on_invalid_management_connection_string()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;username=guest;host=localhost;password=guest;port=5672;useTls=false", "host=127.0.0.1;username=Copa");
+
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+
+            Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
+        }
+
+        [Test]
+        public void Should_throw_on_invalid_broker_connection_string()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "host=127.0.0.1;username=Copa", "virtualHost=/;username=guest;host=localhost;password=guest;port=15672;useTls=false");
+
+            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+
+            Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
+        }
+
+        [Test]
+        public void Should_throw_on_invalid_legacy_management_connection_string()
+        {
+            // Create transport in legacy mode
+            var transport = new RabbitMQTransport
+            {
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                LegacyApiConnectionString = "virtualHost=/;username=guest;host=localhost;password=guest;port=5672;useTls=false",
+                LegacyManagementApiConnectionString = "host=127.0.0.1;username=Copa"
+            };
+
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+
+            Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
+        }
+
+        [Test]
+        public void Should_throw_on_invalid_legacy_broker_connection_string()
+        {
+            // Create transport in legacy mode
+            var transport = new RabbitMQTransport
+            {
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                LegacyApiConnectionString = "virtualHost=/;username=Copa;host=localhost;password=guest;port=5672;useTls=false",
+                LegacyManagementApiConnectionString = "host=127.0.0.1;username=guest"
+            };
+
+            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+
+            Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
+
+        }
+
+        [Test]
+        public async Task Should_connect_to_management_api_with_broker_credentials()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;username=guest;host=localhost;password=guest;port=5672;useTls=false");
+
+            var infra = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
+            });
+
+        }
+
+        [Test]
+        public async Task Should_set_default_port_values_for_broker_and_management_connections()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "host=localhost");
+
+            _ = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
+            });
+
+        }
+
+        [Test]
+        public async Task Should_not_throw_when_DoNotUseManagementClient_is_enabled_and_management_connection_is_invalid()
+        {
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "host=localhost", "host=Copa")
+            {
+                DoNotUseManagementClient = true
+            };
+
+            _ = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
+            });
+
         }
     }
 }
