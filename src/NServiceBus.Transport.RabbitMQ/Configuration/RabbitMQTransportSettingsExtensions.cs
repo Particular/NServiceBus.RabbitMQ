@@ -247,8 +247,6 @@
             return transportExtensions;
         }
 
-        //public static TransportExtensions<RabbitMQTransport> SetManagementClient(this TransportExtensions<RabbitMQTransport>)
-
         /// <summary>
         /// Sets the interval for heartbeats between the endpoint and the broker.
         /// </summary>
