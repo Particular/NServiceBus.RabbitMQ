@@ -38,7 +38,7 @@ class ManagementClient : IManagementClient
         {
             Scheme = connectionConfiguration.UseTls ? "https" : "http",
             Host = connectionConfiguration.Host,
-            Port = 15672 // TODO: fallback to default only if specific details aren't given in config
+            Port = connectionConfiguration.Port,
         };
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
