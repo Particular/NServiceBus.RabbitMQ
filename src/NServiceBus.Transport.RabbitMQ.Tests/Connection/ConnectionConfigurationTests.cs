@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client.Exceptions;
     using NUnit.Framework;
@@ -11,22 +10,11 @@
     class ConnectionConfigurationTests
     {
         const string connectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
-        protected string ReceiverQueue => GetTestQueueName("testreceiver");
-        protected string ErrorQueue => GetTestQueueName("error");
-        protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
-        protected IList<string> AdditionalReceiverQueues = [];
-        protected string[] SendingAddresses => [.. AdditionalReceiverQueues, ErrorQueue];
-        protected QueueType queueType = QueueType.Quorum;
 
-        protected HostSettings HostSettings => new(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(), (_, _, _) => { }, true);
-        protected ReceiveSettings[] ReceiveSettings =>
-        [
-           new ReceiveSettings( ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)
-        ];
+        static readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
+        static readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost", isManagementConnection: true);
 
-        readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
-        readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost", isManagementConnection: true);
-
+        static HostSettings HostSettings { get; } = new(nameof(ConnectionConfigurationTests), nameof(ConnectionConfigurationTests), null, null, false);
 
         [Test]
         public void Should_correctly_parse_full_connection_string()
@@ -279,7 +267,7 @@
         {
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;username=guest;host=localhost;password=guest;port=5672;useTls=false", "host=127.0.0.1;username=Copa");
 
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []).ConfigureAwait(false));
 
             Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
         }
@@ -289,7 +277,7 @@
         {
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "host=127.0.0.1;username=Copa", "virtualHost=/;username=guest;host=localhost;password=guest;port=15672;useTls=false");
 
-            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []).ConfigureAwait(false));
 
             Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
         }
@@ -300,12 +288,12 @@
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
             {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
                 LegacyApiConnectionString = "virtualHost=/;username=guest;host=localhost;password=guest;port=5672;useTls=false",
                 LegacyManagementApiConnectionString = "host=127.0.0.1;username=Copa"
             };
 
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []).ConfigureAwait(false));
 
             Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
         }
@@ -316,15 +304,14 @@
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
             {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
                 LegacyApiConnectionString = "virtualHost=/;username=Copa;host=localhost;password=guest;port=5672;useTls=false",
                 LegacyManagementApiConnectionString = "host=127.0.0.1;username=guest"
             };
 
-            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []).ConfigureAwait(false));
 
             Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
-
         }
 
         [Test]
@@ -332,14 +319,13 @@
         {
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;username=guest;host=localhost;password=guest;port=5672;useTls=false");
 
-            var infra = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+            var infra = await transport.Initialize(HostSettings, [], []).ConfigureAwait(false);
 
             Assert.Multiple(() =>
             {
                 Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
-
         }
 
         [Test]
@@ -347,14 +333,13 @@
         {
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "host=localhost");
 
-            _ = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+            _ = await transport.Initialize(HostSettings, [], []).ConfigureAwait(false);
 
             Assert.Multiple(() =>
             {
                 Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
-
         }
 
         [Test]
@@ -365,14 +350,13 @@
                 DoNotUseManagementClient = true
             };
 
-            _ = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+            _ = await transport.Initialize(HostSettings, [], []).ConfigureAwait(false);
 
             Assert.Multiple(() =>
             {
                 Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
-
         }
     }
 }
