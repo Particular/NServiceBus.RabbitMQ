@@ -18,18 +18,11 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         const string FakeConnectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
         static string BrokerConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         static string ManagementConnectionString => CreateManagementConnectionString(BrokerConnectionString);
-        protected string ReceiverQueue => GetTestQueueName("testreceiver");
-        protected string ErrorQueue => GetTestQueueName("error");
-        protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
-        protected IList<string> AdditionalReceiverQueues = [];
-        protected string[] SendingAddresses => [.. AdditionalReceiverQueues, ErrorQueue];
-        protected QueueType queueType = QueueType.Quorum;
 
-        protected HostSettings HostSettings => new(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(), (_, _, _) => { }, true);
-        protected ReceiveSettings[] ReceiveSettings => [new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)];
+        static HostSettings HostSettings { get; } = new(nameof(ConnectionConfigurationTests), nameof(ConnectionConfigurationTests), null, null, false);
 
-        readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
-        readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost", isManagementConnection: true);
+        static readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
+        static readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost", isManagementConnection: true);
 
         static string CreateManagementConnectionString(string connectionString)
         {
@@ -170,8 +163,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
                 "certPath =/path/to/client/keycert.p12;" +
                 "certPassPhrase = abc123;";
 
-            var exception = Assert.Throws<NotSupportedException>(() =>
-                ConnectionConfiguration.Create(connectionString));
+            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create(connectionString))
+                ?? throw new ArgumentNullException("exception");
 
             Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Does.Contain("Empty host name in 'host' connection string option."));
@@ -294,7 +287,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString());
 
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []))
+                ?? throw new ArgumentNullException("exception");
 
             Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
         }
@@ -309,7 +303,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString());
 
-            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
         }
 
         [Test]
@@ -319,7 +313,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), invalidBrokerConnection.ToConnectionString(), ManagementConnectionString);
 
-            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []))
+                ?? throw new ArgumentNullException("exception");
 
             Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
         }
@@ -335,14 +330,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
             {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
                 LegacyApiConnectionString = BrokerConnectionString,
                 LegacyManagementApiConnectionString = invalidManagementConnection.ToConnectionString()
             };
 
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []));
 
-            Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
+            Assert.That(exception!.Message, Does.Contain("Could not access RabbitMQ Management API"));
         }
 
         [Test]
@@ -356,12 +351,12 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
             {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
                 LegacyApiConnectionString = BrokerConnectionString,
                 LegacyManagementApiConnectionString = invalidManagementConnection.ToConnectionString()
             };
 
-            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
         }
 
         [Test]
@@ -372,15 +367,15 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
             {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
                 LegacyApiConnectionString = invalidBrokerConnection.ToConnectionString(),
                 LegacyManagementApiConnectionString = ManagementConnectionString
             };
 
-            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []))
+                ?? throw new ArgumentNullException("exception");
 
             Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
-
         }
 
         [Test]
@@ -388,7 +383,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         {
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString);
 
-            Assert.DoesNotThrowAsync(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            Assert.DoesNotThrowAsync(async () => await transport.Initialize(HostSettings, [], []));
         }
 
         [Test]
@@ -401,14 +396,13 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), validConnectionWithoutPort.ToConnectionString());
 
-            _ = await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false);
+            _ = await transport.Initialize(HostSettings, [], []);
 
             Assert.Multiple(() =>
             {
                 Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
-
         }
 
         [Test]
@@ -421,81 +415,80 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
                 DoNotUseManagementClient = true
             };
 
-            Assert.DoesNotThrowAsync(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
+            Assert.DoesNotThrowAsync(async () => await transport.Initialize(HostSettings, [], []));
         }
-    }
 
-    public class FakeConnectionConfiguration
-    {
-        internal string Host { get; set; }
-
-        internal string? Port { get; set; }
-
-        internal string? VirtualHost { get; set; }
-
-        internal string? UserName { get; set; }
-
-        internal string? Password { get; set; }
-
-        internal string? UseTls { get; set; }
-
-        internal FakeConnectionConfiguration(
-            string host,
-            string? port = null,
-            string? virtualHost = null,
-            string? userName = null,
-            string? password = null,
-            string? useTls = null)
+        public class FakeConnectionConfiguration
         {
-            Host = host;
-            Port = port;
-            VirtualHost = virtualHost;
-            UserName = userName;
-            Password = password;
-            UseTls = useTls;
+            internal string Host { get; set; }
+
+            internal string? Port { get; set; }
+
+            internal string? VirtualHost { get; set; }
+
+            internal string? UserName { get; set; }
+
+            internal string? Password { get; set; }
+
+            internal string? UseTls { get; set; }
+
+            internal FakeConnectionConfiguration(
+                string host,
+                string? port = null,
+                string? virtualHost = null,
+                string? userName = null,
+                string? password = null,
+                string? useTls = null)
+            {
+                Host = host;
+                Port = port;
+                VirtualHost = virtualHost;
+                UserName = userName;
+                Password = password;
+                UseTls = useTls;
+            }
+
+            internal FakeConnectionConfiguration(string connectionString)
+            {
+                var parameters = connectionString.Split(';').Select(param => param.Split('=')).ToDictionary(parts => parts[0].ToLower(), parts => parts[1]);
+
+                Host = parameters["host"];
+                Port = GetParameterValue(parameters, "port");
+                VirtualHost = GetParameterValue(parameters, "virtualhost");
+                UserName = GetParameterValue(parameters, "username");
+                Password = GetParameterValue(parameters, "password");
+                UseTls = GetParameterValue(parameters, "usetls");
+            }
+
+            static string? GetParameterValue(Dictionary<string, string> parameters, string key) => parameters.TryGetValue(key, out var value) ? value : null;
+
+            internal string ToConnectionString()
+            {
+                var sb = new StringBuilder();
+                _ = sb.Append($"{nameof(Host)}={Host}");
+
+                if (!string.IsNullOrEmpty(VirtualHost))
+                {
+                    _ = sb.Append($";{nameof(VirtualHost)}={VirtualHost}");
+                }
+                if (!string.IsNullOrEmpty(Port))
+                {
+                    _ = sb.Append($";{nameof(Port)}={Port}");
+                }
+                if (!string.IsNullOrEmpty(UserName))
+                {
+                    _ = sb.Append($";{nameof(UserName)}={UserName}");
+                }
+                if (!string.IsNullOrEmpty(Password))
+                {
+                    _ = sb.Append($";{nameof(Password)}={Password}");
+                }
+                if (!string.IsNullOrEmpty(UseTls))
+                {
+                    _ = sb.Append($";{nameof(UseTls)}={UseTls}");
+                }
+                return sb.ToString();
+            }
         }
-
-        internal FakeConnectionConfiguration(string connectionString)
-        {
-            var parameters = connectionString.Split(';').Select(param => param.Split('=')).ToDictionary(parts => parts[0].ToLower(), parts => parts[1]);
-
-            Host = parameters["host"];
-            Port = GetParameterValue(parameters, "port");
-            VirtualHost = GetParameterValue(parameters, "virtualhost");
-            UserName = GetParameterValue(parameters, "username");
-            Password = GetParameterValue(parameters, "password");
-            UseTls = GetParameterValue(parameters, "usetls");
-        }
-
-        static string? GetParameterValue(Dictionary<string, string> parameters, string key) => parameters.TryGetValue(key, out var value) ? value : null;
-
-        internal string ToConnectionString()
-        {
-            var sb = new StringBuilder();
-            _ = sb.Append($"{nameof(Host)}={Host}");
-
-            if (!string.IsNullOrEmpty(VirtualHost))
-            {
-                _ = sb.Append($";{nameof(VirtualHost)}={VirtualHost}");
-            }
-            if (!string.IsNullOrEmpty(Port))
-            {
-                _ = sb.Append($";{nameof(Port)}={Port}");
-            }
-            if (!string.IsNullOrEmpty(UserName))
-            {
-                _ = sb.Append($";{nameof(UserName)}={UserName}");
-            }
-            if (!string.IsNullOrEmpty(Password))
-            {
-                _ = sb.Append($";{nameof(Password)}={Password}");
-            }
-            if (!string.IsNullOrEmpty(UseTls))
-            {
-                _ = sb.Append($";{nameof(UseTls)}={UseTls}");
-            }
-            return sb.ToString();
-        }
-
     }
 }
