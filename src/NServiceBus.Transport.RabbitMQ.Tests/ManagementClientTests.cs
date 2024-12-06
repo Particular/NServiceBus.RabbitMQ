@@ -6,9 +6,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
-    using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Events;
     using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
+    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
     using ConnectionFactory = ConnectionFactory;
@@ -18,52 +17,37 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     class ManagementClientTests
     {
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
-        readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
-        readonly ConnectionConfiguration managementConnectionConfiguration = ConnectionConfiguration.Create(connectionString, isManagementConnection: true);
-        protected QueueType queueType = QueueType.Quorum;
-        protected string ReceiverQueue => GetTestQueueName("ManagementAPITestQueue");
-        protected string GetTestQueueName(string queueName) => $"{queueName}-{queueType}";
-
-        [SetUp]
-        public async Task SetUp()
-        {
-            var connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
-            IConnection connection = await connectionFactory.CreateConnection(ReceiverQueue).ConfigureAwait(false);
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false);
-            var channel = await connection.CreateChannelAsync(createChannelOptions).ConfigureAwait(false);
-            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
-
-            _ = await channel.QueueDeclareAsync(queue: ReceiverQueue, durable: true, exclusive: false, autoDelete: false, arguments: arguments).ConfigureAwait(false);
-
-            var consumer = new AsyncEventingBasicConsumer(channel);
-            consumer.ReceivedAsync += async (o, a) => await Task.Yield();
-
-            var consumerTag = $"localhost - {ReceiverQueue}";
-            _ = await channel.BasicConsumeAsync(ReceiverQueue, true, consumerTag, consumer).ConfigureAwait(false);
-        }
+        static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
+        static readonly ConnectionConfiguration managementConnectionConfiguration = ConnectionConfiguration.Create(connectionString, isManagementConnection: true);
+        static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
+        static readonly ManagementClient client = new(managementConnectionConfiguration);
 
         [Test]
         public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
         {
-            var client = new ManagementClient(managementConnectionConfiguration);
+            // Arrange
+            var queueName = nameof(GetQueue_Should_Return_Queue_Information_When_Exists);
+            await CreateQuorumQueue(queueName).ConfigureAwait(false);
 
-            var response = await client.GetQueue(ReceiverQueue);
+            // Act
+            var response = await client.GetQueue(queueName);
 
+            // Assert
             Assert.Multiple(() =>
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(response.Value, Is.Not.Null);
-                Assert.That(response.Value?.Name, Is.EqualTo(ReceiverQueue));
+                Assert.That(response.Value?.Name, Is.EqualTo(queueName));
             });
         }
 
         [Test]
-        public async Task GetOverview_Should_Return_Broker_Information_When_Exists()
+        public async Task GetOverview_Should_Return_Broker_Information()
         {
-            var client = new ManagementClient(managementConnectionConfiguration);
-
+            // Act
             var response = await client.GetOverview();
 
+            // Assert
             Assert.Multiple(() =>
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -73,6 +57,70 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
                 Assert.That(response.Value?.ProductVersion.Major, Is.InRange(3, 4));
                 Assert.That(response.Value?.RabbitMqVersion.Major, Is.InRange(3, 4));
             });
+        }
+
+        [Test]
+        public async Task GetFeatureFlags_Should_Return_FeatureFlag_Information()
+        {
+            // Act
+            var response = await client.GetFeatureFlags();
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(response.Value, Is.Not.Null);
+                Assert.That(response.Value, Is.Not.Empty);
+                Assert.That(response.Value?.Contains(FeatureFlags.QuorumQueue), Is.True);
+            });
+        }
+
+        [Test]
+        [TestCase(-1)]
+        [TestCase(200)]
+        public async Task CreatePolicy_With_DeliveryLimit_Should_Be_Applied_To_Quorum_Queues(int deliveryLimit)
+        {
+            // Arrange
+            var queueName = nameof(CreatePolicy_With_DeliveryLimit_Should_Be_Applied_To_Quorum_Queues);
+            var policyName = $"{queueName} policy";
+            await CreateQuorumQueue(queueName);
+
+            // Act
+            var policy = new Policy
+            {
+                ApplyTo = PolicyTarget.QuorumQueues,
+                Definition = new PolicyDefinition
+                {
+                    DeliveryLimit = deliveryLimit
+                },
+                Name = policyName,
+                Pattern = queueName,
+                Priority = 100
+            };
+            await client.CreatePolicy(policy);
+
+            // Assert
+
+            // It can take some time for updated policies to be applied, so we need to wait.
+            // If this test is randomly failing, consider increasing the delay
+            await Task.Delay(10000);
+            var response = await client.GetQueue(queueName);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(response.Value, Is.Not.Null);
+                Assert.That(response.Value?.AppliedPolicyName, Is.EqualTo(policyName));
+                Assert.That(response.Value?.EffectivePolicyDefinition?.DeliveryLimit, Is.EqualTo(deliveryLimit));
+            });
+        }
+
+        static async Task CreateQuorumQueue(string queueName)
+        {
+            using var connection = await connectionFactory.CreateConnection($"{queueName} connection").ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
+
+            _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
     }
 }
