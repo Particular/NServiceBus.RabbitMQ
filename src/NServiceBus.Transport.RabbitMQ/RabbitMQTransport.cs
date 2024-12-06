@@ -321,7 +321,7 @@
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
 
-            if (string.IsNullOrEmpty(LegacyManagementApiConnectionString))
+            if (!DoNotUseManagementClient && string.IsNullOrEmpty(LegacyManagementApiConnectionString))
             {
                 throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementConnectionString()` method.");
             }
