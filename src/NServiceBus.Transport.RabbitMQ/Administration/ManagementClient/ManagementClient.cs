@@ -6,7 +6,6 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,18 +17,12 @@ class ManagementClient : IManagementClient
     readonly string virtualHost;
     readonly string escapedVirtualHost;
 
-    public ManagementClient(ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? managementCertCollection = null)
+    public ManagementClient(ConnectionConfiguration connectionConfiguration)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration, nameof(connectionConfiguration));
 
         virtualHost = connectionConfiguration.VirtualHost;
         escapedVirtualHost = Uri.EscapeDataString(virtualHost);
-
-        var handler = new HttpClientHandler();
-        if (connectionConfiguration.UseTls)
-        {
-            ConfigureSsl(handler, managementCertCollection);
-        }
 
         var uriBuilder = new UriBuilder
         {
@@ -38,19 +31,10 @@ class ManagementClient : IManagementClient
             Port = connectionConfiguration.Port,
         };
 
-        httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
+        httpClient = new HttpClient { BaseAddress = uriBuilder.Uri };
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Basic",
             Convert.ToBase64String(Encoding.ASCII.GetBytes($"{connectionConfiguration.UserName}:{connectionConfiguration.Password}")));
-    }
-
-    void ConfigureSsl(HttpClientHandler handler, X509Certificate2Collection? managementCertCollection)
-    {
-        if (managementCertCollection != null)
-        {
-            handler.ClientCertificates.AddRange(managementCertCollection);
-        }
-        handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls13;
     }
 
     public async Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default)
