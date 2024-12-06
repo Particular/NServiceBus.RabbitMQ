@@ -20,10 +20,7 @@ class ManagementClient : IManagementClient
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? managementCertCollection = null)
     {
-        if (connectionConfiguration == null)
-        {
-            throw new ArgumentNullException(nameof(connectionConfiguration));
-        }
+        ArgumentNullException.ThrowIfNull(connectionConfiguration, nameof(connectionConfiguration));
 
         virtualHost = connectionConfiguration.VirtualHost;
         escapedVirtualHost = Uri.EscapeDataString(virtualHost);
@@ -111,10 +108,7 @@ class ManagementClient : IManagementClient
 
     public async Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default)
     {
-        if (policy.Name == null)
-        {
-            throw new ArgumentNullException(nameof(policy.Name));
-        }
+        ArgumentNullException.ThrowIfNull(policy, nameof(policy));
 
         policy.VirtualHost = Uri.EscapeDataString(virtualHost);
 
