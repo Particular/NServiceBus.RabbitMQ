@@ -235,12 +235,12 @@
 
             Assert.Multiple(() =>
             {
-                Assert.That(transport.ConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
-                Assert.That(transport.ConnectionConfiguration.Host, Is.EqualTo("localhost"));
-                Assert.That(transport.ConnectionConfiguration.UserName, Is.EqualTo("guest"));
-                Assert.That(transport.ConnectionConfiguration.Password, Is.EqualTo("guest"));
-                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
-                Assert.That(transport.ConnectionConfiguration.UseTls, Is.EqualTo(false));
+                Assert.That(transport.BrokerConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
+                Assert.That(transport.BrokerConnectionConfiguration.Host, Is.EqualTo("localhost"));
+                Assert.That(transport.BrokerConnectionConfiguration.UserName, Is.EqualTo("guest"));
+                Assert.That(transport.BrokerConnectionConfiguration.Password, Is.EqualTo("guest"));
+                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.BrokerConnectionConfiguration.UseTls, Is.EqualTo(false));
 
                 Assert.That(transport.ManagementConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
                 Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("localhost"));
@@ -258,12 +258,12 @@
 
             Assert.Multiple(() =>
             {
-                Assert.That(transport.ConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
-                Assert.That(transport.ConnectionConfiguration.Host, Is.EqualTo("localhost"));
-                Assert.That(transport.ConnectionConfiguration.UserName, Is.EqualTo("guest"));
-                Assert.That(transport.ConnectionConfiguration.Password, Is.EqualTo("guest"));
-                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
-                Assert.That(transport.ConnectionConfiguration.UseTls, Is.EqualTo(false));
+                Assert.That(transport.BrokerConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
+                Assert.That(transport.BrokerConnectionConfiguration.Host, Is.EqualTo("localhost"));
+                Assert.That(transport.BrokerConnectionConfiguration.UserName, Is.EqualTo("guest"));
+                Assert.That(transport.BrokerConnectionConfiguration.Password, Is.EqualTo("guest"));
+                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.BrokerConnectionConfiguration.UseTls, Is.EqualTo(false));
 
                 Assert.That(transport.ManagementConnectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
                 Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
@@ -336,7 +336,7 @@
 
             Assert.Multiple(() =>
             {
-                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
 
@@ -351,7 +351,7 @@
 
             Assert.Multiple(() =>
             {
-                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
 
@@ -369,7 +369,7 @@
 
             Assert.Multiple(() =>
             {
-                Assert.That(transport.ConnectionConfiguration.Port, Is.EqualTo(5672));
+                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
                 Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
             });
 
