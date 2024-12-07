@@ -5,6 +5,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client.Exceptions;
@@ -284,15 +285,31 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         }
 
         [Test]
-        public void Should_throw_on_invalid_management_connection_string()
+        public void Should_throw_on_invalid_management_credentials()
         {
-            var invalidManagementConnection = new FakeConnectionConfiguration(host: "localhost", userName: "Copa");
+            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
+            {
+                UserName = "Copa"
+            };
 
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString());
 
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
 
             Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
+        }
+
+        [Test]
+        public void Should_throw_on_invalid_management_host()
+        {
+            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
+            {
+                Host = "WrongHostName"
+            };
+
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString());
+
+            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
         }
 
         [Test]
@@ -308,9 +325,12 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         }
 
         [Test]
-        public void Should_throw_on_invalid_legacy_management_connection_string()
+        public void Should_throw_on_invalid_legacy_management_credentials()
         {
-            var invalidManagementConnection = new FakeConnectionConfiguration(host: "127.0.0.1", userName: "Copa");
+            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
+            {
+                UserName = "Copa"
+            };
 
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
@@ -323,6 +343,25 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
 
             Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
+        }
+
+        [Test]
+        public void Should_throw_on_invalid_legacy_management_host()
+        {
+            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
+            {
+                Host = "WrongHostName"
+            };
+
+            // Create transport in legacy mode
+            var transport = new RabbitMQTransport
+            {
+                TopologyFactory = durable => new ConventionalRoutingTopology(durable, queueType),
+                LegacyApiConnectionString = BrokerConnectionString,
+                LegacyManagementApiConnectionString = invalidManagementConnection.ToConnectionString()
+            };
+
+            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, ReceiveSettings, SendingAddresses).ConfigureAwait(false));
         }
 
         [Test]
