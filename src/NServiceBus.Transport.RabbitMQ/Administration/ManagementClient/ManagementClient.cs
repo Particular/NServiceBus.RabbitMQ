@@ -19,6 +19,8 @@ class ManagementClient : IManagementClient
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration)
     {
+        ArgumentNullException.ThrowIfNull(connectionConfiguration, nameof(connectionConfiguration));
+
         virtualHost = connectionConfiguration.VirtualHost;
         escapedVirtualHost = Uri.EscapeDataString(virtualHost);
 
@@ -26,7 +28,7 @@ class ManagementClient : IManagementClient
         {
             Scheme = connectionConfiguration.UseTls ? "https" : "http",
             Host = connectionConfiguration.Host,
-            Port = 15672 // TODO: fallback to default only if specific details aren't given in config
+            Port = connectionConfiguration.Port,
         };
 
         httpClient = new HttpClient { BaseAddress = uriBuilder.Uri };
@@ -90,7 +92,9 @@ class ManagementClient : IManagementClient
 
     public async Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default)
     {
-        policy.VirtualHost = virtualHost;
+        ArgumentNullException.ThrowIfNull(policy, nameof(policy));
+
+        policy.VirtualHost = Uri.EscapeDataString(virtualHost);
 
         var escapedPolicyName = Uri.EscapeDataString(policy.Name);
         var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken)
