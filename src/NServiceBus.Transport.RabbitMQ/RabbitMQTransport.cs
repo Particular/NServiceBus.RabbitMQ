@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.Administration;
@@ -44,10 +43,10 @@
             ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
-            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
             ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
-                ConnectionConfiguration.Create(BuildManagementConnectionString(ConnectionConfiguration), isManagementConnection: true) :
+                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration) :
                 ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
         }
 
@@ -68,13 +67,13 @@
             ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
-            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
             ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
-                ConnectionConfiguration.Create(BuildManagementConnectionString(ConnectionConfiguration), isManagementConnection: true) :
+                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration) :
                 ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
         }
 
-        internal ConnectionConfiguration ConnectionConfiguration { get; set; }
+        internal ConnectionConfiguration BrokerConnectionConfiguration { get; set; }
 
         internal ConnectionConfiguration ManagementConnectionConfiguration { get; set; }
 
@@ -217,7 +216,7 @@
 
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
-                ConnectionConfiguration,
+                BrokerConnectionConfiguration,
                 certCollection,
                 !ValidateRemoteCertificate,
                 UseExternalAuthMechanism,
@@ -298,12 +297,12 @@
             ValidateConnectionString();
 
             RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
-            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
+            BrokerConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
 
             // Uses the legacy management API connection string or build the string from the legacy broker connection configuration
-            ManagementConnectionConfiguration = !string.IsNullOrEmpty(LegacyManagementApiConnectionString)
-                ? ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true)
-                : ConnectionConfiguration.Create(BuildManagementConnectionString(ConnectionConfiguration), isManagementConnection: true);
+            ManagementConnectionConfiguration = !string.IsNullOrEmpty(LegacyManagementApiConnectionString) ?
+                ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true) :
+                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration);
         }
 
         void VaildateTopologyFactory()
@@ -325,19 +324,6 @@
             {
                 throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementConnectionString()` method.");
             }
-        }
-
-        string BuildManagementConnectionString(ConnectionConfiguration connectionConfiguration)
-        {
-            var managementConnectionString = new StringBuilder();
-
-            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.VirtualHost)}={connectionConfiguration.VirtualHost};");
-            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.Host)}={connectionConfiguration.Host};");
-            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.UserName)}={connectionConfiguration.UserName};");
-            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.Password)}={connectionConfiguration.Password};");
-            _ = managementConnectionString.Append($"{nameof(connectionConfiguration.UseTls)}={connectionConfiguration.UseTls}");
-
-            return managementConnectionString.ToString();
         }
     }
 }

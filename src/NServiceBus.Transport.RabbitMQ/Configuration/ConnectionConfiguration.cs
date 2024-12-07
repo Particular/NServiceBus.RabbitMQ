@@ -77,6 +77,18 @@
             return new ConnectionConfiguration(host, port, virtualHost, userName, password, useTls);
         }
 
+        public static ConnectionConfiguration ConvertToManagementConnection(ConnectionConfiguration brokerConnectionConfiguration)
+        {
+            var virtualHost = brokerConnectionConfiguration.VirtualHost;
+            var host = brokerConnectionConfiguration.Host;
+            var port = defaultManagementPort;
+            var useTls = brokerConnectionConfiguration.UseTls;
+            var userName = brokerConnectionConfiguration.UserName;
+            var password = brokerConnectionConfiguration.Password;
+
+            return new ConnectionConfiguration(host, port, virtualHost, userName, password, useTls);
+        }
+
         static Dictionary<string, string> ParseAmqpConnectionString(string connectionString, StringBuilder invalidOptionsMessage)
         {
             var dictionary = new Dictionary<string, string>();
