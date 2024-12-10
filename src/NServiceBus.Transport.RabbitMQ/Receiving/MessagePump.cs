@@ -11,6 +11,7 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
+    using NServiceBus.Transport.RabbitMQ.Administration;
 
     sealed partial class MessagePump : IMessageReceiver
     {
@@ -22,6 +23,7 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
+        readonly IBrokerVerifier brokerVerifier;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
@@ -50,10 +52,10 @@
             MessageConverter messageConverter,
             string consumerTag,
             ChannelProvider channelProvider,
+            IBrokerVerifier brokerVerifier,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
-            Action<string, Exception,
-            CancellationToken> criticalErrorAction,
+            Action<string, Exception, CancellationToken> criticalErrorAction,
             TimeSpan retryDelay)
         {
             this.settings = settings;
@@ -61,6 +63,7 @@
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
+            this.brokerVerifier = brokerVerifier;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.criticalErrorAction = criticalErrorAction;
@@ -93,6 +96,8 @@
             {
                 await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
+
+            await brokerVerifier.ValidateDeliveryLimit(ReceiveAddress, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StartReceive(CancellationToken cancellationToken = default)
