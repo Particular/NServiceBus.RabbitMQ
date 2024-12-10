@@ -94,7 +94,7 @@ class ManagementClient : IManagementClient
     {
         ArgumentNullException.ThrowIfNull(policy, nameof(policy));
 
-        policy.VirtualHost = Uri.EscapeDataString(virtualHost);
+        policy.VirtualHost = virtualHost;
 
         var escapedPolicyName = Uri.EscapeDataString(policy.Name);
         var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken)
