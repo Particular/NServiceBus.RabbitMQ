@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
+namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
 
 using System;
 using System.Net.Http;
@@ -9,7 +9,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
 
 class ManagementClient : IManagementClient
 {

@@ -1,10 +1,9 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
+namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
 
 using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
 
 interface IManagementClient
 {

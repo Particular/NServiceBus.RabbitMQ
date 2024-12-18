@@ -5,14 +5,13 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.RabbitMQ.Administration;
     using global::RabbitMQ.Client;
 
     sealed class RabbitMQTransportInfrastructure : TransportInfrastructure
     {
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
-        readonly IBrokerVerifier brokerVerifier;
+        readonly BrokerVerifier brokerVerifier;
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
@@ -20,7 +19,7 @@
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
-            IBrokerVerifier brokerVerifier,
+            BrokerVerifier brokerVerifier,
             Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)

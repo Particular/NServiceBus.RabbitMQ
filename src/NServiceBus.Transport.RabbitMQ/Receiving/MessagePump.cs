@@ -11,7 +11,6 @@
     using global::RabbitMQ.Client.Events;
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
-    using NServiceBus.Transport.RabbitMQ.Administration;
 
     sealed partial class MessagePump : IMessageReceiver
     {
@@ -23,7 +22,7 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
-        readonly IBrokerVerifier brokerVerifier;
+        readonly BrokerVerifier brokerVerifier;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
@@ -52,7 +51,7 @@
             MessageConverter messageConverter,
             string consumerTag,
             ChannelProvider channelProvider,
-            IBrokerVerifier brokerVerifier,
+            BrokerVerifier brokerVerifier,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
             Action<string, Exception, CancellationToken> criticalErrorAction,
