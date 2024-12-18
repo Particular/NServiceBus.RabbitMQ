@@ -30,8 +30,18 @@
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
+            : this(routingTopology, connectionString, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="routingTopology">The routing topology to use.</param>
+        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
         /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, string managementConnectionString = null)
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, string managementConnectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
@@ -53,9 +63,20 @@
         /// </summary>
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
-        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
         /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, string managementConnectionString = null)
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery)
+            : this(routingTopology, connectionString, enableDelayedDelivery, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="routingTopology">The routing topology to use.</param>
+        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
+        /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
+        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, string managementConnectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: enableDelayedDelivery,
                 supportsPublishSubscribe: true,
