@@ -6,8 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient;
-    using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
+    using NServiceBus.Transport.RabbitMQ.ManagementClient;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
     using ConnectionFactory = ConnectionFactory;

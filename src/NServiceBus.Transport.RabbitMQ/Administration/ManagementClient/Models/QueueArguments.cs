@@ -1,11 +1,10 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
+namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
 
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 class QueueArguments
 {
