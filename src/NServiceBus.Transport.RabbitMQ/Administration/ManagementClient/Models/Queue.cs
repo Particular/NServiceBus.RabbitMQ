@@ -1,11 +1,10 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Models;
+namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
 
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using NServiceBus.Transport.RabbitMQ.Administration.ManagementClient.Converters;
 
 // This is to prevent Fody throwing an error on classes with `required` properties (since the compiler marks the default constructor with an `[Obsolete]` attribute)
 // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-11.0/required-members#metadata-representation

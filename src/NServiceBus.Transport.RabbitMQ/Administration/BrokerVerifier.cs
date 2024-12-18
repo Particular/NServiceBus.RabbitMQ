@@ -1,16 +1,15 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Administration;
+namespace NServiceBus.Transport.RabbitMQ;
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ManagementClient;
-using ManagementClient.Models;
 using NServiceBus.Logging;
 using Polly;
 
-class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFactory? managementClientFactory) : IBrokerVerifier
+class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFactory? managementClientFactory)
 {
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
@@ -168,7 +167,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
             throw new InvalidOperationException($"Cannot override delivery limit on the {queue.Name} queue by policy in RabbitMQ versions prior to 4. Version is {brokerVersion}.");
         }
 
-        var policy = new ManagementClient.Models.Policy
+        var policy = new RabbitMQ.ManagementClient.Policy
         {
             Name = $"nsb.{queue.Name}.delivery-limit",
             ApplyTo = PolicyTarget.QuorumQueues,
