@@ -9,19 +9,19 @@ using ManagementClient;
 using NServiceBus.Logging;
 using Polly;
 
-class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFactory? managementClientFactory)
+class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ConnectionConfiguration connectionConfiguration)
 {
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
     static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
 
-    readonly ManagementClient.ManagementClient? managementClient = managementClientFactory?.CreateManagementClient();
+    readonly ManagementClient.ManagementClient managementClient = new(connectionConfiguration);
 
     Version? brokerVersion;
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
-        if (managementClient != null)
+        if (managementClientAvailable)
         {
             var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
             if (response.HasValue)
@@ -65,7 +65,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
         }
 
         bool streamsEnabled;
-        if (managementClient != null)
+        if (managementClientAvailable)
         {
             var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
             streamsEnabled = response.HasValue && response.Value.HasEnabledFeature(FeatureFlags.StreamQueue);
@@ -84,7 +84,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
 
     public async Task ValidateDeliveryLimit(string queueName, CancellationToken cancellationToken = default)
     {
-        if (managementClient == null)
+        if (!managementClientAvailable)
         {
             return;
         }
