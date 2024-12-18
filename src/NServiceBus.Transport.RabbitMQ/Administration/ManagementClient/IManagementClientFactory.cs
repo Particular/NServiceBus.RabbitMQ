@@ -4,5 +4,5 @@ namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
 
 interface IManagementClientFactory
 {
-    IManagementClient CreateManagementClient();
+    ManagementClient CreateManagementClient();
 }
