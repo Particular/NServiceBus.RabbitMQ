@@ -1,12 +1,7 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
 
-/// <summary>
-/// The types of queues supported by RabbitMQ
-/// </summary>
-/// <remarks>
-/// Note that this is different to <see cref="NServiceBus.QueueType"/> which lists the types of queues supported by the NServiceBus transport 
-/// and doesn't include the <c>Stream</c> value
-/// </remarks>
+// Note that this is different to `NServiceBus.QueueType` which lists the types of queues supported
+// by the NServiceBus transport, which doesn't include the `Stream` value
 enum QueueType
 {
     Classic,
