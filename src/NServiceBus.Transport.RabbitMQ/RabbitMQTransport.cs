@@ -9,7 +9,6 @@
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
-    using Transport.RabbitMQ.ManagementClient;
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
     /// <summary>
@@ -230,8 +229,7 @@
                 ManagementConnectionConfiguration = ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true);
             }
 
-            var managementClientFactory = DoNotUseManagementClient ? null : new ManagementClientFactory(ManagementConnectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(connectionFactory, managementClientFactory);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, ManagementConnectionConfiguration);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
