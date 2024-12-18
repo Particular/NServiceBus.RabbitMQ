@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-class ManagementClient : IManagementClient
+class ManagementClient
 {
     readonly HttpClient httpClient;
     readonly string virtualHost;
