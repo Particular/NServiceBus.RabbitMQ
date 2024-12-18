@@ -15,7 +15,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
     static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
 
-    readonly IManagementClient? managementClient = managementClientFactory?.CreateManagementClient();
+    readonly ManagementClient.ManagementClient? managementClient = managementClientFactory?.CreateManagementClient();
 
     Version? brokerVersion;
 
@@ -125,7 +125,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
         return true;
     }
 
-    static async Task<Queue?> GetFullQueueDetails(IManagementClient managementClient, string queueName, CancellationToken cancellationToken)
+    static async Task<Queue?> GetFullQueueDetails(ManagementClient.ManagementClient managementClient, string queueName, CancellationToken cancellationToken)
     {
         var retryPolicy = Polly.Policy
             .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
@@ -155,7 +155,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
         return response?.Value?.EffectivePolicyDefinition is not null ? response.Value : null;
     }
 
-    static async Task SetDeliveryLimitViaPolicy(IManagementClient managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
+    static async Task SetDeliveryLimitViaPolicy(ManagementClient.ManagementClient managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
         {
@@ -167,7 +167,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, IManagementClientFacto
             throw new InvalidOperationException($"Cannot override delivery limit on the {queue.Name} queue by policy in RabbitMQ versions prior to 4. Version is {brokerVersion}.");
         }
 
-        var policy = new RabbitMQ.ManagementClient.Policy
+        var policy = new ManagementClient.Policy
         {
             Name = $"nsb.{queue.Name}.delivery-limit",
             ApplyTo = PolicyTarget.QuorumQueues,
