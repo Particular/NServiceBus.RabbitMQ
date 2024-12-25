@@ -21,6 +21,7 @@
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
+        X509Certificate2Collection certCollection = null;
 
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
@@ -30,6 +31,17 @@
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
         public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
+            : this(routingTopology, connectionString, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="routingTopology">The routing topology to use.</param>
+        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
+        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, string managementConnectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
@@ -39,7 +51,11 @@
             ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
-            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
+                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration) :
+                ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
         }
 
         /// <summary>
@@ -49,6 +65,18 @@
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
         /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
         public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery)
+            : this(routingTopology, connectionString, enableDelayedDelivery, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of the RabbitMQ transport.
+        /// </summary>
+        /// <param name="routingTopology">The routing topology to use.</param>
+        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
+        /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
+        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
+        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, string managementConnectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: enableDelayedDelivery,
                 supportsPublishSubscribe: true,
@@ -58,10 +86,15 @@
             ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
-            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
+                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration) :
+                ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
         }
 
-        internal ConnectionConfiguration ConnectionConfiguration { get; set; }
+        internal ConnectionConfiguration BrokerConnectionConfiguration { get; set; }
+
+        internal ConnectionConfiguration ManagementConnectionConfiguration { get; set; }
 
         internal IRoutingTopology RoutingTopology { get; set; }
 
@@ -93,8 +126,8 @@
         }
 
         /// <summary>
-        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/> 
-        /// just before it is dispatched to the rabbitmq client. 
+        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/>
+        /// just before it is dispatched to the rabbitmq client.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -135,6 +168,12 @@
         /// Specifies if an external authentication mechanism should be used for client authentication.
         /// </summary>
         public bool UseExternalAuthMechanism { get; set; } = false;
+
+        /// <summary>
+        /// Set this to prevent the transport from using the RabbitMQ Management API.
+        /// This is not recommended as it can prevent the transport from setting appropriate delivery limits for retry functionality.
+        /// </summary>
+        public bool DoNotUseManagementClient { get; set; } = false;
 
         /// <summary>
         /// The interval for heartbeats between the endpoint and the broker.
@@ -192,17 +231,11 @@
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
-
-            X509Certificate2Collection certCollection = null;
-
-            if (ClientCertificate != null)
-            {
-                certCollection = new X509Certificate2Collection(ClientCertificate);
-            }
+            ValidateAndApplyCertCollections();
 
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
-                ConnectionConfiguration,
+                BrokerConnectionConfiguration,
                 certCollection,
                 !ValidateRemoteCertificate,
                 UseExternalAuthMechanism,
@@ -210,6 +243,15 @@
                 NetworkRecoveryInterval,
                 additionalClusterNodes
             );
+
+            // Uses the legacy Management API connection string or default to the RabbitMQ broker connection credentials
+            if (!string.IsNullOrEmpty(LegacyManagementApiConnectionString))
+            {
+                ManagementConnectionConfiguration = ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true);
+            }
+
+            var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, ManagementConnectionConfiguration);
+            await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
@@ -223,6 +265,7 @@
                 RoutingTopology,
                 channelProvider,
                 converter,
+                brokerVerifier,
                 OutgoingNativeMessageCustomization,
                 TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation,
@@ -238,12 +281,17 @@
             return infra;
         }
 
+        void ValidateAndApplyCertCollections() => certCollection ??= ClientCertificate != null
+                ? new X509Certificate2Collection(ClientCertificate) : null;
+
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
 
         // Remove all Legacy API stuff below when PreObsoletes are converted
 
         internal string LegacyApiConnectionString { get; set; }
+
+        internal string LegacyManagementApiConnectionString { get; set; }
 
         internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
 
@@ -263,19 +311,37 @@
                 return;
             }
 
+            VaildateTopologyFactory();
+            ValidateConnectionString();
+
+            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
+            BrokerConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
+
+            // Uses the legacy management API connection string or build the string from the legacy broker connection configuration
+            ManagementConnectionConfiguration = !string.IsNullOrEmpty(LegacyManagementApiConnectionString) ?
+                ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true) :
+                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration);
+        }
+
+        void VaildateTopologyFactory()
+        {
             if (TopologyFactory == null)
             {
                 throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods. Most new projects should use the Conventional routing topology.");
             }
+        }
 
-            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
-
+        void ValidateConnectionString()
+        {
             if (string.IsNullOrEmpty(LegacyApiConnectionString))
             {
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
 
-            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
+            if (!DoNotUseManagementClient && string.IsNullOrEmpty(LegacyManagementApiConnectionString))
+            {
+                throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementConnectionString()` method.");
+            }
         }
     }
 }

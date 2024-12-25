@@ -24,7 +24,8 @@
                 .Run());
 
             Assert.That(exception.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type' for queue 'QuorumEndpointUsesClassicQueue.QuorumQueueEndpoint'"));
-            Assert.That(exception.Message, Does.Contain("received the value 'quorum' of type 'longstr' but current is none"));
+            Assert.That(exception.Message, Does.Contain("received the value 'quorum' of type 'longstr' but current is none'") // RabbitMQ v3.x
+                                            .Or.Contain("received 'quorum' but current is 'classic'")); // RabbitMQ v4.x
         }
 
         class QuorumQueueEndpoint : EndpointConfigurationBuilder
