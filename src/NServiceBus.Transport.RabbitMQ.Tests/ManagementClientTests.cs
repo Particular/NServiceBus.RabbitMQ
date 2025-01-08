@@ -21,6 +21,57 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
         static readonly ManagementClient client = new(managementConnectionConfiguration);
 
+        const int defaultBrokerPort = 5672;
+        const int defaultBrokerTlsPort = 5671;
+        const int defaultManagementPort = 15672;
+        const int defaultManagementTlsPort = 15671;
+        const string defaultUserName = "guest";
+        const string defaultPassword = "guest";
+
+        static IEnumerable<TestCaseData> ConnectionConfigurationTestCases()
+        {
+            yield return new TestCaseData(
+                $"Host=wronghost1;VirtualHost=/;Port={defaultBrokerPort};UserName={defaultUserName};Password={defaultPassword};UseTls=False",
+                defaultManagementPort,
+                defaultUserName,
+                defaultPassword);
+            yield return new TestCaseData(
+                $"Host=wronghost2;VirtualHost=/;Port={defaultBrokerTlsPort};UserName={defaultUserName};Password={defaultPassword};UseTls=True",
+                defaultManagementTlsPort,
+                defaultUserName,
+                defaultPassword);
+            yield return new TestCaseData(
+                $"Host=wronghost3;VirtualHost=/;Port=12345;UserName={defaultUserName};Password={defaultPassword};UseTls=False",
+                12345,
+                defaultUserName,
+                defaultPassword);
+            yield return new TestCaseData(
+                $"Host=wronghost4;VirtualHost=/;Port={defaultBrokerPort};UserName=fakeUser;Password=fakePassword;UseTls=True",
+                defaultManagementPort,
+                "fakeUser",
+                "fakePassword");
+            yield return new TestCaseData(
+                $"Host=wronghost5;VirtualHost=/;Port={defaultBrokerPort};UseTls=True",
+                defaultManagementPort,
+                defaultUserName,
+                defaultPassword);
+        }
+        [Test, TestCaseSource(nameof(ConnectionConfigurationTestCases))]
+        public void ValidateConnectionConfiguration_Should_Set_Default_Port_And_Authorization_Configurations(string connectionString, int expectedPort, string expectedUserName, string expectedPassword)
+        {
+            var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            var client = new ManagementClient(connectionConfiguration);
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await client.ValidateConnectionConfiguration());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exception!.Message, Is.EqualTo("The management connection configuration could not be validated with the supplied connection string or the default values."));
+                Assert.That(client.Port, Is.EqualTo(expectedPort));
+                Assert.That(client.UserName, Is.EqualTo(expectedUserName));
+                Assert.That(client.Password, Is.EqualTo(expectedPassword));
+            });
+        }
+
         [Test]
         public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
         {
