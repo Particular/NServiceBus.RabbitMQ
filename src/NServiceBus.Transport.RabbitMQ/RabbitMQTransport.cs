@@ -53,9 +53,9 @@
             RoutingTopology = routingTopology.Create();
             BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
-                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration) :
-                ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString)
+                ? BrokerConnectionConfiguration
+                : ConnectionConfiguration.Create(managementConnectionString);
         }
 
         /// <summary>
@@ -87,9 +87,9 @@
 
             RoutingTopology = routingTopology.Create();
             BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
-            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString) ?
-                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration) :
-                ConnectionConfiguration.Create(managementConnectionString, isManagementConnection: true);
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString)
+                ? BrokerConnectionConfiguration
+                : ConnectionConfiguration.Create(managementConnectionString);
         }
 
         internal ConnectionConfiguration BrokerConnectionConfiguration { get; set; }
@@ -247,7 +247,7 @@
             // Uses the legacy Management API connection string or default to the RabbitMQ broker connection credentials
             if (!string.IsNullOrEmpty(LegacyManagementApiConnectionString))
             {
-                ManagementConnectionConfiguration = ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true);
+                ManagementConnectionConfiguration = ConnectionConfiguration.Create(LegacyManagementApiConnectionString);
             }
 
             var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, ManagementConnectionConfiguration);
@@ -318,9 +318,9 @@
             BrokerConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
 
             // Uses the legacy management API connection string or build the string from the legacy broker connection configuration
-            ManagementConnectionConfiguration = !string.IsNullOrEmpty(LegacyManagementApiConnectionString) ?
-                ConnectionConfiguration.Create(LegacyManagementApiConnectionString, isManagementConnection: true) :
-                ConnectionConfiguration.ConvertToManagementConnection(BrokerConnectionConfiguration);
+            ManagementConnectionConfiguration = string.IsNullOrEmpty(LegacyManagementApiConnectionString)
+                ? BrokerConnectionConfiguration
+                : ConnectionConfiguration.Create(LegacyManagementApiConnectionString);
         }
 
         void VaildateTopologyFactory()
