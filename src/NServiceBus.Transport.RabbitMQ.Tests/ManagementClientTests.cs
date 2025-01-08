@@ -17,7 +17,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     {
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
-        static readonly ConnectionConfiguration managementConnectionConfiguration = ConnectionConfiguration.Create(connectionString, isManagementConnection: true);
+        static readonly ConnectionConfiguration managementConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
         static readonly ManagementClient client = new(managementConnectionConfiguration);
 

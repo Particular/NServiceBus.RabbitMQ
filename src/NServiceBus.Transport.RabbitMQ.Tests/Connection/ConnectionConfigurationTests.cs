@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         static HostSettings HostSettings { get; } = new(nameof(ConnectionConfigurationTests), nameof(ConnectionConfigurationTests), null, null, false);
 
         static readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
-        static readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost", isManagementConnection: true);
+        static readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost");
 
         static string CreateManagementConnectionString(string connectionString)
         {
@@ -187,7 +187,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             Assert.Multiple(() =>
             {
                 Assert.That(brokerDefaults.Port, Is.EqualTo(5672));
-                Assert.That(managementDefaults.Port, Is.EqualTo(15672));
+                Assert.That(managementDefaults.Port, Is.EqualTo(5672));
             });
         }
 
@@ -249,7 +249,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
                 Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("localhost"));
                 Assert.That(transport.ManagementConnectionConfiguration.UserName, Is.EqualTo("guest"));
                 Assert.That(transport.ManagementConnectionConfiguration.Password, Is.EqualTo("guest"));
-                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));  // This should be set to the default management port
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(5672));  // This should be set to the default management port
                 Assert.That(transport.ManagementConnectionConfiguration.UseTls, Is.EqualTo(false));
             });
         }
@@ -401,7 +401,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             Assert.Multiple(() =>
             {
                 Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
-                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(15672));
+                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(5672));
             });
         }
 
