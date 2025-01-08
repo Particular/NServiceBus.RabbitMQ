@@ -23,6 +23,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
     {
         if (managementClientAvailable)
         {
+            await managementClient.ValidateConnectionConfiguration(cancellationToken).ConfigureAwait(false);
             var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
             if (response.HasValue)
             {
