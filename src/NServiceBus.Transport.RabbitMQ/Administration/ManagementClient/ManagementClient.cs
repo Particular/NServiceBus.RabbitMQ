@@ -12,28 +12,58 @@ using System.Threading.Tasks;
 
 class ManagementClient
 {
-    readonly HttpClient httpClient;
-    readonly string virtualHost;
+    HttpClient httpClient;
+
+    public int Port { get; private set; }
+    public string UserName { get; private set; }
+    public string Password { get; private set; }
+
+    public readonly string Host;
+    public readonly bool UseTls;
+    public readonly string VirtualHost;
+
+    readonly ConnectionConfiguration ConnectionConfiguration;
     readonly string escapedVirtualHost;
+
+    const int defaultManagementPort = 15672;
+    const int defaultManagementTlsPort = 15671;
+    const string defaultUserName = "guest";
+    const string defaultPassword = "guest";
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration, nameof(connectionConfiguration));
+        ConnectionConfiguration = connectionConfiguration;
 
-        virtualHost = connectionConfiguration.VirtualHost;
-        escapedVirtualHost = Uri.EscapeDataString(virtualHost);
+        Host = ConnectionConfiguration.Host;
+        VirtualHost = ConnectionConfiguration.VirtualHost;
+        escapedVirtualHost = Uri.EscapeDataString(VirtualHost);
+        Port = ConnectionConfiguration.Port;
+        UserName = ConnectionConfiguration.UserName;
+        Password = ConnectionConfiguration.Password;
+        UseTls = ConnectionConfiguration.UseTls;
 
-        var uriBuilder = new UriBuilder
+        httpClient = CreateHttpClient(Port, UserName, Password);
+    }
+
+    public async Task ValidateConnectionConfiguration(CancellationToken cancellationToken = default)
+    {
+        if (await IsConnectionValid(cancellationToken).ConfigureAwait(false)
+            || await IsConnectionValidWithDefaultPort(cancellationToken).ConfigureAwait(false)
+            || await IsConnectionValidWithDefaultAuthorization(cancellationToken).ConfigureAwait(false))
         {
-            Scheme = connectionConfiguration.UseTls ? "https" : "http",
-            Host = connectionConfiguration.Host,
-            Port = connectionConfiguration.Port,
-        };
+            return;
+        }
 
-        httpClient = new HttpClient { BaseAddress = uriBuilder.Uri };
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Basic",
-            Convert.ToBase64String(Encoding.ASCII.GetBytes($"{connectionConfiguration.UserName}:{connectionConfiguration.Password}")));
+        SetDefaultManagementPort();
+        SetManagementAuthorization(httpClient, defaultUserName, defaultPassword);
+
+        if (await IsConnectionValid(cancellationToken).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        throw new HttpRequestException("The management connection configuration could not be validated with the supplied connection string or the default values.");
     }
 
     public async Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default)
@@ -93,12 +123,90 @@ class ManagementClient
     {
         ArgumentNullException.ThrowIfNull(policy, nameof(policy));
 
-        policy.VirtualHost = virtualHost;
+        policy.VirtualHost = VirtualHost;
 
         var escapedPolicyName = Uri.EscapeDataString(policy.Name);
         var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken)
             .ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
+    }
+
+    HttpClient CreateHttpClient(int port, string userName, string password)
+    {
+        var uriBuilder = new UriBuilder
+        {
+            Scheme = UseTls ? "https" : "http",
+            Host = Host,
+            Port = port,
+        };
+
+        Port = port;
+        UserName = userName ?? defaultUserName;
+        Password = password ?? defaultPassword;
+        var client = new HttpClient { BaseAddress = uriBuilder.Uri };
+        SetManagementAuthorization(client, UserName, Password);
+        return client;
+    }
+
+    void SetManagementAuthorization(HttpClient client, string userName, string password) =>
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Basic",
+            Convert.ToBase64String(Encoding.ASCII.GetBytes($"{userName}:{password}")));
+
+    void UpdateHttpClientPort(int port) => httpClient = CreateHttpClient(port, UserName, Password);
+
+    void SetDefaultManagementPort()
+    {
+        if (ConnectionConfiguration.UseTls)
+        {
+            UpdateHttpClientPort(defaultManagementTlsPort);
+            return;
+        }
+        UpdateHttpClientPort(defaultManagementPort);
+    }
+
+    async Task<bool> IsConnectionValid(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Head, httpClient.BaseAddress);
+            var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            return response.IsSuccessStatusCode;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    async Task<bool> IsConnectionValidWithDefaultPort(CancellationToken cancellationToken)
+    {
+        SetDefaultManagementPort();
+
+        if (await IsConnectionValid(cancellationToken).ConfigureAwait(false))
+        {
+            return true;
+        }
+
+        UpdateHttpClientPort(ConnectionConfiguration.Port);
+
+        return false;
+    }
+
+    async Task<bool> IsConnectionValidWithDefaultAuthorization(CancellationToken cancellationToken)
+    {
+        SetManagementAuthorization(httpClient, defaultUserName, defaultPassword);
+        if (await IsConnectionValid(cancellationToken).ConfigureAwait(false))
+        {
+            return true;
+        }
+
+        SetManagementAuthorization(httpClient, ConnectionConfiguration.UserName, ConnectionConfiguration.Password);
+        return false;
     }
 }
