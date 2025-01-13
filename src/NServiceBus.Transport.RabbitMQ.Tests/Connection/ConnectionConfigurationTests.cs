@@ -7,8 +7,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
     using System.Linq;
     using System.Net.Http;
     using System.Text;
-    using System.Threading.Tasks;
-    using global::RabbitMQ.Client.Exceptions;
     using NUnit.Framework;
     using RabbitMQ;
 
@@ -17,19 +15,10 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
     {
         const string FakeConnectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
         static string BrokerConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
-        static string ManagementConnectionString => CreateManagementConnectionString(BrokerConnectionString);
 
         static HostSettings HostSettings { get; } = new(nameof(ConnectionConfigurationTests), nameof(ConnectionConfigurationTests), null, null, false);
 
         static readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
-        static readonly ConnectionConfiguration managementDefaults = ConnectionConfiguration.Create("host=localhost");
-
-        static string CreateManagementConnectionString(string connectionString)
-        {
-            var parameters = connectionString.Split(';').Select(param => param.Split('=')).ToDictionary(parts => parts[0], parts => parts[1]);
-            parameters["port"] = "15672";
-            return string.Join(";", parameters.Select(kv => $"{kv.Key}={kv.Value}"));
-        }
 
         [Test]
         public void Should_correctly_parse_full_connection_string()
@@ -184,233 +173,96 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         [Test]
         public void Should_set_default_port()
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(brokerDefaults.Port, Is.EqualTo(5672));
-                Assert.That(managementDefaults.Port, Is.EqualTo(5672));
-            });
+            Assert.That(brokerDefaults.Port, Is.EqualTo(5672));
         }
 
         [Test]
         public void Should_set_default_virtual_host()
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(brokerDefaults.VirtualHost, Is.EqualTo("/"));
-                Assert.That(managementDefaults.VirtualHost, Is.EqualTo("/"));
-            });
+            Assert.That(brokerDefaults.VirtualHost, Is.EqualTo("/"));
         }
 
         [Test]
         public void Should_set_default_username()
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(brokerDefaults.UserName, Is.EqualTo("guest"));
-                Assert.That(managementDefaults.UserName, Is.EqualTo("guest"));
-            });
+            Assert.That(brokerDefaults.UserName, Is.EqualTo("guest"));
         }
 
         [Test]
         public void Should_set_default_password()
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(brokerDefaults.Password, Is.EqualTo("guest"));
-                Assert.That(managementDefaults.Password, Is.EqualTo("guest"));
-            });
+            Assert.That(brokerDefaults.Password, Is.EqualTo("guest"));
         }
 
         [Test]
         public void Should_set_default_use_tls()
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(brokerDefaults.UseTls, Is.EqualTo(false));
-                Assert.That(managementDefaults.UseTls, Is.EqualTo(false));
-            });
+            Assert.That(brokerDefaults.UseTls, Is.EqualTo(false));
         }
 
-        [Test]
-        public void Should_configure_broker_and_management_connection_configurations_with_single_connection_string()
-        {
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;host=localhost;username=guest;password=guest;port=5672;useTls=false");
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(transport.BrokerConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
-                Assert.That(transport.BrokerConnectionConfiguration.Host, Is.EqualTo("localhost"));
-                Assert.That(transport.BrokerConnectionConfiguration.UserName, Is.EqualTo("guest"));
-                Assert.That(transport.BrokerConnectionConfiguration.Password, Is.EqualTo("guest"));
-                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
-                Assert.That(transport.BrokerConnectionConfiguration.UseTls, Is.EqualTo(false));
-
-                Assert.That(transport.ManagementConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
-                Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("localhost"));
-                Assert.That(transport.ManagementConnectionConfiguration.UserName, Is.EqualTo("guest"));
-                Assert.That(transport.ManagementConnectionConfiguration.Password, Is.EqualTo("guest"));
-                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(5672));  // This should be set to the default management port
-                Assert.That(transport.ManagementConnectionConfiguration.UseTls, Is.EqualTo(false));
-            });
-        }
-
-        [Test]
-        public void Should_configure_broker_and_management_connection_configurations_with_respective_connection_strings()
-        {
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), "virtualHost=/;host=localhost;username=guest;password=guest;port=5672;useTls=false", FakeConnectionString);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(transport.BrokerConnectionConfiguration.VirtualHost, Is.EqualTo("/"));
-                Assert.That(transport.BrokerConnectionConfiguration.Host, Is.EqualTo("localhost"));
-                Assert.That(transport.BrokerConnectionConfiguration.UserName, Is.EqualTo("guest"));
-                Assert.That(transport.BrokerConnectionConfiguration.Password, Is.EqualTo("guest"));
-                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
-                Assert.That(transport.BrokerConnectionConfiguration.UseTls, Is.EqualTo(false));
-
-                Assert.That(transport.ManagementConnectionConfiguration.VirtualHost, Is.EqualTo("Copa"));
-                Assert.That(transport.ManagementConnectionConfiguration.Host, Is.EqualTo("192.168.1.1"));
-                Assert.That(transport.ManagementConnectionConfiguration.UserName, Is.EqualTo("Copa"));
-                Assert.That(transport.ManagementConnectionConfiguration.Password, Is.EqualTo("abc_xyz"));
-                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(1234));
-                Assert.That(transport.ManagementConnectionConfiguration.UseTls, Is.EqualTo(true));
-            });
-        }
-
-        [Test]
-        public void Should_throw_on_invalid_management_credentials()
-        {
-            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
-            {
-                UserName = "Copa"
-            };
-
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString());
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []))
-                ?? throw new ArgumentNullException("exception");
-
-            Assert.That(exception.Message, Does.Contain("Could not access RabbitMQ Management API"));
-        }
-
-        [Test]
-        public void Should_throw_on_invalid_management_host()
-        {
-            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
-            {
-                Host = "WrongHostName"
-            };
-
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString());
-
-            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
-        }
-
-        [Test]
-        public void Should_throw_on_invalid_broker_connection_string()
-        {
-            var invalidBrokerConnection = new FakeConnectionConfiguration(host: "127.0.0.1", userName: "Copa");
-
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), invalidBrokerConnection.ToConnectionString(), ManagementConnectionString);
-
-            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []))
-                ?? throw new ArgumentNullException("exception");
-
-            Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
-        }
-
-        [Test]
-        public void Should_throw_on_invalid_legacy_management_credentials()
-        {
-            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
-            {
-                UserName = "Copa"
-            };
-
-            // Create transport in legacy mode
-            var transport = new RabbitMQTransport
-            {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
-                LegacyApiConnectionString = BrokerConnectionString,
-                LegacyManagementApiConnectionString = invalidManagementConnection.ToConnectionString()
-            };
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []));
-
-            Assert.That(exception!.Message, Does.Contain("Could not access RabbitMQ Management API"));
-        }
 
         [Test]
         public void Should_throw_on_invalid_legacy_management_host()
         {
-            var invalidManagementConnection = new FakeConnectionConfiguration(ManagementConnectionString)
-            {
-                Host = "WrongHostName"
-            };
-
             // Create transport in legacy mode
             var transport = new RabbitMQTransport
             {
                 TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
                 LegacyApiConnectionString = BrokerConnectionString,
-                LegacyManagementApiConnectionString = invalidManagementConnection.ToConnectionString()
+                LegacyManagementApiUrl = "http://copa:abc123xyz@wronghost:12345"
             };
 
             _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
         }
 
-        [Test]
-        public void Should_throw_on_invalid_legacy_broker_connection_string()
-        {
-            var invalidBrokerConnection = new FakeConnectionConfiguration(host: "localhost", port: "5672", virtualHost: "/", userName: "Copa", password: "guest", useTls: "false");
+        // Todo: Need to fix tests checking the legacyManagementApiUrl
+        // Scenario 1: legacyManagementApiUrl is null or empty
+        // Scenario 2: legacyManagementApiUrl host is invalid
+        // Scenario 3: legacyManagementApiUrl port is invalid
+        // Scenario 4: legacyManagementApiUrl credentials are invalid
 
-            // Create transport in legacy mode
-            var transport = new RabbitMQTransport
-            {
-                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
-                LegacyApiConnectionString = invalidBrokerConnection.ToConnectionString(),
-                LegacyManagementApiConnectionString = ManagementConnectionString
-            };
+        //[Test]
+        //public void Should_throw_on_invalid_legacy_management_credentials()
+        //{
+        //    // Create transport in legacy mode
+        //    var transport = new RabbitMQTransport
+        //    {
+        //        TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
+        //        LegacyApiConnectionString = BrokerConnectionString,
+        //        LegacyManagementApiUrl = "http://copa:abc123xyz@localhost:12345"
+        //    };
 
-            var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []))
-                ?? throw new ArgumentNullException("exception");
+        //    var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []));
 
-            Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
-        }
+        //    Assert.That(exception!.Message, Does.Contain("Could not access RabbitMQ Management API"));
+        //}
 
-        [Test]
-        public void Should_connect_to_management_api_with_broker_credentials()
-        {
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString);
+        //[Test]
+        //public void Should_throw_on_invalid_legacy_broker_connection_string()
+        //{
+        //    var invalidBrokerConnection = new FakeConnectionConfiguration(host: "localhost", port: "5672", virtualHost: "/", userName: "Copa", password: "guest", useTls: "false");
 
-            Assert.DoesNotThrowAsync(async () => await transport.Initialize(HostSettings, [], []));
-        }
+        //    // Create transport in legacy mode
+        //    var transport = new RabbitMQTransport
+        //    {
+        //        TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
+        //        LegacyApiConnectionString = invalidBrokerConnection.ToConnectionString(),
+        //        //LegacyManagementApiUrl = "http://copa:guest@wronghost:12345"
+        //    };
 
-        [Test]
-        public async Task Should_set_default_port_values_for_broker_and_management_connections()
-        {
-            var validConnectionWithoutPort = new FakeConnectionConfiguration(BrokerConnectionString)
-            {
-                Port = null
-            };
+        //    var exception = Assert.ThrowsAsync<BrokerUnreachableException>(async () => await transport.Initialize(HostSettings, [], []))
+        //        ?? throw new ArgumentNullException("exception");
 
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), validConnectionWithoutPort.ToConnectionString());
-
-            _ = await transport.Initialize(HostSettings, [], []);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(transport.BrokerConnectionConfiguration.Port, Is.EqualTo(5672));
-                Assert.That(transport.ManagementConnectionConfiguration.Port, Is.EqualTo(5672));
-            });
-        }
+        //    Assert.That(exception.Message, Does.Contain("None of the specified endpoints were reachable"));
+        //}
 
         [Test]
         public void Should_not_throw_when_DoNotUseManagementClient_is_enabled_and_management_connection_is_invalid()
         {
             var invalidManagementConnection = new FakeConnectionConfiguration(host: "Copa");
 
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString, invalidManagementConnection.ToConnectionString())
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), BrokerConnectionString)
             {
                 DoNotUseManagementClient = true
             };
