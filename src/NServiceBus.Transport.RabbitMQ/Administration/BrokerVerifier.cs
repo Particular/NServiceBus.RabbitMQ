@@ -5,17 +5,16 @@ namespace NServiceBus.Transport.RabbitMQ;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ManagementClient;
+using ManagementClientClass = ManagementClient.ManagementClient;
 using NServiceBus.Logging;
+using NServiceBus.Transport.RabbitMQ.ManagementClient;
 using Polly;
 
-class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ConnectionConfiguration connectionConfiguration)
+class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ManagementClientClass managementClient)
 {
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
     static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
-
-    readonly ManagementClient.ManagementClient managementClient = new(connectionConfiguration);
 
     Version? brokerVersion;
 
@@ -23,7 +22,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
     {
         if (managementClientAvailable)
         {
-            await managementClient.ValidateConnectionConfiguration(cancellationToken).ConfigureAwait(false);
+            await managementClient.ValidateManagementConnection(cancellationToken).ConfigureAwait(false);
             var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
             if (response.HasValue)
             {
@@ -126,7 +125,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
         return true;
     }
 
-    static async Task<Queue?> GetFullQueueDetails(ManagementClient.ManagementClient managementClient, string queueName, CancellationToken cancellationToken)
+    static async Task<Queue?> GetFullQueueDetails(ManagementClientClass managementClient, string queueName, CancellationToken cancellationToken)
     {
         var retryPolicy = Polly.Policy
             .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
@@ -156,7 +155,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
         return response?.Value?.EffectivePolicyDefinition is not null ? response.Value : null;
     }
 
-    static async Task SetDeliveryLimitViaPolicy(ManagementClient.ManagementClient managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
+    static async Task SetDeliveryLimitViaPolicy(ManagementClientClass managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
         {
