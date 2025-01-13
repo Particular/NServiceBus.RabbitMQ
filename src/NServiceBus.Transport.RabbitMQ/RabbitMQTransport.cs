@@ -9,6 +9,7 @@
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
+    using Transport.RabbitMQ.ManagementClient;
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
     /// <summary>
@@ -31,17 +32,6 @@
         /// <param name="routingTopology">The routing topology to use.</param>
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
         public RabbitMQTransport(RoutingTopology routingTopology, string connectionString)
-            : this(routingTopology, connectionString, null)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new instance of the RabbitMQ transport.
-        /// </summary>
-        /// <param name="routingTopology">The routing topology to use.</param>
-        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
-        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, string managementConnectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: true,
                 supportsPublishSubscribe: true,
@@ -52,10 +42,6 @@
 
             RoutingTopology = routingTopology.Create();
             BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
-
-            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString)
-                ? BrokerConnectionConfiguration
-                : ConnectionConfiguration.Create(managementConnectionString);
         }
 
         /// <summary>
@@ -65,18 +51,6 @@
         /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
         /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
         public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery)
-            : this(routingTopology, connectionString, enableDelayedDelivery, null)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new instance of the RabbitMQ transport.
-        /// </summary>
-        /// <param name="routingTopology">The routing topology to use.</param>
-        /// <param name="connectionString">The connection string to use when connecting to the broker.</param>
-        /// <param name="enableDelayedDelivery">Should the delayed delivery infrastructure be created by the endpoint</param>
-        /// <param name="managementConnectionString">The connection string to use when connecting to the management API</param>
-        public RabbitMQTransport(RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, string managementConnectionString)
             : base(TransportTransactionMode.ReceiveOnly,
                 supportsDelayedDelivery: enableDelayedDelivery,
                 supportsPublishSubscribe: true,
@@ -87,14 +61,9 @@
 
             RoutingTopology = routingTopology.Create();
             BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
-            ManagementConnectionConfiguration = string.IsNullOrEmpty(managementConnectionString)
-                ? BrokerConnectionConfiguration
-                : ConnectionConfiguration.Create(managementConnectionString);
         }
 
         internal ConnectionConfiguration BrokerConnectionConfiguration { get; set; }
-
-        internal ConnectionConfiguration ManagementConnectionConfiguration { get; set; }
 
         internal IRoutingTopology RoutingTopology { get; set; }
 
@@ -176,6 +145,14 @@
         public bool DoNotUseManagementClient { get; set; } = false;
 
         /// <summary>
+        /// Basic authentication HTTP connection string to the RabbitMQ management API.
+        /// </summary>
+        /// <remarks>
+        /// E.g. https://username:password@localhost:15671
+        /// </remarks>
+        public string ManagementApiUrl { get; set; }
+
+        /// <summary>
         /// The interval for heartbeats between the endpoint and the broker.
         /// </summary>
         public TimeSpan HeartbeatInterval
@@ -244,13 +221,11 @@
                 additionalClusterNodes
             );
 
-            // Uses the legacy Management API connection string or default to the RabbitMQ broker connection credentials
-            if (!string.IsNullOrEmpty(LegacyManagementApiConnectionString))
-            {
-                ManagementConnectionConfiguration = ConnectionConfiguration.Create(LegacyManagementApiConnectionString);
-            }
+            var managementClient = !string.IsNullOrEmpty(ManagementApiUrl)
+                ? new ManagementClient(ManagementApiUrl, BrokerConnectionConfiguration.VirtualHost)
+                : new ManagementClient(BrokerConnectionConfiguration);
 
-            var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, ManagementConnectionConfiguration);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, managementClient);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
@@ -291,7 +266,7 @@
 
         internal string LegacyApiConnectionString { get; set; }
 
-        internal string LegacyManagementApiConnectionString { get; set; }
+        internal string LegacyManagementApiUrl { get; set; }
 
         internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
 
@@ -317,10 +292,9 @@
             RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
             BrokerConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
 
-            // Uses the legacy management API connection string or build the string from the legacy broker connection configuration
-            ManagementConnectionConfiguration = string.IsNullOrEmpty(LegacyManagementApiConnectionString)
-                ? BrokerConnectionConfiguration
-                : ConnectionConfiguration.Create(LegacyManagementApiConnectionString);
+            ManagementApiUrl = !string.IsNullOrEmpty(LegacyManagementApiUrl)
+                ? LegacyManagementApiUrl
+                : ManagementClient.CreateManagementConnectionString(BrokerConnectionConfiguration);
         }
 
         void VaildateTopologyFactory()
@@ -338,9 +312,12 @@
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
 
-            if (!DoNotUseManagementClient && string.IsNullOrEmpty(LegacyManagementApiConnectionString))
+            // Todo: Not sure if we should throw here.  Even if the LegacyManagementApiUrl is null or empty the default connection
+            // values could still be tried.  Only if the default values fail should an error be thrown that a connection could not
+            // be made and the ManagementApiUrl should be configured.
+            if (!DoNotUseManagementClient && string.IsNullOrEmpty(LegacyManagementApiUrl))
             {
-                throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementConnectionString()` method.");
+                throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementApiUrl()` method.");
             }
         }
     }
