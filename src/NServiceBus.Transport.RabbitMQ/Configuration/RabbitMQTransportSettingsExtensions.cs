@@ -107,7 +107,7 @@
             ArgumentNullException.ThrowIfNull(transportExtensions);
             ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-            transportExtensions.Transport.LegacyManagementApiConnectionString = connectionString;
+            transportExtensions.Transport.LegacyManagementApiUrl = connectionString;
             return transportExtensions;
         }
 
@@ -122,7 +122,7 @@
             ArgumentNullException.ThrowIfNull(transportExtensions);
             ArgumentNullException.ThrowIfNull(getConnectionString);
 
-            transportExtensions.Transport.LegacyManagementApiConnectionString = getConnectionString();
+            transportExtensions.Transport.LegacyManagementApiUrl = getConnectionString();
             return transportExtensions;
         }
 

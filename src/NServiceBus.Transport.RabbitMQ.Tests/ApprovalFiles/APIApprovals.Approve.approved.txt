@@ -18,11 +18,10 @@ namespace NServiceBus
     {
         public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString) { }
         public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery) { }
-        public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString, string managementConnectionString) { }
-        public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery, string managementConnectionString) { }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
         public bool DoNotUseManagementClient { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
+        public string ManagementApiUrl { get; set; }
         public System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> MessageIdStrategy { get; set; }
         public System.TimeSpan NetworkRecoveryInterval { get; set; }
         public System.Action<NServiceBus.Transport.IOutgoingTransportOperation, RabbitMQ.Client.IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
