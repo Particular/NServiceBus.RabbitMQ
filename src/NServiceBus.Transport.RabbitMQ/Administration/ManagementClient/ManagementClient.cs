@@ -77,25 +77,6 @@ class ManagementClient
         escapedVirtualHost = Uri.EscapeDataString(virtualHost);
     }
 
-    public async Task ValidateManagementConnection(CancellationToken cancellationToken = default)
-    {
-        // Check broker provided authentication
-        var (isValid, _) = await IsConnectionValid(cancellationToken).ConfigureAwait(false);
-        if (isValid)
-        {
-            return;
-        }
-
-        // Check default management authentication
-        SetManagementClientAuthorization(httpClient, defaultUserName, defaultPassword);
-
-        var (isDefaultValid, exception) = await IsConnectionValid(cancellationToken).ConfigureAwait(false);
-        if (exception != null || !isDefaultValid)
-        {
-            throw exception ?? new InvalidOperationException($"Connection to the management API could not be established with the default or provided URL. Update the RabbitMQTransport.ManagementApiUrl with the correct HTTP connection string.");
-        }
-    }
-
     public static string CreateManagementConnectionString(ConnectionConfiguration connectionConfiguration)
     {
         var scheme = connectionConfiguration.UseTls ? "https" : "http";
@@ -274,22 +255,4 @@ class ManagementClient
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Basic",
             Convert.ToBase64String(Encoding.ASCII.GetBytes($"{userName}:{password}")));
-
-    async Task<(bool IsValid, Exception? ex)> IsConnectionValid(CancellationToken cancellationToken)
-    {
-        try
-        {
-            var request = new HttpRequestMessage(HttpMethod.Head, $"{httpClient.BaseAddress}api/overview");
-            var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            return (response.IsSuccessStatusCode, null);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return (false, ex);
-        }
-    }
 }
