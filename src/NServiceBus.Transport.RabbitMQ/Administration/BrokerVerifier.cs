@@ -10,9 +10,9 @@ using NServiceBus.Logging;
 using NServiceBus.Transport.RabbitMQ.ManagementClient;
 using Polly;
 
-class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ManagementClientClass managementClient)
+class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ManagementClientClass managementClient, ILog? logger = null)
 {
-    static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
+    readonly ILog Logger = logger ?? LogManager.GetLogger(typeof(BrokerVerifier));
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
     static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
 
@@ -22,7 +22,6 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
     {
         if (managementClientAvailable)
         {
-            await managementClient.ValidateManagementConnection(cancellationToken).ConfigureAwait(false);
             var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
             if (response.HasValue)
             {
@@ -125,7 +124,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
         return true;
     }
 
-    static async Task<Queue?> GetFullQueueDetails(ManagementClientClass managementClient, string queueName, CancellationToken cancellationToken)
+    async Task<Queue?> GetFullQueueDetails(ManagementClientClass managementClient, string queueName, CancellationToken cancellationToken)
     {
         var retryPolicy = Polly.Policy
             .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
