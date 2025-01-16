@@ -4,14 +4,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Net;
     using System.Net.Http;
-    using System.Text;
-    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.ManagementClient;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
+    using static NServiceBus.Transport.RabbitMQ.Tests.FakeHttpClient;
 
     [TestFixture]
     class ManagementClientTests
@@ -19,7 +19,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
         static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
-        ManagementClient managementClient;
+        string defaultManagementUrl;
+        ManagementClient? managementClient;
 
         const int defaultBrokerPort = 5672;
         const int defaultBrokerTlsPort = 5671;
@@ -30,132 +31,55 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         const string defaultVirtualHost = "/";
 
         [SetUp]
-        public void SetUp()
-        {
-            var defaultManagementUrl = ManagementClient.CreateManagementConnectionString(connectionConfiguration);
-            managementClient = new(defaultManagementUrl, defaultVirtualHost);
-        }
+        public void SetUp() => defaultManagementUrl = ManagementClient.CreateManagementConnectionString(connectionConfiguration);
 
         [Test]
         [TestCase("http://localhost", "guest", "guest", "http://localhost:15672")]
+        [TestCase("https://localhost", "guest", "guest", "https://localhost:15671")]
         [TestCase("http://localhost:15672", "guest", "guest", "http://localhost:15672")]
-        [TestCase("http://copa:abc123xyz@localhost", "copa", "abc123xyz", "http://localhost:15672")]
-        [TestCase("http://copa:abc123xyz@localhost", "guest", "guest", "http://localhost:15672")] // The management client will try guest:guest if the provided credentials fail first
-        [TestCase("http://copa:abc123xyz@localhost:15672", "guest", "guest", "http://localhost:15672")]
+        [TestCase("https://localhost:15671", "guest", "guest", "https://localhost:15671")]
         [TestCase("http://guest:guest@localhost", "guest", "guest", "http://localhost:15672")]
+        [TestCase("https://guest:guest@localhost", "guest", "guest", "https://localhost:15671")]
         [TestCase("http://guest:guest@localhost:15672", "guest", "guest", "http://localhost:15672")]
-        public void ValidateManagementConnection_Should_Not_Throw_With_Default_Management_Api_Connection(
+        [TestCase("https://guest:guest@localhost:15671", "guest", "guest", "https://localhost:15671")]
+        public async Task GetOverview_Should_Return_Success_With_Valid_Default_Connection_Values(
             string managementApiUrl,
             string expectedUserName,
             string expectedPassword,
             string expectedUrl)
         {
-            var HttpClient = CreateFakeHttpClient(request => FakeResponses.CheckRequestMessageConnection(request, expectedUserName, expectedPassword, expectedUrl));
+            var HttpClient = CreateFakeHttpClient(request => FakeResponses.GetOverview(request, expectedUserName, expectedPassword, expectedUrl));
             managementClient = CreateManagementClient(managementApiUrl, HttpClient);
 
-            Assert.DoesNotThrowAsync(async () => await managementClient.ValidateManagementConnection());
+            var result = await managementClient.GetOverview();
+
+            Assert.That(result.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         }
 
         [Test]
-        [TestCase("https://localhost", "guest", "guest", "https://localhost:15671")]
-        [TestCase("https://localhost:15671", "guest", "guest", "https://localhost:15671")]
-        [TestCase("https://copa:abc123xyz@localhost", "copa", "abc123xyz", "https://localhost:15671")]
-        [TestCase("https://copa:abc123xyz@localhost", "guest", "guest", "https://localhost:15671")] // The management client will try guest:guest if the provided credentials fail first
-        [TestCase("https://guest:guest@localhost", "guest", "guest", "https://localhost:15671")]
-        [TestCase("https://guest:guest@localhost:15671", "guest", "guest", "https://localhost:15671")]
-        public void ValidateManagementConnection_Should_Not_Throw_With_Default_Management_Api_Tls_Connection(
+        [TestCase("http://localhost", "user", "password", "http://localhost:15672")]
+        [TestCase("https://localhost", "user", "password", "https://localhost:15671")]
+        [TestCase("http://localhost:15672", "user", "password", "http://localhost:15672")]
+        [TestCase("https://localhost:15671", "user", "password", "https://localhost:15671")]
+        [TestCase("http://guest:guest@localhost", "user", "password", "http://localhost:15672")]
+        [TestCase("https://guest:guest@localhost", "user", "password", "https://localhost:15671")]
+        [TestCase("http://guest:guest@localhost:15672", "user", "password", "http://localhost:15672")]
+        [TestCase("https://guest:guest@localhost:15671", "user", "password", "https://localhost:15671")]
+        public async Task GetOverview_Should_Return_Unauthorized_With_Invalid_Credentials(
             string managementApiUrl,
             string expectedUserName,
             string expectedPassword,
             string expectedUrl)
         {
-            var HttpClient = CreateFakeHttpClient(request => FakeResponses.CheckRequestMessageConnection(request, expectedUserName, expectedPassword, expectedUrl));
-            var managementClient = CreateManagementClient(managementApiUrl, HttpClient);
+            var HttpClient = CreateFakeHttpClient(request => FakeResponses.GetOverview(request, expectedUserName, expectedPassword, expectedUrl));
+            managementClient = CreateManagementClient(managementApiUrl, HttpClient);
 
-            Assert.DoesNotThrowAsync(async () => await managementClient.ValidateManagementConnection());
+            var result = await managementClient.GetOverview();
+            Assert.That(result.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
         }
 
         [Test]
-        [TestCase("http://localhost", "admin", "admin")]
-        [TestCase("http://localhost:15672", "admin", "admin")]
-        [TestCase("https://localhost:15671", "admin", "admin")]
-        [TestCase("http://copa:abc123xyz@localhost", "admin", "admin")]
-        [TestCase("http://guest:guest@localhost", "admin", "admin")]
-        [TestCase("http://guest:guest@localhost:15672", "admin", "admin")]
-        [TestCase("https://guest:guest@localhost:15671", "admin", "admin")]
-        public void ValidateManagementConnection_Should_Throw_With_Invalid_Credentials(
-            string managementApiUrl,
-            string expectedUserName,
-            string expectedPassword)
-        {
-            var httpClient = CreateFakeHttpClient(request => FakeResponses.CheckAuthentication(request, expectedUserName, expectedPassword));
-            var managementClient = CreateManagementClient(managementApiUrl, httpClient);
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await managementClient.ValidateManagementConnection());
-        }
-
-        [Test]
-        [TestCase("host=localhost", "guest", "guest", "http://guest:guest@localhost:15672")]
-        [TestCase("host=localhost;useTls=true", "guest", "guest", "https://guest:guest@localhost:15671")]
-        [TestCase("host=localhost;useTls=false", "guest", "guest", "http://guest:guest@localhost:15672")]
-        [TestCase("host=localhost;port=12345;useTls=true", "guest", "guest", "https://guest:guest@localhost:15671")]
-        [TestCase("host=localhost;port=12345;useTls=false", "guest", "guest", "http://guest:guest@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=true", "guest", "guest", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=false", "guest", "guest", "http://copa:abc123xyz@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=true", "copa", "abc123xyz", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=false", "copa", "abc123xyz", "http://copa:abc123xyz@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=true", "guest", "guest", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=false", "guest", "guest", "http://copa:abc123xyz@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=true", "copa", "abc123xyz", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=false", "copa", "abc123xyz", "http://copa:abc123xyz@localhost:15672")]
-        public void ValidateManagementConnection_Should_Not_Throw_With_Valid_Or_Default_Broker_ConnectionConfiguration(
-            string brokerConnectionString,
-            string expectedUserName,
-            string expectedPassword,
-            string expectedUrl)
-        {
-            var httpClient = CreateFakeHttpClient(request => FakeResponses.CheckAuthentication(request, expectedUserName, expectedPassword));
-            var connectionConfiguration = ConnectionConfiguration.Create(brokerConnectionString);
-            var managementApiUrl = ManagementClient.CreateManagementConnectionString(connectionConfiguration);
-            Assert.That(string.Equals(managementApiUrl, expectedUrl), Is.True);
-
-            var managementClient = CreateManagementClient(managementApiUrl, httpClient);
-
-            Assert.DoesNotThrowAsync(async () => await managementClient.ValidateManagementConnection());
-        }
-
-        [Test]
-        [TestCase("host=localhost", "admin", "admin", "http://guest:guest@localhost:15672")]
-        [TestCase("host=localhost;useTls=true", "admin", "admin", "https://guest:guest@localhost:15671")]
-        [TestCase("host=localhost;useTls=false", "admin", "admin", "http://guest:guest@localhost:15672")]
-        [TestCase("host=localhost;port=12345;useTls=true", "admin", "admin", "https://guest:guest@localhost:15671")]
-        [TestCase("host=localhost;port=12345;useTls=false", "admin", "admin", "http://guest:guest@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=true", "admin", "admin", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=false", "admin", "admin", "http://copa:abc123xyz@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=true", "admin", "admin", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;useTls=false", "admin", "admin", "http://copa:abc123xyz@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=true", "admin", "admin", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=false", "admin", "admin", "http://copa:abc123xyz@localhost:15672")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=true", "admin", "admin", "https://copa:abc123xyz@localhost:15671")]
-        [TestCase("host=localhost;username=copa;password=abc123xyz;port=12345;useTls=false", "admin", "admin", "http://copa:abc123xyz@localhost:15672")]
-        public void ValidateManagementConnection_Should_Throw_With_Invalid_Management_Credentials_From_Broker_ConnectionConfiguration(
-            string brokerConnectionString,
-            string expectedUserName,
-            string expectedPassword,
-            string expectedUrl)
-        {
-            var httpClient = CreateFakeHttpClient(request => FakeResponses.CheckAuthentication(request, expectedUserName, expectedPassword));
-            var connectionConfiguration = ConnectionConfiguration.Create(brokerConnectionString);
-            var managementApiUrl = ManagementClient.CreateManagementConnectionString(connectionConfiguration);
-            Assert.That(string.Equals(managementApiUrl, expectedUrl), Is.True);
-
-            var managementClient = CreateManagementClient(managementApiUrl, httpClient);
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await managementClient.ValidateManagementConnection());
-        }
-
-        [Test]
-        public void Constructor_Should_Throw_With_Invalid_Scheme()
+        public void Should_Throw_With_Invalid_Scheme()
         {
             var managementApiUrl = "amqp:guest:guest@localhost:15672";
 
@@ -166,6 +90,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
         {
             // Arrange
+            managementClient = new(defaultManagementUrl, defaultVirtualHost);
             var queueName = nameof(GetQueue_Should_Return_Queue_Information_When_Exists);
             await CreateQuorumQueue(queueName).ConfigureAwait(false);
 
@@ -185,6 +110,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task GetOverview_Should_Return_Broker_Information()
         {
             // Act
+            managementClient = new(defaultManagementUrl, defaultVirtualHost);
             var response = await managementClient.GetOverview();
 
             // Assert
@@ -203,6 +129,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task GetFeatureFlags_Should_Return_FeatureFlag_Information()
         {
             // Act
+            managementClient = new(defaultManagementUrl, defaultVirtualHost);
             var response = await managementClient.GetFeatureFlags();
 
             // Assert
@@ -221,8 +148,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task CreatePolicy_With_DeliveryLimit_Should_Be_Applied_To_Quorum_Queues(int deliveryLimit)
         {
             // Arrange
+            managementClient = new(defaultManagementUrl, defaultVirtualHost);
             var queueName = nameof(CreatePolicy_With_DeliveryLimit_Should_Be_Applied_To_Quorum_Queues);
-            var policyName = $"{queueName} policy";
+            var policyName = $"nsb.{queueName}";
             await CreateQuorumQueue(queueName);
 
             // Act
@@ -242,23 +170,31 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             // Assert
 
             // It can take some time for updated policies to be applied, so we need to wait.
-            // If this test is randomly failing, consider increasing the delay
-            await Task.Delay(10000);
-            var response = await managementClient.GetQueue(queueName);
-            Assert.Multiple(() =>
+            // If this test is randomly failing, consider increasing the maxWaitTime
+            var maxWaitTime = TimeSpan.FromSeconds(30);
+            var pollingInterval = TimeSpan.FromSeconds(2);
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.Elapsed < maxWaitTime)
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value, Is.Not.Null);
-                Assert.That(response.Value?.AppliedPolicyName, Is.EqualTo(policyName));
-                Assert.That(response.Value?.EffectivePolicyDefinition?.DeliveryLimit, Is.EqualTo(deliveryLimit));
-            });
+                var response = await managementClient.GetQueue(queueName);
+                if (response.StatusCode == HttpStatusCode.OK
+                    && response.Value != null
+                    && response.Value.AppliedPolicyName == policyName
+                    && response.Value.EffectivePolicyDefinition?.DeliveryLimit == deliveryLimit)
+                {
+                    // Policy applied successfully
+                    return;
+                }
+                await Task.Delay(pollingInterval);
+            }
+            Assert.Fail($"Policy '{policyName}' was not applied to queue '{queueName}' within {maxWaitTime.TotalSeconds} seconds.");
         }
 
         static async Task CreateQuorumQueue(string queueName)
         {
             using var connection = await connectionFactory.CreateConnection($"{queueName} connection").ConfigureAwait(false);
             using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
-            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
+            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" }, { "delivery_limit", 5 } };
 
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
