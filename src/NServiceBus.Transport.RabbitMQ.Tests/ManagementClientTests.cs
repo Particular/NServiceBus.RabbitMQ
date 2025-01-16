@@ -263,69 +263,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
 
-        static string ConvertAuthenticationToBase64String(string userName, string password)
-        {
-            return Convert.ToBase64String(Encoding.ASCII.GetBytes($"{userName}:{password}"));
-        }
-
-        static string DecodeAuthenticationHeader(string authenticationHeader)
-        {
-            byte[] data = Convert.FromBase64String(authenticationHeader);
-            return Encoding.ASCII.GetString(data);
-        }
-
-        static HttpClient CreateFakeHttpClient(Func<HttpRequestMessage, HttpResponseMessage> fakeResponse) => new(new FakeHttpMessageHandler { FakeResponse = fakeResponse });
-
         static ManagementClient CreateManagementClient(string managementApiUrl, HttpClient httpClient) => new(defaultVirtualHost, httpClient, managementApiUrl);
-
-        class FakeHttpMessageHandler : HttpMessageHandler
-        {
-            public Func<HttpRequestMessage, HttpResponseMessage>? FakeResponse { get; set; }
-
-            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
-            {
-                var response = FakeResponse?.Invoke(request) ?? FakeResponses.NotFound();
-                return await Task.FromResult(response);
-            }
-        }
-
-        static class FakeResponses
-        {
-            public static HttpResponseMessage Valid() => new()
-            {
-                StatusCode = HttpStatusCode.OK
-            };
-
-            public static HttpResponseMessage Unauthorized() => new()
-            {
-                StatusCode = HttpStatusCode.Unauthorized
-            };
-
-            public static HttpResponseMessage NotFound() => new()
-            {
-                StatusCode = HttpStatusCode.NotFound
-            };
-
-            public static HttpResponseMessage CheckRequestMessageConnection(HttpRequestMessage request, string userName, string password, string url)
-            {
-                var PathAndQuery = request.RequestUri?.PathAndQuery ?? string.Empty;
-                var requestUrl = request.RequestUri?.AbsoluteUri.Replace(PathAndQuery, string.Empty);
-                var credentials = request.Headers.Authorization?.Parameter;
-                var expectedCredentials = ConvertAuthenticationToBase64String(userName, password);
-                var isValidCredential = string.Equals(expectedCredentials, credentials);
-                var isValidBaseAddress = string.Equals(url, requestUrl);
-
-                return !isValidCredential
-                    ? Unauthorized()
-                    : (isValidBaseAddress ? Valid() : NotFound());
-            }
-
-            public static HttpResponseMessage CheckAuthentication(HttpRequestMessage request, string userName, string password)
-            {
-                var credentials = request.Headers.Authorization?.Parameter;
-                var expectedCredentials = ConvertAuthenticationToBase64String(userName, password);
-                return string.Equals(expectedCredentials, credentials) ? Valid() : Unauthorized();
-            }
-        }
     }
 }
