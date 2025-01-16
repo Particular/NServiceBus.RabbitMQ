@@ -12,11 +12,11 @@ class QueueArguments
     [JsonConverter(typeof(QueueTypeConverter))]
     public QueueType? QueueType { get; set; }
 
-    [JsonPropertyName("x-delivery-limit")]
+    [JsonPropertyName("delivery_limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int? DeliveryLimit { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
+    public IDictionary<string, JsonElement> ExtraProperties { get; init; } = new Dictionary<string, JsonElement>();
 }
 
