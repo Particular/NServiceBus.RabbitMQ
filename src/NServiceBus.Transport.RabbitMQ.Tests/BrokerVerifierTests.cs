@@ -54,6 +54,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             await brokerVerifier.Initialize();
             await brokerVerifier.ValidateDeliveryLimit(queueName);
 
+            // It can take some time for updated policies to be applied, so we need to wait.
+            // If this test is randomly failing, consider increasing the maxWaitTime
             var maxWaitTime = TimeSpan.FromSeconds(30);
             var pollingInterval = TimeSpan.FromSeconds(2);
             var stopwatch = Stopwatch.StartNew();
@@ -77,16 +79,59 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         }
 
         [Test]
-        public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Delivery_Limit_Set()
+        public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited()
         {
-            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Delivery_Limit_Set);
+            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited);
             await CreateQuorumQueueWithDeliveryLimit(queueName, 5);
             var managementClient = new ManagementClient(connectionConfiguration);
             var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
 
             await brokerVerifier.Initialize();
 
-            _ = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
+            Assert.That(exception.Message, Does.Contain($"The delivery limit for {queueName} is set to 5 by a queue argument. " +
+                $"This can interfere with the transport's retry implementation"));
+        }
+
+        [Test]
+        public async Task ValidateDeliveryLimit_Should_Throw_When_Delivery_Limit_Cannot_Be_Validated()
+        {
+            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Delivery_Limit_Cannot_Be_Validated);
+            await CreateQuorumQueue(queueName);
+            var managementClient = new ManagementClient(connectionConfiguration);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+
+            await brokerVerifier.Initialize();
+
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit("WrongQueue"));
+            Assert.That(exception.Message, Does.Contain($"Could not retrieve full queue details for WrongQueue"));
+        }
+
+        [Test]
+        public async Task ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited()
+        {
+            // Arrange
+            var deliveryLimit = 15;
+            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited);
+            var managementClient = new ManagementClient(connectionConfiguration);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+            var policy = new Policy
+            {
+                Name = $"nsb.{queueName}.delivery-limit",
+                ApplyTo = PolicyTarget.QuorumQueues,
+                Definition = new PolicyDefinition { DeliveryLimit = deliveryLimit },
+                Pattern = queueName,
+                Priority = 100
+            };
+
+            // Act
+            await CreateQuorumQueue(queueName);
+            await brokerVerifier.Initialize();
+            await managementClient.CreatePolicy(policy).ConfigureAwait(false);
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
+
+            // Assert
+            Assert.That(exception.Message, Does.Contain($"The RabbitMQ policy {policy.Name} is setting delivery limit to {deliveryLimit} for {queueName}"));
         }
 
         static async Task CreateQuorumQueue(string queueName)
