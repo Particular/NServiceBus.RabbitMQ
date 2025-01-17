@@ -33,7 +33,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
             {
-                //request?.RequestUri?.PathAndQuery.Contains("api/policies/");
                 var response = FakeResponse?.Invoke(request) ?? FakeResponses.NotFound();
                 return await Task.FromResult(response);
             }
