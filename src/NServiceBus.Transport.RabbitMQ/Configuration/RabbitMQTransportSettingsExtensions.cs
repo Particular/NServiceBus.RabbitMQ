@@ -102,12 +102,12 @@
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> ManagementConnectionString(this TransportExtensions<RabbitMQTransport> transportExtensions, string connectionString)
+        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, string connectionUrl)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
-            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionUrl);
 
-            transportExtensions.Transport.LegacyManagementApiUrl = connectionString;
+            transportExtensions.Transport.LegacyManagementApiUrl = connectionUrl;
             return transportExtensions;
         }
 
@@ -117,12 +117,12 @@
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> ManagementConnectionString(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<string> getConnectionString)
+        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<string> getConnectionUrl)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
-            ArgumentNullException.ThrowIfNull(getConnectionString);
+            ArgumentNullException.ThrowIfNull(getConnectionUrl);
 
-            transportExtensions.Transport.LegacyManagementApiUrl = getConnectionString();
+            transportExtensions.Transport.LegacyManagementApiUrl = getConnectionUrl();
             return transportExtensions;
         }
 
@@ -366,6 +366,22 @@
             ArgumentNullException.ThrowIfNull(transportExtensions);
 
             transportExtensions.Transport.UseExternalAuthMechanism = true;
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies that an external authentication mechanism should be used for client authentication.
+        /// </summary>
+        /// <returns></returns>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "RabbitMQTransport.UseExternalAuthMechanism",
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> DoNotUseManagementClient(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+
+            transportExtensions.Transport.DoNotUseManagementClient = true;
             return transportExtensions;
         }
     }
