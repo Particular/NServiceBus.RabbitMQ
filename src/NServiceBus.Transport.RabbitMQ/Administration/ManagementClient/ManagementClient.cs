@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 class ManagementClient
 {
-    HttpClient httpClient;
+    readonly HttpClient httpClient;
     readonly string virtualHost;
     readonly string escapedVirtualHost;
 

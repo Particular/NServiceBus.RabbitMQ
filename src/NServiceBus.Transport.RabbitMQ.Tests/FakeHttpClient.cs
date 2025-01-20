@@ -89,6 +89,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
                 {
                     return response;
                 }
+
                 var overview = new Overview
                 {
                     ClusterName = "rabbit@my - rabbit",

@@ -82,14 +82,15 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited()
         {
             var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited);
-            await CreateQuorumQueueWithDeliveryLimit(queueName, 5);
+            var delivery_limit = 5;
+            await CreateQuorumQueueWithDeliveryLimit(queueName, delivery_limit);
             var managementClient = new ManagementClient(connectionConfiguration);
             var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
 
             await brokerVerifier.Initialize();
 
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
-            Assert.That(exception.Message, Does.Contain($"The delivery limit for {queueName} is set to 5 by a queue argument. " +
+            Assert.That(exception.Message, Does.Contain($"The delivery limit for {queueName} is set to {delivery_limit} by a queue argument. " +
                 $"This can interfere with the transport's retry implementation"));
         }
 
@@ -152,8 +153,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
     }
-
-
 
     class FakeLogger : ILog
     {
