@@ -311,14 +311,6 @@
             {
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
-
-            // Todo: Not sure if we should throw here.  Even if the LegacyManagementApiUrl is null or empty the default connection
-            // values could still be tried.  Only if the default values fail should an error be thrown that a connection could not
-            // be made and the ManagementApiUrl should be configured.
-            if (!DoNotUseManagementClient && string.IsNullOrEmpty(LegacyManagementApiUrl))
-            {
-                throw new Exception("A management API connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ManagementApiUrl()` method.");
-            }
         }
     }
 }
