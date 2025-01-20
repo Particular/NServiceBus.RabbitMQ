@@ -147,7 +147,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         {
             using var connection = await connectionFactory.CreateConnection($"{queueName} connection").ConfigureAwait(false);
             using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
-            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" }, { "delivery_limit", deliveryLimit } };
+            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" }, { "x-delivery-limit", deliveryLimit } };
 
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
