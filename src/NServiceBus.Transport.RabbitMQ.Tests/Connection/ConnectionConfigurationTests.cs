@@ -1,25 +1,20 @@
-﻿#nullable enable
-
-namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 {
     using System;
     using NUnit.Framework;
     using RabbitMQ;
 
     [TestFixture]
-    class ConnectionConfigurationTests
+    public class ConnectionConfigurationTests
     {
-        const string FakeConnectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
-        static string BrokerConnectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
+        const string connectionString = "virtualHost=Copa;username=Copa;host=192.168.1.1:1234;password=abc_xyz;port=12345;useTls=true";
 
-        static HostSettings HostSettings { get; } = new(nameof(ConnectionConfigurationTests), nameof(ConnectionConfigurationTests), null, null, false);
-
-        static readonly ConnectionConfiguration brokerDefaults = ConnectionConfiguration.Create("host=localhost");
+        ConnectionConfiguration defaults = ConnectionConfiguration.Create("host=localhost");
 
         [Test]
         public void Should_correctly_parse_full_connection_string()
         {
-            var connectionConfiguration = ConnectionConfiguration.Create(FakeConnectionString);
+            var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
             Assert.Multiple(() =>
             {
@@ -148,8 +143,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
                 "certPath =/path/to/client/keycert.p12;" +
                 "certPassPhrase = abc123;";
 
-            var exception = Assert.Throws<NotSupportedException>(() => ConnectionConfiguration.Create(connectionString))
-                ?? throw new ArgumentNullException("exception");
+            var exception = Assert.Throws<NotSupportedException>(() =>
+                ConnectionConfiguration.Create(connectionString));
 
             Assert.That(exception.Message, Does.Contain("Multiple hosts are no longer supported"));
             Assert.That(exception.Message, Does.Contain("Empty host name in 'host' connection string option."));
@@ -169,31 +164,31 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         [Test]
         public void Should_set_default_port()
         {
-            Assert.That(brokerDefaults.Port, Is.EqualTo(5672));
+            Assert.That(defaults.Port, Is.EqualTo(5672));
         }
 
         [Test]
         public void Should_set_default_virtual_host()
         {
-            Assert.That(brokerDefaults.VirtualHost, Is.EqualTo("/"));
+            Assert.That(defaults.VirtualHost, Is.EqualTo("/"));
         }
 
         [Test]
         public void Should_set_default_username()
         {
-            Assert.That(brokerDefaults.UserName, Is.EqualTo("guest"));
+            Assert.That(defaults.UserName, Is.EqualTo("guest"));
         }
 
         [Test]
         public void Should_set_default_password()
         {
-            Assert.That(brokerDefaults.Password, Is.EqualTo("guest"));
+            Assert.That(defaults.Password, Is.EqualTo("guest"));
         }
 
         [Test]
         public void Should_set_default_use_tls()
         {
-            Assert.That(brokerDefaults.UseTls, Is.EqualTo(false));
+            Assert.That(defaults.UseTls, Is.EqualTo(false));
         }
     }
 }
