@@ -226,9 +226,12 @@
                 additionalClusterNodes
             );
 
-            var managementClient = !string.IsNullOrEmpty(ManagementApiUrl)
-                ? new ManagementClient(ManagementApiUrl, ConnectionConfiguration.VirtualHost)
-                : new ManagementClient(ConnectionConfiguration);
+            ManagementClient managementClient = null;
+
+            if (UseManagementApi)
+            {
+                managementClient = !string.IsNullOrEmpty(ManagementApiUrl) ? new ManagementClient(ManagementApiUrl, ConnectionConfiguration.VirtualHost) : new ManagementClient(ConnectionConfiguration);
+            }
 
             var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, managementClient);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
