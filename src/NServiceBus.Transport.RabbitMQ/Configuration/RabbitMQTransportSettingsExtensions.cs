@@ -102,27 +102,12 @@
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, string connectionUrl)
+        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, string url)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
-            ArgumentException.ThrowIfNullOrWhiteSpace(connectionUrl);
+            ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
-            transportExtensions.Transport.LegacyManagementApiUrl = connectionUrl;
-            return transportExtensions;
-        }
-
-        /// <summary>
-        /// The connection string to use when connecting to the broker management API.
-        /// </summary>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            Message = "The configuration has been moved to RabbitMQTransport class.",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, Func<string> getConnectionUrl)
-        {
-            ArgumentNullException.ThrowIfNull(transportExtensions);
-            ArgumentNullException.ThrowIfNull(getConnectionUrl);
-
-            transportExtensions.Transport.LegacyManagementApiUrl = getConnectionUrl();
+            transportExtensions.Transport.ManagementApiUrl = url;
             return transportExtensions;
         }
 
