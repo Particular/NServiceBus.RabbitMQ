@@ -97,21 +97,6 @@
         }
 
         /// <summary>
-        /// The connection string to use when connecting to the broker management API.
-        /// </summary>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            Message = "The configuration has been moved to RabbitMQTransport class.",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, string url)
-        {
-            ArgumentNullException.ThrowIfNull(transportExtensions);
-            ArgumentException.ThrowIfNullOrWhiteSpace(url);
-
-            transportExtensions.Transport.ManagementApiUrl = url;
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Allows the user to control how the message ID is determined. Mostly useful when consuming native messages from non-NServiceBus endpoints.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
@@ -355,18 +340,34 @@
         }
 
         /// <summary>
-        /// Specifies that an external authentication mechanism should be used for client authentication.
+        /// Specifies that the RabbitMQ management API should not be used to verify broker configuration.
         /// </summary>
         /// <returns></returns>
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "RabbitMQTransport.UseExternalAuthMechanism",
+            ReplacementTypeOrMember = "RabbitMQTransport.UseManagementApi",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> DoNotUseManagementClient(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static TransportExtensions<RabbitMQTransport> DoNotUseManagementApi(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
 
-            transportExtensions.Transport.DoNotUseManagementClient = true;
+            transportExtensions.Transport.UseManagementApi = false;
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// The url to use when connecting to the RabbitMQ management API.
+        /// </summary>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "RabbitMQTransport.ManagementApiUrl",
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, string url)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+            ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
+            transportExtensions.Transport.ManagementApiUrl = url;
             return transportExtensions;
         }
     }

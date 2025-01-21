@@ -21,7 +21,7 @@
 //                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
 //                LegacyApiConnectionString = BrokerConnectionString,
 //                LegacyManagementApiUrl = $"{(broker.UseTls ? "https" : "http")}://{broker.UserName}:{broker.Password}@{broker.Host}:{(broker.UseTls ? "15671" : "15672")}",
-//                DoNotUseManagementClient = false
+//                UseManagementApi = true
 //            };
 
 //            Assert.DoesNotThrowAsync(async () => await transport.Initialize(HostSettings, [], []));
@@ -37,7 +37,7 @@
 //                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
 //                LegacyApiConnectionString = BrokerConnectionString,
 //                LegacyManagementApiUrl = $"{(broker.UseTls ? "http" : "https")}://guest:guest@{broker.Host}:{(broker.UseTls ? "15671" : "15672")}",
-//                DoNotUseManagementClient = false
+//                UseManagementApi = true
 //            };
 
 //            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
@@ -53,7 +53,7 @@
 //                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
 //                LegacyApiConnectionString = BrokerConnectionString,
 //                LegacyManagementApiUrl = $"{(broker.UseTls ? "https" : "http")}://copa:abc123xyz@{broker.Host}:{(broker.UseTls ? "15671" : "15672")}",
-//                DoNotUseManagementClient = false
+//                UseManagementApi = true
 //            };
 
 //            _ = Assert.ThrowsAsync<InvalidOperationException>(async () => await transport.Initialize(HostSettings, [], []));
@@ -69,7 +69,7 @@
 //                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
 //                LegacyApiConnectionString = BrokerConnectionString,
 //                LegacyManagementApiUrl = $"{(broker.UseTls ? "https" : "http")}://guest:guest@wronghost:{(broker.UseTls ? "15671" : "15672")}",
-//                DoNotUseManagementClient = false
+//                UseManagementApi = true
 //            };
 
 //            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
@@ -85,7 +85,7 @@
 //                TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
 //                LegacyApiConnectionString = BrokerConnectionString,
 //                LegacyManagementApiUrl = $"{(broker.UseTls ? "https" : "http")}://guest:guest@{broker.Host}:12345",
-//                DoNotUseManagementClient = false
+//                UseManagementApi = true
 //            };
 
 //            _ = Assert.ThrowsAsync<HttpRequestException>(async () => await transport.Initialize(HostSettings, [], []));
@@ -107,7 +107,7 @@
 //            TopologyFactory = durable => new ConventionalRoutingTopology(durable, QueueType.Quorum),
 //            LegacyApiConnectionString = BrokerConnectionString,
 //            LegacyManagementApiUrl = managementApiUrl,
-//            DoNotUseManagementClient = false
+//            UseManagementApi = true
 //        };
 //    }
 //}
