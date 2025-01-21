@@ -22,7 +22,6 @@
         Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
         PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
         TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
-        X509Certificate2Collection certCollection = null;
 
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
@@ -208,7 +207,13 @@
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
-            ValidateAndApplyCertCollections();
+
+            X509Certificate2Collection certCollection = null;
+
+            if (ClientCertificate != null)
+            {
+                certCollection = new X509Certificate2Collection(ClientCertificate);
+            }
 
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
@@ -256,17 +261,12 @@
             return infra;
         }
 
-        void ValidateAndApplyCertCollections() => certCollection ??= ClientCertificate != null
-                ? new X509Certificate2Collection(ClientCertificate) : null;
-
         /// <inheritdoc />
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[] { TransportTransactionMode.ReceiveOnly };
 
         // Remove all Legacy API stuff below when PreObsoletes are converted
 
         internal string LegacyApiConnectionString { get; set; }
-
-        internal string LegacyManagementApiUrl { get; set; }
 
         internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
 
@@ -286,31 +286,19 @@
                 return;
             }
 
-            VaildateTopologyFactory();
-            ValidateConnectionString();
-
-            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
-            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
-
-            ManagementApiUrl = !string.IsNullOrEmpty(LegacyManagementApiUrl)
-                ? LegacyManagementApiUrl
-                : ManagementClient.CreateManagementConnectionString(ConnectionConfiguration);
-        }
-
-        void VaildateTopologyFactory()
-        {
             if (TopologyFactory == null)
             {
                 throw new Exception("A routing topology must be configured with one of the 'EndpointConfiguration.UseTransport<RabbitMQTransport>().UseXXXXRoutingTopology()` methods. Most new projects should use the Conventional routing topology.");
             }
-        }
 
-        void ValidateConnectionString()
-        {
+            RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
+
             if (string.IsNullOrEmpty(LegacyApiConnectionString))
             {
                 throw new Exception("A connection string must be configured with 'EndpointConfiguration.UseTransport<RabbitMQTransport>().ConnectionString()` method.");
             }
+
+            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
         }
     }
 }
