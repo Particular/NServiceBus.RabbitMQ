@@ -138,10 +138,10 @@
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
-        /// Set this to prevent the transport from using the RabbitMQ Management API.
+        /// Set this to false prevent the transport from using the RabbitMQ Management API.
         /// This is not recommended as it can prevent the transport from setting appropriate delivery limits for retry functionality.
         /// </summary>
-        public bool DoNotUseManagementClient { get; set; } = false;
+        public bool UseManagementApi { get; set; } = true;
 
         /// <summary>
         /// Basic authentication HTTP connection string to the RabbitMQ management API.
@@ -230,7 +230,7 @@
                 ? new ManagementClient(ManagementApiUrl, ConnectionConfiguration.VirtualHost)
                 : new ManagementClient(ConnectionConfiguration);
 
-            var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, managementClient);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, managementClient);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
