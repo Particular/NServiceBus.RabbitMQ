@@ -41,7 +41,7 @@
             ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
-            BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
         /// <summary>
@@ -60,10 +60,10 @@
             ArgumentNullException.ThrowIfNull(connectionString);
 
             RoutingTopology = routingTopology.Create();
-            BrokerConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
-        internal ConnectionConfiguration BrokerConnectionConfiguration { get; set; }
+        internal ConnectionConfiguration ConnectionConfiguration { get; set; }
 
         internal IRoutingTopology RoutingTopology { get; set; }
 
@@ -212,7 +212,7 @@
 
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
-                BrokerConnectionConfiguration,
+                ConnectionConfiguration,
                 certCollection,
                 !ValidateRemoteCertificate,
                 UseExternalAuthMechanism,
@@ -222,8 +222,8 @@
             );
 
             var managementClient = !string.IsNullOrEmpty(ManagementApiUrl)
-                ? new ManagementClient(ManagementApiUrl, BrokerConnectionConfiguration.VirtualHost)
-                : new ManagementClient(BrokerConnectionConfiguration);
+                ? new ManagementClient(ManagementApiUrl, ConnectionConfiguration.VirtualHost)
+                : new ManagementClient(ConnectionConfiguration);
 
             var brokerVerifier = new BrokerVerifier(connectionFactory, !DoNotUseManagementClient, managementClient);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
@@ -290,11 +290,11 @@
             ValidateConnectionString();
 
             RoutingTopology = TopologyFactory(UseDurableExchangesAndQueues);
-            BrokerConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
+            ConnectionConfiguration = ConnectionConfiguration.Create(LegacyApiConnectionString);
 
             ManagementApiUrl = !string.IsNullOrEmpty(LegacyManagementApiUrl)
                 ? LegacyManagementApiUrl
-                : ManagementClient.CreateManagementConnectionString(BrokerConnectionConfiguration);
+                : ManagementClient.CreateManagementConnectionString(ConnectionConfiguration);
         }
 
         void VaildateTopologyFactory()
