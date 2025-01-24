@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     {
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
-        static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
+        static readonly ConnectionFactory connectionFactory = new(typeof(BrokerVerifierTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
 
         [Test]
         public void Initialize_Should_Get_Response_When_Management_Client_Is_Available_And_Valid()
