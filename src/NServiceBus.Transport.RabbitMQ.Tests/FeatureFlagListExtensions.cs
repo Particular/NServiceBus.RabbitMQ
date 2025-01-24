@@ -2,7 +2,7 @@
 
 using System;
 using System.Linq;
-using NServiceBus.Transport.RabbitMQ.ManagementClient;
+using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 static class FeatureFlagListExtensions
 {

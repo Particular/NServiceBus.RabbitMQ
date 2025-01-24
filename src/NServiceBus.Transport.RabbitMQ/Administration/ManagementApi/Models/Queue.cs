@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
+namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System.Collections.Generic;
 using System.Text.Json;

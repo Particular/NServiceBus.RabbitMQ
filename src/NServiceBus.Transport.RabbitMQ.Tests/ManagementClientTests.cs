@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.RabbitMQ.ManagementClient;
+    using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
     using static NServiceBus.Transport.RabbitMQ.Tests.FakeHttpClient;

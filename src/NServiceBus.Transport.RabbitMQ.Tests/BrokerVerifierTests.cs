@@ -3,15 +3,16 @@
 namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
-    using NUnit.Framework;
-    using ManagementClient;
-    using NServiceBus.Logging;
     using System.Collections.Generic;
-    using System.Linq;
-    using ConnectionFactory = ConnectionFactory;
-    using System.Threading.Tasks;
     using System.Diagnostics;
+    using System.Linq;
     using System.Net;
+    using System.Threading.Tasks;
+    using NServiceBus.Logging;
+    using NServiceBus.Transport.RabbitMQ.ManagementApi;
+    using NUnit.Framework;
+
+    using ConnectionFactory = ConnectionFactory;
 
     [TestFixture]
     class BrokerVerifierTests
