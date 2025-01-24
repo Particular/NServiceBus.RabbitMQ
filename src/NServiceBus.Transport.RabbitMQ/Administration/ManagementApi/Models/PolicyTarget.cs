@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
+﻿namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 enum PolicyTarget
 {

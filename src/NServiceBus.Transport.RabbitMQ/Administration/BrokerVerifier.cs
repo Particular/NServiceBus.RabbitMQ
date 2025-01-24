@@ -5,12 +5,11 @@ namespace NServiceBus.Transport.RabbitMQ;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ManagementClientClass = ManagementClient.ManagementClient;
 using NServiceBus.Logging;
-using NServiceBus.Transport.RabbitMQ.ManagementClient;
+using NServiceBus.Transport.RabbitMQ.ManagementApi;
 using Polly;
 
-class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ManagementClientClass managementClient, ILog? logger = null)
+class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ManagementClient managementClient, ILog? logger = null)
 {
     readonly ILog Logger = logger ?? LogManager.GetLogger(typeof(BrokerVerifier));
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
@@ -124,7 +123,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
         return true;
     }
 
-    async Task<Queue?> GetFullQueueDetails(ManagementClientClass managementClient, string queueName, CancellationToken cancellationToken)
+    async Task<Queue?> GetFullQueueDetails(ManagementClient managementClient, string queueName, CancellationToken cancellationToken)
     {
         var retryPolicy = Polly.Policy
             .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
@@ -154,7 +153,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
         return response?.Value?.EffectivePolicyDefinition is not null ? response.Value : null;
     }
 
-    static async Task SetDeliveryLimitViaPolicy(ManagementClientClass managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
+    static async Task SetDeliveryLimitViaPolicy(ManagementClient managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
         {
@@ -166,7 +165,7 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
             throw new InvalidOperationException($"Cannot override delivery limit on the {queue.Name} queue by policy in RabbitMQ versions prior to 4. Version is {brokerVersion}.");
         }
 
-        var policy = new ManagementClient.Policy
+        var policy = new ManagementApi.Policy
         {
             Name = $"nsb.{queue.Name}.delivery-limit",
             ApplyTo = PolicyTarget.QuorumQueues,

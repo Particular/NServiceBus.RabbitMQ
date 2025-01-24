@@ -1,6 +1,6 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.ManagementClient;
+namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 static class FeatureFlags
 {

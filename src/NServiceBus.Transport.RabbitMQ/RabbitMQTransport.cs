@@ -9,7 +9,7 @@
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
-    using Transport.RabbitMQ.ManagementClient;
+    using Transport.RabbitMQ.ManagementApi;
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
     /// <summary>
