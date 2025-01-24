@@ -230,7 +230,7 @@
 
             if (UseManagementApi)
             {
-                managementClient = !string.IsNullOrEmpty(ManagementApiUrl) ? new ManagementClient(ManagementApiUrl, ConnectionConfiguration.VirtualHost) : new ManagementClient(ConnectionConfiguration);
+                managementClient = new ManagementClient(ConnectionConfiguration, ManagementApiUrl);
             }
 
             var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, managementClient);
