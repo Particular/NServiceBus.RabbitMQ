@@ -6,12 +6,10 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Net;
-    using System.Net.Http;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
-    using static NServiceBus.Transport.RabbitMQ.Tests.FakeHttpClient;
 
     [TestFixture]
     class ManagementClientTests
@@ -19,19 +17,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
         static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
         static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
-        string defaultManagementUrl;
-        ManagementClient? managementClient;
-
-        const int defaultBrokerPort = 5672;
-        const int defaultBrokerTlsPort = 5671;
-        const int defaultManagementPort = 15672;
-        const int defaultManagementTlsPort = 15671;
-        const string defaultUserName = "guest";
-        const string defaultPassword = "guest";
-        const string defaultVirtualHost = "/";
-
-        [SetUp]
-        public void SetUp() => defaultManagementUrl = ManagementClient.CreateManagementConnectionString(connectionConfiguration);
 
         [Test]
         [TestCase("http://localhost", "guest", "guest", "http://localhost:15672")]
@@ -48,8 +33,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             string expectedPassword,
             string expectedUrl)
         {
-            var HttpClient = CreateFakeHttpClient(request => FakeResponses.GetOverview(request, expectedUserName, expectedPassword, expectedUrl));
-            managementClient = CreateManagementClient(managementApiUrl, HttpClient);
+            var managementClient = new ManagementClient(connectionConfiguration, managementApiUrl);
 
             var result = await managementClient.GetOverview();
 
@@ -71,8 +55,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             string expectedPassword,
             string expectedUrl)
         {
-            var HttpClient = CreateFakeHttpClient(request => FakeResponses.GetOverview(request, expectedUserName, expectedPassword, expectedUrl));
-            managementClient = CreateManagementClient(managementApiUrl, HttpClient);
+            var managementClient = new ManagementClient(connectionConfiguration, managementApiUrl);
 
             var result = await managementClient.GetOverview();
             Assert.That(result.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
@@ -83,14 +66,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         {
             var managementApiUrl = "amqp:guest:guest@localhost:15672";
 
-            var exception = Assert.Throws<NotSupportedException>(() => managementClient = new(managementApiUrl, defaultVirtualHost));
+            var exception = Assert.Throws<NotSupportedException>(() => new ManagementClient(connectionConfiguration, managementApiUrl));
         }
 
         [Test]
         public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
         {
             // Arrange
-            managementClient = new(defaultManagementUrl, defaultVirtualHost);
+            var managementClient = new ManagementClient(connectionConfiguration);
             var queueName = nameof(GetQueue_Should_Return_Queue_Information_When_Exists);
             await CreateQuorumQueue(queueName).ConfigureAwait(false);
 
@@ -110,7 +93,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task GetOverview_Should_Return_Broker_Information()
         {
             // Act
-            managementClient = new(defaultManagementUrl, defaultVirtualHost);
+            var managementClient = new ManagementClient(connectionConfiguration);
             var response = await managementClient.GetOverview();
 
             // Assert
@@ -129,7 +112,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task GetFeatureFlags_Should_Return_FeatureFlag_Information()
         {
             // Act
-            managementClient = new(defaultManagementUrl, defaultVirtualHost);
+            var managementClient = new ManagementClient(connectionConfiguration);
             var response = await managementClient.GetFeatureFlags();
 
             // Assert
@@ -148,7 +131,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task CreatePolicy_With_DeliveryLimit_Should_Be_Applied_To_Quorum_Queues(int deliveryLimit)
         {
             // Arrange
-            managementClient = new(defaultManagementUrl, defaultVirtualHost);
+            var managementClient = new ManagementClient(connectionConfiguration);
             var queueName = nameof(CreatePolicy_With_DeliveryLimit_Should_Be_Applied_To_Quorum_Queues);
             var policyName = $"nsb.{queueName}";
             await CreateQuorumQueue(queueName);
@@ -198,7 +181,5 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
-
-        static ManagementClient CreateManagementClient(string managementApiUrl, HttpClient httpClient) => new(defaultVirtualHost, httpClient, managementApiUrl);
     }
 }
