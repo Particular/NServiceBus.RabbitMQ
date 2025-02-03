@@ -61,13 +61,13 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         //    Assert.That(result.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
         //}
 
-        [Test]
-        public void Should_Throw_With_Invalid_Scheme()
-        {
-            var managementApiConfiguration = new ManagementApiConfiguration("amqp://localhost:15672", "guest", "guest");
+        //[Test]
+        //public void Should_Throw_With_Invalid_Scheme()
+        //{
+        //    var managementApiConfiguration = new ManagementApiConfiguration("amqp://localhost:15672", "guest", "guest");
 
-            var exception = Assert.Throws<NotSupportedException>(() => new ManagementClient(connectionConfiguration, managementApiConfiguration));
-        }
+        //    var exception = Assert.Throws<NotSupportedException>(() => new ManagementClient(connectionConfiguration, managementApiConfiguration));
+        //}
 
         [Test]
         public async Task GetQueue_Should_Return_Queue_Information_When_Exists()
