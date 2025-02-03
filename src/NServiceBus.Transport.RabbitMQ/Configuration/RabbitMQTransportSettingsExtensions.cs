@@ -356,18 +356,44 @@
         }
 
         /// <summary>
-        /// The url to use when connecting to the RabbitMQ management API.
+        ///
         /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="url">The url to use when connecting to the RabbitMQ management API.</param>
+        /// <returns></returns>
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "RabbitMQTransport.ManagementApiUrl",
+            ReplacementTypeOrMember = "RabbitMQTransport.ManagementApiConfiguration",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> ManagementApiUrl(this TransportExtensions<RabbitMQTransport> transportExtensions, string url)
+        public static TransportExtensions<RabbitMQTransport> ManagementApiConfiguration(this TransportExtensions<RabbitMQTransport> transportExtensions, string url)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
             ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
-            transportExtensions.Transport.ManagementApiUrl = url;
+            transportExtensions.Transport.ManagementApiConfiguration = new(url);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="url">The url to use when connecting to the RabbitMQ management API.</param>
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "RabbitMQTransport.ManagementApiConfiguration",
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> ManagementApiConfiguration(this TransportExtensions<RabbitMQTransport> transportExtensions, string url, string userName, string password)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+            ArgumentException.ThrowIfNullOrWhiteSpace(url);
+            ArgumentException.ThrowIfNullOrWhiteSpace(userName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(password);
+
+            transportExtensions.Transport.ManagementApiConfiguration = new(url, userName, password);
             return transportExtensions;
         }
     }
