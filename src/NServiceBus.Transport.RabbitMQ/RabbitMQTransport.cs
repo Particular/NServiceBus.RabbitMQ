@@ -149,7 +149,7 @@
         /// <remarks>
         /// E.g. https://username:password@localhost:15671
         /// </remarks>
-        public string ManagementApiUrl { get; set; }
+        public ManagementApiConfiguration ManagementApiConfiguration { get; set; }
 
         /// <summary>
         /// The interval for heartbeats between the endpoint and the broker.
@@ -230,7 +230,7 @@
 
             if (UseManagementApi)
             {
-                managementClient = new ManagementClient(ConnectionConfiguration, ManagementApiUrl);
+                managementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
             }
 
             var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, managementClient);

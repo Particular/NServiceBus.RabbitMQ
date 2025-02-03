@@ -19,15 +19,19 @@ class ManagementClient
     const int defaultManagementPort = 15672;
     const int defaultManagementTlsPort = 15671;
 
-    public ManagementClient(ConnectionConfiguration connectionConfiguration, string? managementApiUrl = null)
+    public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration, nameof(connectionConfiguration));
 
         UriBuilder uriBuilder;
 
-        if (managementApiUrl is not null)
+        if (managementApiConfiguration is not null)
         {
-            uriBuilder = new UriBuilder(managementApiUrl);
+            uriBuilder = new UriBuilder(managementApiConfiguration.Url)
+            {
+                UserName = managementApiConfiguration.UserName ?? connectionConfiguration.UserName,
+                Password = managementApiConfiguration.Password ?? connectionConfiguration.Password
+            };
         }
         else
         {

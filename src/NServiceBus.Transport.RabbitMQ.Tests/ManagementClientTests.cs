@@ -64,9 +64,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public void Should_Throw_With_Invalid_Scheme()
         {
-            var managementApiUrl = "amqp:guest:guest@localhost:15672";
+            var managementApiConfiguration = new ManagementApiConfiguration("amqp://localhost:15672", "guest", "guest");
 
-            var exception = Assert.Throws<NotSupportedException>(() => new ManagementClient(connectionConfiguration, managementApiUrl));
+            var exception = Assert.Throws<NotSupportedException>(() => new ManagementClient(connectionConfiguration, managementApiConfiguration));
         }
 
         [Test]
