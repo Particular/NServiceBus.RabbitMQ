@@ -28,6 +28,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.Tests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="ServiceControl.Transports.RabbitMQ" Key="$(NServiceBusKey)" />
   </ItemGroup>
 
 </Project>
