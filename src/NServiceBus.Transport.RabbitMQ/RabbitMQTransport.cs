@@ -203,6 +203,8 @@
             additionalClusterNodes.Add((hostName, port, useTls));
         }
 
+        internal ManagementClient ManagementClient { get; private set; }
+
         /// <inheritdoc />
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
@@ -226,14 +228,12 @@
                 additionalClusterNodes
             );
 
-            ManagementClient managementClient = null;
-
             if (UseManagementApi)
             {
-                managementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
+                ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
             }
 
-            var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, managementClient);
+            var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, ManagementClient);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
