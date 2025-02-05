@@ -232,6 +232,7 @@
 
             var brokerVerifier = new BrokerVerifier(ManagementClient, ValidateDeliveryLimits);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
+            await brokerVerifier.VerifyRequirements(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
