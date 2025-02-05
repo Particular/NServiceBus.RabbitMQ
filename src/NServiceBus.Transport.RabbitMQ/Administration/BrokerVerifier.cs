@@ -9,9 +9,10 @@ using NServiceBus.Logging;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
 using Polly;
 
-class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientAvailable, ManagementClient managementClient, ILog? logger = null)
+class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
 {
-    readonly ILog Logger = logger ?? LogManager.GetLogger(typeof(BrokerVerifier));
+    readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
+
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
     static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
 
@@ -19,27 +20,14 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
-        if (managementClientAvailable)
-        {
-            var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
-            if (response.HasValue)
-            {
-                brokerVersion = response.Value.RabbitMqVersion;
-                return;
-            }
+        var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
 
+        if (!response.HasValue)
+        {
             throw new InvalidOperationException($"Could not access RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
         }
 
-        using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-        brokerVersion = connection.GetBrokerVersion();
-
-        if (brokerVersion >= RabbitMqVersion4)
-        {
-            Logger.Warn("Use of RabbitMQ Management API has been disabled." +
-                "The transport will not be able to override the default delivery limit on each queue " +
-                "which is necessary in order to guarantee that messages are not lost after repeated retries.");
-        }
+        brokerVersion = response.Value.RabbitMqVersion;
     }
 
     Version BrokerVersion
@@ -63,16 +51,9 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
         }
 
         bool streamsEnabled;
-        if (managementClientAvailable)
-        {
-            var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
-            streamsEnabled = response.HasValue && response.Value.HasEnabledFeature(FeatureFlags.StreamQueue);
-        }
-        else
-        {
-            var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-            streamsEnabled = await connection.TryCreateStream(cancellationToken).ConfigureAwait(false);
-        }
+
+        var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
+        streamsEnabled = response.HasValue && response.Value.HasEnabledFeature(FeatureFlags.StreamQueue);
 
         if (!streamsEnabled)
         {
@@ -82,7 +63,12 @@ class BrokerVerifier(ConnectionFactory connectionFactory, bool managementClientA
 
     public async Task ValidateDeliveryLimit(string queueName, CancellationToken cancellationToken = default)
     {
-        if (!managementClientAvailable)
+
+        //Logger.Warn("Use of RabbitMQ Management API has been disabled." +
+        //      "The transport will not be able to override the default delivery limit on each queue " +
+        //      "which is necessary in order to guarantee that messages are not lost after repeated retries.");
+
+        if (!validateDeliveryLimits)
         {
             return;
         }

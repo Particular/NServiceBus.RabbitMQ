@@ -5,7 +5,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
     using NServiceBus.Logging;
@@ -25,22 +24,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public void Initialize_Should_Get_Response_When_Management_Client_Is_Available_And_Valid()
         {
             var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
 
             Assert.DoesNotThrowAsync(async () => await brokerVerifier.Initialize());
-        }
-
-        [Test]
-        public void Initialize_Should_Should_Warn_When_Management_Is_Disabled_With_Version_4_Or_Greater()
-        {
-            var managementClient = new ManagementClient(connectionConfiguration);
-            var fakeLogger = new FakeLogger();
-            var brokerVerifier = new BrokerVerifier(connectionFactory, false, managementClient, fakeLogger);
-
-            Assert.DoesNotThrowAsync(async () => await brokerVerifier.Initialize());
-
-            Assert.That(fakeLogger.Messages, Has.Exactly(1).Items);
-            Assert.That(fakeLogger.Messages.FirstOrDefault(), Does.Contain("Use of RabbitMQ Management API has been disabled."));
         }
 
         [Test]
@@ -50,7 +36,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             var policyName = $"nsb.{queueName}.delivery-limit";
             await CreateQuorumQueue(queueName);
             var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
 
             await brokerVerifier.Initialize();
             await brokerVerifier.ValidateDeliveryLimit(queueName);
@@ -86,7 +72,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             var delivery_limit = 5;
             await CreateQuorumQueueWithDeliveryLimit(queueName, delivery_limit);
             var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
 
             await brokerVerifier.Initialize();
 
@@ -101,7 +87,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Delivery_Limit_Cannot_Be_Validated);
             await CreateQuorumQueue(queueName);
             var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
 
             await brokerVerifier.Initialize();
 
@@ -116,7 +102,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             var deliveryLimit = 15;
             var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited);
             var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(connectionFactory, true, managementClient);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
             var policy = new Policy
             {
                 Name = $"nsb.{queueName}.delivery-limit",
