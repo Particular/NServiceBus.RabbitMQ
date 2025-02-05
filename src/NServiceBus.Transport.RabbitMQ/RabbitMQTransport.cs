@@ -141,7 +141,7 @@
         /// Set this to false prevent the transport from using the RabbitMQ Management API.
         /// This is not recommended as it can prevent the transport from setting appropriate delivery limits for retry functionality.
         /// </summary>
-        public bool UseManagementApi { get; set; } = true;
+        public bool ValidateDeliveryLimits { get; set; } = true;
 
         /// <summary>
         /// Basic authentication HTTP connection string to the RabbitMQ management API.
@@ -228,12 +228,9 @@
                 additionalClusterNodes
             );
 
-            if (UseManagementApi)
-            {
-                ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
-            }
+            ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
 
-            var brokerVerifier = new BrokerVerifier(connectionFactory, UseManagementApi, ManagementClient);
+            var brokerVerifier = new BrokerVerifier(ManagementClient, ValidateDeliveryLimits);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
 
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);

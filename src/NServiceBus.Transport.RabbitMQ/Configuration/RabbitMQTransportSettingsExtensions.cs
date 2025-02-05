@@ -344,14 +344,14 @@
         /// </summary>
         /// <returns></returns>
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "RabbitMQTransport.UseManagementApi",
+            ReplacementTypeOrMember = "RabbitMQTransport.ValidateDeliveryLimits",
             Message = "The configuration has been moved to RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> DoNotUseManagementApi(this TransportExtensions<RabbitMQTransport> transportExtensions)
+        public static TransportExtensions<RabbitMQTransport> DoNotValidateDeliveryLimits(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
 
-            transportExtensions.Transport.UseManagementApi = false;
+            transportExtensions.Transport.ValidateDeliveryLimits = false;
             return transportExtensions;
         }
 
