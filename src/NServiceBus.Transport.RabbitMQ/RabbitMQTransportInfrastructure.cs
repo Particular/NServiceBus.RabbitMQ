@@ -50,8 +50,6 @@
         {
             using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
 
-            await brokerVerifier.VerifyRequirements(cancellationToken).ConfigureAwait(false);
-
             using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (supportsDelayedDelivery)
