@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using global::RabbitMQ.Client;
-    using NServiceBus.Transport.RabbitMQ;
 
     class BrokerConnection
     {
@@ -13,7 +12,9 @@
         public async Task<IConnection> Create(CancellationToken cancellationToken = default)
         {
             var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
-            await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken);
+
+            //TODO Decide how to handle broker verification in commandline
+            //await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken);
 
             return connection;
         }
