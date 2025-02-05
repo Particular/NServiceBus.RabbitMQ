@@ -11,7 +11,7 @@ using Polly;
 
 class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
 {
-    readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
+    static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
 
     static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
     static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
