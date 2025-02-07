@@ -31,6 +31,6 @@ class Overview()
     public required string Node { get; set; }
 
     [JsonExtensionData]
-    public Dictionary<string, JsonElement> ExtraProperties { get; } = [];
+    public Dictionary<string, JsonElement> ExtraProperties { get; init; } = [];
 }
 
