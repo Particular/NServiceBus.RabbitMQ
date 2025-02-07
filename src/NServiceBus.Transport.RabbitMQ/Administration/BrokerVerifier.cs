@@ -13,8 +13,8 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 {
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
 
-    static readonly Version MinimumSupportedRabbitMqVersion = Version.Parse("3.10.0");
-    static readonly Version RabbitMqVersion4 = Version.Parse("4.0.0");
+    static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
+    static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
 
     Version? brokerVersion;
 
@@ -45,9 +45,9 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task VerifyRequirements(CancellationToken cancellationToken = default)
     {
-        if (BrokerVersion < MinimumSupportedRabbitMqVersion)
+        if (BrokerVersion < MinimumSupportedBrokerVersion)
         {
-            throw new Exception($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedRabbitMqVersion}.");
+            throw new Exception($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
         }
 
         bool streamsEnabled;
@@ -84,7 +84,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     bool ShouldOverrideDeliveryLimit(Queue queue)
     {
-        if (BrokerVersion < RabbitMqVersion4)
+        if (BrokerVersion < BrokerVersion4)
         {
             return false;
         }
@@ -146,7 +146,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             throw new InvalidOperationException($"The {queue.Name} queue already has the '{queue.AppliedPolicyName}' policy applied.");
         }
 
-        if (brokerVersion < RabbitMqVersion4)
+        if (brokerVersion < BrokerVersion4)
         {
             throw new InvalidOperationException($"Cannot override delivery limit on the {queue.Name} queue by policy in RabbitMQ versions prior to 4. Version is {brokerVersion}.");
         }
