@@ -8,12 +8,6 @@ using System.Text.Json.Serialization;
 
 class Policy()
 {
-    [JsonPropertyName("vhost")]
-    public string VirtualHost { get; set; } = "/";
-
-    [JsonPropertyName("name")]
-    public required string Name { get; set; }
-
     [JsonPropertyName("pattern")]
     public required string Pattern { get; set; }
 

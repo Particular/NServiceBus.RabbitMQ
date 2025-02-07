@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 class ManagementClient
 {
     readonly HttpClient httpClient;
-    readonly string virtualHost;
     readonly string escapedVirtualHost;
 
     const int defaultManagementPort = 15672;
@@ -45,8 +44,7 @@ class ManagementClient
             };
         }
 
-        virtualHost = connectionConfiguration.VirtualHost;
-        escapedVirtualHost = Uri.EscapeDataString(virtualHost);
+        escapedVirtualHost = Uri.EscapeDataString(connectionConfiguration.VirtualHost);
 
         httpClient = new HttpClient { BaseAddress = uriBuilder.Uri };
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{uriBuilder.UserName}:{uriBuilder.Password}")));
@@ -105,13 +103,11 @@ class ManagementClient
             value);
     }
 
-    public async Task CreatePolicy(Policy policy, CancellationToken cancellationToken = default)
+    public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(policy, nameof(policy));
 
-        policy.VirtualHost = virtualHost;
-
-        var escapedPolicyName = Uri.EscapeDataString(policy.Name);
+        var escapedPolicyName = Uri.EscapeDataString(name);
         var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken)
             .ConfigureAwait(false);
 

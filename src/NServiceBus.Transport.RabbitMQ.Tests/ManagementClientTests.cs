@@ -144,11 +144,10 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
                 {
                     DeliveryLimit = deliveryLimit
                 },
-                Name = policyName,
                 Pattern = queueName,
                 Priority = 100
             };
-            await managementClient.CreatePolicy(policy);
+            await managementClient.CreatePolicy(policyName, policy);
 
             // Assert
 
