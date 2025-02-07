@@ -17,6 +17,6 @@ class FeatureFlag()
     public bool IsEnabled { get; set; }
 
     [JsonExtensionData]
-    public Dictionary<string, JsonElement> ExtraProperties { get; } = [];
+    public Dictionary<string, JsonElement> ExtraProperties { get; init; } = [];
 }
 
