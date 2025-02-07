@@ -40,10 +40,7 @@
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
 
-            return new MessagePump(
-                settings, connectionFactory, routingTopology, messageConverter,
-                consumerTag, channelProvider, brokerVerifier,
-                timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, brokerVerifier, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
         internal async Task SetupInfrastructure(string[] sendingQueues, CancellationToken cancellationToken = default)
