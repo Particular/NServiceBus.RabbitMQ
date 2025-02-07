@@ -11,6 +11,7 @@ class PolicyTargetConverter : JsonConverter<PolicyTarget>
     public override PolicyTarget Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var value = reader.GetString();
+
         return value switch
         {
             "all" => PolicyTarget.All,
@@ -35,6 +36,7 @@ class PolicyTargetConverter : JsonConverter<PolicyTarget>
             PolicyTarget.Exchanges => "exchanges",
             _ => throw new ArgumentOutOfRangeException(nameof(policyTarget), $"PolicyTarget value out of range: {policyTarget}")
         };
+
         writer.WriteStringValue(value);
     }
 }

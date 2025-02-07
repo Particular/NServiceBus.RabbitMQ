@@ -12,16 +12,16 @@ class Overview()
     [JsonPropertyName("product_name")]
     public required string ProductName { get; set; }
 
-    [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("management_version")]
+    [JsonConverter(typeof(VersionConverter))]
     public required Version ManagementVersion { get; set; }
 
-    [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("product_version")]
+    [JsonConverter(typeof(VersionConverter))]
     public required Version ProductVersion { get; set; }
 
-    [JsonConverter(typeof(VersionConverter))]
     [JsonPropertyName("rabbitmq_version")]
+    [JsonConverter(typeof(VersionConverter))]
     public required Version RabbitMqVersion { get; set; }
 
     [JsonPropertyName("cluster_name")]
@@ -31,6 +31,6 @@ class Overview()
     public required string Node { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
+    public Dictionary<string, JsonElement> ExtraProperties { get; } = [];
 }
 

@@ -11,6 +11,7 @@ class QueueTypeConverter : JsonConverter<QueueType>
     public override QueueType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var value = reader.GetString();
+
         return value switch
         {
             "quorum" => QueueType.Quorum,
@@ -29,6 +30,7 @@ class QueueTypeConverter : JsonConverter<QueueType>
             QueueType.Stream => "stream",
             _ => throw new ArgumentOutOfRangeException(nameof(queueType), $"QueueType value out of range: {queueType}")
         };
+
         writer.WriteStringValue(value);
     }
 }

@@ -12,11 +12,11 @@ class FeatureFlag()
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
-    [JsonConverter(typeof(FeatureFlagEnabledConverter))]
     [JsonPropertyName("state")]
+    [JsonConverter(typeof(FeatureFlagEnabledConverter))]
     public bool IsEnabled { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
+    public Dictionary<string, JsonElement> ExtraProperties { get; } = [];
 }
 

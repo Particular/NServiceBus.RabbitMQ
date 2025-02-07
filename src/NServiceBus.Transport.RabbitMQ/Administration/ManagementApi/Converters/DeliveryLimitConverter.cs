@@ -17,6 +17,7 @@ class DeliveryLimitConverter : JsonConverter<int>
         else if (reader.TokenType == JsonTokenType.String)
         {
             var value = reader.GetString();
+
             if (string.Equals(value, "unlimited", StringComparison.OrdinalIgnoreCase))
             {
                 return -1;
