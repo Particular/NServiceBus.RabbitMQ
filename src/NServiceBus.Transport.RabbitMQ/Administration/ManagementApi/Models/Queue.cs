@@ -1,9 +1,6 @@
 ﻿#nullable enable
 
 namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
-
-using System.Collections.Generic;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 class Queue()
@@ -28,7 +25,4 @@ class Queue()
 
     [JsonPropertyName("operator_policy")]
     public string? AppliedOperatorPolicyName { get; set; }
-
-    [JsonExtensionData]
-    public Dictionary<string, JsonElement> ExtraProperties { get; init; } = [];
 }

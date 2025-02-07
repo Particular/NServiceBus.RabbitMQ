@@ -3,8 +3,6 @@
 namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System;
-using System.Collections.Generic;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 class Overview()
@@ -29,8 +27,5 @@ class Overview()
 
     [JsonPropertyName("node")]
     public required string Node { get; set; }
-
-    [JsonExtensionData]
-    public Dictionary<string, JsonElement> ExtraProperties { get; init; } = [];
 }
 
