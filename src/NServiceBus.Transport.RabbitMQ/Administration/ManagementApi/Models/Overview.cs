@@ -20,7 +20,7 @@ class Overview()
 
     [JsonPropertyName("rabbitmq_version")]
     [JsonConverter(typeof(VersionConverter))]
-    public required Version RabbitMqVersion { get; set; }
+    public required Version BrokerVersion { get; set; }
 
     [JsonPropertyName("cluster_name")]
     public required string ClusterName { get; set; }
