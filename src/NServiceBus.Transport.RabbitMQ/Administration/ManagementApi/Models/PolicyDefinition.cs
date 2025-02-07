@@ -13,6 +13,6 @@ class PolicyDefinition
     public int? DeliveryLimit { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
+    public Dictionary<string, JsonElement> ExtraProperties { get; } = [];
 }
 

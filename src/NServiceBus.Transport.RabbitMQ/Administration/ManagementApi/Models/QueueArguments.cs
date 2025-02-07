@@ -17,6 +17,6 @@ class QueueArguments
     public int? DeliveryLimit { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; init; } = new Dictionary<string, JsonElement>();
+    public Dictionary<string, JsonElement> ExtraProperties { get; init; } = [];
 }
 

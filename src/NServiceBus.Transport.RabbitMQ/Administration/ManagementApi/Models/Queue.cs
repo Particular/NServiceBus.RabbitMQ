@@ -30,5 +30,5 @@ class Queue()
     public string? AppliedOperatorPolicyName { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; init; } = new Dictionary<string, JsonElement>();
+    public Dictionary<string, JsonElement> ExtraProperties { get; init; } = [];
 }

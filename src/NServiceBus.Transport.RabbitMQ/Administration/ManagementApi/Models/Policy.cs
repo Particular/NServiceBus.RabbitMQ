@@ -17,8 +17,8 @@ class Policy()
     [JsonPropertyName("pattern")]
     public required string Pattern { get; set; }
 
-    [JsonConverter(typeof(PolicyTargetConverter))]
     [JsonPropertyName("apply-to")]
+    [JsonConverter(typeof(PolicyTargetConverter))]
     public required PolicyTarget ApplyTo { get; set; }
 
     [JsonPropertyName("definition")]
@@ -28,6 +28,6 @@ class Policy()
     public int Priority { get; set; }
 
     [JsonExtensionData]
-    public IDictionary<string, JsonElement> ExtraProperties { get; } = new Dictionary<string, JsonElement>();
+    public Dictionary<string, JsonElement> ExtraProperties { get; } = [];
 }
 
