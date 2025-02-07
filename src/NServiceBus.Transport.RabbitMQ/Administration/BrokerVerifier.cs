@@ -27,7 +27,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             throw new InvalidOperationException($"Could not access RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
         }
 
-        brokerVersion = response.Value.RabbitMqVersion;
+        brokerVersion = response.Value.BrokerVersion;
     }
 
     Version BrokerVersion

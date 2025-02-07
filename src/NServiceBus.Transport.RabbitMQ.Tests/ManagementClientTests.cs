@@ -104,7 +104,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
                 Assert.That(response.Value?.ProductName, Is.EqualTo("RabbitMQ"));
                 Assert.That(response.Value?.ManagementVersion.Major, Is.InRange(3, 4));
                 Assert.That(response.Value?.ProductVersion.Major, Is.InRange(3, 4));
-                Assert.That(response.Value?.RabbitMqVersion.Major, Is.InRange(3, 4));
+                Assert.That(response.Value?.BrokerVersion.Major, Is.InRange(3, 4));
             });
         }
 
