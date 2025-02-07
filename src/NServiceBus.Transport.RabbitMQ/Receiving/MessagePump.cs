@@ -91,12 +91,12 @@
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
 
+            await brokerVerifier.ValidateDeliveryLimit(ReceiveAddress, cancellationToken).ConfigureAwait(false);
+
             if (settings.PurgeOnStartup)
             {
                 await queuePurger.Purge(ReceiveAddress, cancellationToken).ConfigureAwait(false);
             }
-
-            await brokerVerifier.ValidateDeliveryLimit(ReceiveAddress, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StartReceive(CancellationToken cancellationToken = default)
