@@ -151,15 +151,16 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             throw new InvalidOperationException($"Cannot override delivery limit on the {queue.Name} queue by policy in RabbitMQ versions prior to 4. Version is {brokerVersion}.");
         }
 
+        var policyName = $"nsb.{queue.Name}.delivery-limit";
+
         var policy = new ManagementApi.Policy
         {
-            Name = $"nsb.{queue.Name}.delivery-limit",
             ApplyTo = PolicyTarget.QuorumQueues,
             Definition = new PolicyDefinition { DeliveryLimit = -1 },
             Pattern = queue.Name,
             Priority = 100
         };
 
-        await managementClient.CreatePolicy(policy, cancellationToken).ConfigureAwait(false);
+        await managementClient.CreatePolicy(policyName, policy, cancellationToken).ConfigureAwait(false);
     }
 }

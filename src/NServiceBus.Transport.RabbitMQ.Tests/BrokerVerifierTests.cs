@@ -103,9 +103,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited);
             var managementClient = new ManagementClient(connectionConfiguration);
             var brokerVerifier = new BrokerVerifier(managementClient, true);
+            var policyName = $"nsb.{queueName}.delivery-limit";
             var policy = new Policy
             {
-                Name = $"nsb.{queueName}.delivery-limit",
                 ApplyTo = PolicyTarget.QuorumQueues,
                 Definition = new PolicyDefinition { DeliveryLimit = deliveryLimit },
                 Pattern = queueName,
@@ -115,11 +115,11 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             // Act
             await CreateQuorumQueue(queueName);
             await brokerVerifier.Initialize();
-            await managementClient.CreatePolicy(policy).ConfigureAwait(false);
+            await managementClient.CreatePolicy(policyName, policy).ConfigureAwait(false);
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
 
             // Assert
-            Assert.That(exception.Message, Does.Contain($"The RabbitMQ policy {policy.Name} is setting delivery limit to {deliveryLimit} for {queueName}"));
+            Assert.That(exception.Message, Does.Contain($"The RabbitMQ policy {policyName} is setting delivery limit to {deliveryLimit} for {queueName}"));
         }
 
         static async Task CreateQuorumQueue(string queueName)
