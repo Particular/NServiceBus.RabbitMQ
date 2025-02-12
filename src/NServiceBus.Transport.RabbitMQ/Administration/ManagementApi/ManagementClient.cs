@@ -59,56 +59,36 @@ class ManagementClient
     public async Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
-
-        Queue? value = null;
-
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await httpClient.GetAsync($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken)
-            .ConfigureAwait(false);
-
-        if (response.IsSuccessStatusCode)
-        {
-            value = await response.Content.ReadFromJsonAsync<Queue>(cancellationToken).ConfigureAwait(false);
-        }
+        var response = await httpClient.GetAsync($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
+        var content = await GetResponseContent<Queue>(response, cancellationToken).ConfigureAwait(false);
 
         return new Response<Queue?>(
             response.StatusCode,
             response.ReasonPhrase ?? string.Empty,
-            value);
+            content);
     }
 
     public async Task<Response<Overview?>> GetOverview(CancellationToken cancellationToken = default)
     {
-        Overview? value = null;
-
         var response = await httpClient.GetAsync($"api/overview", cancellationToken).ConfigureAwait(false);
-
-        if (response.IsSuccessStatusCode)
-        {
-            value = await response.Content.ReadFromJsonAsync<Overview>(cancellationToken).ConfigureAwait(false);
-        }
+        var content = await GetResponseContent<Overview>(response, cancellationToken).ConfigureAwait(false);
 
         return new Response<Overview?>(
             response.StatusCode,
             response.ReasonPhrase ?? string.Empty,
-            value);
+            content);
     }
 
     public async Task<Response<List<FeatureFlag>?>> GetFeatureFlags(CancellationToken cancellationToken = default)
     {
-        List<FeatureFlag>? value = null;
-
         var response = await httpClient.GetAsync($"api/feature-flags", cancellationToken).ConfigureAwait(false);
-
-        if (response.IsSuccessStatusCode)
-        {
-            value = await response.Content.ReadFromJsonAsync<List<FeatureFlag>>(cancellationToken).ConfigureAwait(false);
-        }
+        var content = await GetResponseContent<List<FeatureFlag>>(response, cancellationToken).ConfigureAwait(false);
 
         return new Response<List<FeatureFlag>?>(
             response.StatusCode,
             response.ReasonPhrase ?? string.Empty,
-            value);
+            content);
     }
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
@@ -121,5 +101,15 @@ class ManagementClient
             .ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
+    }
+
+    static async Task<T?> GetResponseContent<T>(HttpResponseMessage response, CancellationToken cancellationToken) where T : class
+    {
+        if (response.IsSuccessStatusCode && response.Content is not null)
+        {
+            return await response.Content.ReadFromJsonAsync<T>(cancellationToken).ConfigureAwait(false);
+        }
+
+        return default;
     }
 }
