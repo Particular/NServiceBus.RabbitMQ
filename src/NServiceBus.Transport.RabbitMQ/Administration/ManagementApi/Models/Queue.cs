@@ -28,6 +28,16 @@ class Queue()
     [JsonPropertyName("policy")]
     public string? AppliedPolicyName { get; set; }
 
+    [JsonPropertyName("operator_policy")]
+    public string? AppliedOperatorPolicyName { get; set; }
+
+    [JsonPropertyName("message_stats")]
+    public QueueMessageStats? MessageStats { get; set; }
+
+    [JsonRequired]
+    [JsonPropertyName("vhost")]
+    public required string Vhost { get; set; }
+
     public int GetDeliveryLimit()
     {
         // RabbitMQ 4.x
