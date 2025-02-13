@@ -14,7 +14,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
 
     static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
-    static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
+    public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
 
     Version? brokerVersion;
 
@@ -30,7 +30,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         brokerVersion = response.Value.BrokerVersion;
     }
 
-    Version BrokerVersion
+    public Version BrokerVersion
     {
         get
         {
@@ -63,13 +63,10 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task ValidateDeliveryLimit(string queueName, CancellationToken cancellationToken = default)
     {
-
-        //Logger.Warn("Use of RabbitMQ Management API has been disabled." +
-        //      "The transport will not be able to override the default delivery limit on each queue " +
-        //      "which is necessary in order to guarantee that messages are not lost after repeated retries.");
-
         if (!validateDeliveryLimits)
         {
+            Logger.Warn("Validation of delivery limits has been disabled. The transport will not be able to ensure that messages are not lost after repeated retries.");
+
             return;
         }
 
@@ -84,26 +81,16 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     bool ShouldOverrideDeliveryLimit(Queue queue)
     {
-        if (BrokerVersion < BrokerVersion4)
+        var limit = queue.GetDeliveryLimit();
+
+        if (limit == -1)
         {
             return false;
         }
 
-        if (queue.DeliveryLimit == -1)
+        if (queue.Arguments.DeliveryLimit.HasValue || queue.EffectivePolicyDefinition!.DeliveryLimit.HasValue)
         {
-            return false;
-        }
-
-        if (queue.Arguments.DeliveryLimit.HasValue && queue.Arguments.DeliveryLimit != -1)
-        {
-            throw new InvalidOperationException($"The delivery limit for {queue.Name} is set to {queue.Arguments.DeliveryLimit} by a queue argument. " +
-                "This can interfere with the transport's retry implementation");
-        }
-
-        if (queue.EffectivePolicyDefinition!.DeliveryLimit.HasValue && queue.EffectivePolicyDefinition.DeliveryLimit != -1)
-        {
-            throw new InvalidOperationException($"The RabbitMQ policy {queue.AppliedPolicyName} " +
-                $"is setting delivery limit to {queue.EffectivePolicyDefinition.DeliveryLimit} for {queue.Name}.");
+            throw new InvalidOperationException($"The delivery limit for {queue.Name} is set to the non-default value of '{queue.Arguments.DeliveryLimit}'.");
         }
 
         return true;
