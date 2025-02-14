@@ -8,15 +8,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Logging;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
+using NuGet.Versioning;
 
 class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
 {
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
 
-    static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
-    public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
+    static readonly SemanticVersion MinimumSupportedBrokerVersion = SemanticVersion.Parse("3.10.0");
+    public static readonly SemanticVersion BrokerVersion4 = SemanticVersion.Parse("4.0.0");
 
-    Version? brokerVersion;
+    SemanticVersion? brokerVersion;
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
@@ -30,7 +31,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         brokerVersion = response.Value.BrokerVersion;
     }
 
-    public Version BrokerVersion
+    public SemanticVersion BrokerVersion
     {
         get
         {
