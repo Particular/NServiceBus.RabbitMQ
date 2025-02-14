@@ -24,9 +24,6 @@ class Queue()
     [JsonPropertyName("policy")]
     public string? AppliedPolicyName { get; set; }
 
-    [JsonPropertyName("operator_policy")]
-    public string? AppliedOperatorPolicyName { get; set; }
-
     public int GetDeliveryLimit()
     {
         // RabbitMQ 4.x
