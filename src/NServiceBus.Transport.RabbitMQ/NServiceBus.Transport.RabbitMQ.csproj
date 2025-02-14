@@ -10,12 +10,13 @@
   <ItemGroup>
     <PackageReference Include="BitFaster.Caching" Version="2.5.2" />
     <PackageReference Include="NServiceBus" Version="9.2.4" />
+    <PackageReference Include="NuGet.Versioning" Version="6.13.1" />
     <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Fody" Version="6.9.1" PrivateAssets="All" />
-    <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
+    <PackageReference Include="Obsolete.Fody" Version="5.3.1" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="4.2.0" PrivateAssets="All" />
   </ItemGroup>
 
@@ -27,6 +28,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.RabbitMQ.Tests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="ServiceControl.Transports.RabbitMQ" Key="$(NServiceBusKey)" />
   </ItemGroup>
 
 </Project>
