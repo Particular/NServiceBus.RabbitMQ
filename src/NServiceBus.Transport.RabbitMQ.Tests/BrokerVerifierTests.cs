@@ -112,6 +112,8 @@ class BrokerVerifierTests
 
         await managementClient.CreatePolicy(policyName, policy).ConfigureAwait(false);
 
+        // If this test appears flaky, a delay should be added here to give the broker some time to apply the policy before calling ValidateDeliveryLimit
+
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
         Assert.That(exception.Message, Does.Contain($"The delivery limit for '{queueName}' is set to the non-default value of '{deliveryLimit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this."));
     }
