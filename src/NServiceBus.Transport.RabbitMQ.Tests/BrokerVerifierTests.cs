@@ -1,184 +1,133 @@
 ﻿#nullable enable
 
-namespace NServiceBus.Transport.RabbitMQ.Tests
+namespace NServiceBus.Transport.RabbitMQ.Tests;
+
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using NServiceBus.Transport.RabbitMQ.ManagementApi;
+using NUnit.Framework;
+
+[TestFixture]
+class BrokerVerifierTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Net;
-    using System.Threading.Tasks;
-    using NServiceBus.Logging;
-    using NServiceBus.Transport.RabbitMQ.ManagementApi;
-    using NUnit.Framework;
+    static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
+    static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
+    static readonly ConnectionFactory connectionFactory = new(typeof(BrokerVerifierTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
 
-    using ConnectionFactory = ConnectionFactory;
-
-    [TestFixture]
-    class BrokerVerifierTests
+    [Test]
+    public void Initialize_Should_Get_Response_When_Management_Client_Is_Available_And_Valid()
     {
-        static readonly string connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
-        static readonly ConnectionConfiguration connectionConfiguration = ConnectionConfiguration.Create(connectionString);
-        static readonly ConnectionFactory connectionFactory = new(typeof(BrokerVerifierTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
+        var managementClient = new ManagementClient(connectionConfiguration);
+        var brokerVerifier = new BrokerVerifier(managementClient, true);
 
-        [Test]
-        public void Initialize_Should_Get_Response_When_Management_Client_Is_Available_And_Valid()
-        {
-            var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
-
-            Assert.DoesNotThrowAsync(async () => await brokerVerifier.Initialize());
-        }
-
-        [Test]
-        public async Task ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy()
-        {
-            var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
-            await brokerVerifier.Initialize();
-
-            if (brokerVerifier.BrokerVersion < BrokerVerifier.BrokerVersion4)
-            {
-                Assert.Ignore("Test not valid for broker versions before 4.0.0");
-            }
-
-            var queueName = nameof(ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy);
-            var policyName = $"nsb.{queueName}.delivery-limit";
-            await CreateQuorumQueue(queueName);
-
-            await brokerVerifier.ValidateDeliveryLimit(queueName);
-
-            // It can take some time for updated policies to be applied, so we need to wait.
-            // If this test is randomly failing, consider increasing the maxWaitTime
-            var maxWaitTime = TimeSpan.FromSeconds(30);
-            var pollingInterval = TimeSpan.FromSeconds(2);
-            var stopwatch = Stopwatch.StartNew();
-
-            while (stopwatch.Elapsed < maxWaitTime)
-            {
-                var response = await managementClient.GetQueue(queueName);
-
-                if (response.StatusCode == HttpStatusCode.OK
-                    && response.Value is not null
-                    && response.Value.EffectivePolicyDefinition is not null
-                    && response.Value.DeliveryLimit.Equals(-1)
-                    && response.Value.AppliedPolicyName == policyName
-                    && response.Value.EffectivePolicyDefinition.DeliveryLimit == -1)
-                {
-                    // Policy applied successfully
-                    return;
-                }
-
-                await Task.Delay(pollingInterval);
-            }
-
-            Assert.Fail($"Policy '{policyName}' was not applied to queue '{queueName}' within {maxWaitTime.TotalSeconds} seconds.");
-        }
-
-        [Test]
-        public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited()
-        {
-            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited);
-            var delivery_limit = 5;
-            await CreateQuorumQueueWithDeliveryLimit(queueName, delivery_limit);
-            var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
-
-            await brokerVerifier.Initialize();
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
-            //Assert.That(exception.Message, Does.Contain($"The delivery limit for {queueName} is set to {delivery_limit} by a queue argument. " +
-            //$"This can interfere with the transport's retry implementation"));
-        }
-
-        [Test]
-        public async Task ValidateDeliveryLimit_Should_Throw_When_Delivery_Limit_Cannot_Be_Validated()
-        {
-            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Delivery_Limit_Cannot_Be_Validated);
-            await CreateQuorumQueue(queueName);
-            var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
-
-            await brokerVerifier.Initialize();
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit("WrongQueue"));
-            Assert.That(exception.Message, Does.Contain($"Could not retrieve full queue details for WrongQueue"));
-        }
-
-        [Test]
-        public async Task ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited()
-        {
-            // Arrange
-            var deliveryLimit = 15;
-            var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited);
-            var managementClient = new ManagementClient(connectionConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
-            var policyName = $"nsb.{queueName}.delivery-limit";
-            var policy = new Policy
-            {
-                ApplyTo = PolicyTarget.QuorumQueues,
-                Definition = new PolicyDefinition { DeliveryLimit = deliveryLimit },
-                Pattern = queueName,
-                Priority = 100
-            };
-
-            // Act
-            await CreateQuorumQueue(queueName);
-            await brokerVerifier.Initialize();
-            await managementClient.CreatePolicy(policyName, policy).ConfigureAwait(false);
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
-
-            // Assert
-            //Assert.That(exception.Message, Does.Contain($"The RabbitMQ policy {policyName} is setting delivery limit to {deliveryLimit} for {queueName}"));
-        }
-
-        static async Task CreateQuorumQueue(string queueName)
-        {
-            using var connection = await connectionFactory.CreateConnection($"{queueName} connection").ConfigureAwait(false);
-            using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
-            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
-
-            _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
-        }
-
-        static async Task CreateQuorumQueueWithDeliveryLimit(string queueName, int deliveryLimit)
-        {
-            using var connection = await connectionFactory.CreateConnection($"{queueName} connection").ConfigureAwait(false);
-            using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
-            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" }, { "x-delivery-limit", deliveryLimit } };
-
-            _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
-        }
+        Assert.DoesNotThrowAsync(async () => await brokerVerifier.Initialize());
     }
 
-    class FakeLogger : ILog
+    [Test]
+    public async Task ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy()
     {
-        public List<string> Messages { get; } = [];
+        var managementClient = new ManagementClient(connectionConfiguration);
+        var brokerVerifier = new BrokerVerifier(managementClient, true);
+        await brokerVerifier.Initialize();
 
-        public bool IsDebugEnabled => throw new NotImplementedException();
+        if (brokerVerifier.BrokerVersion < BrokerVerifier.BrokerVersion4)
+        {
+            Assert.Ignore("Test not valid for broker versions before 4.0.0");
+        }
 
-        public bool IsInfoEnabled => throw new NotImplementedException();
+        var queueName = nameof(ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy);
+        var policyName = $"nsb.{queueName}.delivery-limit";
+        await CreateQuorumQueue(queueName);
 
-        public bool IsWarnEnabled => throw new NotImplementedException();
+        await brokerVerifier.ValidateDeliveryLimit(queueName);
 
-        public bool IsErrorEnabled => throw new NotImplementedException();
+        // It can take some time for updated policies to be applied, so we need to wait.
+        // If this test is randomly failing, consider increasing the attempts
+        var attempts = 20;
 
-        public bool IsFatalEnabled => throw new NotImplementedException();
+        for (int i = 0; i < attempts; i++)
+        {
+            var response = await managementClient.GetQueue(queueName);
 
-        public void Debug(string message, Exception exception) => throw new NotImplementedException();
-        public void DebugFormat(string format, params object[] args) => throw new NotImplementedException();
-        public void Info(string message, Exception exception) => throw new NotImplementedException();
-        public void InfoFormat(string format, params object[] args) => throw new NotImplementedException();
-        public void Warn(string message, Exception exception) => Messages.Add(message);
-        public void WarnFormat(string format, params object[] args) => Messages.Add(format);
-        public void Error(string message, Exception exception) => throw new NotImplementedException();
-        public void ErrorFormat(string format, params object[] args) => throw new NotImplementedException();
-        public void Fatal(string message, Exception exception) => throw new NotImplementedException();
-        public void FatalFormat(string format, params object[] args) => throw new NotImplementedException();
-        public void Debug(string message) => throw new NotImplementedException();
-        public void Info(string message) => throw new NotImplementedException();
-        public void Error(string message) => Messages.Add(message);
-        public void Fatal(string message) => throw new NotImplementedException();
-        public void Warn(string message) => Messages.Add(message);
+            if (response.StatusCode == HttpStatusCode.OK && response.Value?.DeliveryLimit == -1 && response.Value.AppliedPolicyName == policyName)
+            {
+                // Policy applied successfully
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        Assert.Fail($"Policy '{policyName}' was not applied to queue '{queueName}'.");
     }
 
+    [Test]
+    public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Does_Not_Exist()
+    {
+        var queueName = "WrongQueue";
+        var managementClient = new ManagementClient(connectionConfiguration);
+        var brokerVerifier = new BrokerVerifier(managementClient, true);
+        await brokerVerifier.Initialize();
+
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
+        Assert.That(exception.Message, Does.Contain($"Could not get queue details for '{queueName}'."));
+    }
+
+    [Test]
+    public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited()
+    {
+        var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited);
+        var deliveryLimit = 5;
+        await CreateQuorumQueue(queueName, deliveryLimit);
+
+        var managementClient = new ManagementClient(connectionConfiguration);
+        var brokerVerifier = new BrokerVerifier(managementClient, true);
+        await brokerVerifier.Initialize();
+
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
+        Assert.That(exception.Message, Does.Contain($"The delivery limit for '{queueName}' is set to the non-default value of '{deliveryLimit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this."));
+    }
+
+    [Test]
+    public async Task ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited()
+    {
+        var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited);
+        await CreateQuorumQueue(queueName);
+
+        var managementClient = new ManagementClient(connectionConfiguration);
+        var brokerVerifier = new BrokerVerifier(managementClient, true);
+        await brokerVerifier.Initialize();
+
+        var deliveryLimit = 15;
+        var policyName = $"nsb.{queueName}.delivery-limit";
+        var policy = new Policy
+        {
+            ApplyTo = PolicyTarget.QuorumQueues,
+            Definition = new PolicyDefinition { DeliveryLimit = deliveryLimit },
+            Pattern = queueName,
+            Priority = 100
+        };
+
+        await managementClient.CreatePolicy(policyName, policy).ConfigureAwait(false);
+
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
+        Assert.That(exception.Message, Does.Contain($"The delivery limit for '{queueName}' is set to the non-default value of '{deliveryLimit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this."));
+    }
+
+    static async Task CreateQuorumQueue(string queueName, int? deliveryLimit = null)
+    {
+        using var connection = await connectionFactory.CreateAdministrationConnection().ConfigureAwait(false);
+        using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+
+        var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
+
+        if (deliveryLimit is not null)
+        {
+            arguments.Add("x-delivery-limit", deliveryLimit.Value);
+        }
+
+        _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
+    }
 }

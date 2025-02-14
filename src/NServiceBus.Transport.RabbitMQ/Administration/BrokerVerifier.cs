@@ -90,7 +90,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
         if (queue.Arguments.DeliveryLimit.HasValue || (queue.EffectivePolicyDefinition?.DeliveryLimit.HasValue ?? false))
         {
-            throw new InvalidOperationException($"The delivery limit for '{queue.Name}' is set to the non-default value of '{queue.Arguments.DeliveryLimit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this.");
+            throw new InvalidOperationException($"The delivery limit for '{queue.Name}' is set to the non-default value of '{limit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this.");
         }
 
         return true;
@@ -99,8 +99,9 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     async Task<Queue?> GetQueueDetails(string queueName, CancellationToken cancellationToken)
     {
         Queue? queue = null;
+        var attempts = 20;
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < attempts; i++)
         {
             var response = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
 
@@ -115,7 +116,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
                 break;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
         }
 
         return queue;
