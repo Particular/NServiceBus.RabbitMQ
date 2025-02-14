@@ -3,11 +3,11 @@
 namespace NServiceBus.Transport.RabbitMQ;
 
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Logging;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
-using Polly;
 
 class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
 {
@@ -70,8 +70,8 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             return;
         }
 
-        var queue = await GetFullQueueDetails(queueName, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"Could not retrieve full queue details for {queueName}.");
+        var queue = await GetQueueDetails(queueName, cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"Could not get queue details for '{queueName}'.");
 
         if (ShouldOverrideDeliveryLimit(queue))
         {
@@ -96,34 +96,29 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         return true;
     }
 
-    async Task<Queue?> GetFullQueueDetails(string queueName, CancellationToken cancellationToken)
+    async Task<Queue?> GetQueueDetails(string queueName, CancellationToken cancellationToken)
     {
-        var retryPolicy = Polly.Policy
-            .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
-            .WaitAndRetryAsync(
-                5,
-                attempt => TimeSpan.FromMilliseconds(3000 * Math.Pow(2, attempt - 1)),
-                onRetry: (outcome, timespan, retryCount, context) =>
-                {
-                    if (outcome.Exception is not null)
-                    {
-                        Logger.Error($"Failed to get {queueName} queue - Attempt #{retryCount}.", outcome.Exception);
-                    }
-                    else if (!outcome.Result.HasValue)
-                    {
-                        var response = outcome.Result;
-                        Logger.WarnFormat("Could not get queue details for {0} - Attempt #{1}. ({2}: {3})", queueName, retryCount, response.StatusCode, response.Reason);
-                    }
-                    else
-                    {
-                        var response = outcome.Result;
-                        Logger.WarnFormat("Did not receive full queue details for {0} - Attempt #{1})", queueName, retryCount);
-                    }
-                });
+        Queue? queue = null;
 
-        var response = await retryPolicy.ExecuteAsync(() => managementClient.GetQueue(queueName, cancellationToken)).ConfigureAwait(false);
+        for (int i = 0; i < 10; i++)
+        {
+            var response = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
 
-        return response?.Value?.EffectivePolicyDefinition is not null ? response.Value : null;
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                break;
+            }
+
+            if (response.Value?.EffectivePolicyDefinition is not null)
+            {
+                queue = response.Value;
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+        }
+
+        return queue;
     }
 
     async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
@@ -140,7 +135,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
         var policyName = $"nsb.{queue.Name}.delivery-limit";
 
-        var policy = new ManagementApi.Policy
+        var policy = new Policy
         {
             ApplyTo = PolicyTarget.QuorumQueues,
             Definition = new PolicyDefinition { DeliveryLimit = -1 },
