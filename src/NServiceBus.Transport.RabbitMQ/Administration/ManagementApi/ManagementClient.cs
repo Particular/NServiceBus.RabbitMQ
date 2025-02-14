@@ -3,6 +3,7 @@
 namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -20,7 +21,7 @@ class ManagementClient
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
     {
-        ArgumentNullException.ThrowIfNull(connectionConfiguration, nameof(connectionConfiguration));
+        ArgumentNullException.ThrowIfNull(connectionConfiguration);
 
         UriBuilder uriBuilder;
 
@@ -31,6 +32,11 @@ class ManagementClient
                 UserName = managementApiConfiguration.UserName ?? connectionConfiguration.UserName,
                 Password = managementApiConfiguration.Password ?? connectionConfiguration.Password
             };
+
+            if (uriBuilder.Scheme is not "http" or "https")
+            {
+                throw new NotSupportedException($"URL scheme '{uriBuilder.Scheme}' is not supported for the RabbitMQ management API URL. Valid schemes are 'http' and 'https'.");
+            }
         }
         else
         {
@@ -52,6 +58,8 @@ class ManagementClient
 
     public async Task<Response<Queue?>> GetQueue(string queueName, CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
         Queue? value = null;
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
@@ -86,18 +94,18 @@ class ManagementClient
             value);
     }
 
-    public async Task<Response<FeatureFlagList?>> GetFeatureFlags(CancellationToken cancellationToken = default)
+    public async Task<Response<List<FeatureFlag>?>> GetFeatureFlags(CancellationToken cancellationToken = default)
     {
-        FeatureFlagList? value = null;
+        List<FeatureFlag>? value = null;
 
         var response = await httpClient.GetAsync($"api/feature-flags", cancellationToken).ConfigureAwait(false);
 
         if (response.IsSuccessStatusCode)
         {
-            value = await response.Content.ReadFromJsonAsync<FeatureFlagList>(cancellationToken).ConfigureAwait(false);
+            value = await response.Content.ReadFromJsonAsync<List<FeatureFlag>>(cancellationToken).ConfigureAwait(false);
         }
 
-        return new Response<FeatureFlagList?>(
+        return new Response<List<FeatureFlag>?>(
             response.StatusCode,
             response.ReasonPhrase ?? string.Empty,
             value);
@@ -105,7 +113,8 @@ class ManagementClient
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(policy, nameof(policy));
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(policy);
 
         var escapedPolicyName = Uri.EscapeDataString(name);
         var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken)

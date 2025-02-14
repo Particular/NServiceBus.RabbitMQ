@@ -11,6 +11,6 @@ class FeatureFlag()
 
     [JsonPropertyName("state")]
     [JsonConverter(typeof(FeatureFlagEnabledConverter))]
-    public bool IsEnabled { get; set; }
+    public bool Enabled { get; set; }
 }
 
