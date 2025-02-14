@@ -24,7 +24,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
         if (!response.HasValue)
         {
-            throw new InvalidOperationException($"Could not access RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
+            throw new InvalidOperationException($"Could not access the RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
         }
 
         brokerVersion = response.Value.BrokerVersion;
@@ -70,12 +70,12 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             return;
         }
 
-        var queue = await GetFullQueueDetails(managementClient, queueName, cancellationToken).ConfigureAwait(false)
+        var queue = await GetFullQueueDetails(queueName, cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException($"Could not retrieve full queue details for {queueName}.");
 
         if (ShouldOverrideDeliveryLimit(queue))
         {
-            await SetDeliveryLimitViaPolicy(managementClient, queue, BrokerVersion, cancellationToken).ConfigureAwait(false);
+            await SetDeliveryLimitViaPolicy(queue, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -88,15 +88,15 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             return false;
         }
 
-        if (queue.Arguments.DeliveryLimit.HasValue || queue.EffectivePolicyDefinition!.DeliveryLimit.HasValue)
+        if (queue.Arguments.DeliveryLimit.HasValue || (queue.EffectivePolicyDefinition?.DeliveryLimit.HasValue ?? false))
         {
-            throw new InvalidOperationException($"The delivery limit for {queue.Name} is set to the non-default value of '{queue.Arguments.DeliveryLimit}'.");
+            throw new InvalidOperationException($"The delivery limit for '{queue.Name}' is set to the non-default value of '{queue.Arguments.DeliveryLimit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this.");
         }
 
         return true;
     }
 
-    async Task<Queue?> GetFullQueueDetails(ManagementClient managementClient, string queueName, CancellationToken cancellationToken)
+    async Task<Queue?> GetFullQueueDetails(string queueName, CancellationToken cancellationToken)
     {
         var retryPolicy = Polly.Policy
             .HandleResult<Response<Queue?>>(response => response.Value?.EffectivePolicyDefinition is null)
@@ -126,16 +126,16 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         return response?.Value?.EffectivePolicyDefinition is not null ? response.Value : null;
     }
 
-    static async Task SetDeliveryLimitViaPolicy(ManagementClient managementClient, Queue queue, Version brokerVersion, CancellationToken cancellationToken)
+    async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
+        if (BrokerVersion < BrokerVersion4)
         {
-            throw new InvalidOperationException($"The {queue.Name} queue already has the '{queue.AppliedPolicyName}' policy applied.");
+            throw new InvalidOperationException($"Cannot create unlimited delivery limit policies in RabbitMQ versions prior to 4.0. The version is: {brokerVersion}.");
         }
 
-        if (brokerVersion < BrokerVersion4)
+        if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
         {
-            throw new InvalidOperationException($"Cannot override delivery limit on the {queue.Name} queue by policy in RabbitMQ versions prior to 4. Version is {brokerVersion}.");
+            throw new InvalidOperationException($"An unlimited delivery limit policy cannot be applied to the '{queue.Name}' queue because it already has a '{queue.AppliedPolicyName}' policy applied.");
         }
 
         var policyName = $"nsb.{queue.Name}.delivery-limit";
