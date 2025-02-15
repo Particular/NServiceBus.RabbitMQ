@@ -103,6 +103,45 @@ class ManagementClient
         response.EnsureSuccessStatusCode();
     }
 
+    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    public async Task<Response<Pagination?>> GetPage(int page, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.GetAsync($"/api/queues/{escapedVirtualHost}/?page={page}&page_size=500&name=&use_regex=false&pagination=true", cancellationToken).ConfigureAwait(false);
+        var content = await GetResponseContent<Pagination>(response, cancellationToken).ConfigureAwait(false);
+
+        return new Response<Pagination?>(
+            response.StatusCode,
+            response.ReasonPhrase ?? string.Empty,
+            content);
+    }
+
+    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    public async Task<Response<List<Binding?>>> GetQueueBindings(string queueName, CancellationToken cancellationToken = default)
+    {
+        var escapedQueueName = Uri.EscapeDataString(queueName);
+        var response = await httpClient.GetAsync($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        var content = await GetResponseContent<List<Binding?>>(response, cancellationToken).ConfigureAwait(false) ?? [];
+
+        return new Response<List<Binding?>>(
+            response.StatusCode,
+            response.ReasonPhrase ?? string.Empty,
+            content);
+    }
+
+    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    public async Task<Response<List<Binding?>>> GetExchangeBindingsDestination(string queueName, CancellationToken cancellationToken = default)
+    {
+        var escapedQueueName = Uri.EscapeDataString(queueName);
+        var response = await httpClient.GetAsync($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        var content = await GetResponseContent<List<Binding?>>(response, cancellationToken).ConfigureAwait(false) ?? [];
+
+        return new Response<List<Binding?>>(
+            response.StatusCode,
+            response.ReasonPhrase ?? string.Empty,
+            content);
+    }
+
+
     static async Task<T?> GetResponseContent<T>(HttpResponseMessage response, CancellationToken cancellationToken) where T : class
     {
         if (response.IsSuccessStatusCode && response.Content is not null)
