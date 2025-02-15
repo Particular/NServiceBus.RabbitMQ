@@ -92,6 +92,35 @@ class ManagementClient
         response.EnsureSuccessStatusCode();
     }
 
+    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    public async Task<(HttpStatusCode StatusCode, string Reason, Pagination? Value)> GetVhostQueuesPage(int page, CancellationToken cancellationToken = default)
+    {
+        var response = await Get<Pagination>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size=500&name=&use_regex=false&pagination=true", cancellationToken).ConfigureAwait(false);
+        return response;
+    }
+
+    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetQueueBindings(string queueName, CancellationToken cancellationToken = default)
+    {
+        var escapedQueueName = Uri.EscapeDataString(queueName);
+        var response = await Get<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        return response;
+    }
+
+    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetExchangeDestinationBindings(string queueName, CancellationToken cancellationToken = default)
+    {
+        var escapedQueueName = Uri.EscapeDataString(queueName);
+        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedQueueName}/bindings/destination", cancellationToken).ConfigureAwait(false);
+        return response;
+    }
+
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<Queue>?)> GetVhostQueues(CancellationToken cancellationToken = default)
+    {
+        var response = await Get<List<Queue>>($"/api/queues/{escapedVirtualHost}", cancellationToken).ConfigureAwait(false);
+        return response;
+    }
+
     async Task<(HttpStatusCode StatusCode, string Reason, T? Value)> Get<T>(string url, CancellationToken cancellationToken)
     {
         T? value = default;
