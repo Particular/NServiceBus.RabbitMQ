@@ -165,7 +165,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             ApplyTo = PolicyTarget.QuorumQueues,
             Definition = new PolicyDefinition { DeliveryLimit = -1 },
             Pattern = queue.Name,
-            Priority = 100
+            Priority = 0
         };
 
         await managementClient.CreatePolicy(policyName, policy, cancellationToken).ConfigureAwait(false);
