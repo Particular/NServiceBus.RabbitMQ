@@ -6,12 +6,16 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+#if !COMMANDLINE
 using NServiceBus.Logging;
+#endif
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
 {
+#if !COMMANDLINE
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
+#endif
 
     static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
     public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
@@ -79,8 +83,9 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     {
         if (!validateDeliveryLimits)
         {
+#if !COMMANDLINE
             Logger.Warn("Validation of delivery limits has been disabled. The transport will not be able to ensure that messages are not lost after repeated retries.");
-
+#endif
             return;
         }
 
