@@ -1,4 +1,6 @@
-﻿namespace NServiceBus
+﻿#nullable enable
+
+namespace NServiceBus
 {
     using System;
 
@@ -43,11 +45,11 @@
         /// <summary>
         ///
         /// </summary>
-        public string UserName { get; }
+        public string? UserName { get; }
 
         /// <summary>
         ///
         /// </summary>
-        public string Password { get; }
+        public string? Password { get; }
     }
 }
