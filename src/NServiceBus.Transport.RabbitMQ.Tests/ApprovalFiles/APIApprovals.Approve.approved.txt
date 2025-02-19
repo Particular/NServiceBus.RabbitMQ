@@ -7,9 +7,9 @@ namespace NServiceBus
     {
         public ManagementApiConfiguration(string url) { }
         public ManagementApiConfiguration(string url, string userName, string password) { }
-        public string Password { get; }
+        public string? Password { get; }
         public string Url { get; }
-        public string UserName { get; }
+        public string? UserName { get; }
     }
     public static class NonPersistentDeliveryModeExtensions
     {
