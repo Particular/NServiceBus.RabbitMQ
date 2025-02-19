@@ -8,16 +8,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Logging;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
-using NuGet.Versioning;
 
 class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
 {
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
 
-    static readonly SemanticVersion MinimumSupportedBrokerVersion = SemanticVersion.Parse("3.10.0");
-    public static readonly SemanticVersion BrokerVersion4 = SemanticVersion.Parse("4.0.0");
+    static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
+    public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
 
-    SemanticVersion? brokerVersion;
+    Version? brokerVersion;
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
@@ -28,10 +27,24 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             throw new InvalidOperationException($"Could not access the RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
         }
 
-        brokerVersion = response.Value.BrokerVersion;
+        brokerVersion = RemovePrereleaseFromVersion(response.Value.BrokerVersion);
+
+        static Version RemovePrereleaseFromVersion(string version)
+        {
+            var index = version.IndexOf('-');
+
+            if (index is -1)
+            {
+                index = version.Length;
+            }
+
+            var versionSpan = version.AsSpan()[..index];
+
+            return Version.Parse(versionSpan);
+        }
     }
 
-    public SemanticVersion BrokerVersion
+    public Version BrokerVersion
     {
         get
         {
