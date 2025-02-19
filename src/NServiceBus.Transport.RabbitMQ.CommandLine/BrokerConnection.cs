@@ -2,23 +2,16 @@
 {
     using global::RabbitMQ.Client;
 
-    class BrokerConnection
+    class BrokerConnection(BrokerVerifier brokerVerifier, RabbitMQ.ConnectionFactory connectionFactory)
     {
-        public BrokerConnection(RabbitMQ.ConnectionFactory connectionFactory)
-        {
-            this.connectionFactory = connectionFactory;
-        }
-
         public async Task<IConnection> Create(CancellationToken cancellationToken = default)
         {
-            var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
+            await brokerVerifier.Initialize(cancellationToken);
+            await brokerVerifier.VerifyRequirements(cancellationToken);
 
-            //TODO Decide how to handle broker verification in commandline
-            //await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken);
+            var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
 
             return connection;
         }
-
-        RabbitMQ.ConnectionFactory connectionFactory;
     }
 }

@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
+    using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
 
     [TestFixture]
@@ -283,10 +284,14 @@
         public async Task SetUp()
         {
             var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
+            var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
 
-            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", ConnectionConfiguration.Create(connectionString), null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
+            var managementClient = new ManagementClient(connectionConfiguration);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
 
-            brokerConnection = new BrokerConnection(connectionFactory);
+            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", connectionConfiguration, null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
+
+            brokerConnection = new BrokerConnection(brokerVerifier, connectionFactory);
 
             connection = await brokerConnection.Create();
         }
