@@ -100,6 +100,11 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     bool ShouldOverrideDeliveryLimit(Queue queue)
     {
+        if (queue.QueueType is not QueueType.Quorum)
+        {
+            return false;
+        }
+
         var limit = queue.GetDeliveryLimit();
 
         if (limit == -1)

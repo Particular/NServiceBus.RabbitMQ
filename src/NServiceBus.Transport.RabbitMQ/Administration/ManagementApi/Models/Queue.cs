@@ -10,6 +10,10 @@ class Queue()
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
+    [JsonPropertyName("type")]
+    [JsonConverter(typeof(QueueTypeConverter))]
+    public QueueType? QueueType { get; set; }
+
     [JsonRequired]
     [JsonPropertyName("arguments")]
     public required QueueArguments Arguments { get; set; }
