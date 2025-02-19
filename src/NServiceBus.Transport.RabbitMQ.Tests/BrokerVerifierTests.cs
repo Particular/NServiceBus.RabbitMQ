@@ -39,7 +39,7 @@ class BrokerVerifierTests
 
         var queueName = nameof(ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy);
         var policyName = $"nsb.{queueName}.delivery-limit";
-        await CreateQuorumQueue(queueName);
+        await CreateQueue(queueName);
 
         await brokerVerifier.ValidateDeliveryLimit(queueName);
 
@@ -76,11 +76,24 @@ class BrokerVerifierTests
     }
 
     [Test]
+    public async Task ValidateDeliveryLimit_Should_Pass_When_Called_For_Classic_Queue()
+    {
+        var queueName = nameof(ValidateDeliveryLimit_Should_Pass_When_Called_For_Classic_Queue);
+        await CreateQueue(queueName, queueType: "classic");
+
+        var managementClient = new ManagementClient(connectionConfiguration);
+        var brokerVerifier = new BrokerVerifier(managementClient, true);
+        await brokerVerifier.Initialize();
+
+        await brokerVerifier.ValidateDeliveryLimit(queueName);
+    }
+
+    [Test]
     public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited()
     {
         var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_Queue_Argument_Has_Delivery_Limit_Not_Set_To_Unlimited);
         var deliveryLimit = 5;
-        await CreateQuorumQueue(queueName, deliveryLimit);
+        await CreateQueue(queueName, deliveryLimit: deliveryLimit);
 
         var managementClient = new ManagementClient(connectionConfiguration);
         var brokerVerifier = new BrokerVerifier(managementClient, true);
@@ -94,7 +107,7 @@ class BrokerVerifierTests
     public async Task ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited()
     {
         var queueName = nameof(ValidateDeliveryLimit_Should_Throw_When_A_Policy_On_Queue_Has_Delivery_Limit_Not_Set_To_Unlimited);
-        await CreateQuorumQueue(queueName);
+        await CreateQueue(queueName);
 
         var managementClient = new ManagementClient(connectionConfiguration);
         var brokerVerifier = new BrokerVerifier(managementClient, true);
@@ -118,12 +131,12 @@ class BrokerVerifierTests
         Assert.That(exception.Message, Does.Contain($"The delivery limit for '{queueName}' is set to the non-default value of '{deliveryLimit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this."));
     }
 
-    static async Task CreateQuorumQueue(string queueName, int? deliveryLimit = null)
+    static async Task CreateQueue(string queueName, string queueType = "quorum", int? deliveryLimit = null)
     {
         using var connection = await connectionFactory.CreateAdministrationConnection().ConfigureAwait(false);
         using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
 
-        var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
+        var arguments = new Dictionary<string, object?> { { "x-queue-type", queueType } };
 
         if (deliveryLimit is not null)
         {
