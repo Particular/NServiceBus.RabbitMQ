@@ -34,6 +34,7 @@ void CreateQueueCommand(Command rootCommand)
     var queueSubCommand = new Command("queue", "Commands to manage individual queues");
 
     queueSubCommand.AddCommand(QueueMigrateCommand.CreateCommand());
+    queueSubCommand.AddCommand(QueueValidateDeliveryLimitCommand.CreateCommand());
 
     rootCommand.AddCommand(queueSubCommand);
 }

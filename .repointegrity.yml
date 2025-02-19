@@ -1,0 +1,4 @@
+ignore:
+# Internals need to be visible to ServiceControl RabbitMQ transport plugin
+- test: NoInternalsVisibleToForNonexistantProjects
+  path: src/NServiceBus.Transport.RabbitMQ/NServiceBus.Transport.RabbitMQ.csproj

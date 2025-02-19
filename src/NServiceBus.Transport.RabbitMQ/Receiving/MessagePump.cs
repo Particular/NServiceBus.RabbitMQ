@@ -22,6 +22,7 @@
         readonly MessageConverter messageConverter;
         readonly string consumerTag;
         readonly ChannelProvider channelProvider;
+        readonly BrokerVerifier brokerVerifier;
         readonly TimeSpan timeToWaitBeforeTriggeringCircuitBreaker;
         readonly QueuePurger queuePurger;
         readonly PrefetchCountCalculation prefetchCountCalculation;
@@ -50,10 +51,10 @@
             MessageConverter messageConverter,
             string consumerTag,
             ChannelProvider channelProvider,
+            BrokerVerifier brokerVerifier,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
-            Action<string, Exception,
-            CancellationToken> criticalErrorAction,
+            Action<string, Exception, CancellationToken> criticalErrorAction,
             TimeSpan retryDelay)
         {
             this.settings = settings;
@@ -61,6 +62,7 @@
             this.messageConverter = messageConverter;
             this.consumerTag = consumerTag;
             this.channelProvider = channelProvider;
+            this.brokerVerifier = brokerVerifier;
             this.timeToWaitBeforeTriggeringCircuitBreaker = timeToWaitBeforeTriggeringCircuitBreaker;
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.criticalErrorAction = criticalErrorAction;
@@ -88,6 +90,8 @@
             this.onMessage = onMessage;
             this.onError = onError;
             maxConcurrency = limitations.MaxConcurrency;
+
+            await brokerVerifier.ValidateDeliveryLimit(ReceiveAddress, cancellationToken).ConfigureAwait(false);
 
             if (settings.PurgeOnStartup)
             {

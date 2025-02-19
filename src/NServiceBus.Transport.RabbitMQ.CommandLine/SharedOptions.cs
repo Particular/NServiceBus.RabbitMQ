@@ -27,11 +27,38 @@
             return connectionStringEnvOption;
         }
 
+        public static Option<string> CreateManagementApiUrlOption()
+        {
+            var managementApiUrlOption = new Option<string>(
+                name: "--managementApiUrl",
+                description: $"Overrides the value inferred from the connection string");
+
+            return managementApiUrlOption;
+        }
+
+        public static Option<string> CreateManagementApiUserNameOption()
+        {
+            var managementApiUserNameOption = new Option<string>(
+                name: "--managementApiUserName",
+                description: $"Overrides the value inferred from the connection string. If provided, --managementApiUrl and --managementApiPassword must also be provided.");
+
+            return managementApiUserNameOption;
+        }
+
+        public static Option<string> CreateManagementApiPasswordOption()
+        {
+            var managementApiPasswordOption = new Option<string>(
+                name: "--managementApiPassword",
+                description: $"Overrides the value inferred from the connection string. If provided, --managementApiUrl and --managementApiUserName must also be provided.");
+
+            return managementApiPasswordOption;
+        }
+
         public static Option<RoutingTopologyType> CreateRoutingTopologyTypeOption()
         {
             var routingTopologyTypeOption = new Option<RoutingTopologyType>(
                 name: "--routingTopology",
-                description: $"Specifies which routing toplogy to use.",
+                description: $"Specifies which routing topology to use.",
                 getDefaultValue: () => RoutingTopologyType.Conventional);
 
             routingTopologyTypeOption.AddAlias("-r");
@@ -105,19 +132,42 @@
         {
             var connectionStringOption = CreateConnectionStringOption();
             var connectionStringEnvOption = CreateConnectionStringEnvOption();
+            var managementApiUrlOption = CreateManagementApiUrlOption();
+            var managementApiUserNameOption = CreateManagementApiUserNameOption();
+            var managementApiPasswordOption = CreateManagementApiPasswordOption();
             var certPathOption = CreateCertPathOption();
             var certPassphraseOption = CreateCertPassphraseOption();
-            var disableCertVaidationOption = CreateDisableCertValidationOption();
+            var disableCertValidationOption = CreateDisableCertValidationOption();
             var useExternalAuthOption = CreateUseExternalAuthOption();
 
             command.AddOption(connectionStringOption);
             command.AddOption(connectionStringEnvOption);
+            command.AddOption(managementApiUrlOption);
+            command.AddOption(managementApiUserNameOption);
+            command.AddOption(managementApiPasswordOption);
             command.AddOption(certPathOption);
             command.AddOption(certPassphraseOption);
-            command.AddOption(disableCertVaidationOption);
+            command.AddOption(disableCertValidationOption);
             command.AddOption(useExternalAuthOption);
 
-            return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, certPathOption, certPassphraseOption, disableCertVaidationOption, useExternalAuthOption);
+            return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, certPathOption, certPassphraseOption, disableCertValidationOption, useExternalAuthOption);
+        }
+
+        public static BrokerVerifierBinder CreateBrokerVerifierBinderWithOptions(Command command)
+        {
+            var connectionStringOption = CreateConnectionStringOption();
+            var connectionStringEnvOption = CreateConnectionStringEnvOption();
+            var managementApiUrlOption = CreateManagementApiUrlOption();
+            var managementApiUserNameOption = CreateManagementApiUserNameOption();
+            var managementApiPasswordOption = CreateManagementApiPasswordOption();
+
+            command.AddOption(connectionStringOption);
+            command.AddOption(connectionStringEnvOption);
+            command.AddOption(managementApiUrlOption);
+            command.AddOption(managementApiUserNameOption);
+            command.AddOption(managementApiPasswordOption);
+
+            return new BrokerVerifierBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption);
         }
 
         public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)
