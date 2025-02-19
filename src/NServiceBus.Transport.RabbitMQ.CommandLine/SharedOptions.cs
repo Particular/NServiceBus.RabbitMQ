@@ -153,6 +153,23 @@
             return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, certPathOption, certPassphraseOption, disableCertValidationOption, useExternalAuthOption);
         }
 
+        public static BrokerVerifierBinder CreateBrokerVerifierBinderWithOptions(Command command)
+        {
+            var connectionStringOption = CreateConnectionStringOption();
+            var connectionStringEnvOption = CreateConnectionStringEnvOption();
+            var managementApiUrlOption = CreateManagementApiUrlOption();
+            var managementApiUserNameOption = CreateManagementApiUserNameOption();
+            var managementApiPasswordOption = CreateManagementApiPasswordOption();
+
+            command.AddOption(connectionStringOption);
+            command.AddOption(connectionStringEnvOption);
+            command.AddOption(managementApiUrlOption);
+            command.AddOption(managementApiUserNameOption);
+            command.AddOption(managementApiPasswordOption);
+
+            return new BrokerVerifierBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption);
+        }
+
         public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)
         {
             var routingTopologyTypeOption = CreateRoutingTopologyTypeOption();
