@@ -26,7 +26,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     {
         var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
 
-        if (!response.HasValue)
+        if (response.Value is null)
         {
             throw new InvalidOperationException($"Could not access the RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
         }
@@ -71,7 +71,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         bool streamsEnabled;
 
         var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
-        streamsEnabled = response.HasValue && response.Value.HasEnabledFeature(FeatureFlags.StreamQueue);
+        streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlags.StreamQueue);
 
         if (!streamsEnabled)
         {
