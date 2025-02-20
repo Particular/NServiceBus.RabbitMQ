@@ -17,7 +17,7 @@ class QueueTypeConverter : JsonConverter<QueueType>
             "quorum" => QueueType.Quorum,
             "classic" => QueueType.Classic,
             "stream" => QueueType.Stream,
-            _ => throw new JsonException($"Unknown QueueType: {value}")
+            _ => throw new JsonException($"Unknown queue type: {value}")
         };
     }
 
