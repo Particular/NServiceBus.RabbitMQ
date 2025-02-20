@@ -95,7 +95,7 @@
 
         /// <summary>
         /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/>
-        /// just before it is dispatched to the rabbitmq client.
+        /// just before it is dispatched to the RabbitMQ client.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -138,17 +138,16 @@
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
-        /// Set this to false prevent the transport from using the RabbitMQ Management API.
-        /// This is not recommended as it can prevent the transport from setting appropriate delivery limits for retry functionality.
+        /// Should the transport validate that queue delivery limits are configured properly to avoid interfering with message recoverability.
         /// </summary>
+        /// <remarks>
+        /// Incorrect delivery limit settings could result in message loss, so disabling validation is not recommended.
+        /// </remarks>
         public bool ValidateDeliveryLimits { get; set; } = true;
 
         /// <summary>
-        /// Basic authentication HTTP connection string to the RabbitMQ management API.
+        /// The RabbitMQ management API configuration to use instead of inferring values from the connection string.
         /// </summary>
-        /// <remarks>
-        /// E.g. https://username:password@localhost:15671
-        /// </remarks>
         public ManagementApiConfiguration ManagementApiConfiguration { get; set; }
 
         /// <summary>

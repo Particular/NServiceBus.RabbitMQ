@@ -23,11 +23,11 @@ class DeliveryLimitConverter : JsonConverter<int>
                 return -1;
             }
 
-            throw new JsonException($"Unexpected string value for `delivery-limit` - {value}");
+            throw new JsonException($"Unexpected string value for delivery limit: {value}");
         }
         else
         {
-            throw new JsonException($"Expected `delivery-limit` to be either a Number or the String `unlimited`, not a {reader.TokenType}");
+            throw new JsonException($"Expected delivery limit to be either a number or the string 'unlimited', not a '{reader.TokenType}'");
         }
     }
 

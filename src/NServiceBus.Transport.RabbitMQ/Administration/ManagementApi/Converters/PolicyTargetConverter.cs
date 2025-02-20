@@ -20,7 +20,7 @@ class PolicyTargetConverter : JsonConverter<PolicyTarget>
             "quorum_queues" => PolicyTarget.QuorumQueues,
             "streams" => PolicyTarget.Streams,
             "exchanges" => PolicyTarget.Exchanges,
-            _ => throw new JsonException($"Unknown PolicyTarget: {value}")
+            _ => throw new JsonException($"Unknown policy target: {value}")
         };
     }
 
