@@ -87,7 +87,7 @@ class ManagementClient
         ArgumentNullException.ThrowIfNull(policy);
 
         var escapedPolicyName = Uri.EscapeDataString(name);
-        var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken).ConfigureAwait(false);
+        using var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
     }
@@ -96,7 +96,7 @@ class ManagementClient
     {
         T? value = default;
 
-        var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
         if (response.IsSuccessStatusCode)
         {
