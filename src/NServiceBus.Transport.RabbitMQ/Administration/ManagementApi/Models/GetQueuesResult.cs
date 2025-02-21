@@ -4,7 +4,8 @@ namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-class Pagination
+
+class GetQueuesResult
 {
     [JsonRequired]
     [JsonPropertyName("items")]
@@ -17,9 +18,5 @@ class Pagination
     [JsonRequired]
     [JsonPropertyName("page_count")]
     public required int PageCount { get; set; }
-
-    [JsonRequired]
-    [JsonPropertyName("page_size")]
-    public required int PageSize { get; set; }
 }
 

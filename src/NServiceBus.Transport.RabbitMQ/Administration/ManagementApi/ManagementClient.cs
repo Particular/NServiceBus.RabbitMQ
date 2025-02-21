@@ -57,30 +57,6 @@ class ManagementClient
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{uriBuilder.UserName}:{uriBuilder.Password}")));
     }
 
-    public async Task<(HttpStatusCode StatusCode, string Reason, Queue? Value)> GetQueue(string queueName, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
-
-        var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await Get<Queue>($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
-
-        return response;
-    }
-
-    public async Task<(HttpStatusCode StatusCode, string Reason, Overview? Value)> GetOverview(CancellationToken cancellationToken = default)
-    {
-        var response = await Get<Overview>("api/overview", cancellationToken).ConfigureAwait(false);
-
-        return response;
-    }
-
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<FeatureFlag>? Value)> GetFeatureFlags(CancellationToken cancellationToken = default)
-    {
-        var response = await Get<List<FeatureFlag>>("api/feature-flags", cancellationToken).ConfigureAwait(false);
-
-        return response;
-    }
-
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -93,32 +69,61 @@ class ManagementClient
     }
 
     // TODO: Update comment - This is used for the throughput component in ServiceControl
-    public async Task<(HttpStatusCode StatusCode, string Reason, Pagination? Value)> GetVhostQueuesPage(int page, CancellationToken cancellationToken = default)
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetBindingsForExchange(string exchangeName, CancellationToken cancellationToken = default)
     {
-        var response = await Get<Pagination>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size=500&name=&use_regex=false&pagination=true", cancellationToken).ConfigureAwait(false);
+        ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
+
+        var escapedExchangeName = Uri.EscapeDataString(exchangeName);
+        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
+
         return response;
     }
 
     // TODO: Update comment - This is used for the throughput component in ServiceControl
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetQueueBindings(string queueName, CancellationToken cancellationToken = default)
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetBindingsForQueue(string queueName, CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
         var escapedQueueName = Uri.EscapeDataString(queueName);
         var response = await Get<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+
+        return response;
+    }
+
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<FeatureFlag>? Value)> GetFeatureFlags(CancellationToken cancellationToken = default)
+    {
+        var response = await Get<List<FeatureFlag>>("api/feature-flags", cancellationToken).ConfigureAwait(false);
+
+        return response;
+    }
+
+    public async Task<(HttpStatusCode StatusCode, string Reason, Overview? Value)> GetOverview(CancellationToken cancellationToken = default)
+    {
+        var response = await Get<Overview>("api/overview", cancellationToken).ConfigureAwait(false);
+
+        return response;
+    }
+
+    public async Task<(HttpStatusCode StatusCode, string Reason, Queue? Value)> GetQueue(string queueName, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+
+        var escapedQueueName = Uri.EscapeDataString(queueName);
+        var response = await Get<Queue>($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
+
         return response;
     }
 
     // TODO: Update comment - This is used for the throughput component in ServiceControl
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetExchangeDestinationBindings(string queueName, CancellationToken cancellationToken = default)
+    public async Task<(HttpStatusCode StatusCode, string Reason, List<Queue>? Value, bool MorePages)> GetQueues(int page, int pageSize = 500, CancellationToken cancellationToken = default)
     {
-        var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedQueueName}/bindings/destination", cancellationToken).ConfigureAwait(false);
-        return response;
-    }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(pageSize, 500);
 
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<Queue>?)> GetVhostQueues(CancellationToken cancellationToken = default)
-    {
-        var response = await Get<List<Queue>>($"/api/queues/{escapedVirtualHost}", cancellationToken).ConfigureAwait(false);
-        return response;
+        var (statusCode, reason, value) = await Get<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
+
+        return (statusCode, reason, value?.Items, value?.Page < value?.PageCount);
     }
 
     async Task<(HttpStatusCode StatusCode, string Reason, T? Value)> Get<T>(string url, CancellationToken cancellationToken)

@@ -71,14 +71,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         }
 
         [Test]
-        public async Task GetQueueBindings_Should_Return_List_Of_Bindings_On_A_Queue()
+        public async Task GetBindingsForQueue_Should_Return_List_Of_Bindings_On_A_Queue()
         {
             var managementClient = new ManagementClient(connectionConfiguration);
-            var queueName = nameof(GetQueueBindings_Should_Return_List_Of_Bindings_On_A_Queue);
+            var queueName = nameof(GetBindingsForQueue_Should_Return_List_Of_Bindings_On_A_Queue);
 
             await CreateExchangeAndBindQueue(queueName, "topic-exchange", $"#{queueName}");
 
-            var response = await managementClient.GetQueueBindings(queueName);
+            var response = await managementClient.GetBindingsForQueue(queueName);
 
             Assert.Multiple(() =>
             {
@@ -88,7 +88,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         }
 
         [Test]
-        public async Task GetExchangeDestinationBindings_Should_Return_List_Of_Bindings_Where_The_Exchange_Is_The_Destination()
+        public async Task GetBindingsForExchange_Should_Return_List_Of_Bindings_Where_The_Exchange_Is_The_Destination()
         {
             var managementClient = new ManagementClient(connectionConfiguration);
             var sourceExchangeName = "GetExchangeBindings-source";
@@ -96,7 +96,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             await CreateExchangeToExchangeBinding(sourceExchangeName, destinationExchangeName, $"#{destinationExchangeName}");
 
-            var response = await managementClient.GetExchangeDestinationBindings(destinationExchangeName);
+            var response = await managementClient.GetBindingsForExchange(destinationExchangeName);
 
             Assert.Multiple(() =>
             {
