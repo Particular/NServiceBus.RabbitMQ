@@ -24,4 +24,3 @@ class Binding
     [JsonPropertyName("properties_key")]
     public required string PropertiesKey { get; set; }
 }
-

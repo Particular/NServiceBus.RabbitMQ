@@ -9,4 +9,3 @@ class QueueMessageStats
     [JsonPropertyName("ack")]
     public long? Ack { get; set; }
 }
-

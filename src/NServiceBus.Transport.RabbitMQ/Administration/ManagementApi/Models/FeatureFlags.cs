@@ -6,4 +6,3 @@ static class FeatureFlags
 {
     public const string StreamQueue = "stream_queue";
 }
-
