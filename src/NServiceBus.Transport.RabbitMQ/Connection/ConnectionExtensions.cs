@@ -23,23 +23,27 @@ namespace NServiceBus.Transport.RabbitMQ
             }
 
             var brokerVersionString = Encoding.UTF8.GetString(versionBytes);
+            Version.TryParse(brokerVersionString, out var brokerVersion);
 
-            if (Version.TryParse(brokerVersionString, out var brokerVersion) && brokerVersion < minimumBrokerVersion)
+            if (brokerVersion is not null && brokerVersion < minimumBrokerVersion)
             {
                 throw new Exception($"An unsupported broker version was detected: {brokerVersion}. The broker must be at least version {minimumBrokerVersion}.");
             }
 
-            using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            var arguments = new Dictionary<string, object?> { { "x-queue-type", "stream" } };
-
-            try
+            var streamFlagRequiredMinimumVersion = Version.Parse("3.12.0");
+            if (brokerVersion is null || brokerVersion < streamFlagRequiredMinimumVersion)
             {
-                await channel.QueueDeclareAsync("nsb.v2.verify-stream-flag-enabled", true, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken) && ex.Message.Contains("the corresponding feature flag is disabled"))
-            {
-                throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+                using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                var arguments = new Dictionary<string, object?> { { "x-queue-type", "stream" } };
+
+                try
+                {
+                    await channel.QueueDeclareAsync("nsb.v2.verify-stream-flag-enabled", true, false, false, arguments, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken) && ex.Message.Contains("the corresponding feature flag is disabled"))
+                {
+                    throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+                }
             }
         }
     }
