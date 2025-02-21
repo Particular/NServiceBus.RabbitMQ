@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 
 class FeatureFlag()
 {
-    [JsonRequired]
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
