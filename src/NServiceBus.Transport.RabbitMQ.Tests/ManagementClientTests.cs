@@ -9,6 +9,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
     using NUnit.Framework.Internal;
+    using RabbitMQClient = global::RabbitMQ.Client;
 
     [TestFixture]
     class ManagementClientTests
@@ -70,6 +71,41 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         }
 
         [Test]
+        public async Task GetQueueBindings_Should_Return_List_Of_Bindings_On_A_Queue()
+        {
+            var managementClient = new ManagementClient(connectionConfiguration);
+            var queueName = nameof(GetQueueBindings_Should_Return_List_Of_Bindings_On_A_Queue);
+
+            await CreateExchangeAndBindQueue(queueName, "topic-exchange", $"#{queueName}");
+
+            var response = await managementClient.GetQueueBindings(queueName);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(response.Value, Has.Count.EqualTo(2));
+            });
+        }
+
+        [Test]
+        public async Task GetExchangeDestinationBindings_Should_Return_List_Of_Bindings_Where_The_Exchange_Is_The_Destination()
+        {
+            var managementClient = new ManagementClient(connectionConfiguration);
+            var sourceExchangeName = "GetExchangeBindings-source";
+            var destinationExchangeName = "GetExchangeBindings-destination";
+
+            await CreateExchangeToExchangeBinding(sourceExchangeName, destinationExchangeName, $"#{destinationExchangeName}");
+
+            var response = await managementClient.GetExchangeDestinationBindings(destinationExchangeName);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(response.Value, Has.Count.EqualTo(1));
+            });
+        }
+
+        [Test]
         public async Task CreatePolicy_Should_Create_Policy()
         {
             var managementClient = new ManagementClient(connectionConfiguration);
@@ -87,7 +123,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             };
 
             await managementClient.CreatePolicy(policyName, policy);
-
         }
 
         static async Task CreateQuorumQueue(string queueName)
@@ -98,6 +133,29 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
 
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
+        }
+
+        static async Task CreateExchangeAndBindQueue(string queueName, string exchangeName, string routingKey)
+        {
+            using var connection = await connectionFactory.CreateAdministrationConnection().ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+
+            var arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
+
+            _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
+
+            await channel.ExchangeDeclareAsync(exchangeName, RabbitMQClient.ExchangeType.Topic, durable: true, autoDelete: false).ConfigureAwait(false);
+            await channel.QueueBindAsync(queueName, exchangeName, routingKey).ConfigureAwait(false);
+        }
+
+        static async Task CreateExchangeToExchangeBinding(string sourceExchange, string destinationExchange, string routingKey)
+        {
+            using var connection = await connectionFactory.CreateAdministrationConnection().ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+
+            await channel.ExchangeDeclareAsync(sourceExchange, RabbitMQClient.ExchangeType.Topic, durable: true, autoDelete: false).ConfigureAwait(false);
+            await channel.ExchangeDeclareAsync(destinationExchange, RabbitMQClient.ExchangeType.Topic, durable: true, autoDelete: false).ConfigureAwait(false);
+            await channel.ExchangeBindAsync(destinationExchange, sourceExchange, routingKey).ConfigureAwait(false);
         }
     }
 }
