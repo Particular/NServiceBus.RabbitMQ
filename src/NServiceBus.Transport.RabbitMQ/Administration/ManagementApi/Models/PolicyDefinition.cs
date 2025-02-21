@@ -9,4 +9,3 @@ class PolicyDefinition
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int? DeliveryLimit { get; set; }
 }
-

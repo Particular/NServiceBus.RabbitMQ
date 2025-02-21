@@ -18,4 +18,3 @@ class Overview()
     [JsonPropertyName("disable_stats")]
     public required bool DisableStats { get; set; }
 }
-

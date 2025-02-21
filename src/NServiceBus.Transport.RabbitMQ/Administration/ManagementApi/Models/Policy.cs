@@ -18,4 +18,3 @@ class Policy()
     [JsonPropertyName("priority")]
     public int Priority { get; set; }
 }
-

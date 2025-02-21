@@ -12,4 +12,3 @@ class FeatureFlag()
     [JsonConverter(typeof(FeatureFlagEnabledConverter))]
     public bool Enabled { get; set; }
 }
-

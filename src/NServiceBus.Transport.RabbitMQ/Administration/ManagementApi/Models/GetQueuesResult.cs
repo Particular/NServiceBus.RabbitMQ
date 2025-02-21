@@ -16,4 +16,3 @@ class GetQueuesResult
     [JsonPropertyName("page_count")]
     public required int PageCount { get; set; }
 }
-

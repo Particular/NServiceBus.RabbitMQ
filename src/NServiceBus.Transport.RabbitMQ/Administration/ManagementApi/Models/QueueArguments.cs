@@ -9,4 +9,3 @@ class QueueArguments
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int? DeliveryLimit { get; set; }
 }
-
