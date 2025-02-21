@@ -6,9 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,8 +51,13 @@ class ManagementClient
 
         escapedVirtualHost = Uri.EscapeDataString(connectionConfiguration.VirtualHost);
 
-        httpClient = new HttpClient { BaseAddress = uriBuilder.Uri };
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{uriBuilder.UserName}:{uriBuilder.Password}")));
+        var handler = new SocketsHttpHandler
+        {
+            Credentials = new NetworkCredential(uriBuilder.UserName, uriBuilder.Password),
+            PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+        };
+
+        httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
     }
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
