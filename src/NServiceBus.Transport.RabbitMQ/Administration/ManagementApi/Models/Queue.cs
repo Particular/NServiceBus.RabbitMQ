@@ -6,7 +6,6 @@ using System.Text.Json.Serialization;
 
 class Queue()
 {
-    [JsonRequired]
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
@@ -14,7 +13,6 @@ class Queue()
     [JsonConverter(typeof(QueueTypeConverter))]
     public QueueType? QueueType { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("arguments")]
     public required QueueArguments Arguments { get; set; }
 
@@ -34,7 +32,6 @@ class Queue()
     [JsonPropertyName("message_stats")]
     public QueueMessageStats? MessageStats { get; set; }
 
-    [JsonRequired]
     [JsonPropertyName("vhost")]
     public required string Vhost { get; set; }
 
