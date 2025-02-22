@@ -54,7 +54,8 @@ class ManagementClient
         var handler = new SocketsHttpHandler
         {
             Credentials = new NetworkCredential(uriBuilder.UserName, uriBuilder.Password),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+            PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+            PreAuthenticate = true
         };
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
