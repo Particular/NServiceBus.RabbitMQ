@@ -72,7 +72,7 @@ class ManagementClient
         response.EnsureSuccessStatusCode();
     }
 
-    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    // For ServiceControl licensing component
     public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetBindingsForExchange(string exchangeName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
@@ -83,7 +83,7 @@ class ManagementClient
         return response;
     }
 
-    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    // For ServiceControl licensing component
     public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetBindingsForQueue(string queueName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
@@ -118,7 +118,7 @@ class ManagementClient
         return response;
     }
 
-    // TODO: Update comment - This is used for the throughput component in ServiceControl
+    // For ServiceControl licensing component
     public async Task<(HttpStatusCode StatusCode, string Reason, List<Queue>? Value, bool MorePages)> GetQueues(int page, int pageSize = 500, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
