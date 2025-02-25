@@ -11,6 +11,7 @@
     {
         readonly ConnectionFactory connectionFactory;
         readonly ChannelProvider channelProvider;
+        readonly BrokerVerifier brokerVerifier;
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
         readonly bool supportsDelayedDelivery;
@@ -18,6 +19,7 @@
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
+            BrokerVerifier brokerVerifier,
             Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
@@ -25,6 +27,7 @@
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
+            this.brokerVerifier = brokerVerifier;
             this.networkRecoveryInterval = networkRecoveryInterval;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
 
@@ -36,15 +39,13 @@
         IMessageReceiver CreateMessagePump(HostSettings hostSettings, ReceiveSettings settings, MessageConverter messageConverter, TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation)
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
-            var receiveAddress = ToTransportAddress(settings.ReceiveAddress);
-            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+
+            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, brokerVerifier, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
         }
 
         internal async Task SetupInfrastructure(string[] sendingQueues, CancellationToken cancellationToken = default)
         {
             using var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken).ConfigureAwait(false);
-
-            await connection.VerifyBrokerRequirements(cancellationToken).ConfigureAwait(false);
 
             using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -73,6 +74,7 @@
                 .ConfigureAwait(false);
 
             await channelProvider.DisposeAsync().ConfigureAwait(false);
+            brokerVerifier.Dispose();
         }
 
         public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);

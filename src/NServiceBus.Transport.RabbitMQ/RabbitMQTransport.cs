@@ -9,6 +9,7 @@
     using RabbitMQ.Client.Events;
     using Transport;
     using Transport.RabbitMQ;
+    using Transport.RabbitMQ.ManagementApi;
     using ConnectionFactory = Transport.RabbitMQ.ConnectionFactory;
 
     /// <summary>
@@ -93,8 +94,8 @@
         }
 
         /// <summary>
-        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/> 
-        /// just before it is dispatched to the rabbitmq client. 
+        /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/>
+        /// just before it is dispatched to the RabbitMQ client.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -135,6 +136,19 @@
         /// Specifies if an external authentication mechanism should be used for client authentication.
         /// </summary>
         public bool UseExternalAuthMechanism { get; set; } = false;
+
+        /// <summary>
+        /// Should the transport validate that queue delivery limits are configured properly to avoid interfering with message recoverability.
+        /// </summary>
+        /// <remarks>
+        /// Incorrect delivery limit settings could result in message loss, so disabling validation is not recommended.
+        /// </remarks>
+        public bool ValidateDeliveryLimits { get; set; } = true;
+
+        /// <summary>
+        /// The RabbitMQ management API configuration to use instead of inferring values from the connection string.
+        /// </summary>
+        public ManagementApiConfiguration ManagementApiConfiguration { get; set; }
 
         /// <summary>
         /// The interval for heartbeats between the endpoint and the broker.
@@ -188,6 +202,8 @@
             additionalClusterNodes.Add((hostName, port, useTls));
         }
 
+        internal ManagementClient ManagementClient { get; private set; }
+
         /// <inheritdoc />
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
@@ -211,6 +227,12 @@
                 additionalClusterNodes
             );
 
+            ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
+
+            var brokerVerifier = new BrokerVerifier(ManagementClient, ValidateDeliveryLimits);
+            await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
+            await brokerVerifier.VerifyRequirements(cancellationToken).ConfigureAwait(false);
+
             var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
             await channelProvider.CreateConnection(cancellationToken).ConfigureAwait(false);
 
@@ -223,6 +245,7 @@
                 RoutingTopology,
                 channelProvider,
                 converter,
+                brokerVerifier,
                 OutgoingNativeMessageCustomization,
                 TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation,

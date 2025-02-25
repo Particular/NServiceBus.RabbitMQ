@@ -1,23 +1,17 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using global::RabbitMQ.Client;
-    using NServiceBus.Transport.RabbitMQ;
 
-    class BrokerConnection
+    class BrokerConnection(BrokerVerifier brokerVerifier, RabbitMQ.ConnectionFactory connectionFactory)
     {
-        public BrokerConnection(RabbitMQ.ConnectionFactory connectionFactory)
-        {
-            this.connectionFactory = connectionFactory;
-        }
-
         public async Task<IConnection> Create(CancellationToken cancellationToken = default)
         {
+            await brokerVerifier.Initialize(cancellationToken);
+            await brokerVerifier.VerifyRequirements(cancellationToken);
+
             var connection = await connectionFactory.CreateAdministrationConnection(cancellationToken);
-            await connection.VerifyBrokerRequirements(cancellationToken: cancellationToken);
 
             return connection;
         }
-
-        RabbitMQ.ConnectionFactory connectionFactory;
     }
 }
