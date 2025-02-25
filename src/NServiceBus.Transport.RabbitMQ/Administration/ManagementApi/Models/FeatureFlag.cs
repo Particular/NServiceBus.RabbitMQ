@@ -3,7 +3,7 @@
 namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 using System.Text.Json.Serialization;
 
-class FeatureFlag()
+class FeatureFlag
 {
     [JsonPropertyName("name")]
     public required string Name { get; set; }

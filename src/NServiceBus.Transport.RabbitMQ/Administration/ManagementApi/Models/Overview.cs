@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System.Text.Json.Serialization;
 
-class Overview()
+class Overview
 {
     [JsonPropertyName("rabbitmq_version")]
     public required string BrokerVersion { get; set; }

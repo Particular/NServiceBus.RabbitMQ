@@ -3,7 +3,7 @@
 namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 using System.Text.Json.Serialization;
 
-class Policy()
+class Policy
 {
     [JsonPropertyName("pattern")]
     public required string Pattern { get; set; }

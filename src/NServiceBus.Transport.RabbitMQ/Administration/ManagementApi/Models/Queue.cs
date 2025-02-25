@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System.Text.Json.Serialization;
 
-class Queue()
+class Queue
 {
     [JsonPropertyName("name")]
     public required string Name { get; set; }
