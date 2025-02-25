@@ -72,14 +72,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         }
 
         [Test]
-        public async Task GetQueues_Should_Return_List_Of_Queues_Of_A_Page()
+        public async Task GetQueues_Should_Return_List_Of_Queues_With_Paging()
         {
             using var managementClient = new ManagementClient(connectionConfiguration);
-            var queueName = nameof(GetQueues_Should_Return_List_Of_Queues_Of_A_Page);
+            var queueName = nameof(GetQueues_Should_Return_List_Of_Queues_With_Paging);
 
-            string[] additionalQueues = Enumerable.Range(1, 3).Select(i => $"{queueName}{i}").ToArray();
+            var queues = Enumerable.Range(1, 3).Select(i => $"{queueName}{i}").ToArray();
 
-            foreach (var queue in additionalQueues)
+            foreach (var queue in queues)
             {
                 await CreateQuorumQueue(queue).ConfigureAwait(false);
             }
@@ -111,7 +111,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             using var managementClient = new ManagementClient(connectionConfiguration);
             var queueName = nameof(GetBindingsForQueue_Should_Return_List_Of_Bindings_On_A_Queue);
 
-            await CreateExchangeAndBindQueue(queueName, "topic-exchange", $"#{queueName}");
+            await CreateQueueAndExchangeAndBindThem(queueName, queueName, $"#{queueName}");
 
             var response = await managementClient.GetBindingsForQueue(queueName);
 
@@ -126,10 +126,10 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         public async Task GetBindingsForExchange_Should_Return_List_Of_Bindings_Where_The_Exchange_Is_The_Destination()
         {
             using var managementClient = new ManagementClient(connectionConfiguration);
-            var sourceExchangeName = "GetExchangeBindings-source";
-            var destinationExchangeName = "GetExchangeBindings-destination";
+            var sourceExchangeName = "GetBindingsForExchange-source";
+            var destinationExchangeName = "GetBindingsForExchange-destination";
 
-            await CreateExchangeToExchangeBinding(sourceExchangeName, destinationExchangeName, $"#{destinationExchangeName}");
+            await CreateExchangesAndBindThem(sourceExchangeName, destinationExchangeName, $"#{destinationExchangeName}");
 
             var response = await managementClient.GetBindingsForExchange(destinationExchangeName);
 
@@ -170,7 +170,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             _ = await channel.QueueDeclareAsync(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
         }
 
-        static async Task CreateExchangeAndBindQueue(string queueName, string exchangeName, string routingKey)
+        static async Task CreateQueueAndExchangeAndBindThem(string queueName, string exchangeName, string routingKey)
         {
             using var connection = await connectionFactory.CreateAdministrationConnection().ConfigureAwait(false);
             using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
@@ -183,7 +183,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             await channel.QueueBindAsync(queueName, exchangeName, routingKey).ConfigureAwait(false);
         }
 
-        static async Task CreateExchangeToExchangeBinding(string sourceExchange, string destinationExchange, string routingKey)
+        static async Task CreateExchangesAndBindThem(string sourceExchange, string destinationExchange, string routingKey)
         {
             using var connection = await connectionFactory.CreateAdministrationConnection().ConfigureAwait(false);
             using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
