@@ -26,12 +26,15 @@ class Queue()
     [JsonPropertyName("policy")]
     public string? AppliedPolicyName { get; set; }
 
+    // For ServiceControl licensing component
     [JsonPropertyName("operator_policy")]
     public string? AppliedOperatorPolicyName { get; set; }
 
+    // For ServiceControl licensing component
     [JsonPropertyName("message_stats")]
     public QueueMessageStats? MessageStats { get; set; }
 
+    // For ServiceControl licensing component
     [JsonPropertyName("vhost")]
     public required string Vhost { get; set; }
 
