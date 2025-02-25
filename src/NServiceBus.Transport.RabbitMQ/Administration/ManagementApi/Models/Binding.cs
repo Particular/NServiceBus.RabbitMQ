@@ -10,9 +10,6 @@ class Binding
     [JsonPropertyName("source")]
     public required string Source { get; set; }
 
-    [JsonPropertyName("vhost")]
-    public required string Vhost { get; set; }
-
     [JsonPropertyName("destination")]
     public required string Destination { get; set; }
 
