@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
@@ -71,6 +72,40 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         }
 
         [Test]
+        public async Task GetQueues_Should_Return_List_Of_Queues_Of_A_Page()
+        {
+            var managementClient = new ManagementClient(connectionConfiguration);
+            var queueName = nameof(GetQueues_Should_Return_List_Of_Queues_Of_A_Page);
+
+            string[] additionalQueues = Enumerable.Range(1, 3).Select(i => $"{queueName}{i}").ToArray();
+
+            foreach (var queue in additionalQueues)
+            {
+                await CreateQuorumQueue(queue).ConfigureAwait(false);
+            }
+
+            int page = 1;
+            int pageSize = 2;
+
+            while (true)
+            {
+                var response = await managementClient.GetQueues(page++, pageSize);
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+                if (response.Value?.Count(q => q.Name.StartsWith(queueName)) == pageSize)
+                {
+                    return;
+                }
+
+                if (!response.MorePages)
+                {
+                    break;
+                }
+            }
+
+            Assert.Fail("Could not find the page with two matching queue prefixes");
+        }
+
         public async Task GetBindingsForQueue_Should_Return_List_Of_Bindings_On_A_Queue()
         {
             var managementClient = new ManagementClient(connectionConfiguration);

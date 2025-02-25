@@ -5,6 +5,7 @@ namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
+// For ServiceControl licensing component
 class GetQueuesResult
 {
     [JsonPropertyName("items")]
