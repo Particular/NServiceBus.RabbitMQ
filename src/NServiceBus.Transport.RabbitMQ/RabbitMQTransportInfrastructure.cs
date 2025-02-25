@@ -74,6 +74,7 @@
                 .ConfigureAwait(false);
 
             await channelProvider.DisposeAsync().ConfigureAwait(false);
+            brokerVerifier.Dispose();
         }
 
         public override string ToTransportAddress(QueueAddress address) => TranslateAddress(address);

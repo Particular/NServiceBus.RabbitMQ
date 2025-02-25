@@ -30,7 +30,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public async Task GetQueue_Should_Return_Queue_Information()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
             var queueName = nameof(GetQueue_Should_Return_Queue_Information);
             await CreateQuorumQueue(queueName).ConfigureAwait(false);
 
@@ -46,7 +46,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public async Task GetOverview_Should_Return_Broker_Information()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
 
             var response = await managementClient.GetOverview();
 
@@ -60,7 +60,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public async Task GetFeatureFlags_Should_Return_FeatureFlag_Information()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
 
             var response = await managementClient.GetFeatureFlags();
 
@@ -74,7 +74,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public async Task GetQueues_Should_Return_List_Of_Queues_Of_A_Page()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
             var queueName = nameof(GetQueues_Should_Return_List_Of_Queues_Of_A_Page);
 
             string[] additionalQueues = Enumerable.Range(1, 3).Select(i => $"{queueName}{i}").ToArray();
@@ -108,7 +108,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
         public async Task GetBindingsForQueue_Should_Return_List_Of_Bindings_On_A_Queue()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
             var queueName = nameof(GetBindingsForQueue_Should_Return_List_Of_Bindings_On_A_Queue);
 
             await CreateExchangeAndBindQueue(queueName, "topic-exchange", $"#{queueName}");
@@ -125,7 +125,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public async Task GetBindingsForExchange_Should_Return_List_Of_Bindings_Where_The_Exchange_Is_The_Destination()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
             var sourceExchangeName = "GetExchangeBindings-source";
             var destinationExchangeName = "GetExchangeBindings-destination";
 
@@ -143,7 +143,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         [Test]
         public async Task CreatePolicy_Should_Create_Policy()
         {
-            var managementClient = new ManagementClient(connectionConfiguration);
+            using var managementClient = new ManagementClient(connectionConfiguration);
             var policyName = $"test-management-client-create-policy";
 
             var policy = new Policy

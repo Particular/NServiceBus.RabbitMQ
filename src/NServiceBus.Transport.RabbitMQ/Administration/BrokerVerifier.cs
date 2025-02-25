@@ -11,7 +11,7 @@ using NServiceBus.Logging;
 #endif
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
-class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits)
+class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits) : IDisposable
 {
 #if !COMMANDLINE
     static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
@@ -21,6 +21,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
 
     Version? brokerVersion;
+    bool disposed;
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
@@ -169,5 +170,24 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         };
 
         await managementClient.CreatePolicy(policyName, policy, cancellationToken).ConfigureAwait(false);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposed)
+        {
+            if (disposing)
+            {
+                managementClient.Dispose();
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

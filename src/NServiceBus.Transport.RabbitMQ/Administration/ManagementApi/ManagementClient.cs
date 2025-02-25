@@ -10,13 +10,15 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-class ManagementClient
+class ManagementClient : IDisposable
 {
     readonly HttpClient httpClient;
     readonly string escapedVirtualHost;
 
     const int defaultManagementPort = 15672;
     const int defaultManagementTlsPort = 15671;
+
+    bool disposed;
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
     {
@@ -142,5 +144,24 @@ class ManagementClient
         }
 
         return (response.StatusCode, response.ReasonPhrase ?? string.Empty, value);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposed)
+        {
+            if (disposing)
+            {
+                httpClient.Dispose();
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
