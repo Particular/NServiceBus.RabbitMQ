@@ -11,4 +11,6 @@ class FeatureFlag()
     [JsonPropertyName("state")]
     [JsonConverter(typeof(FeatureFlagEnabledConverter))]
     public bool Enabled { get; set; }
+
+    public const string StreamQueue = "stream_queue";
 }

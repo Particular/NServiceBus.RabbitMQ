@@ -71,7 +71,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         bool streamsEnabled;
 
         var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
-        streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlags.StreamQueue);
+        streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlag.StreamQueue);
 
         if (!streamsEnabled)
         {
