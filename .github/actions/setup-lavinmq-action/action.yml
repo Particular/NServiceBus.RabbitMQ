@@ -1,0 +1,31 @@
+name: setup-lavinmq-action
+description: Set up LavinMQ for testing
+inputs:
+  connection-string-name:
+    description: The name of the environment variable to fill with the LavinMQ connection string
+    required: true
+  tag:
+    description: The name of the component LavinMQ is being used for. The LavinMQ namespace is tagged with this value.
+    required: true
+  host-env-var-name:
+    description: The name of the environment variable to fill with the LavinMQ host name
+    required: false
+  image-tag:
+    description: The tag of the LavinMQ container image
+    required: false
+    default: latest
+  registry-login-server:
+    description: The container registry to log in to, if required
+    required: false
+    default: index.docker.io
+  registry-username:
+    description: The username to log in to the container registry. Will not attempt login if not provided.
+    required: false
+  registry-password:
+    description: The password to log in to the container registry. Will not attempt login if not provided.
+    required: false
+
+runs:
+  using: node20
+  main: dist/index.js
+  post: dist/index.js

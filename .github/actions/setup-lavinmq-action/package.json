@@ -1,0 +1,24 @@
+{
+    "name": "setup-lavinmq-action",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "prepare": "ncc build index.js -o dist --license licenses.txt"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/Particular/setup-lavinmq-action.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/Particular/setup-lavinmq-action/issues"
+    },
+    "homepage": "https://github.com/Particular/setup-lavinmq-action#readme",
+    "dependencies": {
+      "@actions/core": "^1.10.0",
+      "@actions/exec": "^1.1.0"
+    }
+  }

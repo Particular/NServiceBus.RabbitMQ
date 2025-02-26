@@ -13,15 +13,19 @@ defaults:
     shell: pwsh
 jobs:
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.name }}-${{ matrix.test-category }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ windows-2022, ubuntu-22.04 ]
+        test-category: [ RabbitMQ, LavinMQ ]
         include:
-          - os: windows-2022
-            name: Windows
           - os: ubuntu-22.04
             name: Linux
+            test-category: LavinMQ
+        exclude:
+          - os: windows-2022
+          - test-category: RabbitMQ
       fail-fast: false
     steps:
       - name: Check for secrets
@@ -52,12 +56,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
-      - name: Setup RabbitMQ
-        uses: Particular/setup-rabbitmq-action@v1.7.1
+      - name: Setup LavinMQ
+        uses: ./.github/actions/setup-lavinmq-action
+        if: matrix.test-category == 'LavinMQ'
         with:
-          connection-string-name: RabbitMQTransport_ConnectionString
-          tag: RabbitMQTransport
-          image-tag: 4-management
+          connection-string-name: LavinMQTransport_ConnectionString
+          tag: LavinMQTransport
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
