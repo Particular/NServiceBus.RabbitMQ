@@ -61,8 +61,8 @@ jobs:
         uses: ./.github/actions/setup-lavinmq-action
         if: matrix.test-category == 'LavinMQ'
         with:
-          connection-string-name: LavinMQTransport_ConnectionString
-          tag: LavinMQTransport
+          connection-string-name: RabbitMQTransport_ConnectionString
+          tag: RabbitMQTransport
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
