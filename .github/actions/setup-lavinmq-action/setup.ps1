@@ -18,7 +18,6 @@ if ($runnerOs -eq "Linux") {
     Write-Output "Running Lavin in container $($hostname) using Docker"
 
     docker run --name "$($hostname)" -d -p "5672:5672" -p "15672:15672" $dockerImage
-    docker exec $hostname lavinmqctl set_user_tags guest monitoring management
 }
 elseif ($runnerOs -eq "Windows") {
 
@@ -81,23 +80,29 @@ if (-not [string]::IsNullOrWhiteSpace($hostEnvVarName)) {
 
 Write-Output "::group::Testing connection"
 
-$uri = "http://$ipAddress:15672/api/overview"
-$tries = 1
+$uri = "http://" + $ipAddress + ":15672/api/overview"
+$tries = 0
+$statusCode = 0
 
 do {
     $statusCode = (curl -o NUL -s -w "%{http_code}" -u guest:guest $uri)
-    if ($statusCode -ne "200") {
-        Write-Output "Attempt ${tries}: LavinMQ not ready... retrying in 5s"
-        Start-Sleep -Seconds 5
-    }
     $tries++
-} until ($statusCode -eq "200" -or $tries -ge 50)
+    if ($statusCode -ne "200") {
+        Write-Output "No response (Status: $statusCode), retrying..."
+        Start-Sleep -m 5000
+    }
+} until (($statusCode -eq "200") -or ($tries -ge 50))
 
-if ($statusCode -eq "200") {
-    Write-Output "✅ LavinMQ is up and running!"
-} else {
-    Write-Output "❌ Failed to connect after 50 attempts."
+if ($statusCode -ne "200") {
+    Write-Output "Failed to connect after 50 attempts";
     exit 1
+} else {
+    Write-Output "Connection successful"
+    if ($runnerOs -eq "Linux") {
+        docker exec $hostname lavinmqctl set_user_tags guest monitoring management
+    } elseif ($runnerOs -eq "Windows") {
+        az container exec --name $hostname --resource-group $resourceGroup --exec-command "lavinmqctl set_user_tags guest monitoring management"
+    }
 }
 
 Write-Output "::endgroup::"

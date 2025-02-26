@@ -45,13 +45,14 @@ jobs:
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
-        if: matrix.name == 'Windows'
+        if: matrix.name == 'SKIP'
         uses: actions/upload-artifact@v4.6.1
         with:
           name: NuGet packages
           path: nugets/
           retention-days: 7
       - name: Azure login
+        if: matrix.os == 'windows-2022'
         uses: azure/login@v2.2.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
