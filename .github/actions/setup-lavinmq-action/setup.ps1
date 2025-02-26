@@ -58,8 +58,6 @@ elseif ($runnerOs -eq "Windows") {
         exit 1;
     }
 
-    az container exec --name $hostname --resource-group $resourceGroup --exec-command "lavinmqctl set_user_tags guest monitoring management"
-
     $ipAddress=$details.ipAddress.ip
 
     Write-Output "::add-mask::$ipAddress"
@@ -94,10 +92,11 @@ do {
 } until (($statusCode -eq "200") -or ($tries -ge 50))
 
 if ($statusCode -ne "200") {
-    Write-Output "Failed to connect after 50 attempts";
+    Write-Output "Failed to connect after 50 attempts"
     exit 1
 } else {
     Write-Output "Connection successful"
+    Write-Output "Setting user tags on container"
     if ($runnerOs -eq "Linux") {
         docker exec $hostname lavinmqctl set_user_tags guest monitoring management
     } elseif ($runnerOs -eq "Windows") {

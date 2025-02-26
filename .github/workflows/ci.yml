@@ -63,6 +63,7 @@ jobs:
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
+          image-tag: latest
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
