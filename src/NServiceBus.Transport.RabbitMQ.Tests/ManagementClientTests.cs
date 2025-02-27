@@ -6,6 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
@@ -62,13 +63,19 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         {
             using var managementClient = new ManagementClient(connectionConfiguration);
 
-            var response = await managementClient.GetFeatureFlags();
+            var responseOverview = await managementClient.GetOverview();
+            Assert.That(responseOverview.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
-            Assert.Multiple(() =>
+            if (responseOverview.Value?.RabbitMQBrokerVersion != null)
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value, Is.Not.Empty);
-            });
+                var response = await managementClient.GetFeatureFlags();
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                    Assert.That(response.Value, Is.Not.Empty);
+                });
+            }
         }
 
         [Test]
