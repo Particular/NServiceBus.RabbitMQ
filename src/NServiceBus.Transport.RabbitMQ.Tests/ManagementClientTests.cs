@@ -6,7 +6,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
@@ -153,9 +152,12 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             using var managementClient = new ManagementClient(connectionConfiguration);
             var policyName = $"test-management-client-create-policy";
 
+            var responseOverview = await managementClient.GetOverview();
+            Assert.That(responseOverview.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
             var policy = new Policy
             {
-                ApplyTo = PolicyTarget.QuorumQueues,
+                ApplyTo = responseOverview.Value?.RabbitMQBrokerVersion != null ? PolicyTarget.QuorumQueues : PolicyTarget.Queues,
                 Definition = new PolicyDefinition
                 {
                     DeliveryLimit = 100

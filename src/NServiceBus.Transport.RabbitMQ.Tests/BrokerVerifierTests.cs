@@ -117,7 +117,7 @@ class BrokerVerifierTests
         var policyName = $"nsb.{queueName}.delivery-limit";
         var policy = new Policy
         {
-            ApplyTo = PolicyTarget.QuorumQueues,
+            ApplyTo = brokerVerifier.IsRabbitMQBroker ? PolicyTarget.QuorumQueues : PolicyTarget.Queues,
             Definition = new PolicyDefinition { DeliveryLimit = deliveryLimit },
             Pattern = queueName,
             Priority = 100

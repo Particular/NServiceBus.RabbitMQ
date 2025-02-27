@@ -19,9 +19,9 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
     public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
+    public bool IsRabbitMQBroker;
 
     Version? brokerVersion;
-    bool isRabbitMQBroker;
     bool disposed;
 
     public async Task Initialize(CancellationToken cancellationToken = default)
@@ -34,7 +34,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         }
 
         brokerVersion = RemovePrereleaseFromVersion(response.Value.BrokerVersion ?? "");
-        isRabbitMQBroker = response.Value.RabbitMQBrokerVersion is not null;
+        IsRabbitMQBroker = response.Value.RabbitMQBrokerVersion is not null;
 
         static Version RemovePrereleaseFromVersion(string version)
         {
@@ -66,7 +66,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task VerifyRequirements(CancellationToken cancellationToken = default)
     {
-        if (isRabbitMQBroker && BrokerVersion < MinimumSupportedBrokerVersion)
+        if (IsRabbitMQBroker && BrokerVersion < MinimumSupportedBrokerVersion)
         {
             throw new Exception($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
         }
@@ -76,7 +76,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
         streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlag.StreamQueue);
 
-        if (isRabbitMQBroker && !streamsEnabled)
+        if (IsRabbitMQBroker && !streamsEnabled)
         {
             throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
         }
@@ -165,7 +165,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
         var policy = new Policy
         {
-            ApplyTo = PolicyTarget.QuorumQueues,
+            ApplyTo = IsRabbitMQBroker ? PolicyTarget.QuorumQueues : PolicyTarget.Queues,
             Definition = new PolicyDefinition { DeliveryLimit = -1 },
             Pattern = queue.Name,
             Priority = 0
