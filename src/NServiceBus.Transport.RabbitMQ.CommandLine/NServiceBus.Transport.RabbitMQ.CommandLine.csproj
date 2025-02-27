@@ -13,6 +13,7 @@
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>$(DefineConstants);COMMANDLINE</DefineConstants>
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
