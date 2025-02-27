@@ -26,6 +26,10 @@ class Queue
     [JsonPropertyName("policy")]
     public string? AppliedPolicyName { get; set; }
 
+    // For ServiceControl queue length provider
+    [JsonPropertyName("messages")]
+    public long MessageCount { get; set; }
+
     // For ServiceControl licensing component
     [JsonPropertyName("message_stats")]
     public QueueMessageStats? MessageStats { get; set; }
