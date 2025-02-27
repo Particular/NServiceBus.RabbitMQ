@@ -21,6 +21,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
 
     Version? brokerVersion;
+    bool isRabbitMQBroker;
     bool disposed;
 
     public async Task Initialize(CancellationToken cancellationToken = default)
@@ -32,7 +33,8 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             throw new InvalidOperationException($"Could not access the RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
         }
 
-        brokerVersion = RemovePrereleaseFromVersion(response.Value.BrokerVersion);
+        brokerVersion = RemovePrereleaseFromVersion(response.Value.BrokerVersion ?? "");
+        isRabbitMQBroker = response.Value.RabbitMQBrokerVersion is not null;
 
         static Version RemovePrereleaseFromVersion(string version)
         {
@@ -64,7 +66,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task VerifyRequirements(CancellationToken cancellationToken = default)
     {
-        if (BrokerVersion < MinimumSupportedBrokerVersion)
+        if (isRabbitMQBroker && BrokerVersion < MinimumSupportedBrokerVersion)
         {
             throw new Exception($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
         }
@@ -74,7 +76,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
         streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlag.StreamQueue);
 
-        if (!streamsEnabled)
+        if (isRabbitMQBroker && !streamsEnabled)
         {
             throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
         }

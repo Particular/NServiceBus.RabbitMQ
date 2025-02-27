@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,6 +62,8 @@ class ManagementClient : IDisposable
         };
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
+        var authToken = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{connectionConfiguration.UserName}:{connectionConfiguration.Password}"));
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
     }
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
