@@ -98,9 +98,9 @@ if ($statusCode -ne "200") {
     Write-Output "Connection successful"
     Write-Output "Setting user tags on container"
     if ($runnerOs -eq "Linux") {
-        docker exec $hostname lavinmqctl set_user_tags guest monitoring management
+        docker exec $hostname lavinmqctl set_user_tags guest monitoring management policymaker
     } elseif ($runnerOs -eq "Windows") {
-        az container exec --name $hostname --resource-group $resourceGroup --exec-command "lavinmqctl set_user_tags guest monitoring management"
+        az container exec --name $hostname --resource-group $resourceGroup --exec-command "lavinmqctl set_user_tags guest monitoring management policymaker"
     }
 }
 
