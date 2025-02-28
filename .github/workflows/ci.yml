@@ -38,7 +38,7 @@ jobs:
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2022' && matrix.test-category == 'RabbitMQ'
         uses: actions/upload-artifact@v4.6.1
         with:
           name: NuGet packages
@@ -57,6 +57,15 @@ jobs:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
           image-tag: latest
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Setup RabbitMQ
+        uses: Particular/setup-rabbitmq-action@v1.7.1
+        if: matrix.test-category == 'RabbitMQ'
+        with:
+          connection-string-name: RabbitMQTransport_ConnectionString
+          tag: RabbitMQTransport
+          image-tag: 4-management
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
