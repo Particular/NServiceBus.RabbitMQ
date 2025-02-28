@@ -8,4 +8,8 @@ class QueueArguments
     [JsonPropertyName("x-delivery-limit")]
     [JsonConverter(typeof(DeliveryLimitConverter))]
     public int? DeliveryLimit { get; set; }
+
+    [JsonPropertyName("x-queue-type")]
+    [JsonConverter(typeof(QueueTypeConverter))]
+    public QueueType? QueueType { get; set; }
 }

@@ -140,6 +140,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             if (response.Value?.EffectivePolicyDefinition is not null)
             {
                 queue = response.Value;
+                queue.QueueType ??= queue.Arguments.QueueType ?? throw new InvalidOperationException($"Could not determine the queue type for '{queue.Name}'.");
                 break;
             }
 
