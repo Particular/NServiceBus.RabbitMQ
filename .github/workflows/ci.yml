@@ -13,19 +13,12 @@ defaults:
     shell: pwsh
 jobs:
   build:
-    name: ${{ matrix.name }}-${{ matrix.test-category }}
+    name: ${{ matrix.os }}-${{ matrix.test-category }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ windows-2022, ubuntu-22.04 ]
         test-category: [ RabbitMQ, LavinMQ ]
-        include:
-          - os: ubuntu-22.04
-            name: Linux
-            test-category: LavinMQ
-        exclude:
-          - os: windows-2022
-          - test-category: RabbitMQ
       fail-fast: false
     steps:
       - name: Check for secrets
@@ -45,7 +38,7 @@ jobs:
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
-        if: matrix.name == 'SKIP'
+        if: matrix.os == 'windows-2022'
         uses: actions/upload-artifact@v4.6.1
         with:
           name: NuGet packages
