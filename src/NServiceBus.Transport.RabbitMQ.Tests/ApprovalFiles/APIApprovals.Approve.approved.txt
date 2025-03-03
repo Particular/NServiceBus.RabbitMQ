@@ -6,9 +6,10 @@ namespace NServiceBus
     public class ManagementApiConfiguration
     {
         public ManagementApiConfiguration(string url) { }
+        public ManagementApiConfiguration(string userName, string password) { }
         public ManagementApiConfiguration(string url, string userName, string password) { }
         public string? Password { get; }
-        public string Url { get; }
+        public string? Url { get; }
         public string? UserName { get; }
     }
     public static class NonPersistentDeliveryModeExtensions
@@ -54,6 +55,7 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DisableRemoteCertificateValidation(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> DoNotValidateDeliveryLimits(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ManagementApiConfiguration(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string url) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ManagementApiConfiguration(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string userName, string password) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ManagementApiConfiguration(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string url, string userName, string password) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchMultiplier(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int prefetchMultiplier) { }

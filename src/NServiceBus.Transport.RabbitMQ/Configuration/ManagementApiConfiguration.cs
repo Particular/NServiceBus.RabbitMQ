@@ -23,6 +23,20 @@ namespace NServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagementApiConfiguration"/> class.
         /// </summary>
+        /// <param name="userName">The user name to use when connecting to the RabbitMQ management API.</param>
+        /// <param name="password">The password to use when connecting to the RabbitMQ management API.</param>
+        public ManagementApiConfiguration(string userName, string password)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(userName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(password);
+
+            UserName = userName;
+            Password = password;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ManagementApiConfiguration"/> class.
+        /// </summary>
         /// <param name="url">The URL to use when connecting to the RabbitMQ management API.</param>
         /// <param name="userName">The user name to use when connecting to the RabbitMQ management API.</param>
         /// <param name="password">The password to use when connecting to the RabbitMQ management API.</param>
@@ -40,7 +54,7 @@ namespace NServiceBus
         /// <summary>
         /// The URL to use when connecting to the RabbitMQ management API.
         /// </summary>
-        public string Url { get; }
+        public string? Url { get; }
 
         /// <summary>
         /// The user name to use when connecting to the RabbitMQ management API.
