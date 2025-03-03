@@ -26,7 +26,7 @@ class ManagementClient : IDisposable
 
         UriBuilder uriBuilder;
 
-        if (managementApiConfiguration is not null)
+        if (managementApiConfiguration?.Url is not null)
         {
             uriBuilder = new UriBuilder(managementApiConfiguration.Url)
             {
@@ -46,8 +46,8 @@ class ManagementClient : IDisposable
                 Scheme = connectionConfiguration.UseTls ? "https" : "http",
                 Host = connectionConfiguration.Host,
                 Port = connectionConfiguration.UseTls ? defaultManagementTlsPort : defaultManagementPort,
-                UserName = connectionConfiguration.UserName,
-                Password = connectionConfiguration.Password
+                UserName = managementApiConfiguration?.UserName ?? connectionConfiguration.UserName,
+                Password = managementApiConfiguration?.Password ?? connectionConfiguration.Password
             };
         }
 

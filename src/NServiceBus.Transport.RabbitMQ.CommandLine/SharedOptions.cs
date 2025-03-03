@@ -40,7 +40,7 @@
         {
             var managementApiUserNameOption = new Option<string>(
                 name: "--managementApiUserName",
-                description: $"Overrides the value inferred from the connection string. If provided, --managementApiUrl and --managementApiPassword must also be provided.");
+                description: $"Overrides the value inferred from the connection string. If provided, --managementApiPassword must also be provided or this option will be ignored.");
 
             return managementApiUserNameOption;
         }
@@ -49,7 +49,7 @@
         {
             var managementApiPasswordOption = new Option<string>(
                 name: "--managementApiPassword",
-                description: $"Overrides the value inferred from the connection string. If provided, --managementApiUrl and --managementApiUserName must also be provided.");
+                description: $"Overrides the value inferred from the connection string. If provided, --managementApiUserName must also be provided or this option will be ignored.");
 
             return managementApiPasswordOption;
         }

@@ -44,6 +44,10 @@
                     managementApiConfiguration = new(managementApiUrl);
                 }
             }
+            else if (managementApiUrl is null && managementApiUserName is not null && managementApiPassword is not null)
+            {
+                managementApiConfiguration = new(managementApiUserName, managementApiPassword);
+            }
 
             var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
             var brokerVerifier = new BrokerVerifier(managementClient, true);
