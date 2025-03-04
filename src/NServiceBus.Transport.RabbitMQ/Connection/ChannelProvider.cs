@@ -22,9 +22,7 @@ namespace NServiceBus.Transport.RabbitMQ
             channels = new ConcurrentQueue<ConfirmsAwareChannel>();
         }
 
-        public async Task<IConnection> CreateConnection(CancellationToken cancellationToken = default) => connection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
-
-        protected virtual Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default) => connectionFactory.CreatePublishConnection(cancellationToken);
+        public async Task Initialize(CancellationToken cancellationToken = default) => connection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
 
         async Task<IConnection> CreateConnectionWithShutdownListener(CancellationToken cancellationToken)
         {
@@ -32,6 +30,8 @@ namespace NServiceBus.Transport.RabbitMQ
             newConnection.ConnectionShutdownAsync += Connection_ConnectionShutdown;
             return newConnection;
         }
+
+        protected virtual Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default) => connectionFactory.CreatePublishConnection(cancellationToken);
 
 #pragma warning disable PS0018
         Task Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)

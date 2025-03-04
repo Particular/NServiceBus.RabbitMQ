@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_recover_connection_and_dispose_old_one_when_connection_shutdown()
         {
             var channelProvider = new TestableChannelProvider();
-            await channelProvider.CreateConnection();
+            await channelProvider.Initialize();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
@@ -34,7 +34,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_dispose_connection_when_disposed()
         {
             var channelProvider = new TestableChannelProvider();
-            await channelProvider.CreateConnection();
+            await channelProvider.Initialize();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await channelProvider.DisposeAsync();
@@ -46,7 +46,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_not_attempt_to_recover_during_dispose_when_retry_delay_still_pending()
         {
             var channelProvider = new TestableChannelProvider();
-            await channelProvider.CreateConnection();
+            await channelProvider.Initialize();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
@@ -65,7 +65,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
         public async Task Should_dispose_newly_established_connection()
         {
             var channelProvider = new TestableChannelProvider();
-            await channelProvider.CreateConnection();
+            await channelProvider.Initialize();
 
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
