@@ -23,6 +23,11 @@
             var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
+            var managementApiConfiguration = ManagementApiConfiguration.Create(managementApiUrl, managementApiUserName, managementApiPassword);
+
+            var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
+            var brokerVerifier = new BrokerVerifier(managementClient, true);
+
             var certificateCollection = new X509Certificate2Collection();
 
             if (certPath != null)
@@ -31,26 +36,6 @@
                 certificateCollection.Add(certificate);
             }
 
-            ManagementApiConfiguration? managementApiConfiguration = null;
-
-            if (managementApiUrl is not null)
-            {
-                if (managementApiUserName is not null && managementApiPassword is not null)
-                {
-                    managementApiConfiguration = new(managementApiUrl, managementApiUserName, managementApiPassword);
-                }
-                else
-                {
-                    managementApiConfiguration = new(managementApiUrl);
-                }
-            }
-            else if (managementApiUrl is null && managementApiUserName is not null && managementApiPassword is not null)
-            {
-                managementApiConfiguration = new(managementApiUserName, managementApiPassword);
-            }
-
-            var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
             var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
             var brokerConnection = new BrokerConnection(brokerVerifier, connectionFactory);
 
