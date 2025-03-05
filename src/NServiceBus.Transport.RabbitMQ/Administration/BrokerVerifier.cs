@@ -3,7 +3,6 @@
 namespace NServiceBus.Transport.RabbitMQ;
 
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 #if !COMMANDLINE
@@ -25,14 +24,9 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
-        var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
+        var overview = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
 
-        if (response.Value is null)
-        {
-            throw new InvalidOperationException($"Could not access the RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
-        }
-
-        brokerVersion = RemovePrereleaseFromVersion(response.Value.BrokerVersion);
+        brokerVersion = RemovePrereleaseFromVersion(overview.BrokerVersion);
 
         static Version RemovePrereleaseFromVersion(string version)
         {
@@ -71,8 +65,8 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
         bool streamsEnabled;
 
-        var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
-        streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlag.StreamQueue);
+        var featureFlags = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
+        streamsEnabled = featureFlags.HasEnabledFeature(FeatureFlag.StreamQueue);
 
         if (!streamsEnabled)
         {
@@ -90,8 +84,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             return;
         }
 
-        var queue = await GetQueueDetails(queueName, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"Could not get queue details for '{queueName}'.");
+        var queue = await GetQueueDetails(queueName, cancellationToken).ConfigureAwait(false);
 
         if (ShouldOverrideDeliveryLimit(queue))
         {
@@ -121,30 +114,24 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         return true;
     }
 
-    async Task<Queue?> GetQueueDetails(string queueName, CancellationToken cancellationToken)
+    async Task<Queue> GetQueueDetails(string queueName, CancellationToken cancellationToken)
     {
         Queue? queue = null;
         var attempts = 20;
 
         for (int i = 0; i < attempts; i++)
         {
-            var response = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
+            queue = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
 
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            if (queue.EffectivePolicyDefinition is not null)
             {
-                break;
-            }
-
-            if (response.Value?.EffectivePolicyDefinition is not null)
-            {
-                queue = response.Value;
                 break;
             }
 
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
         }
 
-        return queue;
+        return queue ?? throw new InvalidOperationException($"Could not get queue details for '{queueName}'.");
     }
 
     async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)

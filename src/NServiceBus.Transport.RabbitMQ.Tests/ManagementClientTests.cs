@@ -5,7 +5,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Net;
     using System.Threading.Tasks;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
     using NUnit.Framework;
@@ -36,11 +35,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             var response = await managementClient.GetQueue(queueName);
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value?.Name, Is.EqualTo(queueName));
-            });
+            Assert.That(response.Name, Is.EqualTo(queueName));
         }
 
         [Test]
@@ -50,11 +45,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             var response = await managementClient.GetOverview();
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value?.BrokerVersion, Is.Not.Null);
-            });
+            Assert.That(response.BrokerVersion, Is.Not.Null);
         }
 
         [Test]
@@ -64,11 +55,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             var response = await managementClient.GetFeatureFlags();
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value, Is.Not.Empty);
-            });
+            Assert.That(response, Is.Not.Empty);
         }
 
         [Test]
@@ -90,9 +77,8 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             while (true)
             {
                 var response = await managementClient.GetQueues(page++, pageSize);
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
-                if (response.Value?.Count(q => q.Name.StartsWith(queueName)) == pageSize)
+                if (response.Queues.Count(q => q.Name.StartsWith(queueName)) == pageSize)
                 {
                     return;
                 }
@@ -115,11 +101,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             var response = await managementClient.GetBindingsForQueue(queueName);
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value, Has.Count.EqualTo(2));
-            });
+            Assert.That(response, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -133,11 +115,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
             var response = await managementClient.GetBindingsForExchange(destinationExchangeName);
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(response.Value, Has.Count.EqualTo(1));
-            });
+            Assert.That(response, Has.Count.EqualTo(1));
         }
 
         [Test]
