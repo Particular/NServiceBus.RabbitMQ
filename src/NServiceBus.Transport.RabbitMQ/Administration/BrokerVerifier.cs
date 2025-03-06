@@ -24,6 +24,19 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     Version? brokerVersion;
     bool disposed;
 
+    public Version BrokerVersion
+    {
+        get
+        {
+            if (brokerVersion == null)
+            {
+                throw new InvalidOperationException($"Need to call Initialize before accessing {nameof(BrokerVersion)} property.");
+            }
+
+            return brokerVersion;
+        }
+    }
+
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
         try
@@ -49,19 +62,6 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             var versionSpan = version.AsSpan()[..index];
 
             return Version.Parse(versionSpan);
-        }
-    }
-
-    public Version BrokerVersion
-    {
-        get
-        {
-            if (brokerVersion == null)
-            {
-                throw new InvalidOperationException($"Need to call Initialize before accessing {nameof(BrokerVersion)} property.");
-            }
-
-            return brokerVersion;
         }
     }
 
@@ -108,28 +108,6 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         }
     }
 
-    bool ShouldOverrideDeliveryLimit(Queue queue)
-    {
-        if (queue.QueueType is not QueueType.Quorum)
-        {
-            return false;
-        }
-
-        var limit = queue.GetDeliveryLimit();
-
-        if (limit == -1)
-        {
-            return false;
-        }
-
-        if (queue.Arguments.DeliveryLimit.HasValue || (queue.EffectivePolicyDefinition?.DeliveryLimit.HasValue ?? false))
-        {
-            throw new InvalidOperationException($"The delivery limit for '{queue.Name}' is set to the non-default value of '{limit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this.");
-        }
-
-        return true;
-    }
-
     async Task<Queue> GetQueueDetails(string queueName, CancellationToken cancellationToken)
     {
         Queue? queue = null;
@@ -159,6 +137,28 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         }
 
         return queue ?? throw new InvalidOperationException($"Cannot validate the delivery limit of the '{queueName}' queue because the queue details could not be retrieved from the RabbitMQ management API after multiple attempts.");
+    }
+
+    bool ShouldOverrideDeliveryLimit(Queue queue)
+    {
+        if (queue.QueueType is not QueueType.Quorum)
+        {
+            return false;
+        }
+
+        var limit = queue.GetDeliveryLimit();
+
+        if (limit == -1)
+        {
+            return false;
+        }
+
+        if (queue.Arguments.DeliveryLimit.HasValue || (queue.EffectivePolicyDefinition?.DeliveryLimit.HasValue ?? false))
+        {
+            throw new InvalidOperationException($"The delivery limit for '{queue.Name}' is set to the non-default value of '{limit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this.");
+        }
+
+        return true;
     }
 
     async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
