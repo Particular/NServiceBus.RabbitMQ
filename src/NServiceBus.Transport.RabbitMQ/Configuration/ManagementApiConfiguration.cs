@@ -19,6 +19,7 @@ namespace NServiceBus
         public ManagementApiConfiguration(string url)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(url);
+            ThrowIfNotValidUrl(url);
 
             Url = url;
         }
@@ -46,6 +47,7 @@ namespace NServiceBus
         public ManagementApiConfiguration(string url, string userName, string password)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(url);
+            ThrowIfNotValidUrl(url);
             ArgumentException.ThrowIfNullOrWhiteSpace(userName);
             ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
@@ -72,6 +74,12 @@ namespace NServiceBus
         internal static ManagementApiConfiguration Create(string? url, string? userName, string? password)
         {
             ThrowIfWhiteSpace(url);
+
+            if (url is not null)
+            {
+                ThrowIfNotValidUrl(url);
+            }
+
             ThrowIfWhiteSpace(userName);
             ThrowIfWhiteSpace(password);
 
@@ -90,5 +98,14 @@ namespace NServiceBus
                 throw new ArgumentException("The value cannot be an empty string or composed entirely of whitespace.", paramName);
             }
         }
+
+        static void ThrowIfNotValidUrl(string? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
+        {
+            if (!Uri.IsWellFormedUriString(argument, UriKind.RelativeOrAbsolute))
+            {
+                throw new ArgumentException("The value is not a valid URL.", paramName);
+            }
+        }
+
     }
 }
