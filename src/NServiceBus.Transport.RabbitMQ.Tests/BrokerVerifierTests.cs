@@ -71,7 +71,7 @@ class BrokerVerifierTests
         await brokerVerifier.Initialize();
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
-        Assert.That(exception.Message, Does.Contain($"Could not get queue details for '{queueName}'."));
+        Assert.That(exception.Message, Does.Contain($"Cannot validate the delivery limit of the '{queueName}' queue because it does not exist."));
     }
 
     [Test]
