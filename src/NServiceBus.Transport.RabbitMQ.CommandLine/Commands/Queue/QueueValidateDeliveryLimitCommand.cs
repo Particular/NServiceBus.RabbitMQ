@@ -11,7 +11,7 @@
             var queueNameArgument = new Argument<string>()
             {
                 Name = "queueName",
-                Description = "The name of the queue to migrate to validate"
+                Description = "The name of the queue to validate"
             };
 
             var brokerVerifierBinder = SharedOptions.CreateBrokerVerifierBinderWithOptions(command);
