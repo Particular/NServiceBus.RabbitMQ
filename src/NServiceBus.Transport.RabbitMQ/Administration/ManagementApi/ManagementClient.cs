@@ -18,6 +18,8 @@ class ManagementClient : IDisposable
     const int defaultManagementPort = 15672;
     const int defaultManagementTlsPort = 15671;
 
+    const string nullErrorMessage = "RabbitMQ management API returned success but deserializing the response body returned null.";
+
     bool disposed;
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
@@ -75,75 +77,66 @@ class ManagementClient : IDisposable
     }
 
     // For ServiceControl licensing component
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetBindingsForExchange(string exchangeName, CancellationToken cancellationToken = default)
+    public async Task<List<Binding>> GetBindingsForExchange(string exchangeName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
 
         var escapedExchangeName = Uri.EscapeDataString(exchangeName);
-        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetFromJsonAsync<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
 
-        return response;
+        return response ?? throw new HttpRequestException(nullErrorMessage);
     }
 
     // For ServiceControl licensing component
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<Binding>? Value)> GetBindingsForQueue(string queueName, CancellationToken cancellationToken = default)
+    public async Task<List<Binding>> GetBindingsForQueue(string queueName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await Get<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetFromJsonAsync<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
 
-        return response;
+        return response ?? throw new HttpRequestException(nullErrorMessage);
     }
 
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<FeatureFlag>? Value)> GetFeatureFlags(CancellationToken cancellationToken = default)
+    public async Task<List<FeatureFlag>> GetFeatureFlags(CancellationToken cancellationToken = default)
     {
-        var response = await Get<List<FeatureFlag>>("api/feature-flags", cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetFromJsonAsync<List<FeatureFlag>>("api/feature-flags", cancellationToken).ConfigureAwait(false);
 
-        return response;
+        return response ?? throw new HttpRequestException(nullErrorMessage);
     }
 
-    public async Task<(HttpStatusCode StatusCode, string Reason, Overview? Value)> GetOverview(CancellationToken cancellationToken = default)
+    public async Task<Overview> GetOverview(CancellationToken cancellationToken = default)
     {
-        var response = await Get<Overview>("api/overview", cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetFromJsonAsync<Overview>("api/overview", cancellationToken).ConfigureAwait(false);
 
-        return response;
+        return response ?? throw new HttpRequestException(nullErrorMessage);
     }
 
-    public async Task<(HttpStatusCode StatusCode, string Reason, Queue? Value)> GetQueue(string queueName, CancellationToken cancellationToken = default)
+    public async Task<Queue> GetQueue(string queueName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await Get<Queue>($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetFromJsonAsync<Queue>($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
 
-        return response;
+        return response ?? throw new HttpRequestException(nullErrorMessage);
     }
 
     // For ServiceControl licensing component
-    public async Task<(HttpStatusCode StatusCode, string Reason, List<Queue>? Value, bool MorePages)> GetQueues(int page, int pageSize = 500, CancellationToken cancellationToken = default)
+    public async Task<(List<Queue> Queues, bool MorePages)> GetQueues(int page, int pageSize = 500, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(pageSize, 500);
 
-        var (statusCode, reason, value) = await Get<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetFromJsonAsync<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
 
-        return (statusCode, reason, value?.Items, value?.Page < value?.PageCount);
-    }
-
-    async Task<(HttpStatusCode StatusCode, string Reason, T? Value)> Get<T>(string url, CancellationToken cancellationToken)
-    {
-        T? value = default;
-
-        using var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-
-        if (response.IsSuccessStatusCode)
+        if (response is null)
         {
-            value = await response.Content.ReadFromJsonAsync<T>(cancellationToken).ConfigureAwait(false);
+            throw new HttpRequestException(nullErrorMessage);
         }
 
-        return (response.StatusCode, response.ReasonPhrase ?? string.Empty, value);
+        return (response.Items, response.Page < response.PageCount);
     }
 
     protected virtual void Dispose(bool disposing)

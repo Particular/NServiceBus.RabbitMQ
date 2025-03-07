@@ -4,7 +4,6 @@ namespace NServiceBus.Transport.RabbitMQ.Tests;
 
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
 using NUnit.Framework;
@@ -49,9 +48,9 @@ class BrokerVerifierTests
 
         for (int i = 0; i < attempts; i++)
         {
-            var response = await managementClient.GetQueue(queueName);
+            var queue = await managementClient.GetQueue(queueName);
 
-            if (response.StatusCode == HttpStatusCode.OK && response.Value?.DeliveryLimit == -1 && response.Value.AppliedPolicyName == policyName)
+            if (queue.DeliveryLimit == -1 && queue.AppliedPolicyName == policyName)
             {
                 // Policy applied successfully
                 return;
@@ -72,7 +71,7 @@ class BrokerVerifierTests
         await brokerVerifier.Initialize();
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
-        Assert.That(exception.Message, Does.Contain($"Could not get queue details for '{queueName}'."));
+        Assert.That(exception.Message, Does.Contain($"Cannot validate the delivery limit of the '{queueName}' queue because it does not exist."));
     }
 
     [Test]

@@ -17,24 +17,7 @@
             var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
-
-            ManagementApiConfiguration? managementApiConfiguration = null;
-
-            if (managementApiUrl is not null)
-            {
-                if (managementApiUserName is not null && managementApiPassword is not null)
-                {
-                    managementApiConfiguration = new(managementApiUrl, managementApiUserName, managementApiPassword);
-                }
-                else
-                {
-                    managementApiConfiguration = new(managementApiUrl);
-                }
-            }
-            else if (managementApiUrl is null && managementApiUserName is not null && managementApiPassword is not null)
-            {
-                managementApiConfiguration = new(managementApiUserName, managementApiPassword);
-            }
+            var managementApiConfiguration = ManagementApiConfiguration.Create(managementApiUrl, managementApiUserName, managementApiPassword);
 
             var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
             var brokerVerifier = new BrokerVerifier(managementClient, true);

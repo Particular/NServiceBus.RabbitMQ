@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.RabbitMQ;
 
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 #if !COMMANDLINE
@@ -23,16 +24,31 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     Version? brokerVersion;
     bool disposed;
 
+    public Version BrokerVersion
+    {
+        get
+        {
+            if (brokerVersion == null)
+            {
+                throw new InvalidOperationException($"Need to call Initialize before accessing {nameof(BrokerVersion)} property.");
+            }
+
+            return brokerVersion;
+        }
+    }
+
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
-        var response = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
-
-        if (response.Value is null)
+        try
         {
-            throw new InvalidOperationException($"Could not access the RabbitMQ Management API. ({response.StatusCode}: {response.Reason})");
-        }
+            var overview = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
 
-        brokerVersion = RemovePrereleaseFromVersion(response.Value.BrokerVersion);
+            brokerVersion = RemovePrereleaseFromVersion(overview.BrokerVersion);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException("There was a problem accessing the RabbitMQ management API while initializing the transport. See the inner exception for details.", ex);
+        }
 
         static Version RemovePrereleaseFromVersion(string version)
         {
@@ -49,34 +65,28 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         }
     }
 
-    public Version BrokerVersion
-    {
-        get
-        {
-            if (brokerVersion == null)
-            {
-                throw new InvalidOperationException($"Need to call Initialize before accessing {nameof(BrokerVersion)} property");
-            }
-
-            return brokerVersion;
-        }
-    }
-
     public async Task VerifyRequirements(CancellationToken cancellationToken = default)
     {
         if (BrokerVersion < MinimumSupportedBrokerVersion)
         {
-            throw new Exception($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
+            throw new InvalidOperationException($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
         }
 
         bool streamsEnabled;
 
-        var response = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
-        streamsEnabled = response.Value is not null && response.Value.HasEnabledFeature(FeatureFlag.StreamQueue);
+        try
+        {
+            var featureFlags = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
+            streamsEnabled = featureFlags.HasEnabledFeature(FeatureFlag.StreamQueue);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException("There was a problem accessing the RabbitMQ management API to verify broker requirements. See the inner exception for details.", ex);
+        }
 
         if (!streamsEnabled)
         {
-            throw new Exception("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+            throw new InvalidOperationException("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
         }
     }
 
@@ -90,13 +100,43 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             return;
         }
 
-        var queue = await GetQueueDetails(queueName, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"Could not get queue details for '{queueName}'.");
+        var queue = await GetQueueDetails(queueName, cancellationToken).ConfigureAwait(false);
 
         if (ShouldOverrideDeliveryLimit(queue))
         {
             await SetDeliveryLimitViaPolicy(queue, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    async Task<Queue> GetQueueDetails(string queueName, CancellationToken cancellationToken)
+    {
+        Queue? queue = null;
+        var attempts = 20;
+
+        for (int i = 0; i < attempts; i++)
+        {
+            try
+            {
+                queue = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new InvalidOperationException($"Cannot validate the delivery limit of the '{queueName}' queue because it does not exist.", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new InvalidOperationException($"There was a problem accessing the RabbitMQ management API to validate the delivery limit of the '{queueName}' queue. See the inner exception for details.", ex);
+            }
+
+            if (queue.EffectivePolicyDefinition is not null)
+            {
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
+        }
+
+        return queue ?? throw new InvalidOperationException($"Cannot validate the delivery limit of the '{queueName}' queue because the queue details could not be retrieved from the RabbitMQ management API after multiple attempts.");
     }
 
     bool ShouldOverrideDeliveryLimit(Queue queue)
@@ -121,32 +161,6 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         return true;
     }
 
-    async Task<Queue?> GetQueueDetails(string queueName, CancellationToken cancellationToken)
-    {
-        Queue? queue = null;
-        var attempts = 20;
-
-        for (int i = 0; i < attempts; i++)
-        {
-            var response = await managementClient.GetQueue(queueName, cancellationToken).ConfigureAwait(false);
-
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                break;
-            }
-
-            if (response.Value?.EffectivePolicyDefinition is not null)
-            {
-                queue = response.Value;
-                break;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
-        }
-
-        return queue;
-    }
-
     async Task SetDeliveryLimitViaPolicy(Queue queue, CancellationToken cancellationToken)
     {
         if (BrokerVersion < BrokerVersion4)
@@ -169,7 +183,14 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
             Priority = 0
         };
 
-        await managementClient.CreatePolicy(policyName, policy, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await managementClient.CreatePolicy(policyName, policy, cancellationToken).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException($"There was a problem accessing the RabbitMQ management API to create an unlimited delivery limit policy for the '{queue.Name}' queue. See the inner exception for details.", ex);
+        }
     }
 
     protected virtual void Dispose(bool disposing)
