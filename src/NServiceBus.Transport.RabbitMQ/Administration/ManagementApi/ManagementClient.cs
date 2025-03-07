@@ -18,8 +18,6 @@ class ManagementClient : IDisposable
     const int defaultManagementPort = 15672;
     const int defaultManagementTlsPort = 15671;
 
-    const string nullErrorMessage = "RabbitMQ management API returned success but deserializing the response body returned null.";
-
     bool disposed;
 
     public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
@@ -71,9 +69,7 @@ class ManagementClient : IDisposable
         ArgumentNullException.ThrowIfNull(policy);
 
         var escapedPolicyName = Uri.EscapeDataString(name);
-        using var response = await httpClient.PutAsJsonAsync($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken).ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
+        await Put($"api/policies/{escapedVirtualHost}/{escapedPolicyName}", policy, cancellationToken).ConfigureAwait(false);
     }
 
     // For ServiceControl licensing component
@@ -82,9 +78,9 @@ class ManagementClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
 
         var escapedExchangeName = Uri.EscapeDataString(exchangeName);
-        var response = await httpClient.GetFromJsonAsync<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
+        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
 
-        return response ?? throw new HttpRequestException(nullErrorMessage);
+        return response;
     }
 
     // For ServiceControl licensing component
@@ -93,33 +89,23 @@ class ManagementClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await httpClient.GetFromJsonAsync<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        var response = await Get<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
 
-        return response ?? throw new HttpRequestException(nullErrorMessage);
+        return response;
     }
 
-    public async Task<List<FeatureFlag>> GetFeatureFlags(CancellationToken cancellationToken = default)
-    {
-        var response = await httpClient.GetFromJsonAsync<List<FeatureFlag>>("api/feature-flags", cancellationToken).ConfigureAwait(false);
+    public async Task<List<FeatureFlag>> GetFeatureFlags(CancellationToken cancellationToken = default) => await Get<List<FeatureFlag>>("api/feature-flags", cancellationToken).ConfigureAwait(false);
 
-        return response ?? throw new HttpRequestException(nullErrorMessage);
-    }
-
-    public async Task<Overview> GetOverview(CancellationToken cancellationToken = default)
-    {
-        var response = await httpClient.GetFromJsonAsync<Overview>("api/overview", cancellationToken).ConfigureAwait(false);
-
-        return response ?? throw new HttpRequestException(nullErrorMessage);
-    }
+    public async Task<Overview> GetOverview(CancellationToken cancellationToken = default) => await Get<Overview>("api/overview", cancellationToken).ConfigureAwait(false);
 
     public async Task<Queue> GetQueue(string queueName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await httpClient.GetFromJsonAsync<Queue>($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
+        var response = await Get<Queue>($"api/queues/{escapedVirtualHost}/{escapedQueueName}", cancellationToken).ConfigureAwait(false);
 
-        return response ?? throw new HttpRequestException(nullErrorMessage);
+        return response;
     }
 
     // For ServiceControl licensing component
@@ -129,14 +115,23 @@ class ManagementClient : IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(pageSize, 500);
 
-        var response = await httpClient.GetFromJsonAsync<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
-
-        if (response is null)
-        {
-            throw new HttpRequestException(nullErrorMessage);
-        }
+        var response = await Get<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
 
         return (response.Items, response.Page < response.PageCount);
+    }
+
+    async Task<T> Get<T>(string url, CancellationToken cancellationToken)
+    {
+        var response = await httpClient.GetFromJsonAsync<T>(url, cancellationToken).ConfigureAwait(false);
+
+        return response ?? throw new HttpRequestException("RabbitMQ management API returned success but deserializing the response body returned null.");
+    }
+
+    async Task Put<T>(string url, T value, CancellationToken cancellationToken)
+    {
+        using var response = await httpClient.PutAsJsonAsync(url, value, cancellationToken).ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
     }
 
     protected virtual void Dispose(bool disposing)
