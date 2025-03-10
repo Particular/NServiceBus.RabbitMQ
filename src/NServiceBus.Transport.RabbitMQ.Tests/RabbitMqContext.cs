@@ -20,7 +20,12 @@
 
             var useTls = connectionString.StartsWith("https", StringComparison.InvariantCultureIgnoreCase) || connectionString.StartsWith("amqps", StringComparison.InvariantCultureIgnoreCase);
 
-            var transport = new RabbitMQTransport(RoutingTopology.Conventional(queueType), connectionString);
+            var transport = new RabbitMQTransport(RoutingTopology.Conventional(queueType), connectionString)
+            {
+                // The startup costs for creating a policy for every test queue add up, and the tests shouldn't be impacted by the default delivery limit.
+                ValidateDeliveryLimits = false
+            };
+
             var connectionConfig = transport.ConnectionConfiguration;
 
             connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig, null, true, false, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);

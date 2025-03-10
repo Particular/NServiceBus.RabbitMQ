@@ -16,7 +16,11 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
     {
         var connectionString = Environment.GetEnvironmentVariable("RabbitMQTransport_ConnectionString") ?? "host=localhost";
 
-        var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Classic), connectionString, false);
+        var transport = new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Classic), connectionString, false)
+        {
+            // The startup costs for creating a policy for every test queue add up, and the tests shouldn't be impacted by the default delivery limit.
+            ValidateDeliveryLimits = false
+        };
 
         return transport;
     }
