@@ -12,7 +12,7 @@
     using global::RabbitMQ.Client.Exceptions;
     using Logging;
 
-    sealed class MessagePump : IMessageReceiver, IDisposable
+    sealed class MessagePump : IMessageReceiver
     {
         static readonly ILog Logger = LogManager.GetLogger(typeof(MessagePump));
         static readonly TransportTransaction transportTransaction = new();
@@ -31,7 +31,6 @@
         readonly FastConcurrentLru<string, int> deliveryAttempts = new(1_000);
         readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new(1_000);
 
-        bool disposed;
         OnMessage onMessage;
         OnError onError;
         int maxConcurrency;
@@ -113,12 +112,13 @@
             return Task.CompletedTask;
         }
 
-        public Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
+        public async Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
         {
-            maxConcurrency = limitations.MaxConcurrency;
             Logger.InfoFormat("Calling a change concurrency and reconnecting with new value {0}.", limitations.MaxConcurrency);
-            _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token), cancellationToken);
-            return Task.CompletedTask;
+
+            await StopReceive(cancellationToken).ConfigureAwait(false);
+            maxConcurrency = limitations.MaxConcurrency;
+            await StartReceive(CancellationToken.None).ConfigureAwait(false);
         }
 
         void ConnectToBroker()
@@ -148,6 +148,12 @@
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
+            if (messagePumpCancellationTokenSource is null)
+            {
+                // Receiver hasn't been started or is already stopped
+                return;
+            }
+
             messagePumpCancellationTokenSource?.Cancel();
 
             using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
@@ -183,6 +189,12 @@
 
                 await connectionShutdownCompleted.Task.ConfigureAwait(false);
             }
+
+            messagePumpCancellationTokenSource?.Dispose();
+            messagePumpCancellationTokenSource = null;
+            messageProcessingCancellationTokenSource?.Dispose();
+            connection.Dispose();
+            circuitBreaker?.Dispose();
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
@@ -510,25 +522,6 @@
             {
                 Logger.Warn($"Failed to acknowledge poison message because the channel was closed. The message was sent to queue '{queue}' but also returned to the original queue.", ex);
             }
-        }
-
-        public void Dispose()
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            circuitBreaker?.Dispose();
-            messagePumpCancellationTokenSource?.Cancel();
-            messagePumpCancellationTokenSource?.Dispose();
-            // This makes sure that if the stop token hasn't been canceled the processing source is canceled
-            // so that any possible reconnect attempt has the possibility to gracefully stop too.
-            messageProcessingCancellationTokenSource?.Cancel();
-            messageProcessingCancellationTokenSource?.Dispose();
-
-            connection?.Dispose();
-            disposed = true;
         }
     }
 }
