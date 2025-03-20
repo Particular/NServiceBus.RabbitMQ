@@ -19,6 +19,22 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         static readonly ConnectionFactory connectionFactory = new(typeof(ManagementClientTests).FullName, connectionConfiguration, null, false, false, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
 
         [Test]
+        public void Should_Pass_With_http_Scheme()
+        {
+            var managementApiConfiguration = new ManagementApiConfiguration("http://localhost:15672");
+
+            Assert.DoesNotThrow(() => new ManagementClient(connectionConfiguration, managementApiConfiguration));
+        }
+
+        [Test]
+        public void Should_Pass_With_https_Scheme()
+        {
+            var managementApiConfiguration = new ManagementApiConfiguration("https://localhost:15671");
+
+            Assert.DoesNotThrow(() => new ManagementClient(connectionConfiguration, managementApiConfiguration));
+        }
+
+        [Test]
         public void Should_Throw_With_Invalid_Scheme()
         {
             var managementApiConfiguration = new ManagementApiConfiguration("amqp://localhost:15672");
