@@ -34,7 +34,7 @@ class ManagementClient : IDisposable
                 Password = managementApiConfiguration.Password ?? connectionConfiguration.Password
             };
 
-            if (uriBuilder.Scheme is not "http" or "https")
+            if (uriBuilder.Scheme is not ("http" or "https"))
             {
                 throw new NotSupportedException($"URL scheme '{uriBuilder.Scheme}' is not supported for the RabbitMQ management API URL. Valid schemes are 'http' and 'https'.");
             }
