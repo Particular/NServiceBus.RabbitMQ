@@ -19,7 +19,7 @@ class BrokerVerifierTests
     public void Initialize_Should_Get_Response_When_Management_Client_Is_Available_And_Valid()
     {
         var managementClient = new ManagementClient(connectionConfiguration);
-        using var brokerVerifier = new BrokerVerifier(managementClient, true);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
         Assert.DoesNotThrowAsync(async () => await brokerVerifier.Initialize());
     }
@@ -28,7 +28,7 @@ class BrokerVerifierTests
     public async Task ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy()
     {
         var managementClient = new ManagementClient(connectionConfiguration);
-        using var brokerVerifier = new BrokerVerifier(managementClient, true);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
         await brokerVerifier.Initialize();
 
         if (brokerVerifier.BrokerVersion < BrokerVerifier.BrokerVersion4)
@@ -67,7 +67,7 @@ class BrokerVerifierTests
     {
         var queueName = "WrongQueue";
         var managementClient = new ManagementClient(connectionConfiguration);
-        using var brokerVerifier = new BrokerVerifier(managementClient, true);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
         await brokerVerifier.Initialize();
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
@@ -81,7 +81,7 @@ class BrokerVerifierTests
         await CreateQueue(queueName, queueType: "classic");
 
         var managementClient = new ManagementClient(connectionConfiguration);
-        using var brokerVerifier = new BrokerVerifier(managementClient, true);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
         await brokerVerifier.Initialize();
 
         await brokerVerifier.ValidateDeliveryLimit(queueName);
@@ -95,7 +95,7 @@ class BrokerVerifierTests
         await CreateQueue(queueName, deliveryLimit: deliveryLimit);
 
         var managementClient = new ManagementClient(connectionConfiguration);
-        using var brokerVerifier = new BrokerVerifier(managementClient, true);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
         await brokerVerifier.Initialize();
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
@@ -109,7 +109,7 @@ class BrokerVerifierTests
         await CreateQueue(queueName);
 
         var managementClient = new ManagementClient(connectionConfiguration);
-        using var brokerVerifier = new BrokerVerifier(managementClient, true);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
         await brokerVerifier.Initialize();
 
         var deliveryLimit = 15;

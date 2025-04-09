@@ -115,6 +115,25 @@
         }
 
         /// <summary>
+        /// Disables the specified broker requirement checks.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="brokerRequirementChecks">The broker requirement checks to disable.</param>
+        /// <remarks>
+        /// Using a broker that does not meet these requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
+        /// </remarks>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            Message = "This is now part of routing topology configuration, which has been moved to the constructor of the RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> DisableBrokerRequirementChecks(this TransportExtensions<RabbitMQTransport> transportExtensions, BrokerRequirementChecks brokerRequirementChecks)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+
+            transportExtensions.Transport.DisabledBrokerRequirementChecks = brokerRequirementChecks;
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Specifies that exchanges and queues should be declared as non-durable.
         /// </summary>
         /// <param name="transportExtensions"></param>
