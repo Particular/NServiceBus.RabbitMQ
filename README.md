@@ -12,7 +12,7 @@ All tests use the default connection string `host=localhost`. This can be change
 
 For developers using Docker containers, the following docker command will quickly setup a container configured to use the default port:
 
-`docker run -d --hostname my-rabbit --name my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management`
+`docker run -d --hostname my-rabbit --name my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:4-management`
 
 With this setup, the default connection string will work.
 
