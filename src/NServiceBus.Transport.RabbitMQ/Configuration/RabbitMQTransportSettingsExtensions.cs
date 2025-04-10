@@ -120,7 +120,7 @@
         /// <param name="transportExtensions"></param>
         /// <param name="brokerRequirementChecks">The broker requirement checks to disable.</param>
         /// <remarks>
-        /// Using a broker that does not meet these requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
+        /// Using a broker that does not meet all of the requirements can result in message loss or other incorrect operation, so disabling checks is not recommended.
         /// </remarks>
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "This is now part of routing topology configuration, which has been moved to the constructor of the RabbitMQTransport class.",

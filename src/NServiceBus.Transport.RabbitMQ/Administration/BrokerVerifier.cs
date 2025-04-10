@@ -32,6 +32,7 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
+        //This needs to stay in sync with changes to BrokerRequirementChecks
         var all = BrokerRequirementChecks.Version310OrNewer | BrokerRequirementChecks.StreamsEnabled;
 
         if (disabledBrokerRequirementChecks == all && !validateDeliveryLimits)

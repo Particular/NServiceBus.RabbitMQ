@@ -154,7 +154,7 @@
         /// The broker requirement checks to disable.
         /// </summary>
         /// <remarks>
-        /// Using a broker that does not meet these requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
+        /// Using a broker that does not meet all of the requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
         /// </remarks>
         public BrokerRequirementChecks DisabledBrokerRequirementChecks { get; set; }
 
