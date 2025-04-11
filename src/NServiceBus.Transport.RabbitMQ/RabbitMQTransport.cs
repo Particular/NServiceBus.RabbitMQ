@@ -139,10 +139,9 @@
 
         /// <summary>
         /// Should the transport validate that queue delivery limits are configured properly to avoid interfering with message recoverability.
-        /// </summary>
-        /// <remarks>
+        /// <br />
         /// Incorrect delivery limit settings could result in message loss, so disabling validation is not recommended.
-        /// </remarks>
+        /// </summary>
         public bool ValidateDeliveryLimits { get; set; } = true;
 
         /// <summary>
@@ -152,10 +151,9 @@
 
         /// <summary>
         /// The broker requirement checks to disable.
-        /// </summary>
-        /// <remarks>
+        /// <br />
         /// Using a broker that does not meet all of the requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
-        /// </remarks>
+        /// </summary>
         public BrokerRequirementChecks DisabledBrokerRequirementChecks { get; set; }
 
         /// <summary>
