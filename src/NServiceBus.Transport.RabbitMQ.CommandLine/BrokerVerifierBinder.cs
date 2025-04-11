@@ -20,7 +20,7 @@
             var managementApiConfiguration = ManagementApiConfiguration.Create(managementApiUrl, managementApiUserName, managementApiPassword);
 
             var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
-            var brokerVerifier = new BrokerVerifier(managementClient, true);
+            var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
             return brokerVerifier;
         }

@@ -151,6 +151,14 @@
         public ManagementApiConfiguration ManagementApiConfiguration { get; set; }
 
         /// <summary>
+        /// The broker requirement checks to disable.
+        /// </summary>
+        /// <remarks>
+        /// Using a broker that does not meet all of the requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
+        /// </remarks>
+        public BrokerRequirementChecks DisabledBrokerRequirementChecks { get; set; }
+
+        /// <summary>
         /// The interval for heartbeats between the endpoint and the broker.
         /// </summary>
         public TimeSpan HeartbeatInterval
@@ -229,7 +237,7 @@
 
             ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
 
-            var brokerVerifier = new BrokerVerifier(ManagementClient, ValidateDeliveryLimits);
+            var brokerVerifier = new BrokerVerifier(ManagementClient, DisabledBrokerRequirementChecks, ValidateDeliveryLimits);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
             await brokerVerifier.VerifyRequirements(cancellationToken).ConfigureAwait(false);
 

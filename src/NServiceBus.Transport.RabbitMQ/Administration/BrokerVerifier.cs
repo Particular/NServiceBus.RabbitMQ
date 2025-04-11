@@ -7,17 +7,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-#if !COMMANDLINE
-using NServiceBus.Logging;
-#endif
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
-class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLimits) : IDisposable
+class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks disabledBrokerRequirementChecks, bool validateDeliveryLimits) : IDisposable
 {
-#if !COMMANDLINE
-    static readonly ILog Logger = LogManager.GetLogger(typeof(BrokerVerifier));
-#endif
-
     static readonly Version MinimumSupportedBrokerVersion = Version.Parse("3.10.0");
     public static readonly Version BrokerVersion4 = Version.Parse("4.0.0");
 
@@ -39,6 +32,14 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task Initialize(CancellationToken cancellationToken = default)
     {
+        //This needs to stay in sync with changes to BrokerRequirementChecks
+        var all = BrokerRequirementChecks.Version310OrNewer | BrokerRequirementChecks.StreamsEnabled;
+
+        if (disabledBrokerRequirementChecks == all && !validateDeliveryLimits)
+        {
+            return;
+        }
+
         try
         {
             var overview = await managementClient.GetOverview(cancellationToken).ConfigureAwait(false);
@@ -67,26 +68,50 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
 
     public async Task VerifyRequirements(CancellationToken cancellationToken = default)
     {
-        if (BrokerVersion < MinimumSupportedBrokerVersion)
+        if ((disabledBrokerRequirementChecks & BrokerRequirementChecks.Version310OrNewer) == BrokerRequirementChecks.Version310OrNewer)
         {
-            throw new InvalidOperationException($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
+            LogWarning("Verification of the minimum supported broker version has been disabled. The transport will not be able to ensure the delayed delivery infrastructure works properly.");
+        }
+        else
+        {
+            VerifyBrokerMinimumVersion();
         }
 
-        bool streamsEnabled;
-
-        try
+        if ((disabledBrokerRequirementChecks & BrokerRequirementChecks.StreamsEnabled) == BrokerRequirementChecks.StreamsEnabled)
         {
-            var featureFlags = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
-            streamsEnabled = featureFlags.HasEnabledFeature(FeatureFlag.StreamQueue);
+            LogWarning("Verification of the 'stream_queue' feature flag has been disabled. The transport will not be able to ensure the delayed delivery infrastructure works properly.");
         }
-        catch (HttpRequestException ex)
+        else
         {
-            throw new InvalidOperationException("There was a problem accessing the RabbitMQ management API to verify broker requirements. See the inner exception for details.", ex);
+            await VerifyStreamEnabled(cancellationToken).ConfigureAwait(false);
         }
 
-        if (!streamsEnabled)
+        void VerifyBrokerMinimumVersion()
         {
-            throw new InvalidOperationException("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+            if (BrokerVersion < MinimumSupportedBrokerVersion)
+            {
+                throw new InvalidOperationException($"An unsupported broker version was detected: {BrokerVersion}. The broker must be at least version {MinimumSupportedBrokerVersion}.");
+            }
+        }
+
+        async Task VerifyStreamEnabled(CancellationToken cancellationToken)
+        {
+            bool streamsEnabled;
+
+            try
+            {
+                var featureFlags = await managementClient.GetFeatureFlags(cancellationToken).ConfigureAwait(false);
+                streamsEnabled = featureFlags.HasEnabledFeature(FeatureFlag.StreamQueue);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new InvalidOperationException("There was a problem accessing the RabbitMQ management API to verify broker requirements. See the inner exception for details.", ex);
+            }
+
+            if (!streamsEnabled)
+            {
+                throw new InvalidOperationException("An unsupported broker configuration was detected. The 'stream_queue' feature flag needs to be enabled.");
+            }
         }
     }
 
@@ -94,9 +119,7 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
     {
         if (!validateDeliveryLimits)
         {
-#if !COMMANDLINE
-            Logger.Warn("Validation of delivery limits has been disabled. The transport will not be able to ensure that messages are not lost after repeated retries.");
-#endif
+            LogWarning("Validation of delivery limits has been disabled. The transport will not be able to ensure that messages are not lost after repeated retries.");
             return;
         }
 
@@ -191,6 +214,14 @@ class BrokerVerifier(ManagementClient managementClient, bool validateDeliveryLim
         {
             throw new InvalidOperationException($"There was a problem accessing the RabbitMQ management API to create an unlimited delivery limit policy for the '{queue.Name}' queue. See the inner exception for details.", ex);
         }
+    }
+
+    static void LogWarning(string message)
+    {
+#if !COMMANDLINE
+        var logger = Logging.LogManager.GetLogger(typeof(BrokerVerifier));
+        logger.Warn(message);
+#endif
     }
 
     protected virtual void Dispose(bool disposing)
