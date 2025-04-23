@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,7 +58,9 @@ class ManagementClient : IDisposable
         {
             Credentials = new NetworkCredential(uriBuilder.UserName, uriBuilder.Password),
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
-            PreAuthenticate = true
+            PreAuthenticate = true,
+            SslOptions =
+                new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true }
         };
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
