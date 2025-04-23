@@ -233,7 +233,7 @@
                 additionalClusterNodes
             );
 
-            ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration);
+            ManagementClient = new ManagementClient(ConnectionConfiguration, !ValidateRemoteCertificate, ManagementApiConfiguration);
 
             var brokerVerifier = new BrokerVerifier(ManagementClient, DisabledBrokerRequirementChecks, ValidateDeliveryLimits);
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
