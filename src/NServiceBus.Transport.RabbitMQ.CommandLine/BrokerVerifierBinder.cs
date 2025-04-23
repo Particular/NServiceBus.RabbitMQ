@@ -4,7 +4,7 @@
     using System.CommandLine.Binding;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
-    class BrokerVerifierBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> managementApiUrlOption, Option<string> managementApiUserNameOption, Option<string> managementApiPasswordOption) : BinderBase<BrokerVerifier>
+    class BrokerVerifierBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> managementApiUrlOption, Option<string> managementApiUserNameOption, Option<string> managementApiPasswordOption, Option<bool> disableCertificateValidationOption) : BinderBase<BrokerVerifier>
     {
         protected override BrokerVerifier GetBoundValue(BindingContext bindingContext)
         {
@@ -13,13 +13,14 @@
             var managementApiUrl = bindingContext.ParseResult.GetValueForOption(managementApiUrlOption);
             var managementApiUserName = bindingContext.ParseResult.GetValueForOption(managementApiUserNameOption);
             var managementApiPassword = bindingContext.ParseResult.GetValueForOption(managementApiPasswordOption);
+            var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
 
             var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var managementApiConfiguration = ManagementApiConfiguration.Create(managementApiUrl, managementApiUserName, managementApiPassword);
 
-            var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
+            var managementClient = new ManagementClient(connectionConfiguration, disableCertificateValidation, managementApiConfiguration);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
             return brokerVerifier;

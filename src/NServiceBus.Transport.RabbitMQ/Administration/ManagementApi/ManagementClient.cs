@@ -21,7 +21,7 @@ class ManagementClient : IDisposable
 
     bool disposed;
 
-    public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
+    public ManagementClient(ConnectionConfiguration connectionConfiguration, bool disableRemoteCertificateValidation, ManagementApiConfiguration? managementApiConfiguration = null)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration);
 
@@ -59,9 +59,16 @@ class ManagementClient : IDisposable
             Credentials = new NetworkCredential(uriBuilder.UserName, uriBuilder.Password),
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
             PreAuthenticate = true,
-            SslOptions =
-                new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true }
         };
+
+        if (disableRemoteCertificateValidation)
+        {
+            handler.SslOptions = new SslClientAuthenticationOptions
+            {
+                RemoteCertificateValidationCallback = (_, _, _, _) => true
+            };
+
+        }
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
     }
