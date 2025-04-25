@@ -20,7 +20,7 @@
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var managementApiConfiguration = ManagementApiConfiguration.Create(managementApiUrl, managementApiUserName, managementApiPassword);
 
-            var managementClient = new ManagementClient(connectionConfiguration, disableCertificateValidation, managementApiConfiguration);
+            var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration, disableCertificateValidation);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
             return brokerVerifier;
