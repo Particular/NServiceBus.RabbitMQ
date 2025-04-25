@@ -25,7 +25,7 @@
             var connectionConfiguration = ConnectionConfiguration.Create(connectionString);
             var managementApiConfiguration = ManagementApiConfiguration.Create(managementApiUrl, managementApiUserName, managementApiPassword);
 
-            var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration);
+            var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration, disableCertificateValidation);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
             var certificateCollection = new X509Certificate2Collection();

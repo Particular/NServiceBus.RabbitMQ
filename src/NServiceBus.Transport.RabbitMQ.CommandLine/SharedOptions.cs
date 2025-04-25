@@ -160,14 +160,16 @@
             var managementApiUrlOption = CreateManagementApiUrlOption();
             var managementApiUserNameOption = CreateManagementApiUserNameOption();
             var managementApiPasswordOption = CreateManagementApiPasswordOption();
+            var disableCertValidationOption = CreateDisableCertValidationOption();
 
             command.AddOption(connectionStringOption);
             command.AddOption(connectionStringEnvOption);
             command.AddOption(managementApiUrlOption);
             command.AddOption(managementApiUserNameOption);
             command.AddOption(managementApiPasswordOption);
+            command.AddOption(disableCertValidationOption);
 
-            return new BrokerVerifierBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption);
+            return new BrokerVerifierBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, disableCertValidationOption);
         }
 
         public static RoutingTopologyBinder CreateRoutingTopologyBinderWithOptions(Command command)
