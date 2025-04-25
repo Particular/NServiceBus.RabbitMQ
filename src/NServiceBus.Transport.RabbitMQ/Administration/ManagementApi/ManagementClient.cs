@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +21,7 @@ class ManagementClient : IDisposable
 
     bool disposed;
 
-    public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null)
+    public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null, bool disableRemoteCertificateValidation = false)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration);
 
@@ -59,6 +60,14 @@ class ManagementClient : IDisposable
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
             PreAuthenticate = true
         };
+
+        if (disableRemoteCertificateValidation)
+        {
+            handler.SslOptions = new SslClientAuthenticationOptions
+            {
+                RemoteCertificateValidationCallback = (_, _, _, _) => true
+            };
+        }
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
     }
