@@ -8,6 +8,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Exceptions;
     using NServiceBus.Logging;
     using Unicast.Messages;
 
@@ -58,8 +59,19 @@ namespace NServiceBus.Transport.RabbitMQ
             await channel.BasicPublishAsync(exchangeNameConvention(type), string.Empty, false, properties, message.Body, cancellationToken).ConfigureAwait(false);
         }
 
-        public ValueTask Send(IChannel channel, string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
-            => channel.BasicPublishAsync(address, string.Empty, true, properties, message.Body, cancellationToken);
+        public async ValueTask Send(IChannel channel, string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await channel
+                    .BasicPublishAsync(address, string.Empty, true, properties, message.Body, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (PublishException e)
+            {
+                throw new Exception($"Message {message.MessageId} could not be routed to {address}", e);
+            }
+        }
 
         public ValueTask RawSendInCaseOfFailure(IChannel channel, string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
             => channel.BasicPublishAsync(address, string.Empty, true, properties, body, cancellationToken);
