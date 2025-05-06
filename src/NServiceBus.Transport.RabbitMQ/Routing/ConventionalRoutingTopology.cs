@@ -8,7 +8,6 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Exceptions;
     using NServiceBus.Logging;
     using Unicast.Messages;
 
@@ -67,7 +66,11 @@ namespace NServiceBus.Transport.RabbitMQ
                     .BasicPublishAsync(address, string.Empty, true, properties, message.Body, cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (PublishException e)
+            catch (OperationCanceledException e) when (cancellationToken.IsCancellationRequested && e.CancellationToken == cancellationToken)
+            {
+                throw;
+            }
+            catch (Exception e)
             {
                 throw new Exception($"Message {message.MessageId} could not be routed to {address}", e);
             }
