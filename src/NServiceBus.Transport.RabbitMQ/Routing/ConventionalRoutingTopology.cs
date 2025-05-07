@@ -66,7 +66,7 @@ namespace NServiceBus.Transport.RabbitMQ
                     .BasicPublishAsync(address, string.Empty, true, properties, message.Body, cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException e) when (cancellationToken.IsCancellationRequested && e.CancellationToken == cancellationToken)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
             }
