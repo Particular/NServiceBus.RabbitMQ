@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.2.6" />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="9.2.7" />
   </ItemGroup>
 
   <ItemGroup>
