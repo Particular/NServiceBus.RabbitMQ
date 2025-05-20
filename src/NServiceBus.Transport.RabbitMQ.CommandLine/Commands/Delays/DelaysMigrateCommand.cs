@@ -143,10 +143,25 @@
         {
             var originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
             var newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            var destinationQueue = currentRoutingKey.Substring(currentRoutingKey.LastIndexOf('.') + 1);
+            var destinationQueue = GetUltimateDestinationKey(currentRoutingKey);
             var newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
 
             return (destinationQueue, newRoutingKey, newDelayLevel);
+        }
+
+        static string GetUltimateDestinationKey(string key)
+        {
+            var numberOfDotsBetweenBitFlags = DelayInfrastructure.MaxLevel;
+            var numberOfDotsAfterBitFlagsAndBeforeUltimateDestinationKey = 1;
+            var totalNumberOfDots = numberOfDotsBetweenBitFlags + numberOfDotsAfterBitFlagsAndBeforeUltimateDestinationKey;
+
+            int positionAfterLastDot = 0;
+            for (var level = 0; level < totalNumberOfDots; ++level)
+            {
+                positionAfterLastDot = key.IndexOf('.', positionAfterLastDot) + 1;
+            }
+
+            return key.Substring(positionAfterLastDot);
         }
 
         static DateTimeOffset GetTimeSent(BasicGetResult message)
