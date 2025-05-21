@@ -12,6 +12,7 @@
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
         const string dateTimeOffsetWireFormat = "yyyy-MM-dd HH:mm:ss:ffffff Z";
+        const int indexStartOfDestinationQueue = DelayInfrastructure.MaxNumberOfBitsToUse * 2;
 
         public static Command CreateCommand()
         {
@@ -143,8 +144,7 @@
         {
             var originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
             var newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            var indexStartOfDestinationQueue = DelayInfrastructure.MaxNumberOfBitsToUse * 2;
-            var destinationQueue = currentRoutingKey[indexStartOfDestinationQueue..];
+            var destinationQueue = currentRoutingKey[IndexStartOfDestinationQueue..];
             var newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
 
             return (destinationQueue, newRoutingKey, newDelayLevel);
