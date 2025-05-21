@@ -12,7 +12,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     static class DelayInfrastructure
     {
-        const int MaxNumberOfBitsToUse = 28;
+        public const int MaxNumberOfBitsToUse = 28;
 
         public const int MaxLevel = MaxNumberOfBitsToUse - 1;
         public const int MaxDelayInSeconds = (1 << MaxNumberOfBitsToUse) - 1;
