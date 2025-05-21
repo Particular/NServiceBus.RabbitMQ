@@ -144,7 +144,7 @@
         {
             var originalDeliveryDate = timeSent.AddSeconds(delayInSeconds);
             var newDelayInSeconds = Convert.ToInt32(originalDeliveryDate.Subtract(utcNow).TotalSeconds);
-            var destinationQueue = currentRoutingKey[IndexStartOfDestinationQueue..];
+            var destinationQueue = currentRoutingKey[indexStartOfDestinationQueue..];
             var newRoutingKey = DelayInfrastructure.CalculateRoutingKey(newDelayInSeconds, destinationQueue, out int newDelayLevel);
 
             return (destinationQueue, newRoutingKey, newDelayLevel);
