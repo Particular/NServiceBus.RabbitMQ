@@ -13,6 +13,7 @@
         [TestCase(128, new int[] { 2022, 5, 6, 12, 0, 0 }, "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.destination", new int[] { 2022, 5, 6, 12, 0, 30 }, "destination", "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.0.0.0.1.0.destination", 6)]
         [TestCase(86400, new int[] { 2022, 5, 6, 12, 0, 0 }, "0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.destination", new int[] { 2022, 5, 7, 0, 0, 0 }, "destination", "0.0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.destination", 15)]
         [TestCase(604800, new int[] { 2022, 5, 6, 12, 0, 0 }, "0.0.0.0.0.0.0.0.1.0.0.1.0.0.1.1.1.0.1.0.1.0.0.0.0.0.0.0.destination", new int[] { 2022, 5, 9, 12, 0, 0 }, "destination", "0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.0.0.destination", 18)]
+        [TestCase(604800, new int[] { 2022, 5, 6, 12, 0, 0 }, "0.0.0.0.0.0.0.0.1.0.0.1.0.0.1.1.1.0.1.0.1.0.0.0.0.0.0.0.destination.with.dots.in.name", new int[] { 2022, 5, 9, 12, 0, 0 }, "destination.with.dots.in.name", "0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.0.0.destination.with.dots.in.name", 18)]
         public void Should_generate_the_correct_routing_key(int originalDelayInSeconds, int[] originalTimeSentValues, string originalRoutingKey, int[] utcNowValues, string expectedDestination, string expectedRoutingKey, int expectedDelayLevel)
         {
             var originalTimeSent = GetDateTimeOffsetFromValues(originalTimeSentValues);
