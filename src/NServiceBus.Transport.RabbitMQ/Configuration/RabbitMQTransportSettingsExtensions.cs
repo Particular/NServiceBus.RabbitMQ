@@ -308,7 +308,7 @@
             ArgumentException.ThrowIfNullOrWhiteSpace(path);
             ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
-            transportExtensions.Transport.ClientCertificate = new X509Certificate2(path, password);
+            transportExtensions.Transport.ClientCertificate = CertificateLoader.LoadCertificateFromFile(path, password);
             return transportExtensions;
         }
 

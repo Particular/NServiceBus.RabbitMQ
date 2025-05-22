@@ -30,6 +30,7 @@
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Administration\BrokerVerifier.cs" Link="Transport\BrokerVerifier.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Administration\ManagementApi\**\*.cs" Link="Transport\ManagementApi\%(RecursiveDir)\%(Filename)%(Extension)" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\BrokerRequirementChecks.cs" Link="Transport\ManagementApi\BrokerRequirementChecks.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\CertificateLoader.cs" Link="Transport\CertificateLoader.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" Link="Transport\ConnectionConfiguration.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ManagementApiConfiguration.cs" Link="Transport\ManagementApi\ManagementApiConfiguration.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\QueueType.cs" Link="Transport\QueueType.cs" />
