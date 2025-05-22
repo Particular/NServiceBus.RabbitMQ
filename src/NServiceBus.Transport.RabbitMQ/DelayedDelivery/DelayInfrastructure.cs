@@ -8,10 +8,10 @@
 
     static class DelayInfrastructure
     {
-        const int maxNumberOfBitsToUse = 28;
+        public const int MaxNumberOfBitsToUse = 28;
 
-        public const int MaxLevel = maxNumberOfBitsToUse - 1;
-        public const int MaxDelayInSeconds = (1 << maxNumberOfBitsToUse) - 1;
+        public const int MaxLevel = MaxNumberOfBitsToUse - 1;
+        public const int MaxDelayInSeconds = (1 << MaxNumberOfBitsToUse) - 1;
         public const string DelayHeader = "NServiceBus.Transport.RabbitMQ.DelayInSeconds";
         public const string XDeathHeader = "x-death";
         public const string XFirstDeathExchangeHeader = "x-first-death-exchange";
