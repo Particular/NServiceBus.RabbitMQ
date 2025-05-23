@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -20,7 +22,7 @@
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly List<AmqpTcpEndpoint> endpoints = [];
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
         {
             if (endpointName is null)
             {
@@ -64,7 +66,7 @@
             }
         }
 
-        static AmqpTcpEndpoint CreateAmqpTcpEndpoint(string hostName, int port, bool useTls, X509Certificate2Collection certificateCollection, bool disableRemoteCertificateValidation)
+        static AmqpTcpEndpoint CreateAmqpTcpEndpoint(string hostName, int port, bool useTls, X509Certificate2Collection? certificateCollection, bool disableRemoteCertificateValidation)
         {
             var sslOption = new SslOption();
 

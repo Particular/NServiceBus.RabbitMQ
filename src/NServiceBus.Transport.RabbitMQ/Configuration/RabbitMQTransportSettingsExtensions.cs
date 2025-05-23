@@ -308,7 +308,18 @@
             ArgumentException.ThrowIfNullOrWhiteSpace(path);
             ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
-            transportExtensions.Transport.ClientCertificate = new X509Certificate2(path, password);
+            var contentType = X509Certificate2.GetCertContentType(path);
+
+#pragma warning disable IDE0072 // Add missing cases
+            var certificate = contentType switch
+            {
+                X509ContentType.Cert => X509CertificateLoader.LoadCertificateFromFile(path),
+                X509ContentType.Pkcs12 => X509CertificateLoader.LoadPkcs12FromFile(path, password),
+                _ => throw new NotSupportedException($"Certificate content type '{contentType}' is not supported.")
+            };
+#pragma warning restore IDE0072 // Add missing cases
+
+            transportExtensions.Transport.ClientCertificate = certificate;
             return transportExtensions;
         }
 
@@ -370,7 +381,7 @@
         /// Uses the conventional routing topology. This is the preferred setting for new projects.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
-        /// <param name="queueType">The type of queue that the endpoint should use.</param>
+        /// <param name="queueType">The contentType of queue that the endpoint should use.</param>
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
@@ -404,7 +415,7 @@
         /// Uses the direct routing topology with the specified conventions.
         /// </summary>
         /// <param name="transportExtensions">The transport settings.</param>
-        /// <param name="queueType">The type of queue that the endpoint should use.</param>
+        /// <param name="queueType">The contentType of queue that the endpoint should use.</param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",

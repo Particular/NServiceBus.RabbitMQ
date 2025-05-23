@@ -28,12 +28,22 @@
             var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration, disableCertificateValidation);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
-            var certificateCollection = new X509Certificate2Collection();
+            X509Certificate2Collection? certificateCollection = null;
 
-            if (certPath != null)
+            if (certPath is not null)
             {
-                var certificate = new X509Certificate2(certPath, certPassphrase);
-                certificateCollection.Add(certificate);
+                var contentType = X509Certificate2.GetCertContentType(certPath);
+
+#pragma warning disable IDE0072 // Add missing cases
+                var certificate = contentType switch
+                {
+                    X509ContentType.Cert => X509CertificateLoader.LoadCertificateFromFile(certPath),
+                    X509ContentType.Pkcs12 => X509CertificateLoader.LoadPkcs12FromFile(certPath, certPassphrase),
+                    _ => throw new NotSupportedException($"Certificate content type '{contentType}' is not supported.")
+                };
+#pragma warning restore IDE0072 // Add missing cases
+
+                certificateCollection = [certificate];
             }
 
             var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);
