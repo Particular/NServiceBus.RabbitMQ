@@ -4,7 +4,6 @@ namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.Specialized;
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -105,20 +104,17 @@ namespace NServiceBus.Transport.RabbitMQ
                     var (delayInSeconds, address, startingDelayLevelPtr) = state;
 
                     var startingDelayLevel = 0;
-                    var mask = BitVector32.CreateMask();
-
-                    var bitVector = new BitVector32(delayInSeconds);
 
                     var index = 0;
                     for (var level = MaxLevel; level >= 0; level--)
                     {
-                        var flag = bitVector[mask << level];
-                        if (startingDelayLevel == 0 && flag)
+                        bool bitSet = ((delayInSeconds >> level) & 1) != 0;
+                        if (startingDelayLevel == 0 && bitSet)
                         {
                             startingDelayLevel = level;
                         }
 
-                        span[index++] = flag ? '1' : '0';
+                        span[index++] = bitSet ? '1' : '0';
                         span[index++] = '.';
                     }
 
