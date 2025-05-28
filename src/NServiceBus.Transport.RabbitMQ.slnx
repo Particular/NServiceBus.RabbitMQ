@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.github/workflows/ci.yml" />
+    <File Path="../.github/workflows/release.yml" />
+    <File Path="Custom.Build.props" />
+  </Folder>
+  <Project Path="NServiceBus.Transport.RabbitMQ.AcceptanceTests/NServiceBus.Transport.RabbitMQ.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Transport.RabbitMQ.CommandLine.Tests/NServiceBus.Transport.RabbitMQ.CommandLine.Tests.csproj" />
+  <Project Path="NServiceBus.Transport.RabbitMQ.CommandLine/NServiceBus.Transport.RabbitMQ.CommandLine.csproj" />
+  <Project Path="NServiceBus.Transport.RabbitMQ.Tests/NServiceBus.Transport.RabbitMQ.Tests.csproj" />
+  <Project Path="NServiceBus.Transport.RabbitMQ.TransportTests/NServiceBus.Transport.RabbitMQ.TransportTests.csproj" />
+  <Project Path="NServiceBus.Transport.RabbitMQ/NServiceBus.Transport.RabbitMQ.csproj" />
+  <Project Path="targets/Targets.csproj" />
+</Solution>

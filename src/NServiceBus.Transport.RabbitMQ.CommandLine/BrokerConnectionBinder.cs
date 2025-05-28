@@ -28,12 +28,11 @@
             var managementClient = new ManagementClient(connectionConfiguration, managementApiConfiguration, disableCertificateValidation);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
-            var certificateCollection = new X509Certificate2Collection();
+            X509Certificate2Collection? certificateCollection = null;
 
-            if (certPath != null)
+            if (certPath is not null)
             {
-                var certificate = new X509Certificate2(certPath, certPassphrase);
-                certificateCollection.Add(certificate);
+                certificateCollection = [CertificateLoader.LoadCertificateFromFile(certPath, certPassphrase)];
             }
 
             var connectionFactory = new ConnectionFactory("rabbitmq-transport", connectionConfiguration, certificateCollection, disableCertificateValidation, useExternalAuth, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(10), []);

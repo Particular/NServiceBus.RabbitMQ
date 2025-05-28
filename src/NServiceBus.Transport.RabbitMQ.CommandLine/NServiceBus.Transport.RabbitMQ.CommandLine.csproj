@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <ToolCommandName>rabbitmq-transport</ToolCommandName>
     <PackAsTool>True</PackAsTool>
@@ -17,19 +17,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="9.2.7" />
+    <PackageReference Include="NServiceBus" Version="10.0.0-alpha.1" />
     <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Particular.Packaging" Version="4.2.2" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="4.3.1" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Administration\BrokerVerifier.cs" Link="Transport\BrokerVerifier.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Administration\ManagementApi\**\*.cs" Link="Transport\ManagementApi\%(RecursiveDir)\%(Filename)%(Extension)" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\BrokerRequirementChecks.cs" Link="Transport\ManagementApi\BrokerRequirementChecks.cs" />
+    <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\CertificateLoader.cs" Link="Transport\CertificateLoader.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ConnectionConfiguration.cs" Link="Transport\ConnectionConfiguration.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\ManagementApiConfiguration.cs" Link="Transport\ManagementApi\ManagementApiConfiguration.cs" />
     <Compile Include="..\NServiceBus.Transport.RabbitMQ\Configuration\QueueType.cs" Link="Transport\QueueType.cs" />
