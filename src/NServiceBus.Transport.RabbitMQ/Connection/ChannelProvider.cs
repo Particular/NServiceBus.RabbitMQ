@@ -3,7 +3,6 @@
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
@@ -18,8 +17,6 @@ namespace NServiceBus.Transport.RabbitMQ
             this.retryDelay = retryDelay;
 
             this.routingTopology = routingTopology;
-
-            channels = new ConcurrentQueue<ConfirmsAwareChannel>();
         }
 
         public async Task Initialize(CancellationToken cancellationToken = default) => connection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
@@ -60,7 +57,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                     var newConnection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
 
-                    // A  race condition is possible where CreatePublishConnection is invoked during Dispose
+                    // A race condition is possible where CreatePublishConnection is invoked during Dispose
                     // where the returned connection isn't disposed so invoking Dispose to be sure
                     if (cancellationToken.IsCancellationRequested)
                     {
@@ -94,32 +91,43 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async ValueTask<ConfirmsAwareChannel> GetPublishChannel(CancellationToken cancellationToken = default)
         {
-            if (channels.TryDequeue(out var channel) && !channel.IsClosed)
+            while (true)
             {
-                return channel;
+                var existing = Interlocked.CompareExchange(ref publishChannel, null, null);
+                if (existing is not null && !existing.IsClosed)
+                {
+                    return existing;
+                }
+
+                var newChannel = new ConfirmsAwareChannel(connection!, routingTopology);
+                await newChannel.Initialize(cancellationToken).ConfigureAwait(false);
+
+                var expected = existing;
+                var prev = Interlocked.CompareExchange(ref publishChannel, newChannel, expected);
+
+                if (ReferenceEquals(prev, expected))
+                {
+                    if (expected is not null)
+                    {
+                        await expected.DisposeAsync().ConfigureAwait(false);
+                    }
+
+                    return newChannel;
+                }
+
+                await newChannel.DisposeAsync().ConfigureAwait(false);
             }
-
-            if (channel is not null)
-            {
-                await channel.DisposeAsync()
-                    .ConfigureAwait(false);
-            }
-
-            channel = new ConfirmsAwareChannel(connection, routingTopology);
-            await channel.Initialize(cancellationToken).ConfigureAwait(false);
-
-            return channel;
         }
 
         public ValueTask ReturnPublishChannel(ConfirmsAwareChannel channel, CancellationToken cancellationToken = default)
         {
-            if (channel.IsOpen)
+            if (!channel.IsClosed)
             {
-                channels.Enqueue(channel);
                 return ValueTask.CompletedTask;
             }
 
-            return channel.DisposeAsync();
+            var prev = Interlocked.CompareExchange(ref publishChannel, null, channel);
+            return ReferenceEquals(prev, channel) ? channel.DisposeAsync() : ValueTask.CompletedTask;
         }
 
 #pragma warning disable PS0018
@@ -137,9 +145,10 @@ namespace NServiceBus.Transport.RabbitMQ
             var oldConnection = Interlocked.Exchange(ref connection, null);
             oldConnection?.Dispose();
 
-            foreach (var channel in channels)
+            var oldChannel = Interlocked.Exchange(ref publishChannel, null);
+            if (oldChannel is not null)
             {
-                await channel.DisposeAsync().ConfigureAwait(false);
+                await oldChannel.DisposeAsync().ConfigureAwait(false);
             }
 
             disposed = true;
@@ -148,9 +157,9 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly ConnectionFactory connectionFactory;
         readonly TimeSpan retryDelay;
         readonly IRoutingTopology routingTopology;
-        readonly ConcurrentQueue<ConfirmsAwareChannel> channels;
         readonly CancellationTokenSource stoppingTokenSource = new();
         volatile IConnection? connection;
+        ConfirmsAwareChannel? publishChannel;
         bool disposed;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
