@@ -84,43 +84,57 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async ValueTask<ConfirmsAwareChannel> GetPublishChannel(CancellationToken cancellationToken = default)
         {
-            while (true)
+            if (publishChannel is { IsOpen: true })
             {
-                var existing = Interlocked.CompareExchange(ref publishChannel, null, null);
-                if (existing is { IsOpen: true })
+                return publishChannel;
+            }
+
+            try
+            {
+                await publishChannelSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                if (publishChannel is { IsOpen: true })
                 {
-                    return existing;
+                    return publishChannel;
+                }
+
+                var oldChannel = publishChannel;
+                if (oldChannel is not null)
+                {
+                    await oldChannel.DisposeAsync().ConfigureAwait(false);
                 }
 
                 var newChannel = new ConfirmsAwareChannel(connection!, routingTopology);
                 await newChannel.Initialize(cancellationToken).ConfigureAwait(false);
-
-                var expected = existing;
-                var prev = Interlocked.CompareExchange(ref publishChannel, newChannel, expected);
-
-                if (ReferenceEquals(prev, expected))
-                {
-                    if (expected is not null)
-                    {
-                        await expected.DisposeAsync().ConfigureAwait(false);
-                    }
-
-                    return newChannel;
-                }
-
-                await newChannel.DisposeAsync().ConfigureAwait(false);
+                publishChannel = newChannel;
+                return newChannel;
+            }
+            finally
+            {
+                publishChannelSemaphore.Release();
             }
         }
 
-        public ValueTask ReturnPublishChannel(ConfirmsAwareChannel channel, CancellationToken cancellationToken = default)
+        public async ValueTask ReturnPublishChannel(ConfirmsAwareChannel channel, CancellationToken cancellationToken = default)
         {
             if (channel.IsOpen)
             {
-                return ValueTask.CompletedTask;
+                return;
             }
 
-            var prev = Interlocked.CompareExchange(ref publishChannel, null, channel);
-            return ReferenceEquals(prev, channel) ? channel.DisposeAsync() : ValueTask.CompletedTask;
+            try
+            {
+                await publishChannelSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                if (ReferenceEquals(publishChannel, channel))
+                {
+                    await channel.DisposeAsync().ConfigureAwait(false);
+                    publishChannel = null;
+                }
+            }
+            finally
+            {
+                publishChannelSemaphore.Release();
+            }
         }
 
 #pragma warning disable PS0018
@@ -149,7 +163,8 @@ namespace NServiceBus.Transport.RabbitMQ
 
         readonly CancellationTokenSource stoppingTokenSource = new();
         volatile IConnection? connection;
-        ConfirmsAwareChannel? publishChannel;
+        readonly SemaphoreSlim publishChannelSemaphore = new(1, 1);
+        volatile ConfirmsAwareChannel? publishChannel;
         bool disposed;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ChannelProvider));
