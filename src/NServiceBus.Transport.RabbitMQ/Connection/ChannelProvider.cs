@@ -87,7 +87,7 @@ namespace NServiceBus.Transport.RabbitMQ
             while (true)
             {
                 var existing = Interlocked.CompareExchange(ref publishChannel, null, null);
-                if (existing is not null && !existing.IsClosed)
+                if (existing is { IsOpen: true })
                 {
                     return existing;
                 }
@@ -114,7 +114,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public ValueTask ReturnPublishChannel(ConfirmsAwareChannel channel, CancellationToken cancellationToken = default)
         {
-            if (!channel.IsClosed)
+            if (channel.IsOpen)
             {
                 return ValueTask.CompletedTask;
             }
