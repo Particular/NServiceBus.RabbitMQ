@@ -9,16 +9,9 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client.Events;
     using Logging;
 
-    class ChannelProvider : IAsyncDisposable
+    class ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
+        : IAsyncDisposable
     {
-        public ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
-        {
-            this.connectionFactory = connectionFactory;
-            this.retryDelay = retryDelay;
-
-            this.routingTopology = routingTopology;
-        }
-
         public async Task Initialize(CancellationToken cancellationToken = default) => connection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
 
         async Task<IConnection> CreateConnectionWithShutdownListener(CancellationToken cancellationToken)
@@ -154,9 +147,6 @@ namespace NServiceBus.Transport.RabbitMQ
             disposed = true;
         }
 
-        readonly ConnectionFactory connectionFactory;
-        readonly TimeSpan retryDelay;
-        readonly IRoutingTopology routingTopology;
         readonly CancellationTokenSource stoppingTokenSource = new();
         volatile IConnection? connection;
         ConfirmsAwareChannel? publishChannel;
