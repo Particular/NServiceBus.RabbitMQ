@@ -103,7 +103,7 @@ namespace NServiceBus.Transport.RabbitMQ
                     await oldChannel.DisposeAsync().ConfigureAwait(false);
                 }
 
-                var newChannel = new ConfirmsAwareChannel(connection!, routingTopology);
+                var newChannel = new ConfirmsAwareChannel(connection, routingTopology);
                 await newChannel.Initialize(cancellationToken).ConfigureAwait(false);
                 publishChannel = newChannel;
                 return newChannel;
