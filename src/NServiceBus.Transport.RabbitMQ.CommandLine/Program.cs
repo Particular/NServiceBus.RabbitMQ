@@ -7,34 +7,36 @@ CreateDelaysCommand(rootCommand);
 CreateEndpointCommand(rootCommand);
 CreateQueueCommand(rootCommand);
 
-return await rootCommand.InvokeAsync(args);
+var parseResult = rootCommand.Parse(args);
+
+return await parseResult.InvokeAsync();
 
 void CreateDelaysCommand(Command rootCommand)
 {
     var delaysSubCommand = new Command("delays", "Commands to manage the queues and exchanges for the NServiceBus delay infrastructure");
 
-    delaysSubCommand.AddCommand(DelaysCreateCommand.CreateCommand());
-    delaysSubCommand.AddCommand(DelaysMigrateCommand.CreateCommand());
-    delaysSubCommand.AddCommand(DelaysVerifyCommand.CreateCommand());
+    delaysSubCommand.Subcommands.Add(DelaysCreateCommand.CreateCommand());
+    delaysSubCommand.Subcommands.Add(DelaysMigrateCommand.CreateCommand());
+    delaysSubCommand.Subcommands.Add(DelaysVerifyCommand.CreateCommand());
 
-    rootCommand.AddCommand(delaysSubCommand);
+    rootCommand.Subcommands.Add(delaysSubCommand);
 }
 
 void CreateEndpointCommand(Command rootCommand)
 {
     var endpointSubCommand = new Command("endpoint", "Commands to manage the infrastructure for an NServiceBus endpoint");
 
-    endpointSubCommand.AddCommand(EndpointCreateCommand.CreateCommand());
+    endpointSubCommand.Subcommands.Add(EndpointCreateCommand.CreateCommand());
 
-    rootCommand.AddCommand(endpointSubCommand);
+    rootCommand.Subcommands.Add(endpointSubCommand);
 }
 
 void CreateQueueCommand(Command rootCommand)
 {
     var queueSubCommand = new Command("queue", "Commands to manage individual queues");
 
-    queueSubCommand.AddCommand(QueueMigrateCommand.CreateCommand());
-    queueSubCommand.AddCommand(QueueValidateDeliveryLimitCommand.CreateCommand());
+    queueSubCommand.Subcommands.Add(QueueMigrateCommand.CreateCommand());
+    queueSubCommand.Subcommands.Add(QueueValidateDeliveryLimitCommand.CreateCommand());
 
-    rootCommand.AddCommand(queueSubCommand);
+    rootCommand.Subcommands.Add(queueSubCommand);
 }

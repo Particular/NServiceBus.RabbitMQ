@@ -2,28 +2,28 @@
 {
     using System.CommandLine;
 
-    class QueueValidateDeliveryLimitCommand(string queueName, BrokerVerifier brokerVerifier, IConsole console)
+    class QueueValidateDeliveryLimitCommand(string queueName, BrokerVerifier brokerVerifier, TextWriter console)
     {
         public static Command CreateCommand()
         {
             var command = new Command("validate-delivery-limit", "Validate that the queue has an unlimited delivery limit");
 
-            var queueNameArgument = new Argument<string>()
+            var queueNameArgument = new Argument<string>("queueName")
             {
-                Name = "queueName",
                 Description = "The name of the queue to validate"
             };
 
             var brokerVerifierBinder = SharedOptions.CreateBrokerVerifierBinderWithOptions(command);
 
-            command.AddArgument(queueNameArgument);
+            command.Arguments.Add(queueNameArgument);
 
-            command.SetHandler(async (queueName, brokerVerifier, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
-                var validateCommand = new QueueValidateDeliveryLimitCommand(queueName, brokerVerifier, console);
+                var brokerVerifier = brokerVerifierBinder.CreateBrokerVerifier(parseResult);
+
+                var validateCommand = new QueueValidateDeliveryLimitCommand(parseResult.GetRequiredValue(queueNameArgument), brokerVerifier, parseResult.Configuration.Output);
                 await validateCommand.Run(cancellationToken);
-            },
-            queueNameArgument, brokerVerifierBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            });
 
             return command;
         }

@@ -3,7 +3,7 @@
     using System;
     using System.CommandLine;
 
-    class DelaysVerifyCommand(BrokerVerifier brokerVerifier, IConsole console)
+    class DelaysVerifyCommand(BrokerVerifier brokerVerifier, TextWriter console)
     {
         public static Command CreateCommand()
         {
@@ -11,12 +11,13 @@
 
             var brokerVerifierBinder = SharedOptions.CreateBrokerVerifierBinderWithOptions(command);
 
-            command.SetHandler(async (brokerVerifier, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
-                var delaysVerify = new DelaysVerifyCommand(brokerVerifier, console);
+                var brokerVerifier = brokerVerifierBinder.CreateBrokerVerifier(parseResult);
+
+                var delaysVerify = new DelaysVerifyCommand(brokerVerifier, parseResult.Configuration.Output);
                 await delaysVerify.Run(cancellationToken);
-            },
-            brokerVerifierBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            });
 
             return command;
         }

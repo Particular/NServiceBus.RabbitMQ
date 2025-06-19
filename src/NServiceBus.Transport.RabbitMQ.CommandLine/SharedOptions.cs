@@ -8,122 +8,126 @@
 
         public static Option<string> CreateConnectionStringOption()
         {
-            var connectionStringOption = new Option<string>(
-                name: "--connectionString",
-                description: $"Force this command to use the specified connection string");
-
-            connectionStringOption.AddAlias("-c");
+            var connectionStringOption = new Option<string>("--connectionString", "-c")
+            {
+                Description = "Force this command to use the specified connection string"
+            };
 
             return connectionStringOption;
         }
 
         public static Option<string> CreateConnectionStringEnvOption()
         {
-            var connectionStringEnvOption = new Option<string>(
-                name: "--connectionStringEnv",
-                description: $"Specifies the environment variable where the connection string can be found. --connectionString, if specified, will take precedence over this option.",
-                getDefaultValue: () => ConnectionStringEnvironmentVariable);
+            var connectionStringEnvOption = new Option<string>("--connectionStringEnv")
+            {
+                Description = "Specifies the environment variable where the connection string can be found. --connectionString, if specified, will take precedence over this option.",
+                DefaultValueFactory = _ => ConnectionStringEnvironmentVariable
+            };
 
             return connectionStringEnvOption;
         }
 
         public static Option<string> CreateManagementApiUrlOption()
         {
-            var managementApiUrlOption = new Option<string>(
-                name: "--managementApiUrl",
-                description: $"Overrides the value inferred from the connection string");
+            var managementApiUrlOption = new Option<string>("--managementApiUrl")
+            {
+                Description = "Overrides the value inferred from the connection string"
+            };
 
             return managementApiUrlOption;
         }
 
         public static Option<string> CreateManagementApiUserNameOption()
         {
-            var managementApiUserNameOption = new Option<string>(
-                name: "--managementApiUserName",
-                description: $"Overrides the value inferred from the connection string. If provided, --managementApiPassword must also be provided or this option will be ignored.");
+            var managementApiUserNameOption = new Option<string>("--managementApiUserName")
+            {
+                Description = "Overrides the value inferred from the connection string. If provided, --managementApiPassword must also be provided or this option will be ignored."
+            };
 
             return managementApiUserNameOption;
         }
 
         public static Option<string> CreateManagementApiPasswordOption()
         {
-            var managementApiPasswordOption = new Option<string>(
-                name: "--managementApiPassword",
-                description: $"Overrides the value inferred from the connection string. If provided, --managementApiUserName must also be provided or this option will be ignored.");
+            var managementApiPasswordOption = new Option<string>("--managementApiPassword")
+            {
+                Description = "Overrides the value inferred from the connection string. If provided, --managementApiUserName must also be provided or this option will be ignored."
+            };
 
             return managementApiPasswordOption;
         }
 
         public static Option<RoutingTopologyType> CreateRoutingTopologyTypeOption()
         {
-            var routingTopologyTypeOption = new Option<RoutingTopologyType>(
-                name: "--routingTopology",
-                description: $"Specifies which routing topology to use.",
-                getDefaultValue: () => RoutingTopologyType.Conventional);
-
-            routingTopologyTypeOption.AddAlias("-r");
+            var routingTopologyTypeOption = new Option<RoutingTopologyType>("--routingTopology", "-r")
+            {
+                Description = "Specifies which routing topology to use.",
+                DefaultValueFactory = _ => RoutingTopologyType.Conventional
+            };
 
             return routingTopologyTypeOption;
         }
 
         public static Option<bool> CreateUseDurableEntitiesOption()
         {
-            var useDurableEntities = new Option<bool>(
-                name: "--useDurableEntities",
-                description: $"Specifies if entities should be created as durable",
-                getDefaultValue: () => true);
-
-            useDurableEntities.AddAlias("-d");
+            var useDurableEntities = new Option<bool>("--useDurableEntities", "-d")
+            {
+                Description = "Specifies if entities should be created as durable",
+                DefaultValueFactory = _ => true
+            };
 
             return useDurableEntities;
         }
 
         public static Option<QueueType> CreateQueueTypeOption()
         {
-            var queueTypeOption = new Option<QueueType>(
-                name: "--queueType",
-                description: $"Specifies queue type will be used for queue creation",
-                getDefaultValue: () => QueueType.Quorum);
-
-            queueTypeOption.AddAlias("-t");
+            var queueTypeOption = new Option<QueueType>("--queueType", "-t")
+            {
+                Description = "Specifies queue type will be used for queue creation",
+                DefaultValueFactory = _ => QueueType.Quorum
+            };
 
             return queueTypeOption;
         }
 
         public static Option<bool> CreateDisableCertValidationOption()
         {
-            var disableCertValidationOption = new Option<bool>(
-                name: "--disableCertValidation",
-                description: $"Disable remote certificate validation when connecting to the broker",
-                getDefaultValue: () => false);
+            var disableCertValidationOption = new Option<bool>("--disableCertValidation")
+            {
+                Description = "Disable remote certificate validation when connecting to the broker",
+                DefaultValueFactory = _ => false
+            };
 
             return disableCertValidationOption;
         }
 
         public static Option<bool> CreateUseExternalAuthOption()
         {
-            var useExternalAuthOption = new Option<bool>(
-                name: "--useExternalAuth",
-                description: $"Use the external authorization option when connecting to the broker",
-                getDefaultValue: () => false);
+            var useExternalAuthOption = new Option<bool>("--useExternalAuth")
+            {
+                Description = "Use the external authorization option when connecting to the broker",
+                DefaultValueFactory = _ => false
+            };
 
             return useExternalAuthOption;
         }
 
         public static Option<string> CreateCertPathOption()
         {
-            var certPathOption = new Option<string>(
-            name: "--certPath",
-            description: $"Set the path to the client certificate file for connecting to the broker");
+            var certPathOption = new Option<string>("--certPath")
+            {
+                Description = "Set the path to the client certificate file for connecting to the broker"
+            };
 
             return certPathOption;
         }
 
         public static Option<string> CreateCertPassphraseOption()
         {
-            var certPassphraseOption = new Option<string>(
-            name: "--certPassphrase",
-            description: $"The passphrase for client certificate file for when using a client certificate");
+            var certPassphraseOption = new Option<string>("--certPassphrase")
+            {
+                Description = "The passphrase for client certificate file for when using a client certificate"
+            };
 
             return certPassphraseOption;
         }
@@ -140,15 +144,15 @@
             var disableCertValidationOption = CreateDisableCertValidationOption();
             var useExternalAuthOption = CreateUseExternalAuthOption();
 
-            command.AddOption(connectionStringOption);
-            command.AddOption(connectionStringEnvOption);
-            command.AddOption(managementApiUrlOption);
-            command.AddOption(managementApiUserNameOption);
-            command.AddOption(managementApiPasswordOption);
-            command.AddOption(certPathOption);
-            command.AddOption(certPassphraseOption);
-            command.AddOption(disableCertValidationOption);
-            command.AddOption(useExternalAuthOption);
+            command.Options.Add(connectionStringOption);
+            command.Options.Add(connectionStringEnvOption);
+            command.Options.Add(managementApiUrlOption);
+            command.Options.Add(managementApiUserNameOption);
+            command.Options.Add(managementApiPasswordOption);
+            command.Options.Add(certPathOption);
+            command.Options.Add(certPassphraseOption);
+            command.Options.Add(disableCertValidationOption);
+            command.Options.Add(useExternalAuthOption);
 
             return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, certPathOption, certPassphraseOption, disableCertValidationOption, useExternalAuthOption);
         }
@@ -162,12 +166,12 @@
             var managementApiPasswordOption = CreateManagementApiPasswordOption();
             var disableCertValidationOption = CreateDisableCertValidationOption();
 
-            command.AddOption(connectionStringOption);
-            command.AddOption(connectionStringEnvOption);
-            command.AddOption(managementApiUrlOption);
-            command.AddOption(managementApiUserNameOption);
-            command.AddOption(managementApiPasswordOption);
-            command.AddOption(disableCertValidationOption);
+            command.Options.Add(connectionStringOption);
+            command.Options.Add(connectionStringEnvOption);
+            command.Options.Add(managementApiUrlOption);
+            command.Options.Add(managementApiUserNameOption);
+            command.Options.Add(managementApiPasswordOption);
+            command.Options.Add(disableCertValidationOption);
 
             return new BrokerVerifierBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, disableCertValidationOption);
         }
@@ -178,9 +182,9 @@
             var useDurableEntitiesOption = CreateUseDurableEntitiesOption();
             var queueTypeOption = CreateQueueTypeOption();
 
-            command.AddOption(routingTopologyTypeOption);
-            command.AddOption(useDurableEntitiesOption);
-            command.AddOption(queueTypeOption);
+            command.Options.Add(routingTopologyTypeOption);
+            command.Options.Add(useDurableEntitiesOption);
+            command.Options.Add(queueTypeOption);
 
             return new RoutingTopologyBinder(routingTopologyTypeOption, useDurableEntitiesOption, queueTypeOption);
         }

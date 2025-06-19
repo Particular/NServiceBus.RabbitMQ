@@ -1,24 +1,23 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using System.CommandLine;
-    using System.CommandLine.Binding;
     using System.Security.Cryptography.X509Certificates;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
     class BrokerConnectionBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> managementApiUrlOption, Option<string> managementApiUserNameOption, Option<string> managementApiPasswordOption, Option<string> certPathOption,
-        Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption) : BinderBase<BrokerConnection>
+        Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
     {
-        protected override BrokerConnection GetBoundValue(BindingContext bindingContext)
+        public BrokerConnection CreateBrokerConnection(ParseResult parseResult)
         {
-            var connectionStringOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption);
-            var connectionStringEnvOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringEnvOption);
-            var managementApiUrl = bindingContext.ParseResult.GetValueForOption(managementApiUrlOption);
-            var managementApiUserName = bindingContext.ParseResult.GetValueForOption(managementApiUserNameOption);
-            var managementApiPassword = bindingContext.ParseResult.GetValueForOption(managementApiPasswordOption);
-            var certPath = bindingContext.ParseResult.GetValueForOption(certPathOption);
-            var certPassphrase = bindingContext.ParseResult.GetValueForOption(certPassphraseOption);
-            var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
-            var useExternalAuth = bindingContext.ParseResult.GetValueForOption(useExternalAuthOption);
+            var connectionStringOptionValue = parseResult.GetValue(connectionStringOption);
+            var connectionStringEnvOptionValue = parseResult.GetValue(connectionStringEnvOption);
+            var managementApiUrl = parseResult.GetValue(managementApiUrlOption);
+            var managementApiUserName = parseResult.GetValue(managementApiUserNameOption);
+            var managementApiPassword = parseResult.GetValue(managementApiPasswordOption);
+            var certPath = parseResult.GetValue(certPathOption);
+            var certPassphrase = parseResult.GetValue(certPassphraseOption);
+            var disableCertificateValidation = parseResult.GetValue(disableCertificateValidationOption);
+            var useExternalAuth = parseResult.GetValue(useExternalAuthOption);
 
             var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 

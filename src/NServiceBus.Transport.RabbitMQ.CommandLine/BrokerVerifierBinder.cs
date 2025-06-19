@@ -1,19 +1,18 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using System.CommandLine;
-    using System.CommandLine.Binding;
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
-    class BrokerVerifierBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> managementApiUrlOption, Option<string> managementApiUserNameOption, Option<string> managementApiPasswordOption, Option<bool> disableCertificateValidationOption) : BinderBase<BrokerVerifier>
+    class BrokerVerifierBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> managementApiUrlOption, Option<string> managementApiUserNameOption, Option<string> managementApiPasswordOption, Option<bool> disableCertificateValidationOption)
     {
-        protected override BrokerVerifier GetBoundValue(BindingContext bindingContext)
+        public BrokerVerifier CreateBrokerVerifier(ParseResult parseResult)
         {
-            var connectionStringOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringOption);
-            var connectionStringEnvOptionValue = bindingContext.ParseResult.GetValueForOption(connectionStringEnvOption);
-            var managementApiUrl = bindingContext.ParseResult.GetValueForOption(managementApiUrlOption);
-            var managementApiUserName = bindingContext.ParseResult.GetValueForOption(managementApiUserNameOption);
-            var managementApiPassword = bindingContext.ParseResult.GetValueForOption(managementApiPasswordOption);
-            var disableCertificateValidation = bindingContext.ParseResult.GetValueForOption(disableCertificateValidationOption);
+            var connectionStringOptionValue = parseResult.GetValue(connectionStringOption);
+            var connectionStringEnvOptionValue = parseResult.GetValue(connectionStringEnvOption);
+            var managementApiUrl = parseResult.GetValue(managementApiUrlOption);
+            var managementApiUserName = parseResult.GetValue(managementApiUserNameOption);
+            var managementApiPassword = parseResult.GetValue(managementApiPasswordOption);
+            var disableCertificateValidation = parseResult.GetValue(disableCertificateValidationOption);
 
             var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 

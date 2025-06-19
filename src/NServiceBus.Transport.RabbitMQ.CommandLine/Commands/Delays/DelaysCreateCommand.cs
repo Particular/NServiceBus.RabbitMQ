@@ -1,8 +1,9 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using System.CommandLine;
+    using System.Threading;
 
-    class DelaysCreateCommand
+    class DelaysCreateCommand(BrokerConnection brokerConnection, TextWriter console)
     {
         public static Command CreateCommand()
         {
@@ -10,20 +11,15 @@
 
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
 
-            command.SetHandler(async (brokerConnection, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
-                var delaysCreate = new DelaysCreateCommand(brokerConnection, console);
+                var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
+
+                var delaysCreate = new DelaysCreateCommand(brokerConnection, parseResult.Configuration.Output);
                 await delaysCreate.Run(cancellationToken);
-            },
-            brokerConnectionBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            });
 
             return command;
-        }
-
-        public DelaysCreateCommand(BrokerConnection brokerConnection, IConsole console)
-        {
-            this.brokerConnection = brokerConnection;
-            this.console = console;
         }
 
         public async Task Run(CancellationToken cancellationToken = default)
@@ -37,8 +33,5 @@
 
             console.WriteLine("Queues and exchanges created successfully");
         }
-
-        readonly BrokerConnection brokerConnection;
-        readonly IConsole console;
     }
 }

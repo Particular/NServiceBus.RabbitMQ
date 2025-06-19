@@ -6,28 +6,28 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
 
-    class QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, IConsole console)
+    class QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, TextWriter console)
     {
         public static Command CreateCommand()
         {
             var command = new Command("migrate-to-quorum", "Migrate an existing classic queue to a quorum queue");
 
-            var queueNameArgument = new Argument<string>()
+            var queueNameArgument = new Argument<string>("queueName")
             {
-                Name = "queueName",
                 Description = "The name of the classic queue to migrate to a quorum queue"
             };
 
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
 
-            command.AddArgument(queueNameArgument);
+            command.Arguments.Add(queueNameArgument);
 
-            command.SetHandler(async (queueName, brokerConnection, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
-                var migrateCommand = new QueueMigrateCommand(queueName, brokerConnection, console);
+                var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
+
+                var migrateCommand = new QueueMigrateCommand(parseResult.GetRequiredValue(queueNameArgument), brokerConnection, parseResult.Configuration.Output);
                 await migrateCommand.Run(cancellationToken);
-            },
-            queueNameArgument, brokerConnectionBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            });
 
             return command;
         }

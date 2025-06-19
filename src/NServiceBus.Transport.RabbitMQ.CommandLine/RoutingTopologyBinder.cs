@@ -1,22 +1,14 @@
 ﻿namespace NServiceBus.Transport.RabbitMQ.CommandLine
 {
     using System.CommandLine;
-    using System.CommandLine.Binding;
 
-    class RoutingTopologyBinder : BinderBase<IRoutingTopology>
+    class RoutingTopologyBinder(Option<RoutingTopologyType> routingTopologyTypeOption, Option<bool> useDurableEntitiesOption, Option<QueueType> queueTypeOption)
     {
-        public RoutingTopologyBinder(Option<RoutingTopologyType> routingTopologyTypeOption, Option<bool> useDurableEntitiesOption, Option<QueueType> queueTypeOption)
+        public IRoutingTopology CreateRoutingTopology(ParseResult parseResult)
         {
-            this.routingTopologyTypeOption = routingTopologyTypeOption;
-            this.useDurableEntitiesOption = useDurableEntitiesOption;
-            this.queueTypeOption = queueTypeOption;
-        }
-
-        protected override IRoutingTopology GetBoundValue(BindingContext bindingContext)
-        {
-            var routingTopologyType = bindingContext.ParseResult.GetValueForOption(routingTopologyTypeOption);
-            var useDurableEntities = bindingContext.ParseResult.GetValueForOption(useDurableEntitiesOption);
-            var queueType = bindingContext.ParseResult.GetValueForOption(queueTypeOption);
+            var routingTopologyType = parseResult.GetValue(routingTopologyTypeOption);
+            var useDurableEntities = parseResult.GetValue(useDurableEntitiesOption);
+            var queueType = parseResult.GetValue(queueTypeOption);
 
             return routingTopologyType switch
             {
@@ -25,9 +17,5 @@
                 _ => throw new InvalidOperationException()
             };
         }
-
-        readonly Option<RoutingTopologyType> routingTopologyTypeOption;
-        readonly Option<bool> useDurableEntitiesOption;
-        readonly Option<QueueType> queueTypeOption;
     }
 }
