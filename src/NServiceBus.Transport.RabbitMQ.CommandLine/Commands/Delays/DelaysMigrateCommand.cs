@@ -7,7 +7,7 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    class DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, TextWriter console)
+    class DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, TextWriter output)
     {
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
@@ -62,7 +62,7 @@
 
             if (messageCount > 0)
             {
-                console.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
+                output.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
 
                 int skippedMessages = 0;
                 int processedMessages = 0;
@@ -134,11 +134,11 @@
                     processedMessages++;
                 }
 
-                console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
+                output.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
             }
             else
             {
-                console.WriteLine($"No messages to process at delay level {delayLevel:00}.");
+                output.WriteLine($"No messages to process at delay level {delayLevel:00}.");
             }
         }
 

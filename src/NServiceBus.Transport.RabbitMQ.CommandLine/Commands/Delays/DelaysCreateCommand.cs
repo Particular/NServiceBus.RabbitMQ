@@ -3,7 +3,7 @@
     using System.CommandLine;
     using System.Threading;
 
-    class DelaysCreateCommand(BrokerConnection brokerConnection, TextWriter console)
+    class DelaysCreateCommand(BrokerConnection brokerConnection, TextWriter output)
     {
         public static Command CreateCommand()
         {
@@ -24,14 +24,14 @@
 
         public async Task Run(CancellationToken cancellationToken = default)
         {
-            console.WriteLine($"Creating v2 delay infrastructure queues and exchanges...");
+            output.WriteLine($"Creating v2 delay infrastructure queues and exchanges...");
 
             using var connection = await brokerConnection.Create(cancellationToken);
             using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await DelayInfrastructure.Build(channel, cancellationToken);
 
-            console.WriteLine("Queues and exchanges created successfully");
+            output.WriteLine("Queues and exchanges created successfully");
         }
     }
 }

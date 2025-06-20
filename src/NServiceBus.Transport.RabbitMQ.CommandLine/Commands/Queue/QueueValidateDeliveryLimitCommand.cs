@@ -2,7 +2,7 @@
 {
     using System.CommandLine;
 
-    class QueueValidateDeliveryLimitCommand(string queueName, BrokerVerifier brokerVerifier, TextWriter console)
+    class QueueValidateDeliveryLimitCommand(string queueName, BrokerVerifier brokerVerifier, TextWriter output)
     {
         public static Command CreateCommand()
         {
@@ -37,7 +37,7 @@
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
-                console.WriteLine(ex.Message);
+                output.WriteLine(ex.Message);
             }
         }
     }

@@ -3,7 +3,7 @@
     using System;
     using System.CommandLine;
 
-    class DelaysVerifyCommand(BrokerVerifier brokerVerifier, TextWriter console)
+    class DelaysVerifyCommand(BrokerVerifier brokerVerifier, TextWriter output)
     {
         public static Command CreateCommand()
         {
@@ -29,11 +29,11 @@
                 await brokerVerifier.Initialize(cancellationToken);
                 await brokerVerifier.VerifyRequirements(cancellationToken);
 
-                console.WriteLine("All checks OK");
+                output.WriteLine("All checks OK");
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
-                console.WriteLine($"Fail: {ex.Message}");
+                output.WriteLine($"Fail: {ex.Message}");
             }
         }
     }
