@@ -29,7 +29,6 @@
                 Arity = ArgumentArity.ZeroOrMore,
                 AllowMultipleArgumentsPerToken = true,
                 Description = "An optional list of instance discriminators to use when the endpoint needs uniquely addressable instances",
-                DefaultValueFactory = _ => []
             };
 
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
@@ -46,13 +45,13 @@
                 var routingTopology = routingTopologyBinder.CreateRoutingTopology(parseResult);
 
                 var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, parseResult.Configuration.Output, parseResult.Configuration.Error);
-                await queueCreate.Run(parseResult.GetRequiredValue(endpointNameArgument), parseResult.GetValue(errorQueueOption), parseResult.GetValue(auditQueueOption), parseResult.GetRequiredValue(instanceDiscriminatorsOption), cancellationToken);
+                await queueCreate.Run(parseResult.GetRequiredValue(endpointNameArgument), parseResult.GetValue(errorQueueOption), parseResult.GetValue(auditQueueOption), parseResult.GetValue(instanceDiscriminatorsOption), cancellationToken);
             });
 
             return command;
         }
 
-        public async Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, CancellationToken cancellationToken = default)
+        public async Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string>? instanceDiscriminators, CancellationToken cancellationToken = default)
         {
             output.WriteLine("Connecting to broker");
 
@@ -75,7 +74,7 @@
 
             var receivingAddresses = new List<string>() { endpointName };
 
-            if (instanceDiscriminators.Any())
+            if (instanceDiscriminators is not null && instanceDiscriminators.Any())
             {
                 receivingAddresses.AddRange(instanceDiscriminators.Select(discriminator => $"{endpointName}-{discriminator}"));
             }
