@@ -17,12 +17,6 @@
     /// </summary>
     public class RabbitMQTransport : TransportDefinition
     {
-        TimeSpan heartbeatInterval = TimeSpan.FromSeconds(60);
-        TimeSpan networkRecoveryInterval = TimeSpan.FromSeconds(10);
-        Func<BasicDeliverEventArgs, string> messageIdStrategy = MessageConverter.DefaultMessageIdStrategy;
-        PrefetchCountCalculation prefetchCountCalculation = maxConcurrency => 3 * maxConcurrency;
-        TimeSpan timeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.FromMinutes(2);
-
         readonly List<(string hostName, int port, bool useTls)> additionalClusterNodes = [];
 
         /// <summary>
@@ -72,26 +66,26 @@
         /// </summary>
         public Func<BasicDeliverEventArgs, string> MessageIdStrategy
         {
-            get => messageIdStrategy;
+            get;
             set
             {
                 ArgumentNullException.ThrowIfNull(value);
-                messageIdStrategy = value;
+                field = value;
             }
-        }
+        } = MessageConverter.DefaultMessageIdStrategy;
 
         /// <summary>
         /// The time to wait before executing the critical error action when the endpoint cannot communicate with the broker.
         /// </summary>
         public TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker
         {
-            get => timeToWaitBeforeTriggeringCircuitBreaker;
+            get;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
-                timeToWaitBeforeTriggeringCircuitBreaker = value;
+                field = value;
             }
-        }
+        } = TimeSpan.FromMinutes(2);
 
         /// <summary>
         /// Gets or sets the action that allows customization of the native <see cref="BasicProperties"/>
@@ -114,13 +108,13 @@
         /// </summary>
         public PrefetchCountCalculation PrefetchCountCalculation
         {
-            get => prefetchCountCalculation;
+            get;
             set
             {
                 ArgumentNullException.ThrowIfNull(value);
-                prefetchCountCalculation = value;
+                field = value;
             }
-        }
+        } = maxConcurrency => 3 * maxConcurrency;
 
         /// <summary>
         /// The certificate to use for client authentication when connecting to the broker via TLS.
@@ -152,7 +146,7 @@
         /// <summary>
         /// The broker requirement checks to disable.
         /// <br />
-        /// Using a broker that does not meet all of the requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
+        /// Using a broker that does not meet all the requirements can result in message loss or other incorrect operation, so disabling the checks is not recommended.
         /// </summary>
         public BrokerRequirementChecks DisabledBrokerRequirementChecks { get; set; }
 
@@ -161,26 +155,26 @@
         /// </summary>
         public TimeSpan HeartbeatInterval
         {
-            get => heartbeatInterval;
+            get;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
-                heartbeatInterval = value;
+                field = value;
             }
-        }
+        } = TimeSpan.FromSeconds(60);
 
         /// <summary>
         /// The time to wait between attempts to reconnect to the broker if the connection is lost.
         /// </summary>
         public TimeSpan NetworkRecoveryInterval
         {
-            get => networkRecoveryInterval;
+            get;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
-                networkRecoveryInterval = value;
+                field = value;
             }
-        }
+        } = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Adds an additional cluster node that the endpoint can use to connect to the broker.
