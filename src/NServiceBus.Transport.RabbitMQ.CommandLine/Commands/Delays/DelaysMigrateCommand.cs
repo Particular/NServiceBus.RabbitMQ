@@ -7,7 +7,7 @@
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    class DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
+    class DelaysMigrateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, TextWriter output)
     {
         const string poisonMessageQueue = "delays-migrate-poison-messages";
         const string timeSentHeader = "NServiceBus.TimeSent";
@@ -21,10 +21,13 @@
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
 
             var routingTopologyTypeOption = SharedOptions.CreateRoutingTopologyTypeOption();
-            command.AddOption(routingTopologyTypeOption);
+            command.Options.Add(routingTopologyTypeOption);
 
-            command.SetHandler(async (brokerConnection, routingTopologyType, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
+                var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
+                var routingTopologyType = parseResult.GetValue(routingTopologyTypeOption);
+
                 IRoutingTopology routingTopology = routingTopologyType switch
                 {
                     RoutingTopologyType.Conventional => new ConventionalRoutingTopology(true, QueueType.Quorum),
@@ -32,10 +35,9 @@
                     _ => throw new InvalidOperationException()
                 };
 
-                var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, console);
+                var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, parseResult.Configuration.Output);
                 await delaysMigrate.Run(cancellationToken);
-            },
-            brokerConnectionBinder, routingTopologyTypeOption, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            });
 
             return command;
         }
@@ -60,7 +62,7 @@
 
             if (messageCount > 0)
             {
-                console.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
+                output.Write($"Processing {messageCount} messages at delay level {delayLevel:00}. ");
 
                 int skippedMessages = 0;
                 int processedMessages = 0;
@@ -132,11 +134,11 @@
                     processedMessages++;
                 }
 
-                console.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
+                output.WriteLine($"{processedMessages} successful, {skippedMessages} skipped.");
             }
             else
             {
-                console.WriteLine($"No messages to process at delay level {delayLevel:00}.");
+                output.WriteLine($"No messages to process at delay level {delayLevel:00}.");
             }
         }
 

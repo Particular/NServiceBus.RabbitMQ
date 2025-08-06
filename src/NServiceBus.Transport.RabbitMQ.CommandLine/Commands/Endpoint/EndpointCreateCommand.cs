@@ -3,69 +3,62 @@
     using System.CommandLine;
     using global::RabbitMQ.Client.Exceptions;
 
-    class EndpointCreateCommand
+    class EndpointCreateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, TextWriter output, TextWriter error)
     {
-        readonly BrokerConnection brokerConnection;
-        readonly IRoutingTopology routingTopology;
-        readonly IConsole console;
-
         public static Command CreateCommand()
         {
             var command = new Command("create", "Create queues and exchanges for an endpoint");
 
-            var endpointNameArgument = new Argument<string>(
-                name: "endpointName",
-                description: "The name of the endpoint to create");
+            var endpointNameArgument = new Argument<string>("endpointName")
+            {
+                Description = "The name of the endpoint to create"
+            };
 
-            var errorQueueOption = new Option<string>(
-                name: "--errorQueueName",
-                description: "Also create an error queue with the specified name");
+            var errorQueueOption = new Option<string>("--errorQueueName")
+            {
+                Description = "Also create an error queue with the specified name"
+            };
 
-            var auditQueueOption = new Option<string>(
-                name: "--auditQueueName",
-                description: "Also create an audit queue with the specified name");
+            var auditQueueOption = new Option<string>("--auditQueueName")
+            {
+                Description = "Also create an audit queue with the specified name"
+            };
 
-            var instanceDiscriminatorsOption = new Option<IEnumerable<string>>(
-                name: "--instanceDiscriminators",
-                description: "An optional list of instance discriminators to use when the endpoint needs uniquely addressable instances")
+            var instanceDiscriminatorsOption = new Option<IEnumerable<string>>("--instanceDiscriminators")
             {
                 Arity = ArgumentArity.ZeroOrMore,
-                AllowMultipleArgumentsPerToken = true
+                AllowMultipleArgumentsPerToken = true,
+                Description = "An optional list of instance discriminators to use when the endpoint needs uniquely addressable instances",
             };
 
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
             var routingTopologyBinder = SharedOptions.CreateRoutingTopologyBinderWithOptions(command);
 
-            command.AddArgument(endpointNameArgument);
-            command.AddOption(errorQueueOption);
-            command.AddOption(auditQueueOption);
-            command.AddOption(instanceDiscriminatorsOption);
+            command.Arguments.Add(endpointNameArgument);
+            command.Options.Add(errorQueueOption);
+            command.Options.Add(auditQueueOption);
+            command.Options.Add(instanceDiscriminatorsOption);
 
-            command.SetHandler(async (endpointName, errorQueue, auditQueue, instanceDiscriminators, brokerConnection, routingTopology, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
-                var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, console);
-                await queueCreate.Run(endpointName, errorQueue, auditQueue, instanceDiscriminators, cancellationToken);
-            },
-            endpointNameArgument, errorQueueOption, auditQueueOption, instanceDiscriminatorsOption, brokerConnectionBinder, routingTopologyBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+                var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
+                var routingTopology = routingTopologyBinder.CreateRoutingTopology(parseResult);
+
+                var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, parseResult.Configuration.Output, parseResult.Configuration.Error);
+                await queueCreate.Run(parseResult.GetRequiredValue(endpointNameArgument), parseResult.GetValue(errorQueueOption), parseResult.GetValue(auditQueueOption), parseResult.GetValue(instanceDiscriminatorsOption), cancellationToken);
+            });
 
             return command;
         }
 
-        public EndpointCreateCommand(BrokerConnection brokerConnection, IRoutingTopology routingTopology, IConsole console)
+        public async Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string>? instanceDiscriminators, CancellationToken cancellationToken = default)
         {
-            this.brokerConnection = brokerConnection;
-            this.routingTopology = routingTopology;
-            this.console = console;
-        }
-
-        public async Task Run(string endpointName, string? errorQueue, string? auditQueue, IEnumerable<string> instanceDiscriminators, CancellationToken cancellationToken = default)
-        {
-            console.WriteLine("Connecting to broker");
+            output.WriteLine("Connecting to broker");
 
             using var connection = await brokerConnection.Create(cancellationToken);
             using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-            console.WriteLine("Checking for v2 delay infrastructure");
+            output.WriteLine("Checking for v2 delay infrastructure");
 
             try
             {
@@ -73,15 +66,15 @@
             }
             catch (OperationInterruptedException)
             {
-                console.Error.Write("Fail: v2 delay infrastructure not found.\n");
+                error.Write("Fail: v2 delay infrastructure not found.\n");
                 throw;
             }
 
-            console.WriteLine($"Creating queues");
+            output.WriteLine($"Creating queues");
 
             var receivingAddresses = new List<string>() { endpointName };
 
-            if (instanceDiscriminators.Any())
+            if (instanceDiscriminators is not null && instanceDiscriminators.Any())
             {
                 receivingAddresses.AddRange(instanceDiscriminators.Select(discriminator => $"{endpointName}-{discriminator}"));
             }
@@ -105,7 +98,7 @@
                 await routingTopology.BindToDelayInfrastructure(channel, receivingAddress, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(receivingAddress), cancellationToken);
             }
 
-            console.WriteLine($"Completed successfully");
+            output.WriteLine($"Completed successfully");
         }
     }
 }

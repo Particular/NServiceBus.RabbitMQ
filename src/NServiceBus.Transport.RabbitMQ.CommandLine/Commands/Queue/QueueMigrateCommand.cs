@@ -6,35 +6,35 @@
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Exceptions;
 
-    class QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, IConsole console)
+    class QueueMigrateCommand(string queueName, BrokerConnection brokerConnection, TextWriter output)
     {
         public static Command CreateCommand()
         {
             var command = new Command("migrate-to-quorum", "Migrate an existing classic queue to a quorum queue");
 
-            var queueNameArgument = new Argument<string>()
+            var queueNameArgument = new Argument<string>("queueName")
             {
-                Name = "queueName",
                 Description = "The name of the classic queue to migrate to a quorum queue"
             };
 
             var brokerConnectionBinder = SharedOptions.CreateBrokerConnectionBinderWithOptions(command);
 
-            command.AddArgument(queueNameArgument);
+            command.Arguments.Add(queueNameArgument);
 
-            command.SetHandler(async (queueName, brokerConnection, console, cancellationToken) =>
+            command.SetAction(async (parseResult, cancellationToken) =>
             {
-                var migrateCommand = new QueueMigrateCommand(queueName, brokerConnection, console);
+                var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
+
+                var migrateCommand = new QueueMigrateCommand(parseResult.GetRequiredValue(queueNameArgument), brokerConnection, parseResult.Configuration.Output);
                 await migrateCommand.Run(cancellationToken);
-            },
-            queueNameArgument, brokerConnectionBinder, Bind.FromServiceProvider<IConsole>(), Bind.FromServiceProvider<CancellationToken>());
+            });
 
             return command;
         }
 
         public async Task Run(CancellationToken cancellationToken = default)
         {
-            console.WriteLine($"Starting migration of '{queueName}'");
+            output.WriteLine($"Starting migration of '{queueName}'");
 
             await using var connection = await brokerConnection.Create(cancellationToken);
 
@@ -71,20 +71,20 @@
             var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
             await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken);
 
-            console.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
+            output.WriteLine($"Migrating messages from '{queueName}' to '{holdingQueueName}'");
 
             // does the holding queue need to be quorum?
             await channel.QueueDeclareAsync(holdingQueueName, true, false, false, quorumQueueArguments, cancellationToken: cancellationToken);
-            console.WriteLine($"Created queue '{holdingQueueName}'");
+            output.WriteLine($"Created queue '{holdingQueueName}'");
 
             // bind the holding queue to the exchange of the queue under migration
             // this will throw if the exchange for the queue doesn't exist
             await channel.QueueBindAsync(holdingQueueName, queueName, string.Empty, cancellationToken: cancellationToken);
-            console.WriteLine($"Bound '{holdingQueueName}' to exchange '{queueName}'");
+            output.WriteLine($"Bound '{holdingQueueName}' to exchange '{queueName}'");
 
             // unbind the queue under migration to stop more messages from coming in
             await channel.QueueUnbindAsync(queueName, queueName, string.Empty, cancellationToken: cancellationToken);
-            console.WriteLine($"Unbound '{queueName}' from exchange '{queueName}' ");
+            output.WriteLine($"Unbound '{queueName}' from exchange '{queueName}' ");
 
             // move all existing messages to the holding queue
             var numMessagesMovedToHolding = await ProcessMessages(
@@ -96,7 +96,7 @@
                 },
                 cancellationToken);
 
-            console.WriteLine($"Moved {numMessagesMovedToHolding} messages to '{holdingQueueName}'");
+            output.WriteLine($"Moved {numMessagesMovedToHolding} messages to '{holdingQueueName}'");
 
             return MigrationStage.MessagesMovedToHoldingQueue;
         }
@@ -112,7 +112,7 @@
 
             // delete the queue under migration
             await channel.QueueDeleteAsync(queueName, cancellationToken: cancellationToken);
-            console.WriteLine($"Removed '{queueName}'");
+            output.WriteLine($"Removed '{queueName}'");
 
             return MigrationStage.ClassicQueueDeleted;
         }
@@ -122,7 +122,7 @@
             await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.QueueDeclareAsync(queueName, true, false, false, quorumQueueArguments, cancellationToken: cancellationToken);
-            console.WriteLine($"Recreated '{queueName}' as a quorum queue");
+            output.WriteLine($"Recreated '{queueName}' as a quorum queue");
 
             return MigrationStage.QuorumQueueCreated;
         }
@@ -133,10 +133,10 @@
             await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken);
 
             await channel.QueueBindAsync(queueName, queueName, string.Empty, cancellationToken: cancellationToken);
-            console.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
+            output.WriteLine($"Re-bound '{queueName}' to exchange '{queueName}'");
 
             await channel.QueueUnbindAsync(holdingQueueName, queueName, string.Empty, cancellationToken: cancellationToken);
-            console.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
+            output.WriteLine($"Unbound '{holdingQueueName}' from exchange '{queueName}'");
 
             var messageIds = new Dictionary<string, string>();
 
@@ -170,7 +170,7 @@
                 },
                 cancellationToken);
 
-            console.WriteLine($"Moved {numMessageMovedBackToMain} messages from '{holdingQueueName}' to '{queueName}'");
+            output.WriteLine($"Moved {numMessageMovedBackToMain} messages from '{holdingQueueName}' to '{queueName}'");
 
             return MigrationStage.MessagesMovedToQuorumQueue;
         }
@@ -185,7 +185,7 @@
             }
 
             await channel.QueueDeleteAsync(holdingQueueName, cancellationToken: cancellationToken);
-            console.WriteLine($"Removed '{holdingQueueName}'");
+            output.WriteLine($"Removed '{holdingQueueName}'");
 
             return MigrationStage.CleanUpCompleted;
         }
