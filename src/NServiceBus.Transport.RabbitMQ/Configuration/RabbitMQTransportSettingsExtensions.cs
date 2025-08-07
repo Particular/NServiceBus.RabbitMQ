@@ -3,6 +3,7 @@
     using System;
     using System.Security.Cryptography.X509Certificates;
     using NServiceBus.Transport.RabbitMQ;
+    using Particular.Obsoletes;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.
