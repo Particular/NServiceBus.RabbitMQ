@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Particular.Obsoletes" Version="1.0.0-alpha.1" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Particular.Obsoletes" Version="1.0.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Particular.Packaging" Version="4.5.0" PrivateAssets="All" />
   </ItemGroup>
 
