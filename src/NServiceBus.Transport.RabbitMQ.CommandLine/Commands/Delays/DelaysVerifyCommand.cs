@@ -15,7 +15,7 @@
             {
                 var brokerVerifier = brokerVerifierBinder.CreateBrokerVerifier(parseResult);
 
-                var delaysVerify = new DelaysVerifyCommand(brokerVerifier, parseResult.Configuration.Output);
+                var delaysVerify = new DelaysVerifyCommand(brokerVerifier, parseResult.InvocationConfiguration.Output);
                 await delaysVerify.Run(cancellationToken);
             });
 

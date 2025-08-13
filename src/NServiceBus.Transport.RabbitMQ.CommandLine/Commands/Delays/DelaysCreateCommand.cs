@@ -15,7 +15,7 @@
             {
                 var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
 
-                var delaysCreate = new DelaysCreateCommand(brokerConnection, parseResult.Configuration.Output);
+                var delaysCreate = new DelaysCreateCommand(brokerConnection, parseResult.InvocationConfiguration.Output);
                 await delaysCreate.Run(cancellationToken);
             });
 

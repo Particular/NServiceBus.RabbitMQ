@@ -21,7 +21,7 @@
             {
                 var brokerVerifier = brokerVerifierBinder.CreateBrokerVerifier(parseResult);
 
-                var validateCommand = new QueueValidateDeliveryLimitCommand(parseResult.GetRequiredValue(queueNameArgument), brokerVerifier, parseResult.Configuration.Output);
+                var validateCommand = new QueueValidateDeliveryLimitCommand(parseResult.GetRequiredValue(queueNameArgument), brokerVerifier, parseResult.InvocationConfiguration.Output);
                 await validateCommand.Run(cancellationToken);
             });
 

@@ -35,7 +35,7 @@
                     _ => throw new InvalidOperationException()
                 };
 
-                var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, parseResult.Configuration.Output);
+                var delaysMigrate = new DelaysMigrateCommand(brokerConnection, routingTopology, parseResult.InvocationConfiguration.Output);
                 await delaysMigrate.Run(cancellationToken);
             });
 
