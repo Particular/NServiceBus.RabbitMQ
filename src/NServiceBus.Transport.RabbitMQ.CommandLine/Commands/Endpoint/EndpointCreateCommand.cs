@@ -44,7 +44,7 @@
                 var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
                 var routingTopology = routingTopologyBinder.CreateRoutingTopology(parseResult);
 
-                var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, parseResult.Configuration.Output, parseResult.Configuration.Error);
+                var queueCreate = new EndpointCreateCommand(brokerConnection, routingTopology, parseResult.InvocationConfiguration.Output, parseResult.InvocationConfiguration.Error);
                 await queueCreate.Run(parseResult.GetRequiredValue(endpointNameArgument), parseResult.GetValue(errorQueueOption), parseResult.GetValue(auditQueueOption), parseResult.GetValue(instanceDiscriminatorsOption), cancellationToken);
             });
 

@@ -25,7 +25,7 @@
             {
                 var brokerConnection = brokerConnectionBinder.CreateBrokerConnection(parseResult);
 
-                var migrateCommand = new QueueMigrateCommand(parseResult.GetRequiredValue(queueNameArgument), brokerConnection, parseResult.Configuration.Output);
+                var migrateCommand = new QueueMigrateCommand(parseResult.GetRequiredValue(queueNameArgument), brokerConnection, parseResult.InvocationConfiguration.Output);
                 await migrateCommand.Run(cancellationToken);
             });
 
