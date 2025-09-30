@@ -1,9 +1,8 @@
-<Project>
+﻿<Project>
 
   <PropertyGroup>
     <MinVerMinimumMajorMinor>11.0</MinVerMinimumMajorMinor>
     <MinVerAutoIncrement>minor</MinVerAutoIncrement>
-    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
 </Project>
