@@ -107,34 +107,22 @@
                 throw new NotSupportedException();
             }
 
-            public bool IsAppIdPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsAppIdPresent() => AppId != null;
 
             public bool IsClusterIdPresent()
             {
                 throw new NotSupportedException();
             }
 
-            public bool IsContentEncodingPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsContentEncodingPresent() => ContentEncoding != null;
 
-            public bool IsContentTypePresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsContentTypePresent() => ContentType != null;
 
             public bool IsCorrelationIdPresent() => !string.IsNullOrEmpty(CorrelationId);
 
             public bool IsDeliveryModePresent() => DeliveryMode != 0;
 
-            public bool IsExpirationPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsExpirationPresent() => Expiration != null;
 
             public bool IsHeadersPresent()
             {
@@ -157,10 +145,7 @@
 
             public bool IsTypePresent() => !string.IsNullOrEmpty(Type);
 
-            public bool IsUserIdPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsUserIdPresent() => UserId != null;
         }
 
         MessageConverter converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
@@ -399,6 +384,30 @@
             {
                 Assert.That(headers, Is.Not.Null);
                 Assert.That(Convert.ToString(headers["Foo"]), Is.EqualTo("key1=value1,key2=value2"));
+            });
+        }
+
+        [Test]
+        public void Should_handle_basic_properties()
+        {
+            var basicProperties = new TestingBasicProperties
+            {
+                MessageId = "Blah",
+                ContentType = "content_type",
+                ContentEncoding = "content_encoding"
+            };
+
+            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+
+            var headers = converter.RetrieveHeaders(message);
+            var messageId = converter.RetrieveMessageId(message, headers);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(messageId, Is.Not.Null);
+                Assert.That(headers, Is.Not.Null);
+                Assert.That(headers[NServiceBus.Headers.ContentType], Is.EqualTo(basicProperties.ContentType));
+                Assert.That(headers[PropertiesToHeaderMapping.ContentEncoding], Is.EqualTo(basicProperties.ContentEncoding));
             });
         }
     }

@@ -110,6 +110,12 @@
                 });
         }
 
+        [Test]
+        public Task Should_set_the_content_encoding()
+        {
+            return Verify(new OutgoingMessageBuilder().WithHeader(PropertiesToHeaderMapping.ContentEncoding, "content-encoding"), received => Assert.That(received.BasicProperties.ContentEncoding, Is.EqualTo("content-encoding")));
+        }
+
         async Task Verify(OutgoingMessageBuilder builder, Action<IncomingMessage, BasicDeliverEventArgs> assertion, CancellationToken cancellationToken = default)
         {
             var operations = builder.SendTo(QueueToReceiveOn).Build();
