@@ -70,16 +70,6 @@
             {
                 properties.ReplyTo = replyToAddress;
             }
-
-            if (messageHeaders.TryGetValue(PropertiesToHeaderMapping.AppId, out var appId) && appId != null)
-            {
-                properties.AppId = appId;
-            }
-
-            if (messageHeaders.TryGetValue(PropertiesToHeaderMapping.ContentEncoding, out var contentEncoding) && contentEncoding != null)
-            {
-                properties.ContentEncoding = contentEncoding;
-            }
         }
 
         static bool CalculateDelay(DispatchProperties dispatchProperties, out long delay)

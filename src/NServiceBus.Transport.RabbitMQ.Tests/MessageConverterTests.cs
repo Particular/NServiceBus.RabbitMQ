@@ -37,84 +37,39 @@
 
             DeliveryModes IReadOnlyBasicProperties.DeliveryMode => throw new NotImplementedException();
 
-            public void ClearAppId()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearAppId() => throw new NotSupportedException();
 
-            public void ClearClusterId()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearClusterId() => throw new NotSupportedException();
 
-            public void ClearContentEncoding()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearContentEncoding() => throw new NotSupportedException();
 
-            public void ClearContentType()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearContentType() => throw new NotSupportedException();
 
-            public void ClearCorrelationId()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearCorrelationId() => throw new NotSupportedException();
 
-            public void ClearDeliveryMode()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearDeliveryMode() => throw new NotSupportedException();
 
-            public void ClearExpiration()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearExpiration() => throw new NotSupportedException();
 
-            public void ClearHeaders()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearHeaders() => throw new NotSupportedException();
 
-            public void ClearMessageId()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearMessageId() => throw new NotSupportedException();
 
-            public void ClearPriority()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearPriority() => throw new NotSupportedException();
 
-            public void ClearReplyTo()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearReplyTo() => throw new NotSupportedException();
 
-            public void ClearTimestamp()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearTimestamp() => throw new NotSupportedException();
 
-            public void ClearType()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearType() => throw new NotSupportedException();
 
-            public void ClearUserId()
-            {
-                throw new NotSupportedException();
-            }
+            public void ClearUserId() => throw new NotSupportedException();
 
-            public bool IsAppIdPresent() => AppId != null;
+            public bool IsAppIdPresent() => throw new NotSupportedException();
 
-            public bool IsClusterIdPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsClusterIdPresent() => throw new NotSupportedException();
 
-            public bool IsContentEncodingPresent() => ContentEncoding != null;
+            public bool IsContentEncodingPresent() => throw new NotSupportedException();
 
             public bool IsContentTypePresent() => ContentType != null;
 
@@ -122,30 +77,21 @@
 
             public bool IsDeliveryModePresent() => DeliveryMode != 0;
 
-            public bool IsExpirationPresent() => Expiration != null;
+            public bool IsExpirationPresent() => throw new NotSupportedException();
 
-            public bool IsHeadersPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsHeadersPresent() => throw new NotSupportedException();
 
             public bool IsMessageIdPresent() => !string.IsNullOrEmpty(MessageId);
 
-            public bool IsPriorityPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsPriorityPresent() => throw new NotSupportedException();
 
             public bool IsReplyToPresent() => !string.IsNullOrEmpty(ReplyTo);
 
-            public bool IsTimestampPresent()
-            {
-                throw new NotSupportedException();
-            }
+            public bool IsTimestampPresent() => throw new NotSupportedException();
 
             public bool IsTypePresent() => !string.IsNullOrEmpty(Type);
 
-            public bool IsUserIdPresent() => UserId != null;
+            public bool IsUserIdPresent() => throw new NotSupportedException();
         }
 
         MessageConverter converter = new MessageConverter(MessageConverter.DefaultMessageIdStrategy);
@@ -388,13 +334,12 @@
         }
 
         [Test]
-        public void Should_handle_basic_properties()
+        public void Should_handle_content_type()
         {
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                ContentType = "content_type",
-                ContentEncoding = "content_encoding"
+                ContentType = "content_type"
             };
 
             var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
@@ -407,7 +352,6 @@
                 Assert.That(messageId, Is.Not.Null);
                 Assert.That(headers, Is.Not.Null);
                 Assert.That(headers[NServiceBus.Headers.ContentType], Is.EqualTo(basicProperties.ContentType));
-                Assert.That(headers[PropertiesToHeaderMapping.ContentEncoding], Is.EqualTo(basicProperties.ContentEncoding));
             });
         }
     }
