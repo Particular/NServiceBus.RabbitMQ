@@ -44,11 +44,11 @@
                 messageHeaders.Remove(Constants.PublishSequenceNumberHeader);
             }
 
-            // Leaving space for ReplyTo, CorrelationId, DeliveryMode, EnclosedMessageTypes conditionally
+            // Leaving space for ReplyTo, CorrelationId, DeliveryMode, EnclosedMessageTypes, ContentType conditionally
             // added below. This is a bit cumbersome and need to be changed when things are conditionally added below
             // but it prevents the header dictionary from growing and relocating which creates quite a bit of
             // memory allocations and eats up CPU cycles.
-            const int extraCapacity = 4;
+            const int extraCapacity = 5;
             var deserializedHeaders = DeserializeHeaders(messageHeaders, extraCapacity);
 
             if (properties.IsReplyToPresent())
@@ -75,6 +75,11 @@
             if (!deserializedHeaders.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
                 deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type;
+            }
+
+            if (properties.IsContentTypePresent())
+            {
+                deserializedHeaders[Headers.ContentType] = properties.ContentType;
             }
 
             //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
