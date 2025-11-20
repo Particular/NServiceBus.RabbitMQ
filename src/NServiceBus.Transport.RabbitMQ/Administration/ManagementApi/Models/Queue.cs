@@ -43,8 +43,8 @@ class Queue
         }
 
         // RabbitMQ 3.x
-        // The broker doesn't tell us what the actual delivery limit is, so we have to figure it out
-        // We have to find the lowest value from the possible places in can be configured
+        // The broker doesn't tell us what the actual delivery limit is, so we have to figure it out.
+        // We have to find the lowest value from the possible places it can be configured.
 
         int? limit = null;
 
