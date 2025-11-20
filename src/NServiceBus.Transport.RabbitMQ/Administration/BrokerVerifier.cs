@@ -171,7 +171,7 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
 
         var limit = queue.GetDeliveryLimit();
 
-        if (limit == -1)
+        if (limit is Queue.UnlimitedDeliveryLimitIndicatorValue or Queue.BigValueInsteadOfActuallyUnlimited)
         {
             return false;
         }
@@ -201,7 +201,7 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
         var policy = new Policy
         {
             ApplyTo = PolicyTarget.QuorumQueues,
-            Definition = new PolicyDefinition { DeliveryLimit = -1 },
+            Definition = new PolicyDefinition { DeliveryLimit = Queue.BigValueInsteadOfActuallyUnlimited },
             Pattern = queue.Name,
             Priority = 0
         };

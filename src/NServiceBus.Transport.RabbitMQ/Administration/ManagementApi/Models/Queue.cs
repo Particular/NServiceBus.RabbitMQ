@@ -67,6 +67,9 @@ class Queue
             limit = 0;
         }
 
-        return limit ?? -1;
+        return limit ?? UnlimitedDeliveryLimitIndicatorValue;
     }
+
+    public const int UnlimitedDeliveryLimitIndicatorValue = -1_000;
+    public const int BigValueInsteadOfActuallyUnlimited = 100_000;
 }
