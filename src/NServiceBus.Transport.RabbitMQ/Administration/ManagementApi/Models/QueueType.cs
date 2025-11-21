@@ -4,7 +4,9 @@
 // by the NServiceBus transport, which doesn't include the `Stream` value
 enum QueueType
 {
+    Unknown,
     Classic,
     Quorum,
-    Stream
+    Stream,
+    MqttQos0
 }
