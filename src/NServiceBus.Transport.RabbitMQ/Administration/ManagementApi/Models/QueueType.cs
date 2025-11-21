@@ -6,5 +6,6 @@ enum QueueType
 {
     Classic,
     Quorum,
-    Stream
+    Stream,
+    MqttQos0
 }
