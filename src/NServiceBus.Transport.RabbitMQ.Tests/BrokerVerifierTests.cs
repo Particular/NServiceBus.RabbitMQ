@@ -49,8 +49,9 @@ class BrokerVerifierTests
         for (int i = 0; i < attempts; i++)
         {
             var queue = await managementClient.GetQueue(queueName);
+            var deliveryLimit = queue.GetDeliveryLimit();
 
-            if (queue.DeliveryLimit == -1 && queue.AppliedPolicyName == policyName)
+            if (deliveryLimit == Queue.BigValueInsteadOfActuallyUnlimited && queue.AppliedPolicyName == policyName)
             {
                 // Policy applied successfully
                 return;
