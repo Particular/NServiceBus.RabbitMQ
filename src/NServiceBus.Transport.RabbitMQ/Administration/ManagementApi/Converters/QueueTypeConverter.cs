@@ -18,7 +18,7 @@ class QueueTypeConverter : JsonConverter<QueueType>
             "classic" => QueueType.Classic,
             "stream" => QueueType.Stream,
             "rabbit_mqtt_qos0_queue" => QueueType.MqttQos0,
-            _ => throw new JsonException($"Unknown queue type: {value}")
+            _ => QueueType.Unknown
         };
     }
 
@@ -30,6 +30,7 @@ class QueueTypeConverter : JsonConverter<QueueType>
             QueueType.Classic => "classic",
             QueueType.Stream => "stream",
             QueueType.MqttQos0 => "rabbit_mqtt_qos0_queue",
+            QueueType.Unknown => throw new ArgumentOutOfRangeException(nameof(queueType), "Cannot write unknown queue type"),
             _ => throw new ArgumentOutOfRangeException(nameof(queueType), $"QueueType value out of range: {queueType}")
         };
 
