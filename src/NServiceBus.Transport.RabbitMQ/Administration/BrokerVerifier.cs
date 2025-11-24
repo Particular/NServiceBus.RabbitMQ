@@ -176,6 +176,11 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
             return false;
         }
 
+        if (limit == -1 && queue.AppliedPolicyName == $"nsb.{queue.Name}.delivery-limit")
+        {
+            return true;
+        }
+
         if (queue.Arguments.DeliveryLimit.HasValue || (queue.EffectivePolicyDefinition?.DeliveryLimit.HasValue ?? false))
         {
             throw new InvalidOperationException($"The delivery limit for '{queue.Name}' is set to the non-default value of '{limit}'. Remove any delivery limit settings from queue arguments, user policies or operator policies to correct this.");
@@ -191,12 +196,12 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
             throw new InvalidOperationException($"Cannot create unlimited delivery limit policies in RabbitMQ versions prior to 4.0. The version is: {brokerVersion}.");
         }
 
-        if (!string.IsNullOrEmpty(queue.AppliedPolicyName))
+        var policyName = $"nsb.{queue.Name}.delivery-limit";
+
+        if (!string.IsNullOrEmpty(queue.AppliedPolicyName) && queue.AppliedPolicyName != policyName)
         {
             throw new InvalidOperationException($"An unlimited delivery limit policy cannot be applied to the '{queue.Name}' queue because it already has a '{queue.AppliedPolicyName}' policy applied.");
         }
-
-        var policyName = $"nsb.{queue.Name}.delivery-limit";
 
         var policy = new Policy
         {
