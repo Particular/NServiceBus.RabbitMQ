@@ -171,7 +171,7 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
 
         var limit = queue.GetDeliveryLimit();
 
-        if (limit is Queue.UnlimitedDeliveryLimitIndicatorValue or Queue.BigValueInsteadOfActuallyUnlimited)
+        if (limit is Queue.BigValueInsteadOfActuallyUnlimited)
         {
             return false;
         }

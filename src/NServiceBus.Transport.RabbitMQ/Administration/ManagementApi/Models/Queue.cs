@@ -67,7 +67,7 @@ class Queue
             limit = 0;
         }
 
-        return limit ?? UnlimitedDeliveryLimitIndicatorValue;
+        return limit ?? BigValueInsteadOfActuallyUnlimited;
     }
 
     public const int UnlimitedDeliveryLimitIndicatorValue = -1_000;
