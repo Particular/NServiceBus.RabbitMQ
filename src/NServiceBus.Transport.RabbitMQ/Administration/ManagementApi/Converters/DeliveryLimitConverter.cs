@@ -20,7 +20,7 @@ class DeliveryLimitConverter : JsonConverter<int>
 
             if (string.Equals(value, "unlimited", StringComparison.OrdinalIgnoreCase))
             {
-                return Queue.UnlimitedDeliveryLimitIndicatorValue;
+                return -1;
             }
 
             throw new JsonException($"Unexpected string value for delivery limit: {value}");
