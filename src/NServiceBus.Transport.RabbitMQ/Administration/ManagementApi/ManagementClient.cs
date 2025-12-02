@@ -21,19 +21,13 @@ sealed class ManagementClient : IDisposable
 
     bool disposed;
 
-    internal ManagementClient(
-        HttpClient httpClient
-    )
+    internal ManagementClient(HttpClient httpClient)
     {
         escapedVirtualHost = Uri.EscapeDataString("/vhosttest");
         this.httpClient = httpClient;
     }
 
-    public ManagementClient(
-        ConnectionConfiguration connectionConfiguration,
-        ManagementApiConfiguration? managementApiConfiguration = null,
-        bool disableRemoteCertificateValidation = false
-    )
+    public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null, bool disableRemoteCertificateValidation = false)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration);
 
@@ -86,10 +80,7 @@ sealed class ManagementClient : IDisposable
             uriBuilder.Path += '/'; // Ensure BasePath concatenation works
         }
 
-        httpClient = new HttpClient(handler)
-        {
-            BaseAddress = uriBuilder.Uri
-        };
+        httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
     }
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
