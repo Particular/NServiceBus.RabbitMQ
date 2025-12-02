@@ -11,7 +11,7 @@ using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
-class ManagementClient : IDisposable
+sealed class ManagementClient : IDisposable
 {
     readonly HttpClient httpClient;
     readonly string escapedVirtualHost;
@@ -21,22 +21,15 @@ class ManagementClient : IDisposable
 
     bool disposed;
 
-    public ManagementClient(
-        ConnectionConfiguration connectionConfiguration,
-        ManagementApiConfiguration? managementApiConfiguration = null,
-        bool disableRemoteCertificateValidation = false
+    internal ManagementClient(
+        HttpClient httpClient
     )
-        : this(
-            new HttpClient(),
-            connectionConfiguration,
-            managementApiConfiguration,
-            disableRemoteCertificateValidation
-        )
     {
+        escapedVirtualHost = Uri.EscapeDataString("/vhosttest");
+        this.httpClient = httpClient;
     }
 
-    internal ManagementClient(
-        HttpClient httpClient,
+    public ManagementClient(
         ConnectionConfiguration connectionConfiguration,
         ManagementApiConfiguration? managementApiConfiguration = null,
         bool disableRemoteCertificateValidation = false
@@ -93,8 +86,10 @@ class ManagementClient : IDisposable
             uriBuilder.Path += '/'; // Ensure BasePath concatenation works
         }
 
-        httpClient.BaseAddress = uriBuilder.Uri;
-        this.httpClient = httpClient;
+        httpClient = new HttpClient(handler)
+        {
+            BaseAddress = uriBuilder.Uri
+        };
     }
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
@@ -168,7 +163,7 @@ class ManagementClient : IDisposable
         response.EnsureSuccessStatusCode();
     }
 
-    protected virtual void Dispose(bool disposing)
+    void Dispose(bool disposing)
     {
         if (!disposed)
         {

@@ -5,8 +5,6 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus;
-using NServiceBus.Transport.RabbitMQ;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
 using NUnit.Framework;
 
@@ -20,12 +18,8 @@ public class ManagementClientApiUrlTests
     public void Setup()
     {
         handler = new TestHttpHandler();
-        var httpClient = new HttpClient(handler);
-        client = new ManagementClient(
-            httpClient,
-            ConnectionConfiguration.Create("host=localhost;virtualHost=/vhosttest;username=guest;password=guest"),
-            new ManagementApiConfiguration("http://localhost:15672/xxx")
-        );
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/xxx/") };
+        client = new ManagementClient(httpClient);
     }
 
     [TearDown]
