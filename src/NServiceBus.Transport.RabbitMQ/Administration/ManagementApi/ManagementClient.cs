@@ -21,7 +21,26 @@ class ManagementClient : IDisposable
 
     bool disposed;
 
-    public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null, bool disableRemoteCertificateValidation = false)
+    public ManagementClient(
+        ConnectionConfiguration connectionConfiguration,
+        ManagementApiConfiguration? managementApiConfiguration = null,
+        bool disableRemoteCertificateValidation = false
+    )
+        : this(
+            new HttpClient(),
+            connectionConfiguration,
+            managementApiConfiguration,
+            disableRemoteCertificateValidation
+        )
+    {
+    }
+
+    internal ManagementClient(
+        HttpClient httpClient,
+        ConnectionConfiguration connectionConfiguration,
+        ManagementApiConfiguration? managementApiConfiguration = null,
+        bool disableRemoteCertificateValidation = false
+    )
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration);
 
@@ -69,7 +88,13 @@ class ManagementClient : IDisposable
             };
         }
 
-        httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
+        if (!uriBuilder.Uri.PathAndQuery.EndsWith('/'))
+        {
+            uriBuilder.Path += '/'; // Ensure BasePath concatenation works
+        }
+
+        httpClient.BaseAddress = uriBuilder.Uri;
+        this.httpClient = httpClient;
     }
 
     public async Task CreatePolicy(string name, Policy policy, CancellationToken cancellationToken = default)
