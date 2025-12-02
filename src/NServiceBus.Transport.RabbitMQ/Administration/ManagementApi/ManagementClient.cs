@@ -11,7 +11,7 @@ using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
-sealed class ManagementClient : IDisposable
+class ManagementClient : IDisposable
 {
     readonly HttpClient httpClient;
     readonly string escapedVirtualHost;
@@ -156,7 +156,7 @@ sealed class ManagementClient : IDisposable
         response.EnsureSuccessStatusCode();
     }
 
-    void Dispose(bool disposing)
+    protected virtual void Dispose(bool disposing)
     {
         if (!disposed)
         {
