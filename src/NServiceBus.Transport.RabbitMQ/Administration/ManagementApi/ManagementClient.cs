@@ -35,7 +35,14 @@ sealed class ManagementClient : IDisposable
 
         if (managementApiConfiguration?.Url is not null)
         {
-            uriBuilder = new UriBuilder(managementApiConfiguration.Url)
+            var uri = managementApiConfiguration.Url;
+
+            if (!uri.EndsWith('/'))
+            {
+                uri += "/";
+            }
+
+            uriBuilder = new UriBuilder(uri)
             {
                 UserName = managementApiConfiguration.UserName ?? connectionConfiguration.UserName,
                 Password = managementApiConfiguration.Password ?? connectionConfiguration.Password
@@ -73,11 +80,6 @@ sealed class ManagementClient : IDisposable
             {
                 RemoteCertificateValidationCallback = (_, _, _, _) => true
             };
-        }
-
-        if (!uriBuilder.Uri.PathAndQuery.EndsWith('/'))
-        {
-            uriBuilder.Path += '/'; // Ensure BasePath concatenation works
         }
 
         httpClient = new HttpClient(handler) { BaseAddress = uriBuilder.Uri };
