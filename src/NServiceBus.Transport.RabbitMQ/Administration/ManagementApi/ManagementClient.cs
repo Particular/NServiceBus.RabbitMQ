@@ -87,7 +87,7 @@ class ManagementClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
 
         var escapedExchangeName = Uri.EscapeDataString(exchangeName);
-        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
+        var response = await Get<List<Binding>>($"api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -98,7 +98,7 @@ class ManagementClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await Get<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        var response = await Get<List<Binding>>($"api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -124,7 +124,7 @@ class ManagementClient : IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(pageSize, 500);
 
-        var response = await Get<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
+        var response = await Get<GetQueuesResult>($"api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
 
         return (response.Items, response.Page < response.PageCount);
     }
