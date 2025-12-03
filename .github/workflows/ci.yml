@@ -51,13 +51,14 @@ jobs:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
       - name: Setup RabbitMQ
-        uses: Particular/setup-rabbitmq-action@v1.7.1
+        uses: Particular/setup-rabbitmq-action@erl-args
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
           image-tag: 4-management
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          erl-args: -rabbitmq_management path_prefix "/my-prefix"
       - name: Run tests
         uses: Particular/run-tests-action@v1.7.0
         with:
