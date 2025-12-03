@@ -21,12 +21,6 @@ class ManagementClient : IDisposable
 
     bool disposed;
 
-    internal ManagementClient(HttpClient httpClient)
-    {
-        escapedVirtualHost = Uri.EscapeDataString("/vhosttest");
-        this.httpClient = httpClient;
-    }
-
     public ManagementClient(ConnectionConfiguration connectionConfiguration, ManagementApiConfiguration? managementApiConfiguration = null, bool disableRemoteCertificateValidation = false)
     {
         ArgumentNullException.ThrowIfNull(connectionConfiguration);
@@ -142,14 +136,14 @@ class ManagementClient : IDisposable
         return (response.Items, response.Page < response.PageCount);
     }
 
-    async Task<T> Get<T>(string url, CancellationToken cancellationToken)
+    protected virtual async Task<T> Get<T>(string url, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.GetFromJsonAsync<T>(url, cancellationToken).ConfigureAwait(false);
 
         return response ?? throw new HttpRequestException("RabbitMQ management API returned success but deserializing the response body returned null.");
     }
 
-    async Task Put<T>(string url, T value, CancellationToken cancellationToken)
+    protected virtual async Task Put<T>(string url, T value, CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.PutAsJsonAsync(url, value, cancellationToken).ConfigureAwait(false);
 
