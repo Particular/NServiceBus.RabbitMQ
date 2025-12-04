@@ -177,7 +177,7 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
             return false;
         }
 
-        if (limit == -1 && queue.AppliedPolicyName == $"nsb.{queue.Name}.delivery-limit")
+        if (limit == -1 && IsTransportPolicy(queue.AppliedPolicyName))
         {
             return true;
         }
@@ -197,12 +197,12 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
             throw new InvalidOperationException($"Cannot create unlimited delivery limit policies in RabbitMQ versions prior to 4.0. The version is: {brokerVersion}.");
         }
 
-        var policyName = $"nsb.{queue.Name}.delivery-limit";
-
-        if (!string.IsNullOrEmpty(queue.AppliedPolicyName) && queue.AppliedPolicyName != policyName)
+        if (!string.IsNullOrEmpty(queue.AppliedPolicyName) && !IsTransportPolicy(queue.AppliedPolicyName))
         {
             throw new InvalidOperationException($"An unlimited delivery limit policy cannot be applied to the '{queue.Name}' queue because it already has a '{queue.AppliedPolicyName}' policy applied.");
         }
+
+        var policyName = $"nsb.{queue.Name}.delivery-limit";
 
         var policy = new Policy
         {
@@ -221,6 +221,8 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
             throw new InvalidOperationException($"There was a problem accessing the RabbitMQ management API to create an unlimited delivery limit policy for the '{queue.Name}' queue. See the inner exception for details.", ex);
         }
     }
+
+    static bool IsTransportPolicy(string? policyName) => policyName is not null && policyName.StartsWith("nsb.") && policyName.EndsWith(".delivery-limit");
 
     static void LogWarning(string message)
     {
