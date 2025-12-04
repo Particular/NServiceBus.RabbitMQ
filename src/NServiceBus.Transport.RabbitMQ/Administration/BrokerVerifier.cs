@@ -5,6 +5,7 @@ namespace NServiceBus.Transport.RabbitMQ;
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Transport.RabbitMQ.ManagementApi;
@@ -207,7 +208,7 @@ class BrokerVerifier(ManagementClient managementClient, BrokerRequirementChecks 
         {
             ApplyTo = PolicyTarget.QuorumQueues,
             Definition = new PolicyDefinition { DeliveryLimit = Queue.BigValueInsteadOfActuallyUnlimited },
-            Pattern = queue.Name,
+            Pattern = $"^{Regex.Escape(queue.Name)}$",
             Priority = 0
         };
 
