@@ -268,7 +268,7 @@ class BrokerVerifierTests
 
         await managementClient.CreatePolicy(policyName, policy).ConfigureAwait(false);
 
-        // If this test appears flaky, the delay should be increased to give the broker more time to apply the oldPolicy before calling ValidateDeliveryLimit
+        // If this test appears flaky, the delay should be increased to give the broker more time to apply the policy before calling ValidateDeliveryLimit
         await Task.Delay(TimeSpan.FromSeconds(30));
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
