@@ -134,6 +134,79 @@ class BrokerVerifierTests
     }
 
     [Test]
+    public async Task ValidateDeliveryLimit_Should_Update_Old_Overeager_Policy()
+    {
+        var managementClient = new ManagementClient(connectionConfiguration);
+        using var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
+        await brokerVerifier.Initialize();
+
+        if (brokerVerifier.BrokerVersion < BrokerVerifier.BrokerVersion4)
+        {
+            Assert.Ignore("Test not valid for broker versions before 4.0.0");
+        }
+
+        var queueName = nameof(ValidateDeliveryLimit_Should_Update_Old_Overeager_Policy);
+        var policyName = $"nsb.{queueName}.delivery-limit";
+
+        var oldQueueName = queueName[..^7];
+        var oldPolicyName = $"nsb.{oldQueueName}.delivery-limit";
+
+        var oldPolicy = new Policy
+        {
+            ApplyTo = PolicyTarget.QuorumQueues,
+            Definition = new PolicyDefinition { DeliveryLimit = -1 },
+            Pattern = oldQueueName,
+            Priority = 0
+        };
+
+        await CreateQueue(queueName);
+        await managementClient.CreatePolicy(oldPolicyName, oldPolicy);
+
+        // It can take some time for updated policies to be applied, so we need to wait.
+        // If this test is randomly failing, consider increasing the attempts
+        var attempts = 20;
+
+        int deliveryLimit = 0;
+
+        for (int i = 0; i < attempts; i++)
+        {
+            var queue = await managementClient.GetQueue(queueName);
+            deliveryLimit = queue.GetDeliveryLimit();
+
+            if (deliveryLimit == -1 && queue.AppliedPolicyName == oldPolicyName)
+            {
+                // Policy applied successfully
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        if (deliveryLimit != -1)
+        {
+            Assert.Fail($"Old Policy '{oldPolicyName}' was not applied to queue '{queueName}'.");
+        }
+
+        await brokerVerifier.ValidateDeliveryLimit(queueName);
+
+        for (int i = 0; i < attempts; i++)
+        {
+            var queue = await managementClient.GetQueue(queueName);
+            deliveryLimit = queue.GetDeliveryLimit();
+
+            if (deliveryLimit == Queue.BigValueInsteadOfActuallyUnlimited && queue.AppliedPolicyName == policyName)
+            {
+                // Policy applied successfully
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        Assert.Fail($"Policy '{policyName}' was not applied to queue '{queueName}'.");
+    }
+
+    [Test]
     public async Task ValidateDeliveryLimit_Should_Throw_When_Queue_Does_Not_Exist()
     {
         var queueName = "WrongQueue";
@@ -195,7 +268,7 @@ class BrokerVerifierTests
 
         await managementClient.CreatePolicy(policyName, policy).ConfigureAwait(false);
 
-        // If this test appears flaky, the delay should be increased to give the broker more time to apply the oldUnlimitedPolicy before calling ValidateDeliveryLimit
+        // If this test appears flaky, the delay should be increased to give the broker more time to apply the oldPolicy before calling ValidateDeliveryLimit
         await Task.Delay(TimeSpan.FromSeconds(30));
 
         var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await brokerVerifier.ValidateDeliveryLimit(queueName));
