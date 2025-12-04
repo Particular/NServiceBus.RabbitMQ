@@ -75,7 +75,7 @@ class BrokerVerifierTests
             Assert.Ignore("Test not valid for broker versions before 4.0.0");
         }
 
-        var queueName = nameof(ValidateDeliveryLimit_Should_Set_Delivery_Limit_Policy);
+        var queueName = nameof(ValidateDeliveryLimit_Should_Update_Old_Unlimited_Policy_Created_By_Transport);
         var policyName = $"nsb.{queueName}.delivery-limit";
 
         var oldUnlimitedPolicy = new Policy
