@@ -136,16 +136,26 @@ class ManagementClient : IDisposable
         return (response.Items, response.Page < response.PageCount);
     }
 
-    protected virtual async Task<T> Get<T>(string url, CancellationToken cancellationToken = default)
+    async Task<T> Get<T>(string requestUri, CancellationToken cancellationToken)
     {
-        var response = await httpClient.GetFromJsonAsync<T>(url, cancellationToken).ConfigureAwait(false);
+        if (requestUri.StartsWith('/'))
+        {
+            throw new InvalidOperationException("An invalid request URI was provided. The request URI cannot be a root-relative URI.");
+        }
+
+        var response = await httpClient.GetFromJsonAsync<T>(requestUri, cancellationToken).ConfigureAwait(false);
 
         return response ?? throw new HttpRequestException("RabbitMQ management API returned success but deserializing the response body returned null.");
     }
 
-    protected virtual async Task Put<T>(string url, T value, CancellationToken cancellationToken = default)
+    async Task Put<T>(string requestUri, T value, CancellationToken cancellationToken)
     {
-        using var response = await httpClient.PutAsJsonAsync(url, value, cancellationToken).ConfigureAwait(false);
+        if (requestUri.StartsWith('/'))
+        {
+            throw new InvalidOperationException("An invalid request URI was provided. The request URI cannot be a root-relative URI.");
+        }
+
+        using var response = await httpClient.PutAsJsonAsync(requestUri, value, cancellationToken).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
     }
