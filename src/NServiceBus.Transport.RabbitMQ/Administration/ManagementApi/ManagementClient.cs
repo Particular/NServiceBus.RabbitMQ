@@ -29,7 +29,14 @@ class ManagementClient : IDisposable
 
         if (managementApiConfiguration?.Url is not null)
         {
-            uriBuilder = new UriBuilder(managementApiConfiguration.Url)
+            var uri = managementApiConfiguration.Url;
+
+            if (!uri.EndsWith('/'))
+            {
+                uri += "/";
+            }
+
+            uriBuilder = new UriBuilder(uri)
             {
                 UserName = managementApiConfiguration.UserName ?? connectionConfiguration.UserName,
                 Password = managementApiConfiguration.Password ?? connectionConfiguration.Password
@@ -87,7 +94,7 @@ class ManagementClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
 
         var escapedExchangeName = Uri.EscapeDataString(exchangeName);
-        var response = await Get<List<Binding>>($"/api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
+        var response = await Get<List<Binding>>($"api/exchanges/{escapedVirtualHost}/{escapedExchangeName}/bindings/destination", cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -98,7 +105,7 @@ class ManagementClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
         var escapedQueueName = Uri.EscapeDataString(queueName);
-        var response = await Get<List<Binding>>($"/api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
+        var response = await Get<List<Binding>>($"api/queues/{escapedVirtualHost}/{escapedQueueName}/bindings", cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -124,19 +131,19 @@ class ManagementClient : IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(pageSize, 500);
 
-        var response = await Get<GetQueuesResult>($"/api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
+        var response = await Get<GetQueuesResult>($"api/queues/{escapedVirtualHost}/?page={page}&page_size={pageSize}", cancellationToken).ConfigureAwait(false);
 
         return (response.Items, response.Page < response.PageCount);
     }
 
-    async Task<T> Get<T>(string url, CancellationToken cancellationToken)
+    protected virtual async Task<T> Get<T>(string url, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.GetFromJsonAsync<T>(url, cancellationToken).ConfigureAwait(false);
 
         return response ?? throw new HttpRequestException("RabbitMQ management API returned success but deserializing the response body returned null.");
     }
 
-    async Task Put<T>(string url, T value, CancellationToken cancellationToken)
+    protected virtual async Task Put<T>(string url, T value, CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.PutAsJsonAsync(url, value, cancellationToken).ConfigureAwait(false);
 
