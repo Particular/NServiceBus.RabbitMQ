@@ -34,7 +34,7 @@
                        });
                    })
                    .Done(ctx => ctx.Counter > 0)
-                   .Run(TimeSpan.FromSeconds(10));
+                   .Run();
 
             Assert.That(context.Counter, Is.EqualTo(1), "One of the scaled out instances should get the event");
         }

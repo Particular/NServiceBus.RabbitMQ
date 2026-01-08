@@ -22,8 +22,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
                 }))
                 .WithEndpoint<ReceivingEndpoint>(b => b.DoNotFailOnErrorMessages())
                 .WithEndpoint<SpyEndpoint>()
-                .Done(c => c.Done)
-                .Run(TimeSpan.FromMinutes(1));
+                .Run();
 
             Assert.That(context.RepliedToWrongQueue, Is.False);
         }
@@ -38,7 +37,6 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 
         class MyContext : ScenarioContext
         {
-            public bool Done { get; set; }
             public bool RepliedToWrongQueue { get; set; }
         }
 
@@ -62,7 +60,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
                     testContext.RepliedToWrongQueue = true;
-                    testContext.Done = true;
+                    testContext.MarkAsCompleted();
                     return Task.CompletedTask;
                 }
             }
@@ -75,18 +73,11 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
                 EndpointSetup<DefaultServer>();
             }
 
-            class ReplyHandler : IHandleMessages<Reply>
+            class ReplyHandler(MyContext testContext) : IHandleMessages<Reply>
             {
-                MyContext testContext;
-
-                public ReplyHandler(MyContext testContext)
-                {
-                    this.testContext = testContext;
-                }
-
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    testContext.Done = true;
+                    testContext.MarkAsCompleted();
                     return Task.CompletedTask;
                 }
             }
