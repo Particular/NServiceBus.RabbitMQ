@@ -131,7 +131,7 @@
             await ExecuteMigration(endpointName);
 
             Assert.That(QueueIsQuorum(endpointName), Is.True);
-            Assert.That(1, Is.EqualTo(MessageCount(endpointName)));
+            Assert.That(MessageCount(endpointName), Is.EqualTo(1));
         }
 
         [Test]

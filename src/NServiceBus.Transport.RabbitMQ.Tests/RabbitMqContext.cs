@@ -8,7 +8,7 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
 
-    class RabbitMqContext
+    abstract class RabbitMqContext
     {
         public virtual int MaximumConcurrency => 1;
 
