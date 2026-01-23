@@ -25,7 +25,7 @@ namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
                 .Done(c => c.Done)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.IsFalse(context.RepliedToWrongQueue);
+            Assert.That(context.RepliedToWrongQueue, Is.False);
         }
 
         public class Request : IMessage
