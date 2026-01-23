@@ -173,14 +173,14 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
 
         void AssertReceived<T>(IncomingMessage receivedEvent)
         {
-            Assert.AreEqual(typeof(T).FullName, receivedEvent.Headers[Headers.CorrelationId]);
+            Assert.That(typeof(T).FullName, Is.EqualTo(receivedEvent.Headers[Headers.CorrelationId]));
         }
 
         void AssertNoEventReceived()
         {
             var messageWasReceived = TryWaitForMessageReceipt();
 
-            Assert.False(messageWasReceived);
+            Assert.That(messageWasReceived, Is.False);
         }
     }
 

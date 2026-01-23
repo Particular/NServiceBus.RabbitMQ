@@ -106,8 +106,8 @@
             var headers = converter.RetrieveHeaders(message);
             var messageId = converter.RetrieveMessageId(message, headers);
 
-            Assert.IsNotNull(messageId);
-            Assert.IsNotNull(headers);
+            Assert.That(messageId, Is.Not.Null);
+            Assert.That(headers, Is.Not.Null);
         }
 
         [Test]
@@ -152,7 +152,7 @@
 
             var messageId = customConverter.RetrieveMessageId(message, headers);
 
-            Assert.AreEqual(messageId, "Blah");
+            Assert.That(messageId, Is.EqualTo("Blah"));
         }
 
         [Test]
@@ -172,8 +172,8 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("blah", headers["Foo"]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers["Foo"], Is.EqualTo("blah"));
         }
 
         [Test]
@@ -190,8 +190,8 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("myaddress", headers[NServiceBus.Headers.ReplyToAddress]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers[NServiceBus.Headers.ReplyToAddress], Is.EqualTo("myaddress"));
         }
 
         [Test]
@@ -212,8 +212,8 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("myaddress", headers[NServiceBus.Headers.ReplyToAddress]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers[NServiceBus.Headers.ReplyToAddress], Is.EqualTo("myaddress"));
         }
 
         [Test]
@@ -240,15 +240,15 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("42", headers["short"]);
-            Assert.AreEqual("42", headers["int"]);
-            Assert.AreEqual("42", headers["long"]);
-            Assert.AreEqual("42", headers["decimal"]);
-            Assert.AreEqual("42", headers["sbyte"]);
-            Assert.AreEqual("42", headers["double"]);
-            Assert.AreEqual("42", headers["single"]);
-            Assert.AreEqual("True", headers["bool"]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers["short"], Is.EqualTo("42"));
+            Assert.That(headers["int"], Is.EqualTo("42"));
+            Assert.That(headers["long"], Is.EqualTo("42"));
+            Assert.That(headers["decimal"], Is.EqualTo("42"));
+            Assert.That(headers["sbyte"], Is.EqualTo("42"));
+            Assert.That(headers["double"], Is.EqualTo("42"));
+            Assert.That(headers["single"], Is.EqualTo("42"));
+            Assert.That(headers["bool"], Is.EqualTo("True"));
         }
 
         [Test]
@@ -261,15 +261,15 @@
                     MessageId = "Blah",
                     Headers = new Dictionary<string, object>
                     {
-                        {"Foo", new global::RabbitMQ.Client.AmqpTimestamp(int.MaxValue) }
+                        {"Foo", new AmqpTimestamp(int.MaxValue) }
                     }
                 }
             };
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("2038-01-19 03:14:07:000000 Z", headers["Foo"]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers["Foo"], Is.EqualTo("2038-01-19 03:14:07:000000 Z"));
         }
 
         [Test]
@@ -289,8 +289,8 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("ni", headers["Foo"]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers["Foo"], Is.EqualTo("ni"));
         }
 
         [Test]
@@ -310,8 +310,8 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("Bing", headers["Foo"]);
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(headers["Foo"], Is.EqualTo("Bing"));
         }
 
         [Test]
@@ -331,8 +331,8 @@
 
             var headers = converter.RetrieveHeaders(message);
 
-            Assert.NotNull(headers);
-            Assert.AreEqual("key1=value1,key2=value2", Convert.ToString(headers["Foo"]));
+            Assert.That(headers, Is.Not.Null);
+            Assert.That(Convert.ToString(headers["Foo"]), Is.EqualTo("key1=value1,key2=value2"));
         }
 
         [Test]

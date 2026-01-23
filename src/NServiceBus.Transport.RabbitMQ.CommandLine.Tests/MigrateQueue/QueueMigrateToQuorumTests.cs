@@ -20,7 +20,7 @@
 
             var ex = Assert.ThrowsAsync<Exception>(async () => await ExecuteMigration(endpointName));
 
-            StringAssert.Contains(endpointName, ex.Message);
+            Assert.That(ex.Message, Does.Contain(endpointName));
         }
 
         [Test]
@@ -32,7 +32,7 @@
 
             var ex = Assert.ThrowsAsync<NotSupportedException>(async () => await ExecuteMigration(endpointName));
 
-            StringAssert.Contains(endpointName, ex.Message);
+            Assert.That(ex.Message, Does.Contain(endpointName));
         }
 
         [Test]
@@ -44,7 +44,7 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
         }
 
         [Test]
@@ -58,7 +58,7 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
         }
 
         [Test]
@@ -73,8 +73,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(numExistingMessages, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -89,8 +89,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(numExistingMessages, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -108,8 +108,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(numExistingMessages, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -130,8 +130,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(1, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(1, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -151,7 +151,7 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.AreEqual(expectedMessageCount, MessageCount(endpointName));
+            Assert.That(expectedMessageCount, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -169,8 +169,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(numExistingMessages, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -190,8 +190,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(numExistingMessages, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -209,8 +209,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(numExistingMessages, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(numExistingMessages, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -230,8 +230,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.AreEqual(expectedMessageCount, MessageCount(endpointName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(expectedMessageCount, Is.EqualTo(MessageCount(endpointName)));
         }
 
         [Test]
@@ -247,8 +247,8 @@
 
             await ExecuteMigration(endpointName);
 
-            Assert.True(QueueIsQuorum(endpointName));
-            Assert.False(QueueExists(holdingQueueName));
+            Assert.That(QueueIsQuorum(endpointName), Is.True);
+            Assert.That(QueueExists(holdingQueueName), Is.False);
         }
 
         [SetUp]
