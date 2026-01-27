@@ -19,7 +19,7 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.That(message.MessageId, Is.EqualTo(receivedMessage.MessageId));
+            Assert.That(receivedMessage.MessageId, Is.EqualTo(message.MessageId));
         }
 
         [Test]
@@ -39,7 +39,7 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.That(message.MessageId, Is.EqualTo(receivedMessage.MessageId));
+            Assert.That(receivedMessage.MessageId, Is.EqualTo(message.MessageId));
         }
 
         [Test]
@@ -170,7 +170,7 @@
 
             var receivedMessage = ReceiveMessage();
 
-            Assert.That(typeName, Is.EqualTo(receivedMessage.Headers[Headers.EnclosedMessageTypes]));
+            Assert.That(receivedMessage.Headers[Headers.EnclosedMessageTypes], Is.EqualTo(typeName));
             Assert.That(Type.GetType(receivedMessage.Headers[Headers.EnclosedMessageTypes]), Is.EqualTo(typeof(MyMessage)));
         }
 

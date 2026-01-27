@@ -47,7 +47,7 @@
         {
             var messageType = typeof(MyMessage);
 
-            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.That(messageType.FullName, Is.EqualTo(received.BasicProperties.Type)));
+            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.That(received.BasicProperties.Type, Is.EqualTo(messageType.FullName)));
         }
 
         [Test]
@@ -55,7 +55,7 @@
         {
             var timeToBeReceived = TimeSpan.FromDays(1);
 
-            return Verify(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived), received => Assert.That(timeToBeReceived.TotalMilliseconds.ToString(), Is.EqualTo(received.BasicProperties.Expiration)));
+            return Verify(new OutgoingMessageBuilder().TimeToBeReceived(timeToBeReceived), received => Assert.That(received.BasicProperties.Expiration, Is.EqualTo(timeToBeReceived.TotalMilliseconds.ToString())));
         }
 
         [Test]
@@ -66,8 +66,8 @@
             return Verify(new OutgoingMessageBuilder().ReplyToAddress(address),
                 (t, r) =>
                 {
-                    Assert.That(address, Is.EqualTo(t.Headers[Headers.ReplyToAddress]));
-                    Assert.That(address, Is.EqualTo(r.BasicProperties.ReplyTo));
+                    Assert.That(t.Headers[Headers.ReplyToAddress], Is.EqualTo(address));
+                    Assert.That(r.BasicProperties.ReplyTo, Is.EqualTo(address));
                 });
         }
 
@@ -76,7 +76,7 @@
         {
             var correlationId = Guid.NewGuid().ToString();
 
-            return Verify(new OutgoingMessageBuilder().CorrelationId(correlationId), result => Assert.That(correlationId, Is.EqualTo(result.Headers[Headers.CorrelationId])));
+            return Verify(new OutgoingMessageBuilder().CorrelationId(correlationId), result => Assert.That(result.Headers[Headers.CorrelationId], Is.EqualTo(correlationId)));
         }
 
         [Test]
