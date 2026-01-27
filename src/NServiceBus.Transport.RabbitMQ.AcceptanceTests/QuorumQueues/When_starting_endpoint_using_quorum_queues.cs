@@ -34,19 +34,19 @@
                 using (var channel = connection.CreateModel())
                 {
                     var mainQueueException = Assert.Catch<RabbitMQClientException>(() => channel.DeclareClassicQueue(endpointInputQueue));
-                    StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'", mainQueueException.Message);
+                    Assert.That(mainQueueException.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"));
                 }
 
                 using (var channel = connection.CreateModel())
                 {
                     var instanceSpecificQueueException = Assert.Catch<RabbitMQClientException>(() => channel.DeclareClassicQueue(endpointInputQueue + "-disc"));
-                    StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'", instanceSpecificQueueException.Message);
+                    Assert.That(instanceSpecificQueueException.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"));
                 }
 
                 using (var channel = connection.CreateModel())
                 {
                     var satelliteReceiver = Assert.Catch<RabbitMQClientException>(() => channel.DeclareClassicQueue("QuorumQueueSatelliteReceiver"));
-                    StringAssert.Contains("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'", satelliteReceiver.Message);
+                    Assert.That(satelliteReceiver.Message, Does.Contain("PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"));
                 }
             }
         }

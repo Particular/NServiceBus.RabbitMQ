@@ -63,7 +63,7 @@
                 .Done(c => c.RepliesReceived >= numMessagesToSend * 2)
                 .Run();
 
-            Assert.AreEqual(2 * numMessagesToSend, context.RepliesReceived);
+            Assert.That(context.RepliesReceived, Is.EqualTo(2 * numMessagesToSend));
         }
 
         public class ScaledOutClient : EndpointConfigurationBuilder

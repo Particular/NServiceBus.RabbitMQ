@@ -60,7 +60,7 @@
                 {
                     var messageType = context.Headers["Type"];
                     receivedMessages.Enqueue(messageType);
-                    TestContext.WriteLine("Received message " + messageType);
+                    TestContext.Out.WriteLine("Received message " + messageType);
 
                     switch (messageType)
                     {
@@ -72,7 +72,7 @@
                                 var t = receiver.StopReceive(token);
                                 pumpStopTriggered.SetResult();
                                 await t;
-                                TestContext.WriteLine("Stopped receiver");
+                                TestContext.Out.WriteLine("Stopped receiver");
                             }, token);
 
                             await pumpStopTriggered.Task;
@@ -85,7 +85,7 @@
                             _ = stopTask.ContinueWith(async _ =>
                             {
                                 await receiver.StartReceive(token);
-                                TestContext.WriteLine("Started receiver");
+                                TestContext.Out.WriteLine("Started receiver");
                             }, token);
 
                             break;
@@ -106,11 +106,11 @@
             await followupMessageReceived.Task;
             await StopPump();
 
-            Assert.AreEqual(2, receivedMessages.Count);
-            Assert.IsTrue(receivedMessages.TryDequeue(out var firstMessageType));
-            Assert.AreEqual("Start", firstMessageType);
-            Assert.IsTrue(receivedMessages.TryDequeue(out var secondMessageType));
-            Assert.AreEqual("Followup", secondMessageType);
+            Assert.That(receivedMessages.Count, Is.EqualTo(2));
+            Assert.That(receivedMessages.TryDequeue(out var firstMessageType), Is.True);
+            Assert.That(firstMessageType, Is.EqualTo("Start"));
+            Assert.That(receivedMessages.TryDequeue(out var secondMessageType), Is.True);
+            Assert.That(secondMessageType, Is.EqualTo("Followup"));
         }
     }
 }
