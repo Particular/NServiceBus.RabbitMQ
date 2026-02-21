@@ -289,7 +289,7 @@
             var managementClient = new ManagementClient(connectionConfiguration);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
-            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", connectionConfiguration, null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
+            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", connectionConfiguration, null, true, false, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null, null);
 
             brokerConnection = new BrokerConnection(brokerVerifier, connectionFactory);
 
