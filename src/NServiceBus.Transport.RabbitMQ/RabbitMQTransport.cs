@@ -132,9 +132,9 @@
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
-        /// Custom authentication mechanisms that should be used for client authentication.
+        /// Authentication mechanisms that should be used for client authentication. Overrides the default mechanism.
         /// </summary>
-        public List<IAuthMechanismFactory> AdditionalAuthMechanisms { get; set; }
+        public List<IAuthMechanismFactory> AuthMechanisms { get; set; }
 
         /// <summary>
         /// Should the transport validate that queue delivery limits are configured properly to avoid interfering with message recoverability.
@@ -230,7 +230,7 @@
                 HeartbeatInterval,
                 NetworkRecoveryInterval,
                 additionalClusterNodes,
-                AdditionalAuthMechanisms
+                AuthMechanisms
             );
 
             ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration, !ValidateRemoteCertificate);
