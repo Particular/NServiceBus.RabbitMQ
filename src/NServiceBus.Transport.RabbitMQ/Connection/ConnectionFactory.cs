@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly List<AmqpTcpEndpoint> endpoints = [];
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes, List<IAuthMechanismFactory> authMechanisms)
         {
             if (endpointName is null)
             {
@@ -48,7 +48,13 @@ namespace NServiceBus.Transport.RabbitMQ
 
             if (useExternalAuthMechanism)
             {
-                connectionFactory.AuthMechanisms = [new ExternalMechanismFactory()];
+                authMechanisms ??= [];
+                authMechanisms.Add(new ExternalMechanismFactory());
+            }
+
+            if (authMechanisms is { Count: > 0 })
+            {
+                connectionFactory.AuthMechanisms = [.. authMechanisms];
             }
 
             SetClientProperties(endpointName, connectionConfiguration.UserName);
