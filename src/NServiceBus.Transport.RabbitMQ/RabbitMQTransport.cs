@@ -137,7 +137,7 @@
         /// <summary>
         /// The authentication mechanisms that should be used for client authentication. Overrides the default mechanisms.
         /// </summary>
-        public List<IAuthMechanismFactory> AuthMechanisms { get; set; }
+        public List<IAuthMechanismFactory> AuthMechanisms { get; set; } = [];
 
         /// <summary>
         /// Should the transport validate that queue delivery limits are configured properly to avoid interfering with message recoverability.
