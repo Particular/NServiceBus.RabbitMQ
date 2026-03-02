@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.RabbitMQ
         readonly global::RabbitMQ.Client.ConnectionFactory connectionFactory;
         readonly List<AmqpTcpEndpoint> endpoints = [];
 
-        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, List<IAuthMechanismFactory> authMechanisms, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
+        public ConnectionFactory(string endpointName, ConnectionConfiguration connectionConfiguration, X509Certificate2Collection? clientCertificateCollection, bool disableRemoteCertificateValidation, bool useExternalAuthMechanism, List<IAuthMechanismFactory>? authMechanisms, TimeSpan heartbeatInterval, TimeSpan networkRecoveryInterval, List<(string hostName, int port, bool useTls)> additionalClusterNodes)
         {
             if (endpointName is null)
             {
