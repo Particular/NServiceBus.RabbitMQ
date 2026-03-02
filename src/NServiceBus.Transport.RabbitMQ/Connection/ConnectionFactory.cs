@@ -48,13 +48,12 @@ namespace NServiceBus.Transport.RabbitMQ
 
             if (useExternalAuthMechanism)
             {
-                authMechanisms ??= [];
-                authMechanisms.Add(new ExternalMechanismFactory());
+                connectionFactory.AuthMechanisms = [new ExternalMechanismFactory()];
             }
 
             if (authMechanisms is { Count: > 0 })
             {
-                connectionFactory.AuthMechanisms = [.. authMechanisms];
+                connectionFactory.AuthMechanisms = authMechanisms;
             }
 
             SetClientProperties(endpointName, connectionConfiguration.UserName);
