@@ -227,11 +227,10 @@
                 certCollection,
                 !ValidateRemoteCertificate,
                 UseExternalAuthMechanism,
+                AuthMechanisms,
                 HeartbeatInterval,
                 NetworkRecoveryInterval,
-                additionalClusterNodes,
-                AuthMechanisms
-            );
+                additionalClusterNodes);
 
             ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration, !ValidateRemoteCertificate);
 
