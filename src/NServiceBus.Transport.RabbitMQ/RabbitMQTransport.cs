@@ -132,7 +132,7 @@
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
-        /// Authentication mechanisms that should be used for client authentication. Overrides the default mechanism.
+        /// The authentication mechanisms that should be used for client authentication. Overrides the default mechanisms.
         /// </summary>
         public List<IAuthMechanismFactory> AuthMechanisms { get; set; }
 
