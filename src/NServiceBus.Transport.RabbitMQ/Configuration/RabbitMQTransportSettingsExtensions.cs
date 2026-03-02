@@ -1,9 +1,11 @@
 ﻿namespace NServiceBus
 {
     using System;
+    using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;
     using NServiceBus.Transport.RabbitMQ;
     using Particular.Obsoletes;
+    using RabbitMQ.Client;
 
     /// <summary>
     /// Adds access to the RabbitMQ transport config to the global Transports object.
@@ -272,6 +274,24 @@
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(prefetchMultiplier);
 
             transportExtensions.Transport.PrefetchCountCalculation = concurrency => prefetchMultiplier * concurrency;
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies the authentication mechanisms that should be used for client authentication. Overrides the default mechanisms.
+        /// </summary>
+        /// <param name="transportExtensions">The transport settings.</param>
+        /// <param name="authMechanisms">The authentication mechanisms that should be used for client authentication.</param>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "RabbitMQTransport.AuthMechanisms",
+            Message = "The configuration has been moved to RabbitMQTransport class.",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public static TransportExtensions<RabbitMQTransport> SetAuthMechanisms(this TransportExtensions<RabbitMQTransport> transportExtensions, List<IAuthMechanismFactory> authMechanisms)
+        {
+            ArgumentNullException.ThrowIfNull(transportExtensions);
+            ArgumentNullException.ThrowIfNull(authMechanisms);
+
+            transportExtensions.Transport.AuthMechanisms = authMechanisms;
             return transportExtensions;
         }
 
