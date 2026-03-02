@@ -35,6 +35,7 @@ namespace NServiceBus
     {
         public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString) { }
         public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery) { }
+        public System.Collections.Generic.List<RabbitMQ.Client.IAuthMechanismFactory> AuthMechanisms { get; set; }
         public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
         public NServiceBus.BrokerRequirementChecks DisabledBrokerRequirementChecks { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
@@ -44,6 +45,9 @@ namespace NServiceBus
         public System.Action<NServiceBus.Transport.IOutgoingTransportOperation, RabbitMQ.Client.IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
         public NServiceBus.PrefetchCountCalculation PrefetchCountCalculation { get; set; }
         public System.TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; }
+        [System.Obsolete("The authentication mechanisms that should be used can be specified with \'AuthMech" +
+            "anisms\' instead. Will be treated as an error from version 12.0.0. Will be remove" +
+            "d in version 13.0.0.", false)]
         public bool UseExternalAuthMechanism { get; set; }
         public bool ValidateDeliveryLimits { get; set; }
         public bool ValidateRemoteCertificate { get; set; }
@@ -68,6 +72,7 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> ManagementApiConfiguration(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string url, string userName, string password) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchCount(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, ushort prefetchCount) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> PrefetchMultiplier(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, int prefetchMultiplier) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetAuthMechanisms(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Collections.Generic.List<RabbitMQ.Client.IAuthMechanismFactory> authMechanisms) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificate(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Security.Cryptography.X509Certificates.X509Certificate2 clientCertificate) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetClientCertificate(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, string path, string password) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> SetHeartbeatInterval(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan heartbeatInterval) { }
@@ -76,6 +81,9 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
+        [System.Obsolete("The authentication mechanisms that should be used can be specified with \'SetAuthM" +
+            "echanisms\' instead. Will be treated as an error from version 12.0.0. Will be rem" +
+            "oved in version 13.0.0.", false)]
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseExternalAuthMechanism(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseTransport<T>(this NServiceBus.EndpointConfiguration config)
             where T : NServiceBus.RabbitMQTransport { }
