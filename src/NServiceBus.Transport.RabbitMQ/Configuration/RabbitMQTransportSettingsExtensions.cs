@@ -443,15 +443,15 @@
         /// Specifies that an external authentication mechanism should be used for client authentication.
         /// </summary>
         /// <returns></returns>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "RabbitMQTransport.UseExternalAuthMechanism",
-            Message = "The configuration has been moved to RabbitMQTransport class.",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        [ObsoleteMetadata(Message = "The authentication mechanisms that should be used can be specified with 'SetAuthMechanisms' instead", TreatAsErrorFromVersion = "12", RemoveInVersion = "13")]
+        [Obsolete("The authentication mechanisms that should be used can be specified with 'SetAuthMechanisms' instead. Will be treated as an error from version 12.0.0. Will be removed in version 13.0.0.", false)]
         public static TransportExtensions<RabbitMQTransport> UseExternalAuthMechanism(this TransportExtensions<RabbitMQTransport> transportExtensions)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
 
+#pragma warning disable CS0618 // Type or member is obsolete
             transportExtensions.Transport.UseExternalAuthMechanism = true;
+#pragma warning restore CS0618 // Type or member is obsolete
             return transportExtensions;
         }
     }

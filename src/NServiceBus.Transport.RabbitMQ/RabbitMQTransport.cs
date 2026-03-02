@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using Particular.Obsoletes;
     using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
     using Transport;
@@ -129,6 +130,8 @@
         /// <summary>
         /// Specifies if an external authentication mechanism should be used for client authentication.
         /// </summary>
+        [ObsoleteMetadata(Message = "The authentication mechanisms that should be used can be specified with 'AuthMechanisms' instead", TreatAsErrorFromVersion = "12", RemoveInVersion = "13")]
+        [Obsolete("The authentication mechanisms that should be used can be specified with 'AuthMechanisms' instead. Will be treated as an error from version 12.0.0. Will be removed in version 13.0.0.", false)]
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
@@ -221,6 +224,7 @@
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
                 ConnectionConfiguration,
@@ -231,6 +235,7 @@
                 HeartbeatInterval,
                 NetworkRecoveryInterval,
                 additionalClusterNodes);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration, !ValidateRemoteCertificate);
 
