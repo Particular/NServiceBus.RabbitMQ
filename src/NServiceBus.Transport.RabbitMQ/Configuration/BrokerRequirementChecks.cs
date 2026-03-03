@@ -25,4 +25,3 @@ public enum BrokerRequirementChecks
     /// </summary>
     StreamsEnabled = 2,
 }
-
