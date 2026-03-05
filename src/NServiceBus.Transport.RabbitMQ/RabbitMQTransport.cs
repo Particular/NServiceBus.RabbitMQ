@@ -130,17 +130,17 @@
         /// <summary>
         /// Specifies if an external authentication mechanism should be used for client authentication.
         /// </summary>
-        [ObsoleteMetadata(Message = "Use 'AuthMechanisms = [new ExternalMechanismFactory()]' to configure external authentication instead", TreatAsErrorFromVersion = "12", RemoveInVersion = "13")]
-        [Obsolete("Use 'AuthMechanisms = [new ExternalMechanismFactory()]' to configure external authentication instead. Will be treated as an error from version 12.0.0. Will be removed in version 13.0.0.", false)]
+        [ObsoleteMetadata(Message = "Use 'AuthMechanisms = [new ExternalMechanismFactory()]' to configure an external authentication mechanism instead", TreatAsErrorFromVersion = "12", RemoveInVersion = "13")]
+        [Obsolete("Use 'AuthMechanisms = [new ExternalMechanismFactory()]' to configure an external authentication mechanism instead. Will be treated as an error from version 12.0.0. Will be removed in version 13.0.0.", false)]
         public bool UseExternalAuthMechanism { get; set; } = false;
 
         /// <summary>
         /// The authentication mechanisms that should be used for client authentication. Overrides the default mechanisms.
         /// </summary>
         /// <example>
-        /// To use the EXTERNAL authentication mechanism (e.g., for mutual TLS or SASL EXTERNAL):
+        /// To use an external authentication mechanism:
         /// <code>
-        /// transport.AuthMechanisms = [new ExternalMechanismFactory()];
+        /// AuthMechanisms = [new ExternalMechanismFactory()];
         /// </code>
         /// </example>
         /// <seealso cref="ExternalMechanismFactory"/>
