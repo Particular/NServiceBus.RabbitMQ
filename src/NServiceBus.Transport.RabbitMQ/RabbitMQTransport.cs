@@ -5,6 +5,7 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
+    using Particular.Obsoletes;
     using RabbitMQ.Client;
     using RabbitMQ.Client.Events;
     using Transport;
@@ -129,7 +130,21 @@
         /// <summary>
         /// Specifies if an external authentication mechanism should be used for client authentication.
         /// </summary>
+        [ObsoleteMetadata(Message = "Use 'AuthMechanisms = [new ExternalMechanismFactory()]' to configure an external authentication mechanism instead", TreatAsErrorFromVersion = "12", RemoveInVersion = "13")]
+        [Obsolete("Use 'AuthMechanisms = [new ExternalMechanismFactory()]' to configure an external authentication mechanism instead. Will be treated as an error from version 12.0.0. Will be removed in version 13.0.0.", false)]
         public bool UseExternalAuthMechanism { get; set; } = false;
+
+        /// <summary>
+        /// The authentication mechanisms that should be used for client authentication. Overrides the default mechanisms.
+        /// </summary>
+        /// <example>
+        /// To use an external authentication mechanism:
+        /// <code>
+        /// AuthMechanisms = [new ExternalMechanismFactory()];
+        /// </code>
+        /// </example>
+        /// <seealso cref="ExternalMechanismFactory"/>
+        public IReadOnlyList<IAuthMechanismFactory> AuthMechanisms { get; set; } = [];
 
         /// <summary>
         /// Should the transport validate that queue delivery limits are configured properly to avoid interfering with message recoverability.
@@ -216,16 +231,18 @@
                 certCollection = new X509Certificate2Collection(ClientCertificate);
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var connectionFactory = new ConnectionFactory(
                 hostSettings.Name,
                 ConnectionConfiguration,
                 certCollection,
                 !ValidateRemoteCertificate,
                 UseExternalAuthMechanism,
+                AuthMechanisms,
                 HeartbeatInterval,
                 NetworkRecoveryInterval,
-                additionalClusterNodes
-            );
+                additionalClusterNodes);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             ManagementClient = new ManagementClient(ConnectionConfiguration, ManagementApiConfiguration, !ValidateRemoteCertificate);
 
