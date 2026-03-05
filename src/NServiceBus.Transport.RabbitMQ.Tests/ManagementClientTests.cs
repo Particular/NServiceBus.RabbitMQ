@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-namespace NServiceBus.Transport.RabbitMQ.Tests
+﻿namespace NServiceBus.Transport.RabbitMQ.Tests
 {
     using System;
     using System.Collections.Generic;

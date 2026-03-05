@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -42,7 +44,7 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
 
     public async Task Cleanup(CancellationToken cancellationToken = default)
     {
-        if (queuesToCleanUp == null)
+        if (queuesToCleanUp is null)
         {
             return;
         }
@@ -62,5 +64,5 @@ class ConfigureRabbitMQTransportInfrastructure : IConfigureTransportInfrastructu
         }
     }
 
-    string[] queuesToCleanUp;
+    string[]? queuesToCleanUp;
 }

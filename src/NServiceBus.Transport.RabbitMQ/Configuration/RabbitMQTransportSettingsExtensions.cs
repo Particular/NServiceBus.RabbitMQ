@@ -431,7 +431,7 @@
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "Routing topology configuration has been moved to the constructor of the RabbitMQTransport class.",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, QueueType queueType, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static TransportExtensions<RabbitMQTransport> UseDirectRoutingTopology(this TransportExtensions<RabbitMQTransport> transportExtensions, QueueType queueType, Func<Type, string>? routingKeyConvention = null, Func<string>? exchangeNameConvention = null)
         {
             ArgumentNullException.ThrowIfNull(transportExtensions);
 

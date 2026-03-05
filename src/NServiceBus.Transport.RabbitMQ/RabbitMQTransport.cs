@@ -57,9 +57,9 @@
             ConnectionConfiguration = ConnectionConfiguration.Create(connectionString);
         }
 
-        internal ConnectionConfiguration ConnectionConfiguration { get; set; }
+        internal ConnectionConfiguration? ConnectionConfiguration { get; set; }
 
-        internal IRoutingTopology RoutingTopology { get; set; }
+        internal IRoutingTopology? RoutingTopology { get; set; }
 
         /// <summary>
         /// The strategy for deriving the message ID from the raw RabbitMQ message. Override in case of native integration when
@@ -102,7 +102,7 @@
         /// with expectations elsewhere in the system.
         /// </para>
         /// </remarks>
-        public Action<IOutgoingTransportOperation, IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
+        public Action<IOutgoingTransportOperation, IBasicProperties>? OutgoingNativeMessageCustomization { get; set; }
 
         /// <summary>
         /// The calculation method for the prefetch count. The default is 3 times the maximum concurrency value.
@@ -120,7 +120,7 @@
         /// <summary>
         /// The certificate to use for client authentication when connecting to the broker via TLS.
         /// </summary>
-        public X509Certificate2 ClientCertificate { get; set; }
+        public X509Certificate2? ClientCertificate { get; set; }
 
         /// <summary>
         /// Should the client validate the broker certificate when connecting via TLS.
@@ -156,7 +156,7 @@
         /// <summary>
         /// The RabbitMQ management API configuration to use instead of inferring values from the connection string.
         /// </summary>
-        public ManagementApiConfiguration ManagementApiConfiguration { get; set; }
+        public ManagementApiConfiguration? ManagementApiConfiguration { get; set; }
 
         /// <summary>
         /// The broker requirement checks to disable.
@@ -217,14 +217,17 @@
             additionalClusterNodes.Add((hostName, port, useTls));
         }
 
-        internal ManagementClient ManagementClient { get; private set; }
+        internal ManagementClient? ManagementClient { get; private set; }
 
         /// <inheritdoc />
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateAndApplyLegacyConfiguration();
 
-            X509Certificate2Collection certCollection = null;
+            ArgumentNullException.ThrowIfNull(ConnectionConfiguration);
+            ArgumentNullException.ThrowIfNull(RoutingTopology);
+
+            X509Certificate2Collection? certCollection = null;
 
             if (ClientCertificate != null)
             {
@@ -283,9 +286,9 @@
 
         // Remove all Legacy API stuff below when PreObsoletes are converted
 
-        internal string LegacyApiConnectionString { get; set; }
+        internal string? LegacyApiConnectionString { get; set; }
 
-        internal Func<bool, IRoutingTopology> TopologyFactory { get; set; }
+        internal Func<bool, IRoutingTopology>? TopologyFactory { get; set; }
 
         internal bool UseDurableExchangesAndQueues { get; set; } = true;
 

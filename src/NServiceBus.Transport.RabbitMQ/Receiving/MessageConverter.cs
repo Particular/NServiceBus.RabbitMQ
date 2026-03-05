@@ -53,7 +53,7 @@
 
             if (properties.IsReplyToPresent())
             {
-                deserializedHeaders[Headers.ReplyToAddress] = properties.ReplyTo;
+                deserializedHeaders[Headers.ReplyToAddress] = properties.ReplyTo ?? string.Empty;
             }
 
             if (deserializedHeaders.TryGetValue("NServiceBus.RabbitMQ.CallbackQueue", out var callbackQueue))
@@ -63,7 +63,7 @@
 
             if (properties.IsCorrelationIdPresent())
             {
-                deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId;
+                deserializedHeaders[Headers.CorrelationId] = properties.CorrelationId ?? string.Empty;
             }
 
             if (properties.IsDeliveryModePresent() && properties.DeliveryMode == DeliveryModes.Transient)
@@ -74,12 +74,12 @@
             //When doing native interop we only require the type to be set the "fullName" of the message
             if (!deserializedHeaders.ContainsKey(Headers.EnclosedMessageTypes) && properties.IsTypePresent())
             {
-                deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type;
+                deserializedHeaders[Headers.EnclosedMessageTypes] = properties.Type ?? string.Empty;
             }
 
             if (properties.IsContentTypePresent())
             {
-                deserializedHeaders[Headers.ContentType] = properties.ContentType;
+                deserializedHeaders[Headers.ContentType] = properties.ContentType ?? string.Empty;
             }
 
             //These headers need to be removed so that they won't be copied to an outgoing message if this message gets forwarded
@@ -101,7 +101,7 @@
             return properties.MessageId;
         }
 
-        static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object> headers, int extraCapacity)
+        static Dictionary<string, string> DeserializeHeaders(IDictionary<string, object?>? headers, int extraCapacity)
         {
             if (headers is null)
             {
@@ -116,7 +116,7 @@
             return deserializedHeaders;
         }
 
-        static string ValueToString(object value)
+        static string ValueToString(object? value)
         {
             if (value is byte[] bytes)
             {
@@ -166,7 +166,7 @@
                 return DateTimeOffsetHelper.ToWireFormattedString(UnixEpoch.AddSeconds(timestamp.UnixTime));
             }
 
-            return value?.ToString();
+            return value?.ToString() ?? string.Empty;
         }
 
         readonly Func<BasicDeliverEventArgs, string> messageIdStrategy;

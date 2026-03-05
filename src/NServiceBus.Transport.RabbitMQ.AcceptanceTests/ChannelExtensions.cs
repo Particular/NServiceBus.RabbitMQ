@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
@@ -8,7 +10,7 @@
     {
         public static Task<QueueDeclareOk> DeclareQuorumQueue(this IChannel channel, string queueName)
         {
-            return channel.QueueDeclareAsync(queueName, true, false, false, new Dictionary<string, object>
+            return channel.QueueDeclareAsync(queueName, true, false, false, new Dictionary<string, object?>
             {
                 { "x-queue-type", "quorum" }
             });

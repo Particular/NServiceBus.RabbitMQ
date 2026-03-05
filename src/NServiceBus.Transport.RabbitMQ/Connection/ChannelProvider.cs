@@ -1,5 +1,3 @@
-#nullable enable
-
 namespace NServiceBus.Transport.RabbitMQ
 {
     using System;

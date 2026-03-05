@@ -12,22 +12,37 @@
     {
         class TestingBasicProperties : IBasicProperties
         {
-            public string AppId { get; set; }
-            public string ClusterId { get; set; }
-            public string ContentEncoding { get; set; }
-            public string ContentType { get; set; }
-            public string CorrelationId { get; set; }
-            public byte DeliveryMode { get; set; }
-            public string Expiration { get; set; }
-            public IDictionary<string, object> Headers { get; set; }
-            public string MessageId { get; set; }
+            public string? AppId { get; set; }
+
+            public string? ClusterId { get; set; }
+
+            public string? ContentEncoding { get; set; }
+
+            public string? ContentType { get; set; }
+
+            public string? CorrelationId { get; set; }
+
+            public DeliveryModes DeliveryMode { get; set; }
+
+            public string? Expiration { get; set; }
+
+            public IDictionary<string, object?>? Headers { get; set; }
+
+            public string? MessageId { get; set; }
+
             public bool Persistent { get; set; }
+
             public byte Priority { get; set; }
-            public string ReplyTo { get; set; }
-            public PublicationAddress ReplyToAddress { get; set; }
+
+            public string? ReplyTo { get; set; }
+
+            public PublicationAddress? ReplyToAddress { get; set; }
+
             public AmqpTimestamp Timestamp { get; set; }
-            public string Type { get; set; }
-            public string UserId { get; set; }
+
+            public string? Type { get; set; }
+
+            public string? UserId { get; set; }
 
             public ushort ProtocolClassId => throw new NotSupportedException();
 
@@ -104,7 +119,7 @@
                 MessageId = "Blah"
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
             var messageId = converter.RetrieveMessageId(message, headers);
@@ -120,7 +135,7 @@
         public void Should_throw_exception_when_no_message_id_is_set()
         {
             var basicProperties = new TestingBasicProperties();
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = new Dictionary<string, string>();
 
@@ -133,7 +148,7 @@
             var customConverter = new MessageConverter(args => "");
 
             var basicProperties = new TestingBasicProperties();
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = new Dictionary<string, string>();
 
@@ -146,7 +161,7 @@
             var customConverter = new MessageConverter(args => "");
 
             var basicProperties = new TestingBasicProperties();
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = new Dictionary<string, string> { { NServiceBus.Headers.MessageId, "Blah" } };
 
@@ -161,13 +176,13 @@
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {"Foo", Encoding.UTF8.GetBytes("blah")}
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -184,7 +199,7 @@
                 MessageId = "Blah"
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -199,13 +214,13 @@
             {
                 ReplyTo = "myaddress",
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {NServiceBus.Headers.ReplyToAddress, Encoding.UTF8.GetBytes("nsb set address")}
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -219,7 +234,7 @@
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {"short", (short)42},
                     {"int", 42},
@@ -232,7 +247,7 @@
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -256,13 +271,13 @@
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {"Foo", new AmqpTimestamp(int.MaxValue) }
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -276,13 +291,13 @@
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {"Foo", "ni"}
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -296,13 +311,13 @@
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {"Foo", new List<object> {"Bing"}}
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -316,13 +331,13 @@
             var basicProperties = new TestingBasicProperties
             {
                 MessageId = "Blah",
-                Headers = new Dictionary<string, object>
+                Headers = new Dictionary<string, object?>
                 {
                     {"Foo", new List<object> {new Dictionary<string, object> {{"key1", Encoding.UTF8.GetBytes("value1")}, {"key2", Encoding.UTF8.GetBytes("value2")}}}}
                 }
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
 
@@ -342,7 +357,7 @@
                 ContentType = "content_type"
             };
 
-            var message = new BasicDeliverEventArgs(default, default, default, default, default, basicProperties, default);
+            var message = new BasicDeliverEventArgs(string.Empty, default, default, string.Empty, string.Empty, basicProperties, default);
 
             var headers = converter.RetrieveHeaders(message);
             var messageId = converter.RetrieveMessageId(message, headers);

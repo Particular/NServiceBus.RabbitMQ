@@ -1,5 +1,4 @@
-﻿#nullable disable
-namespace NServiceBus.Transport.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Concurrent;
@@ -66,12 +65,12 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async ValueTask Initialize(IChannel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, CancellationToken cancellationToken = default)
         {
-            Dictionary<string, object> arguments = null;
+            Dictionary<string, object?>? arguments = null;
             var createDurableQueue = durable;
 
             if (queueType == QueueType.Quorum)
             {
-                arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+                arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
 
                 if (createDurableQueue == false)
                 {
@@ -143,7 +142,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         readonly bool durable;
         readonly QueueType queueType;
-        readonly ConcurrentDictionary<Type, string> typeTopologyConfiguredSet = new ConcurrentDictionary<Type, string>();
+        readonly ConcurrentDictionary<Type, string?> typeTopologyConfiguredSet = new();
         readonly Func<Type, string> exchangeNameConvention;
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(ConventionalRoutingTopology));

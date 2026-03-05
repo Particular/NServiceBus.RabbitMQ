@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
     using System.Linq;
@@ -23,8 +25,7 @@
             {
                 Assert.That(context.ForwardedToErrorQueue, Is.True);
                 Assert.That(context.NumberOfTimesInvoked, Is.EqualTo(numberOfRetries + 1), "Message should be retried 5 times immediately");
-                Assert.That(context.Logs.Count(l => l.Message
-                    .StartsWith($"Immediate Retry is going to retry message '{context.MessageId}' because of an exception:")), Is.EqualTo(numberOfRetries));
+                Assert.That(context.Logs.Count(l => l.Message?.StartsWith($"Immediate Retry is going to retry message '{context.MessageId}' because of an exception:") ?? false), Is.EqualTo(numberOfRetries));
             });
         }
 
@@ -36,7 +37,7 @@
 
             public bool ForwardedToErrorQueue { get; set; }
 
-            public string MessageId { get; set; }
+            public string? MessageId { get; set; }
         }
 
         public class RetryEndpoint : EndpointConfigurationBuilder

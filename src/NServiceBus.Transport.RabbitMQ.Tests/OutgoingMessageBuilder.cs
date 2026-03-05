@@ -74,10 +74,10 @@
             return WithHeader(Headers.MessageIntent, intent.ToString());
         }
 
-        string destination;
-        Type eventType;
+        string? destination;
+        Type? eventType;
         string messageId = Guid.NewGuid().ToString();
-        byte[] body;
+        byte[]? body;
         Dictionary<string, string> headers = [];
         DispatchProperties constraints = [];
         DispatchConsistency dispatchConsistency = DispatchConsistency.Default;

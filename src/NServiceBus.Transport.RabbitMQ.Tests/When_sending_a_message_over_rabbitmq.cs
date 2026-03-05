@@ -47,7 +47,7 @@
         {
             var messageType = typeof(MyMessage);
 
-            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName), received => Assert.That(received.BasicProperties.Type, Is.EqualTo(messageType.FullName)));
+            return Verify(new OutgoingMessageBuilder().WithHeader(Headers.EnclosedMessageTypes, messageType.AssemblyQualifiedName!), received => Assert.That(received.BasicProperties.Type, Is.EqualTo(messageType.FullName)));
         }
 
         [Test]
@@ -116,7 +116,7 @@
 
             await messageDispatcher.Dispatch(operations, new TransportTransaction(), cancellationToken);
 
-            var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId;
+            var messageId = operations.MulticastTransportOperations.FirstOrDefault()?.Message.MessageId ?? operations.UnicastTransportOperations.FirstOrDefault()?.Message.MessageId ?? string.Empty;
 
             var result = await Consume(messageId, QueueToReceiveOn, cancellationToken);
 

@@ -159,7 +159,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
         Task Publish<T>(CancellationToken cancellationToken = default)
         {
             var type = typeof(T);
-            var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName).PublishType(type).Build();
+            var message = new OutgoingMessageBuilder().WithBody(new byte[0]).CorrelationId(type.FullName!).PublishType(type).Build();
 
             return messageDispatcher.Dispatch(message, new TransportTransaction(), cancellationToken);
         }

@@ -15,7 +15,7 @@
 
         public MessageDispatcher(
             ChannelProvider channelProvider,
-            Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
+            Action<IOutgoingTransportOperation, IBasicProperties>? messageCustomization,
             bool supportsDelayedDelivery
         )
         {

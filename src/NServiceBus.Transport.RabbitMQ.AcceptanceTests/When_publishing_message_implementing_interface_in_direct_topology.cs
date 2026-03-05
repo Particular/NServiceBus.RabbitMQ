@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Linq;
     using System.Threading.Tasks;
@@ -29,7 +31,7 @@
                 .Done(c => c.GotTheMessage)
                 .Run();
 
-            Assert.That(context.Logs.Any(l => l.Level == LogLevel.Warn && l.Message.Contains("The direct routing topology cannot properly publish a message type that implements")), Is.True);
+            Assert.That(context.Logs.Any(l => l.Level == LogLevel.Warn && l.Message is not null && l.Message.Contains("The direct routing topology cannot properly publish a message type that implements")), Is.True);
         }
 
         public class Publisher : EndpointConfigurationBuilder

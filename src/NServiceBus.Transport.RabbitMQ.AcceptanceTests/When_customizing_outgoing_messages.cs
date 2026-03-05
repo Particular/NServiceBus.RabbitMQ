@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -17,7 +19,7 @@
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            Assert.That(scenario.BasicDeliverEventArgs.BasicProperties.AppId, Is.EqualTo("MyValue"));
+            Assert.That(scenario.BasicDeliverEventArgs?.BasicProperties.AppId, Is.EqualTo("MyValue"));
         }
 
         public class Receiver : EndpointConfigurationBuilder
@@ -61,7 +63,7 @@
         {
             public bool MessageReceived { get; set; }
 
-            public BasicDeliverEventArgs BasicDeliverEventArgs { get; set; }
+            public BasicDeliverEventArgs? BasicDeliverEventArgs { get; set; }
         }
     }
 }
