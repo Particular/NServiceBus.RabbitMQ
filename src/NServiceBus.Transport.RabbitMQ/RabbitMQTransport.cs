@@ -70,7 +70,7 @@
             get;
             set
             {
-                ArgumentNullException.ThrowIfNull(value);
+                ArgumentNullException.ThrowIfNull(value, nameof(MessageIdStrategy));
                 field = value;
             }
         } = MessageConverter.DefaultMessageIdStrategy;
@@ -83,7 +83,7 @@
             get;
             set
             {
-                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero, nameof(TimeToWaitBeforeTriggeringCircuitBreaker));
                 field = value;
             }
         } = TimeSpan.FromMinutes(2);
@@ -112,7 +112,7 @@
             get;
             set
             {
-                ArgumentNullException.ThrowIfNull(value);
+                ArgumentNullException.ThrowIfNull(value, nameof(PrefetchCountCalculation));
                 field = value;
             }
         } = maxConcurrency => 3 * maxConcurrency;
@@ -149,7 +149,7 @@
             get;
             set
             {
-                ArgumentNullException.ThrowIfNull(value);
+                ArgumentNullException.ThrowIfNull(value, nameof(AuthMechanisms));
                 field = value;
             }
         } = [];
@@ -181,7 +181,7 @@
             get;
             set
             {
-                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero, nameof(HeartbeatInterval));
                 field = value;
             }
         } = TimeSpan.FromSeconds(60);
@@ -194,7 +194,7 @@
             get;
             set
             {
-                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero, nameof(NetworkRecoveryInterval));
                 field = value;
             }
         } = TimeSpan.FromSeconds(10);
