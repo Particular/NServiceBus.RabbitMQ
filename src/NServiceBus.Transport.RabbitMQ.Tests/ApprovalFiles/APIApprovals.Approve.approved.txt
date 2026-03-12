@@ -36,13 +36,13 @@ namespace NServiceBus
         public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString) { }
         public RabbitMQTransport(NServiceBus.RoutingTopology routingTopology, string connectionString, bool enableDelayedDelivery) { }
         public System.Collections.Generic.IReadOnlyList<RabbitMQ.Client.IAuthMechanismFactory> AuthMechanisms { get; set; }
-        public System.Security.Cryptography.X509Certificates.X509Certificate2 ClientCertificate { get; set; }
+        public System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate { get; set; }
         public NServiceBus.BrokerRequirementChecks DisabledBrokerRequirementChecks { get; set; }
         public System.TimeSpan HeartbeatInterval { get; set; }
-        public NServiceBus.ManagementApiConfiguration ManagementApiConfiguration { get; set; }
+        public NServiceBus.ManagementApiConfiguration? ManagementApiConfiguration { get; set; }
         public System.Func<RabbitMQ.Client.Events.BasicDeliverEventArgs, string> MessageIdStrategy { get; set; }
         public System.TimeSpan NetworkRecoveryInterval { get; set; }
-        public System.Action<NServiceBus.Transport.IOutgoingTransportOperation, RabbitMQ.Client.IBasicProperties> OutgoingNativeMessageCustomization { get; set; }
+        public System.Action<NServiceBus.Transport.IOutgoingTransportOperation, RabbitMQ.Client.IBasicProperties>? OutgoingNativeMessageCustomization { get; set; }
         public NServiceBus.PrefetchCountCalculation PrefetchCountCalculation { get; set; }
         public System.TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; }
         [System.Obsolete("Use \'AuthMechanisms = [new ExternalMechanismFactory()]\' to configure an external " +
@@ -80,7 +80,7 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.TimeSpan waitTime) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseConventionalRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType) { }
         public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseCustomRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, System.Func<bool, NServiceBus.Transport.RabbitMQ.IRoutingTopology> topologyFactory) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> UseDirectRoutingTopology(this NServiceBus.TransportExtensions<NServiceBus.RabbitMQTransport> transportExtensions, NServiceBus.QueueType queueType, System.Func<System.Type, string>? routingKeyConvention = null, System.Func<string>? exchangeNameConvention = null) { }
         [System.Obsolete("Use \'SetAuthMechanisms([new ExternalMechanismFactory()])\' to configure an externa" +
             "l authentication mechanism instead. Will be treated as an error from version 12." +
             "0.0. Will be removed in version 13.0.0.", false)]
@@ -92,7 +92,7 @@ namespace NServiceBus
     {
         public static NServiceBus.RoutingTopology Conventional(NServiceBus.QueueType queueType, bool useDurableEntities = true) { }
         public static NServiceBus.RoutingTopology Custom(NServiceBus.Transport.RabbitMQ.IRoutingTopology routingTopology) { }
-        public static NServiceBus.RoutingTopology Direct(NServiceBus.QueueType queueType, bool useDurableEntities = true, System.Func<System.Type, string> routingKeyConvention = null, System.Func<string> exchangeNameConvention = null) { }
+        public static NServiceBus.RoutingTopology Direct(NServiceBus.QueueType queueType, bool useDurableEntities = true, System.Func<System.Type, string>? routingKeyConvention = null, System.Func<string>? exchangeNameConvention = null) { }
     }
 }
 namespace NServiceBus.Transport.RabbitMQ
