@@ -250,12 +250,7 @@
         Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
 #pragma warning restore PS0018
         {
-            if (e.Initiator == ShutdownInitiator.Application)
-            {
-                return Task.CompletedTask;
-            }
-
-            if (e.Initiator == ShutdownInitiator.Peer && e.ReplyCode == 404)
+            if (e.Initiator == ShutdownInitiator.Application || e is { Initiator: ShutdownInitiator.Peer, ReplyCode: 404 })
             {
                 return Task.CompletedTask;
             }
