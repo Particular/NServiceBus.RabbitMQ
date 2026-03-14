@@ -501,14 +501,14 @@
                 return attempts;
             }
 
-            if (message.BasicProperties.Headers != null && message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
+            if (message.BasicProperties.Headers?.TryGetValue("x-delivery-count", out var headerValue) ?? false)
             {
                 attempts = Convert.ToInt32(headerValue) + 1;
             }
             else
             {
 
-                attempts = deliveryAttempts.GetOrAdd(messageIdKey, k => 1);
+                attempts = deliveryAttempts.GetOrAdd(messageIdKey, static k => 1);
                 attempts++;
                 deliveryAttempts.AddOrUpdate(messageIdKey, attempts);
             }
