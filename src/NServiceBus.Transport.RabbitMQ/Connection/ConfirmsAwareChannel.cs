@@ -52,23 +52,17 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        public async ValueTask PublishMessage(Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
-        {
-            await routingTopology.Publish(channel, type, message, properties, cancellationToken)
-              .ConfigureAwait(false);
-        }
+        public ValueTask PublishMessage(Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default) =>
+            routingTopology.Publish(channel, type, message, properties, cancellationToken);
 
-        public async ValueTask RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
+        public ValueTask RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
         {
             properties.Headers ??= new Dictionary<string, object?>();
 
-            await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken)
-                .ConfigureAwait(false);
+            return routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken);
         }
 
-#pragma warning disable PS0018
         public ValueTask DisposeAsync() => channel.DisposeAsync();
-#pragma warning restore PS0018
 
         readonly IChannel channel;
         readonly IRoutingTopology routingTopology;
