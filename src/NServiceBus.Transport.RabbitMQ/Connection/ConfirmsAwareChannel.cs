@@ -33,7 +33,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async ValueTask SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            if (properties.Headers != null && properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
+            if (properties.Headers?.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue) ?? false)
             {
                 var delay = Convert.ToInt32(delayValue);
                 var routingKey = DelayInfrastructure.CalculateRoutingKey(delay, address, out var startingDelayLevel);
