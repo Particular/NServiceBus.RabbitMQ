@@ -1,5 +1,4 @@
-﻿#nullable disable
-namespace NServiceBus.Transport.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;
@@ -12,7 +11,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
     class DirectRoutingTopology : IRoutingTopology
     {
-        public DirectRoutingTopology(bool durable, QueueType queueType, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public DirectRoutingTopology(bool durable, QueueType queueType, Func<Type, string>? routingKeyConvention = null, Func<string>? exchangeNameConvention = null)
         {
             this.durable = durable;
             this.queueType = queueType;
@@ -40,12 +39,12 @@ namespace NServiceBus.Transport.RabbitMQ
 
         public async ValueTask Initialize(IChannel channel, IEnumerable<string> receivingAddresses, IEnumerable<string> sendingAddresses, CancellationToken cancellationToken = default)
         {
-            Dictionary<string, object> arguments = null;
+            Dictionary<string, object?>? arguments = null;
             var createDurableQueue = durable;
 
             if (queueType == QueueType.Quorum)
             {
-                arguments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+                arguments = new Dictionary<string, object?> { { "x-queue-type", "quorum" } };
 
                 if (createDurableQueue == false)
                 {

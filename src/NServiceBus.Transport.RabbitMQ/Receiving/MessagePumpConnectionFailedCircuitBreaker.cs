@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.RabbitMQ
                 return;
             }
 
-            timer.Change(Timeout.Infinite, Timeout.Infinite);
+            timer?.Change(Timeout.Infinite, Timeout.Infinite);
             Logger.InfoFormat("The circuit breaker for '{0}' is now disarmed", name);
         }
 
@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
             if (newValue == 1)
             {
-                timer.Change(timeToWaitBeforeTriggering, NoPeriodicTriggering);
+                timer?.Change(timeToWaitBeforeTriggering, NoPeriodicTriggering);
                 Logger.WarnFormat("The circuit breaker for '{0}' is now in the armed state", name);
             }
         }
@@ -45,14 +45,15 @@ namespace NServiceBus.Transport.RabbitMQ
         public void Dispose()
         {
             timer?.Dispose();
+            timer = null;
         }
 
-        void CircuitBreakerTriggered(object state)
+        void CircuitBreakerTriggered(object? state)
         {
             if (Interlocked.Read(ref failureCount) > 0)
             {
                 Logger.WarnFormat("The circuit breaker for '{0}' will now be triggered", name);
-                criticalErrorAction($"'{name}' connection to the broker has failed.", lastException);
+                criticalErrorAction($"'{name}' connection to the broker has failed.", lastException ?? new Exception());
             }
         }
 
@@ -60,9 +61,9 @@ namespace NServiceBus.Transport.RabbitMQ
         static readonly ILog Logger = LogManager.GetLogger<MessagePumpConnectionFailedCircuitBreaker>();
         string name;
         TimeSpan timeToWaitBeforeTriggering;
-        Timer timer;
+        Timer? timer;
         Action<string, Exception> criticalErrorAction;
         long failureCount;
-        Exception lastException;
+        Exception? lastException;
     }
 }

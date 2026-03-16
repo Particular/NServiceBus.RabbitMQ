@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,7 +12,7 @@ using NServiceBus.Transport.RabbitMQ.AcceptanceTests;
 
 class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 {
-    TestRabbitMQTransport transport;
+    TestRabbitMQTransport? transport;
     readonly QueueType queueType;
 
     public ConfigureEndpointRabbitMQTransport(QueueType queueType = QueueType.Classic)
@@ -20,7 +22,7 @@ class ConfigureEndpointRabbitMQTransport : IConfigureEndpointTestExecution
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
-        transport = new TestRabbitMQTransport(RoutingTopology.Conventional(queueType, type => type.FullName), ConnectionHelper.ConnectionString)
+        transport = new TestRabbitMQTransport(RoutingTopology.Conventional(queueType, type => type.FullName!), ConnectionHelper.ConnectionString)
         {
             // The startup costs for creating a policy for every test queue add up, and the tests shouldn't be impacted by the default delivery limit.
             ValidateDeliveryLimits = false

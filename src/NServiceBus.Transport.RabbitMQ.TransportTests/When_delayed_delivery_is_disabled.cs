@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.TransportTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.TransportTests
 {
     using System;
     using System.Threading.Tasks;

@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
@@ -28,7 +29,7 @@
 
             var connectionConfig = transport.ConnectionConfiguration;
 
-            connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig, null, true, false, null, transport.HeartbeatInterval, transport.NetworkRecoveryInterval, null);
+            connectionFactory = new ConnectionFactory(ReceiverQueue, connectionConfig!, null, true, false, [], transport.HeartbeatInterval, transport.NetworkRecoveryInterval, []);
 
             infra = await transport.Initialize(new HostSettings(ReceiverQueue, ReceiverQueue, new StartupDiagnosticEntries(), (_, _, _) => { }, true),
                 [new ReceiveSettings(ReceiverQueue, new QueueAddress(ReceiverQueue), true, true, ErrorQueue)], [.. AdditionalReceiverQueues, ErrorQueue]);
@@ -78,8 +79,7 @@
             return message;
         }
 
-        bool TryReceiveMessage(out IncomingMessage message, TimeSpan timeout) =>
-            receivedMessages.TryTake(out message, timeout);
+        bool TryReceiveMessage([NotNullWhen(true)] out IncomingMessage? message, TimeSpan timeout) => receivedMessages.TryTake(out message, timeout);
 
         protected IList<string> AdditionalReceiverQueues = [];
 

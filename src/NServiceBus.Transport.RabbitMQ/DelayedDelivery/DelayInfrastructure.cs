@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-namespace NServiceBus.Transport.RabbitMQ
+﻿namespace NServiceBus.Transport.RabbitMQ
 {
     using System;
     using System.Collections.Generic;

@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.TransportTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.TransportTests
 {
     using System;
     using System.Collections.Generic;
@@ -17,7 +19,7 @@
         {
             var triggeredChangeConcurrency = CreateTaskCompletionSource();
             var sentMessageReceived = CreateTaskCompletionSource();
-            Task concurrencyChanged = null;
+            Task? concurrencyChanged = null;
             int invocationCounter = 0;
 
             await StartPump(async (context, ct) =>
@@ -43,7 +45,7 @@
 
             await SendMessage(InputQueueName);
             await sentMessageReceived.Task;
-            await concurrencyChanged;
+            await (concurrencyChanged ?? Task.CompletedTask);
             await StopPump();
 
             Assert.That(invocationCounter, Is.EqualTo(1), "message should successfully complete on first processing attempt");

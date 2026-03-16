@@ -6,32 +6,44 @@ namespace NServiceBus.Transport.RabbitMQ
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
 
-    sealed class ConfirmsAwareChannel(IConnection connection, IRoutingTopology routingTopology) : IAsyncDisposable
+    sealed class ConfirmsAwareChannel : IAsyncDisposable
     {
+        ConfirmsAwareChannel(IChannel channel, IRoutingTopology routingTopology)
+        {
+            this.channel = channel;
+            this.routingTopology = routingTopology;
+        }
+
+        public static async Task<ConfirmsAwareChannel> Create(IConnection? connection, IRoutingTopology routingTopology, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(connection);
+
+            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
+            var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            var confirmsAwareChannel = new ConfirmsAwareChannel(channel, routingTopology);
+
+            return confirmsAwareChannel;
+        }
+
         public bool IsOpen => channel.IsOpen;
 
         public bool IsClosed => channel.IsClosed;
 
-        public async Task Initialize(CancellationToken cancellationToken = default)
-        {
-            var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true, outstandingPublisherConfirmationsRateLimiter: null);
-            channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-
         public async ValueTask SendMessage(string address, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            if (properties.Headers != null &&
-                properties.Headers.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue))
+            if (properties.Headers?.TryGetValue(DelayInfrastructure.DelayHeader, out var delayValue) ?? false)
             {
-                var routingKey =
-                    DelayInfrastructure.CalculateRoutingKey((int)delayValue, address, out var startingDelayLevel);
+                var delay = Convert.ToInt32(delayValue);
+                var routingKey = DelayInfrastructure.CalculateRoutingKey(delay, address, out var startingDelayLevel);
 
-                await routingTopology.BindToDelayInfrastructure(channel, address,
-                    DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address),
-                    cancellationToken).ConfigureAwait(false);
+                await routingTopology.BindToDelayInfrastructure(channel, address, DelayInfrastructure.DeliveryExchange, DelayInfrastructure.BindingKey(address), cancellationToken)
+                    .ConfigureAwait(false);
+
                 // The channel is used here directly because it is not the routing topologies concern to know about the sends to the delay infrastructure
-                await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true,
-                    properties, message.Body, cancellationToken).ConfigureAwait(false);
+                await channel.BasicPublishAsync(DelayInfrastructure.LevelName(startingDelayLevel), routingKey, true, properties, message.Body, cancellationToken)
+                    .ConfigureAwait(false);
             }
             else
             {
@@ -40,22 +52,19 @@ namespace NServiceBus.Transport.RabbitMQ
             }
         }
 
-        public async ValueTask PublishMessage(Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default) =>
-            await routingTopology.Publish(channel, type, message, properties, cancellationToken)
-                .ConfigureAwait(false);
+        public ValueTask PublishMessage(Type type, OutgoingMessage message, BasicProperties properties, CancellationToken cancellationToken = default) =>
+            routingTopology.Publish(channel, type, message, properties, cancellationToken);
 
-        public async ValueTask RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
+        public ValueTask RawSendInCaseOfFailure(string address, ReadOnlyMemory<byte> body, BasicProperties properties, CancellationToken cancellationToken = default)
         {
-            properties.Headers ??= new Dictionary<string, object>();
+            properties.Headers ??= new Dictionary<string, object?>();
 
-            await routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken)
-                .ConfigureAwait(false);
+            return routingTopology.RawSendInCaseOfFailure(channel, address, body, properties, cancellationToken);
         }
 
-#pragma warning disable PS0018
-        public ValueTask DisposeAsync() => channel is not null ? channel.DisposeAsync() : ValueTask.CompletedTask;
-#pragma warning restore PS0018
+        public ValueTask DisposeAsync() => channel.DisposeAsync();
 
-        IChannel channel;
+        readonly IChannel channel;
+        readonly IRoutingTopology routingTopology;
     }
 }

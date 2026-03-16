@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
+﻿namespace NServiceBus.Transport.RabbitMQ.ManagementApi;
 
 using System.Text.Json.Serialization;
 

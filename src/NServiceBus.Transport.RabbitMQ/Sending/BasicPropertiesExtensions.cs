@@ -20,7 +20,7 @@
 
             properties.Persistent = !messageHeaders.Remove(UseNonPersistentDeliveryHeader);
 
-            properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object)p.Value);
+            properties.Headers = messageHeaders.ToDictionary(p => p.Key, p => (object?)p.Value);
 
             if (delayed)
             {

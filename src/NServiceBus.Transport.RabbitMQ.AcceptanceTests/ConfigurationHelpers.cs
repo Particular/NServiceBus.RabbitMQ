@@ -1,4 +1,6 @@
-﻿using NServiceBus;
+﻿#nullable enable
+
+using NServiceBus;
 using NServiceBus.AcceptanceTests.EndpointTemplates;
 
 static class ConfigurationHelpers

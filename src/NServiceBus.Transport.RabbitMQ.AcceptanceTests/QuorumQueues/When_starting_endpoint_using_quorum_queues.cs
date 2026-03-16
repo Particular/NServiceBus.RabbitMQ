@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;

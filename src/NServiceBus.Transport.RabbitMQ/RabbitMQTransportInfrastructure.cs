@@ -20,7 +20,7 @@
             ConnectionFactory connectionFactory, IRoutingTopology routingTopology,
             ChannelProvider channelProvider, MessageConverter messageConverter,
             BrokerVerifier brokerVerifier,
-            Action<IOutgoingTransportOperation, IBasicProperties> messageCustomization,
+            Action<IOutgoingTransportOperation, IBasicProperties>? messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
             TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
         {

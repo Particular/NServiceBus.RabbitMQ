@@ -90,7 +90,7 @@
 
             await PrepareTestEndpoint(endpointName);
 
-            await AddMessages(endpointName, numExistingMessages, properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, Guid.NewGuid().ToString() } });
+            await AddMessages(endpointName, numExistingMessages, properties => properties.Headers = new Dictionary<string, object?> { { NServiceBus.Headers.MessageId, Guid.NewGuid().ToString() } });
 
             await ExecuteMigration(endpointName);
 
@@ -137,7 +137,7 @@
             await AddMessages(
                 holdingQueueName,
                 numExistingMessages,
-                properties => properties.Headers = new Dictionary<string, object> { { NServiceBus.Headers.MessageId, "duplicate" } });
+                properties => properties.Headers = new Dictionary<string, object?> { { NServiceBus.Headers.MessageId, "duplicate" } });
 
             await ExecuteMigration(endpointName);
 
@@ -289,7 +289,7 @@
             var managementClient = new ManagementClient(connectionConfiguration);
             var brokerVerifier = new BrokerVerifier(managementClient, BrokerRequirementChecks.None, true);
 
-            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", connectionConfiguration, null, true, false, [], TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), null);
+            var connectionFactory = new RabbitMQ.ConnectionFactory("unit-tests", connectionConfiguration, null, true, false, [], TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), []);
 
             brokerConnection = new BrokerConnection(brokerVerifier, connectionFactory);
 
@@ -352,7 +352,7 @@
         Task CreateQueue(string queueName, bool quorum) =>
             ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
-                var queueArguments = new Dictionary<string, object>();
+                var queueArguments = new Dictionary<string, object?>();
 
                 if (quorum)
                 {
@@ -366,7 +366,7 @@
 
         Task BindQueue(string queueName, string exchangeName) => ExecuteBrokerCommand(async (channel, cancellationToken) => await channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken));
 
-        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties> modifications = null) =>
+        Task AddMessages(string queueName, int numMessages, Action<IBasicProperties>? modifications = null) =>
             ExecuteBrokerCommand(async (channel, cancellationToken) =>
             {
                 for (var i = 0; i < numMessages; i++)
@@ -408,7 +408,7 @@
             return queueExists;
         }
 
-        async Task ExecuteBrokerCommand(Func<IChannel, CancellationToken, Task> command, CreateChannelOptions createChannelOptions = default, CancellationToken cancellationToken = default)
+        async Task ExecuteBrokerCommand(Func<IChannel, CancellationToken, Task> command, CreateChannelOptions? createChannelOptions = default, CancellationToken cancellationToken = default)
         {
             await using var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken: cancellationToken);
             await command(channel, cancellationToken);

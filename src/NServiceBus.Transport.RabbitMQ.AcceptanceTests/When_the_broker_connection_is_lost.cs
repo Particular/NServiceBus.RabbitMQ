@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
     using System.Threading;
@@ -101,13 +103,14 @@
 
         public class MyRequest : IMessage
         {
-            public string MessageId { get; set; }
+            public string? MessageId { get; set; }
         }
 
         class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
-            public string MessageId { get; set; }
+
+            public string? MessageId { get; set; }
         }
     }
 }

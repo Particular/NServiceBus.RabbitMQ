@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System;
     using System.Threading;
@@ -117,12 +119,12 @@
 
         public class MyRequest : IMessage
         {
-            public string Client { get; set; }
+            public required string Client { get; set; }
         }
 
         public class MyResponse : IMessage
         {
-            public string Client { get; set; }
+            public required string Client { get; set; }
         }
 
         class Context : ScenarioContext

@@ -1,5 +1,4 @@
-﻿#nullable disable
-namespace NServiceBus
+﻿namespace NServiceBus
 {
     using System;
     using NServiceBus.Transport.RabbitMQ;
@@ -38,7 +37,7 @@ namespace NServiceBus
         /// <param name="useDurableEntities">Specifies whether exchanges and queues should be declared as durable or not.</param>
         /// <param name="routingKeyConvention">The routing key convention.</param>
         /// <param name="exchangeNameConvention">The exchange name convention.</param>
-        public static RoutingTopology Direct(QueueType queueType, bool useDurableEntities = true, Func<Type, string> routingKeyConvention = null, Func<string> exchangeNameConvention = null)
+        public static RoutingTopology Direct(QueueType queueType, bool useDurableEntities = true, Func<Type, string>? routingKeyConvention = null, Func<string>? exchangeNameConvention = null)
         {
             return new RoutingTopology(() => new DirectRoutingTopology(useDurableEntities, queueType, routingKeyConvention, exchangeNameConvention));
         }

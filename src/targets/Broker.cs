@@ -85,13 +85,14 @@ class Broker
 
         return request;
     }
-    public string HostName { get; set; }
 
-    public int Port { get; set; }
+    public required string HostName { get; set; }
 
-    public string VirtualHost { get; set; }
+    public required int Port { get; set; }
 
-    public string UserName { get; set; }
+    public required string VirtualHost { get; set; }
 
-    public string Password { get; set; }
+    public required string UserName { get; set; }
+
+    public required string Password { get; set; }
 }

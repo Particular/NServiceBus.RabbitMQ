@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace NServiceBus.TransportTests;
 
 public partial class TransportTestsConfiguration : ITransportTestsConfiguration

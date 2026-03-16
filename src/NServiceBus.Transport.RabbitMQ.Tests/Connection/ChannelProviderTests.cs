@@ -91,7 +91,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public TaskCompletionSource DelayTaskCompletionSource { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            public Func<CancellationToken, Task> FireAndForgetAction { get; private set; }
+            public Func<CancellationToken, Task> FireAndForgetAction { get; private set; } = _ => Task.CompletedTask;
 
             protected override Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default)
             {
@@ -121,19 +121,19 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             public bool WasDisposed { get; private set; }
 
-            public Task<IChannel> CreateChannelAsync(CreateChannelOptions options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task<IChannel> CreateChannelAsync(CreateChannelOptions? options = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
             public ushort ChannelMax { get; }
-            public IDictionary<string, object> ClientProperties { get; }
-            public ShutdownEventArgs CloseReason { get; }
-            public AmqpTcpEndpoint Endpoint { get; }
+            public IDictionary<string, object?> ClientProperties { get; } = new Dictionary<string, object?>();
+            public ShutdownEventArgs? CloseReason { get; }
+            public AmqpTcpEndpoint Endpoint { get; } = new AmqpTcpEndpoint();
             public uint FrameMax { get; }
             public TimeSpan Heartbeat { get; }
             public bool IsOpen { get; }
-            public AmqpTcpEndpoint[] KnownHosts { get; }
-            public IProtocol Protocol { get; }
-            public IDictionary<string, object> ServerProperties { get; }
-            public IList<ShutdownReportEntry> ShutdownReport { get; }
+            public AmqpTcpEndpoint[]? KnownHosts { get; }
+            public IProtocol Protocol { get; } = new FakeProtocol();
+            public IDictionary<string, object?>? ServerProperties { get; }
+            public IList<ShutdownReportEntry>? ShutdownReport { get; }
             public string ClientProvidedName { get; } = $"FakeConnection{Interlocked.Increment(ref connectionCounter)}";
             public event AsyncEventHandler<CallbackExceptionEventArgs> CallbackExceptionAsync = (_, _) => Task.CompletedTask;
             public event AsyncEventHandler<ShutdownEventArgs> ConnectionShutdownAsync = (_, _) => Task.CompletedTask;
@@ -153,6 +153,19 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
 
             static int connectionCounter;
             public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+
+        class FakeProtocol : IProtocol
+        {
+            public string ApiName => throw new NotImplementedException();
+
+            public int DefaultPort => throw new NotImplementedException();
+
+            public int MajorVersion => throw new NotImplementedException();
+
+            public int MinorVersion => throw new NotImplementedException();
+
+            public int Revision => throw new NotImplementedException();
         }
     }
 }

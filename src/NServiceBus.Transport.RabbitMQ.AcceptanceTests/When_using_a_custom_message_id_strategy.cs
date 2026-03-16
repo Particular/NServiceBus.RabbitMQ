@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+﻿#nullable enable
+
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
 {
     using System.Collections.Generic;
     using System.Text;
@@ -68,7 +70,7 @@
                             string.Empty,
                             new Dictionary<string, string>
                             {
-                                    { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName }
+                                    { Headers.EnclosedMessageTypes, typeof(MyRequest).FullName! }
                             },
                             Encoding.UTF8.GetBytes(messageBody));
 
@@ -109,7 +111,7 @@
         class MyContext : ScenarioContext
         {
             public bool GotTheMessage { get; set; }
-            public string ReceivedMessageId { get; set; }
+            public string? ReceivedMessageId { get; set; }
         }
     }
 }

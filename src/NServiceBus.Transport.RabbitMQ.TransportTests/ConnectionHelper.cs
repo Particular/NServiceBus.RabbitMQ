@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Security.Authentication;
 using NServiceBus.Transport.RabbitMQ;
 using RabbitMQ.Client;

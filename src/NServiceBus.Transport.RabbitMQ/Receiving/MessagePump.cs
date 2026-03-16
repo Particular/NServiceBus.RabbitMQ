@@ -32,17 +32,17 @@
         readonly FastConcurrentLru<string, int> deliveryAttempts = new(1_000);
         readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new(1_000);
 
-        OnMessage onMessage;
-        OnError onError;
+        OnMessage onMessage = (_, _) => Task.CompletedTask;
+        OnError onError = (_, _) => Task.FromResult(ErrorHandleResult.Handled);
         int maxConcurrency;
         long numberOfMessagesBeingProcessed;
-        CancellationTokenSource messagePumpCancellationTokenSource;
-        CancellationTokenSource messageProcessingCancellationTokenSource;
+        CancellationTokenSource? messagePumpCancellationTokenSource;
+        CancellationTokenSource? messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
-        IConnection connection;
+        IConnection? connection;
 
         // Stop
-        TaskCompletionSource connectionShutdownCompleted;
+        TaskCompletionSource? connectionShutdownCompleted;
 
         public MessagePump(
             ReceiveSettings settings,
@@ -78,9 +78,12 @@
             queuePurger = new QueuePurger(connectionFactory);
 
             name = $"{ReceiveAddress} MessagePump";
+
+            circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(name, timeToWaitBeforeTriggeringCircuitBreaker, (message, exception) => criticalErrorAction(message, exception, CancellationToken.None));
         }
 
-        public ISubscriptionManager Subscriptions { get; }
+        public ISubscriptionManager? Subscriptions { get; }
+
         public string Id => settings.Id;
 
         public string ReceiveAddress { get; }
@@ -103,6 +106,8 @@
         {
             messagePumpCancellationTokenSource = new CancellationTokenSource();
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
+
+            circuitBreaker.Dispose();
 
             circuitBreaker = new MessagePumpConnectionFailedCircuitBreaker(
                 name,
@@ -182,7 +187,7 @@
                 // is not executed on the event handler thread
                 connectionShutdownCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                if (connection.IsOpen)
+                if (connection is { IsOpen: true })
                 {
                     try
                     {
@@ -206,8 +211,8 @@
             messagePumpCancellationTokenSource?.Dispose();
             messagePumpCancellationTokenSource = null;
             messageProcessingCancellationTokenSource?.Dispose();
-            connection.Dispose();
-            circuitBreaker?.Dispose();
+            connection?.Dispose();
+            circuitBreaker.Dispose();
         }
 
 #pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
@@ -231,7 +236,7 @@
             {
                 //log entry handled by event handler registered in ConnectionFactory
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
             }
             else
             {
@@ -245,12 +250,7 @@
         Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
 #pragma warning restore PS0018
         {
-            if (e.Initiator == ShutdownInitiator.Application)
-            {
-                return Task.CompletedTask;
-            }
-
-            if (e.Initiator == ShutdownInitiator.Peer && e.ReplyCode == 404)
+            if (e.Initiator == ShutdownInitiator.Application || e is { Initiator: ShutdownInitiator.Peer, ReplyCode: 404 })
             {
                 return Task.CompletedTask;
             }
@@ -259,7 +259,7 @@
             {
                 Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
             }
             else
             {
@@ -275,7 +275,7 @@
         {
             var consumer = (AsyncEventingBasicConsumer)sender;
 
-            if (consumer.Channel is not { IsOpen: true } || !connection.IsOpen)
+            if (!(consumer.Channel is { IsOpen: true } && connection is { IsOpen: true }))
             {
                 return Task.CompletedTask;
             }
@@ -284,7 +284,7 @@
             {
                 Logger.WarnFormat("'{0}' consumer canceled by broker", name);
                 circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource.Token));
+                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
             }
             else
             {
@@ -303,12 +303,12 @@
                 {
                     try
                     {
-                        if (connection.IsOpen)
+                        if (connection is { IsOpen: true })
                         {
                             await connection.CloseAsync(cancellationToken).ConfigureAwait(false);
                         }
 
-                        connection.Dispose();
+                        connection?.Dispose();
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
@@ -339,14 +339,14 @@
         async Task Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
 #pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
         {
-            if (messagePumpCancellationTokenSource.IsCancellationRequested)
+            if (messagePumpCancellationTokenSource?.IsCancellationRequested ?? false)
             {
                 return;
             }
 
             var consumer = (AsyncEventingBasicConsumer)sender;
 
-            await ProcessAndSwallowExceptions(consumer, eventArgs, messageProcessingCancellationTokenSource.Token).ConfigureAwait(false);
+            await ProcessAndSwallowExceptions(consumer, eventArgs, messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None).ConfigureAwait(false);
         }
 
         async Task ProcessAndSwallowExceptions(AsyncEventingBasicConsumer consumer, BasicDeliverEventArgs message, CancellationToken messageProcessingCancellationToken)
@@ -469,7 +469,7 @@
             {
                 failedBasicAckMessages.AddOrUpdate(messageIdKey, true);
 
-                if (PreconditionFailedRegex().IsMatch(ex.ShutdownReason.ReplyText))
+                if (PreconditionFailedRegex().IsMatch(ex.ShutdownReason?.ReplyText ?? string.Empty))
                 {
                     Logger.Error($"Failed to acknowledge message '{messageId}' because the handler execution time exceeded the broker delivery acknowledgement timeout. Increase the length of the timeout on the broker. The message was returned to the queue.", ex);
                 }
@@ -496,14 +496,14 @@
                 return attempts;
             }
 
-            if (message.BasicProperties.Headers != null && message.BasicProperties.Headers.TryGetValue("x-delivery-count", out var headerValue))
+            if (message.BasicProperties.Headers?.TryGetValue("x-delivery-count", out var headerValue) ?? false)
             {
                 attempts = Convert.ToInt32(headerValue) + 1;
             }
             else
             {
 
-                attempts = deliveryAttempts.GetOrAdd(messageIdKey, k => 1);
+                attempts = deliveryAttempts.GetOrAdd(messageIdKey, static k => 1);
                 attempts++;
                 deliveryAttempts.AddOrUpdate(messageIdKey, attempts);
             }
