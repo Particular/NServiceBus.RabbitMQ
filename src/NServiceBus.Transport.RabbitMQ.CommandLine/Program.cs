@@ -17,6 +17,7 @@ void CreateDelaysCommand(Command rootCommand)
 
     delaysSubCommand.Subcommands.Add(DelaysCreateCommand.CreateCommand());
     delaysSubCommand.Subcommands.Add(DelaysMigrateCommand.CreateCommand());
+    delaysSubCommand.Subcommands.Add(DelaysTransferCommand.CreateCommand());
     delaysSubCommand.Subcommands.Add(DelaysVerifyCommand.CreateCommand());
 
     rootCommand.Subcommands.Add(delaysSubCommand);
