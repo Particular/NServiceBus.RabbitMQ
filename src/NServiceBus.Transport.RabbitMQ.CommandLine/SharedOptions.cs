@@ -305,8 +305,8 @@
             var managementApiPasswordOption = CreateManagementApiPasswordOption();
             var certPathOption = CreateCertPathOption();
             var certPassphraseOption = CreateCertPassphraseOption();
-            var disableCertValidationOption = CreateDisableCertValidationOption();
             var useExternalAuthOption = CreateUseExternalAuthOption();
+            var disableCertValidationOption = CreateDisableCertValidationOption();
 
             command.Options.Add(connectionStringOption);
             command.Options.Add(connectionStringEnvOption);
@@ -315,10 +315,10 @@
             command.Options.Add(managementApiPasswordOption);
             command.Options.Add(certPathOption);
             command.Options.Add(certPassphraseOption);
-            command.Options.Add(disableCertValidationOption);
             command.Options.Add(useExternalAuthOption);
+            command.Options.Add(disableCertValidationOption);
 
-            return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, certPathOption, certPassphraseOption, disableCertValidationOption, useExternalAuthOption);
+            return new BrokerConnectionBinder(connectionStringOption, connectionStringEnvOption, managementApiUrlOption, managementApiUserNameOption, managementApiPasswordOption, certPathOption, certPassphraseOption, useExternalAuthOption, disableCertValidationOption);
         }
 
         public static (BrokerConnectionBinder Source, BrokerConnectionBinder Destination) CreateSourceAndDestinationBrokerConnectionBindersWithOptions(Command command)
@@ -364,10 +364,10 @@
             command.Options.Add(disableCertValidationOption);
 
             var sourceBrokerConnection = new BrokerConnectionBinder(sourceConnectionStringOption, sourceConnectionStringEnvOption, sourceManagementApiUrlOption, sourceManagementApiUserNameOption, sourceManagementApiPasswordOption,
-                sourceCertPathOption, sourceCertPassphraseOption, disableCertValidationOption, sourceUseExternalAuthOption);
+                sourceCertPathOption, sourceCertPassphraseOption, sourceUseExternalAuthOption, disableCertValidationOption);
 
             var destinationBrokerConnection = new BrokerConnectionBinder(destinationConnectionStringOption, destinationConnectionStringEnvOption, destinationManagementApiUrlOption, destinationManagementApiUserNameOption, destinationManagementApiPasswordOption,
-                destinationCertPathOption, destinationCertPassphraseOption, disableCertValidationOption, destinationUseExternalAuthOption);
+                destinationCertPathOption, destinationCertPassphraseOption, destinationUseExternalAuthOption, disableCertValidationOption);
 
             return (sourceBrokerConnection, destinationBrokerConnection);
         }
