@@ -6,6 +6,8 @@
     {
         const string ConnectionStringEnvironmentVariable = "RabbitMQTransport_ConnectionString";
 
+        //Standard options
+
         public static Option<string> CreateConnectionStringOption()
         {
             var connectionStringOption = new Option<string>("--connectionString", "-c")
@@ -126,17 +128,19 @@
         {
             var certPassphraseOption = new Option<string>("--certPassphrase")
             {
-                Description = "The passphrase for client certificate file for when using a client certificate"
+                Description = "The passphrase for the client certificate file when using a client certificate"
             };
 
             return certPassphraseOption;
         }
 
+        // Options for source broker
+
         public static Option<string> CreateSourceConnectionStringOption()
         {
             var connectionStringOption = new Option<string>("--sourceConnectionString")
             {
-                Description = "Force this command to use the specified connection string"
+                Description = "Force this command to use the specified connection string for the source broker"
             };
 
             return connectionStringOption;
@@ -146,7 +150,7 @@
         {
             var connectionStringEnvOption = new Option<string>("--sourceConnectionStringEnv")
             {
-                Description = "Specifies the environment variable where the connection string can be found. --connectionString, if specified, will take precedence over this option.",
+                Description = "Specifies the environment variable where the connection string for the source broker can be found. --sourceConnectionString, if specified, will take precedence over this option.",
                 DefaultValueFactory = _ => "RabbitMQTransport_Source_ConnectionString"
             };
 
@@ -157,7 +161,7 @@
         {
             var managementApiUrlOption = new Option<string>("--sourceManagementApiUrl")
             {
-                Description = "Overrides the value inferred from the connection string"
+                Description = "Overrides the value inferred from the connection string for the source broker"
             };
 
             return managementApiUrlOption;
@@ -167,7 +171,7 @@
         {
             var managementApiUserNameOption = new Option<string>("--sourceManagementApiUserName")
             {
-                Description = "Overrides the value inferred from the connection string. If provided, --managementApiPassword must also be provided or this option will be ignored."
+                Description = "Overrides the value inferred from the connection string for the source broker. If provided, --sourceManagementApiPassword must also be provided or this option will be ignored."
             };
 
             return managementApiUserNameOption;
@@ -177,7 +181,7 @@
         {
             var managementApiPasswordOption = new Option<string>("--sourceManagementApiPassword")
             {
-                Description = "Overrides the value inferred from the connection string. If provided, --managementApiUserName must also be provided or this option will be ignored."
+                Description = "Overrides the value inferred from the connection string for the source broker. If provided, --sourceManagementApiUserName must also be provided or this option will be ignored."
             };
 
             return managementApiPasswordOption;
@@ -187,7 +191,7 @@
         {
             var useExternalAuthOption = new Option<bool>("--sourceUseExternalAuth")
             {
-                Description = "Use the external authorization option when connecting to the broker",
+                Description = "Use the external authorization option when connecting to the source broker",
                 DefaultValueFactory = _ => false
             };
 
@@ -198,7 +202,7 @@
         {
             var certPathOption = new Option<string>("--sourceCertPath")
             {
-                Description = "Set the path to the client certificate file for connecting to the broker"
+                Description = "Set the path to the client certificate file for connecting to the source broker"
             };
 
             return certPathOption;
@@ -208,17 +212,19 @@
         {
             var certPassphraseOption = new Option<string>("--sourceCertPassphrase")
             {
-                Description = "The passphrase for client certificate file for when using a client certificate"
+                Description = "The passphrase for the client certificate file when using a client certificate to connect to the source broker"
             };
 
             return certPassphraseOption;
         }
 
+        // Options for destination broker
+
         public static Option<string> CreateDestinationConnectionStringOption()
         {
             var connectionStringOption = new Option<string>("--destinationConnectionString")
             {
-                Description = "Force this command to use the specified connection string"
+                Description = "Force this command to use the specified connection string for the destination broker"
             };
 
             return connectionStringOption;
@@ -228,7 +234,7 @@
         {
             var connectionStringEnvOption = new Option<string>("--destinationConnectionStringEnv")
             {
-                Description = "Specifies the environment variable where the connection string can be found. --connectionString, if specified, will take precedence over this option.",
+                Description = "Specifies the environment variable where the connection string for the destination broker can be found. --destinationConnectionString, if specified, will take precedence over this option.",
                 DefaultValueFactory = _ => "RabbitMQTransport_Destination_ConnectionString"
             };
 
@@ -239,7 +245,7 @@
         {
             var managementApiUrlOption = new Option<string>("--destinationManagementApiUrl")
             {
-                Description = "Overrides the value inferred from the connection string"
+                Description = "Overrides the value inferred from the connection string for the destination broker"
             };
 
             return managementApiUrlOption;
@@ -249,7 +255,7 @@
         {
             var managementApiUserNameOption = new Option<string>("--destinationManagementApiUserName")
             {
-                Description = "Overrides the value inferred from the connection string. If provided, --managementApiPassword must also be provided or this option will be ignored."
+                Description = "Overrides the value inferred from the connection string for the destination broker. If provided, --destinationManagementApiPassword must also be provided or this option will be ignored."
             };
 
             return managementApiUserNameOption;
@@ -259,7 +265,7 @@
         {
             var managementApiPasswordOption = new Option<string>("--destinationManagementApiPassword")
             {
-                Description = "Overrides the value inferred from the connection string. If provided, --managementApiUserName must also be provided or this option will be ignored."
+                Description = "Overrides the value inferred from the connection string for the destination broker. If provided, --destinationManagementApiUserName must also be provided or this option will be ignored."
             };
 
             return managementApiPasswordOption;
@@ -269,7 +275,7 @@
         {
             var useExternalAuthOption = new Option<bool>("--destinationUseExternalAuth")
             {
-                Description = "Use the external authorization option when connecting to the broker",
+                Description = "Use the external authorization option when connecting to the destination broker",
                 DefaultValueFactory = _ => false
             };
 
@@ -280,7 +286,7 @@
         {
             var certPathOption = new Option<string>("--destinationCertPath")
             {
-                Description = "Set the path to the client certificate file for connecting to the broker"
+                Description = "Set the path to the client certificate file for connecting to the destination broker"
             };
 
             return certPathOption;
@@ -290,7 +296,7 @@
         {
             var certPassphraseOption = new Option<string>("--destinationCertPassphrase")
             {
-                Description = "The passphrase for client certificate file for when using a client certificate"
+                Description = "The passphrase for the client certificate file when using a client certificate to connect to the destination broker"
             };
 
             return certPassphraseOption;
