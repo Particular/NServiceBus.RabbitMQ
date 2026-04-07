@@ -5,7 +5,7 @@
     using NServiceBus.Transport.RabbitMQ.ManagementApi;
 
     class BrokerConnectionBinder(Option<string> connectionStringOption, Option<string> connectionStringEnvOption, Option<string> managementApiUrlOption, Option<string> managementApiUserNameOption, Option<string> managementApiPasswordOption, Option<string> certPathOption,
-        Option<string> certPassphraseOption, Option<bool> disableCertificateValidationOption, Option<bool> useExternalAuthOption)
+        Option<string> certPassphraseOption, Option<bool> useExternalAuthOption, Option<bool> disableCertificateValidationOption)
     {
         public BrokerConnection CreateBrokerConnection(ParseResult parseResult)
         {
@@ -16,8 +16,8 @@
             var managementApiPassword = parseResult.GetValue(managementApiPasswordOption);
             var certPath = parseResult.GetValue(certPathOption);
             var certPassphrase = parseResult.GetValue(certPassphraseOption);
-            var disableCertificateValidation = parseResult.GetValue(disableCertificateValidationOption);
             var useExternalAuth = parseResult.GetValue(useExternalAuthOption);
+            var disableCertificateValidation = parseResult.GetValue(disableCertificateValidationOption);
 
             var connectionString = GetConnectionString(connectionStringOptionValue, connectionStringEnvOptionValue);
 
