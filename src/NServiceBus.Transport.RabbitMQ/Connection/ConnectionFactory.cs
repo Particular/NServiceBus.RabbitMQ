@@ -94,7 +94,7 @@
         {
             connectionFactory.ClientProperties.Clear();
 
-            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(Endpoint).Assembly.Location);
+            var nsbVersion = FileVersionInfo.GetVersionInfo(typeof(EndpointConfiguration).Assembly.Location);
             var nsbFileVersion = $"{nsbVersion.FileMajorPart}.{nsbVersion.FileMinorPart}.{nsbVersion.FileBuildPart}";
 
             var rabbitMQVersion = FileVersionInfo.GetVersionInfo(typeof(ConnectionFactory).Assembly.Location);
