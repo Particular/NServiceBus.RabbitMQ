@@ -72,7 +72,7 @@ namespace NServiceBus.Transport.RabbitMQ.TransportTests
 
             var errorContext = await errorHandled.Task;
 
-            Assert.That(errorContext.Message.Headers["test-header"], Is.EqualTo("original"));
+            Assert.That(errorContext.Headers["test-header"], Is.EqualTo("original"));
         }
 
         [TestCase(TransportTransactionMode.ReceiveOnly)]
@@ -97,7 +97,7 @@ namespace NServiceBus.Transport.RabbitMQ.TransportTests
                 },
                 (context, _) =>
                 {
-                    context.Message.Headers["test-header"] = "modified";
+                    context.Headers["test-header"] = "modified";
                     return Task.FromResult(ErrorHandleResult.RetryRequired);
                 },
                 transactionMode);
