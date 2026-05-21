@@ -1,113 +1,80 @@
-namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests
+namespace NServiceBus.Transport.RabbitMQ.AcceptanceTests;
+
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using AcceptanceTesting.Customization;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
+
+public class When_the_message_contains_a_legacy_callback_header : NServiceBusAcceptanceTest
 {
-    using System;
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
-
-    public class When_the_message_contains_a_legacy_callback_header : NServiceBusAcceptanceTest
+    [Test]
+    public async Task It_should_reply_to_an_address_sent_in_that_header()
     {
-        [Test]
-        public async Task It_should_reply_to_an_address_sent_in_that_header()
-        {
-            var context = await Scenario.Define<MyContext>()
-                .WithEndpoint<OriginatingEndpoint>(c => c.When(bus =>
-                {
-                    var options = new SendOptions();
-                    options.SetHeader("NServiceBus.RabbitMQ.CallbackQueue", Conventions.EndpointNamingConvention(typeof(SpyEndpoint)));
-                    return bus.Send(new Request(), options);
-                }))
-                .WithEndpoint<ReceivingEndpoint>(b => b.DoNotFailOnErrorMessages())
-                .WithEndpoint<SpyEndpoint>()
-                .Done(c => c.Done)
-                .Run(TimeSpan.FromMinutes(1));
+        var context = await Scenario.Define<MyContext>()
+            .WithEndpoint<OriginatingEndpoint>(c => c.When(bus =>
+            {
+                var options = new SendOptions();
+                options.SetHeader("NServiceBus.RabbitMQ.CallbackQueue", Conventions.EndpointNamingConvention(typeof(SpyEndpoint)));
+                return bus.Send(new Request(), options);
+            }))
+            .WithEndpoint<ReceivingEndpoint>(b => b.DoNotFailOnErrorMessages())
+            .WithEndpoint<SpyEndpoint>()
+            .Run();
 
-            Assert.That(context.RepliedToWrongQueue, Is.False);
+        Assert.That(context.RepliedToWrongQueue, Is.False);
+    }
+
+    public class Request : IMessage;
+
+    public class Reply : IMessage;
+
+    class MyContext : ScenarioContext
+    {
+        public bool RepliedToWrongQueue { get; set; }
+    }
+
+    class OriginatingEndpoint : EndpointConfigurationBuilder
+    {
+        public OriginatingEndpoint()
+        {
+            EndpointSetup<DefaultServer>(config =>
+                config.ConfigureRouting().RouteToEndpoint(typeof(Request), typeof(ReceivingEndpoint)));
         }
 
-        public class Request : IMessage
+        class ReplyHandler(MyContext testContext) : IHandleMessages<Reply>
         {
-        }
-
-        public class Reply : IMessage
-        {
-        }
-
-        class MyContext : ScenarioContext
-        {
-            public bool Done { get; set; }
-            public bool RepliedToWrongQueue { get; set; }
-        }
-
-        class OriginatingEndpoint : EndpointConfigurationBuilder
-        {
-            public OriginatingEndpoint()
+            public Task Handle(Reply message, IMessageHandlerContext context)
             {
-                EndpointSetup<DefaultServer>(config =>
-                    config.ConfigureRouting().RouteToEndpoint(typeof(Request), typeof(ReceivingEndpoint)));
-            }
-
-            class ReplyHandler : IHandleMessages<Reply>
-            {
-                MyContext testContext;
-
-                public ReplyHandler(MyContext testContext)
-                {
-                    this.testContext = testContext;
-                }
-
-                public Task Handle(Reply message, IMessageHandlerContext context)
-                {
-                    testContext.RepliedToWrongQueue = true;
-                    testContext.Done = true;
-                    return Task.CompletedTask;
-                }
+                testContext.RepliedToWrongQueue = true;
+                testContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
+    }
 
-        class SpyEndpoint : EndpointConfigurationBuilder
+    class SpyEndpoint : EndpointConfigurationBuilder
+    {
+        public SpyEndpoint() => EndpointSetup<DefaultServer>();
+
+        class ReplyHandler(MyContext testContext) : IHandleMessages<Reply>
         {
-            public SpyEndpoint()
+            public Task Handle(Reply message, IMessageHandlerContext context)
             {
-                EndpointSetup<DefaultServer>();
-            }
-
-            class ReplyHandler : IHandleMessages<Reply>
-            {
-                MyContext testContext;
-
-                public ReplyHandler(MyContext testContext)
-                {
-                    this.testContext = testContext;
-                }
-
-                public Task Handle(Reply message, IMessageHandlerContext context)
-                {
-                    testContext.Done = true;
-                    return Task.CompletedTask;
-                }
+                testContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
+    }
 
-        class ReceivingEndpoint : EndpointConfigurationBuilder
+    class ReceivingEndpoint : EndpointConfigurationBuilder
+    {
+        public ReceivingEndpoint() => EndpointSetup<DefaultServer>();
+
+        public class RequestHandler : IHandleMessages<Request>
         {
-            public ReceivingEndpoint()
-            {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                });
-            }
-
-            public class RequestHandler : IHandleMessages<Request>
-            {
-                public Task Handle(Request message, IMessageHandlerContext context)
-                {
-                    return context.Reply(new Reply());
-                }
-            }
+            public Task Handle(Request message, IMessageHandlerContext context) => context.Reply(new Reply());
         }
     }
 }
