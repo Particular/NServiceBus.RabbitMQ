@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.TransportTests
+namespace NServiceBus.TransportTests
 {
     using System;
     using System.Collections.Concurrent;
