@@ -62,8 +62,11 @@ namespace NServiceBus.TransportTests
                 {
                     var messageType = context.Headers["Type"];
                     receivedMessages.Enqueue(messageType);
+#if NET11_0_OR_GREATER
                     await TestContext.Out.WriteLineAsync("Received message " + messageType, token);
-
+#else
+                    await TestContext.Out.WriteLineAsync("Received message " + messageType);
+#endif
                     switch (messageType)
                     {
                         case "Start":
