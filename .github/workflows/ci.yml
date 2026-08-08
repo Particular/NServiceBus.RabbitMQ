@@ -56,7 +56,7 @@ jobs:
         uses: Particular/setup-rabbitmq-action@v2.0.0
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
-          tag: RabbitMQTransport
+          image-tag: 4-management
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
