@@ -32,6 +32,8 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+      - name: Setup WSL
+        uses: Particular/setup-wsl-action@v1.1.0       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6.0.0
         with:
@@ -51,11 +53,10 @@ jobs:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
           enable-AzPSSession: true
       - name: Setup RabbitMQ
-        uses: Particular/setup-rabbitmq-action@v1.7.1
+        uses: Particular/setup-rabbitmq-action@v2.0.0
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
           tag: RabbitMQTransport
-          image-tag: 4-management
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
