@@ -47,11 +47,6 @@ jobs:
           name: NuGet packages
           path: nugets/
           retention-days: 7
-      - name: Azure login
-        uses: azure/login@v3.0.1
-        with:
-          creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
-          enable-AzPSSession: true
       - name: Setup RabbitMQ
         uses: Particular/setup-rabbitmq-action@v2.0.0
         with:
