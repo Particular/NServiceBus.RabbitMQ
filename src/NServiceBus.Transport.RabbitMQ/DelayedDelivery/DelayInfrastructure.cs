@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Runtime.CompilerServices;
+    using System.Numerics;
     using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
@@ -78,50 +78,36 @@
             }
         }
 
-        public static unsafe string CalculateRoutingKey(int delayInSeconds, string address, out int startingDelayLevel)
+        public static string CalculateRoutingKey(int delayInSeconds, string address, out int startingDelayLevel)
         {
             if (delayInSeconds < 0)
             {
                 delayInSeconds = 0;
             }
 
-            startingDelayLevel = 0;
-            // Pinning the address of the startingDelayLevel so that we can safely write back to the address of the local.
-            // This trickery is done because when string.Create returns, there is no way to pass state outside of the lambda
-            // without doing a closure over a local variable, which would create DisplayClass allocations for every call.
-            fixed (int* pinnedStartingDelayLevel = &startingDelayLevel)
+            // The starting delay level is the index of the highest set bit of the delay, which is exactly what
+            // BitOperations.Log2 returns. BitOperations.Log2(0) is defined to return 0, matching the loop semantics
+            // where a zero delay yields starting delay level 0. The delay is clamped to be non-negative above and
+            // MaxDelayInSeconds is 2^28 - 1, so the conversion to uint is lossless.
+            startingDelayLevel = BitOperations.Log2((uint)delayInSeconds);
+
+            // The length of the string is determined by the max level, taking into account the number of dots, the address length
+            // and additional space since we are zero based.
+            return string.Create((2 * MaxLevel) + 2 + address.Length, (delayInSeconds, address), static (span, state) =>
             {
-                var startingDelayLevelPtr = (nint)pinnedStartingDelayLevel;
+                var (delayInSeconds, address) = state;
 
-                // The length of the string is determined by the max level, taking into account the number of dots, the address length
-                // and additional space since we are zero based.
-                return string.Create((2 * MaxLevel) + 2 + address.Length, (delayInSeconds, address, startingDelayLevelPtr), Action);
-
-                static void Action(Span<char> span, (int, string, nint) state)
+                var index = 0;
+                for (var level = MaxLevel; level >= 0; level--)
                 {
-                    var (delayInSeconds, address, startingDelayLevelPtr) = state;
+                    bool bitSet = ((delayInSeconds >> level) & 1) != 0;
 
-                    var startingDelayLevel = 0;
-
-                    var index = 0;
-                    for (var level = MaxLevel; level >= 0; level--)
-                    {
-                        bool bitSet = ((delayInSeconds >> level) & 1) != 0;
-                        if (startingDelayLevel == 0 && bitSet)
-                        {
-                            startingDelayLevel = level;
-                        }
-
-                        span[index++] = bitSet ? '1' : '0';
-                        span[index++] = '.';
-                    }
-
-                    address.AsSpan().CopyTo(span[index..]);
-
-                    // Write back the startingDelayLevel to the address of the local
-                    Unsafe.Write(startingDelayLevelPtr.ToPointer(), startingDelayLevel);
+                    span[index++] = bitSet ? '1' : '0';
+                    span[index++] = '.';
                 }
-            }
+
+                address.AsSpan().CopyTo(span[index..]);
+            });
         }
     }
 }
