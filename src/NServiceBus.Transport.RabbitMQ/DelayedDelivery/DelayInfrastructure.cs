@@ -40,7 +40,7 @@
                     { "x-queue-type", "quorum" },
                     { "x-dead-letter-strategy", "at-least-once" },
                     { "x-overflow", "reject-publish" },
-                    { "x-message-ttl", Convert.ToInt64(Math.Pow(2, level)) * 1000 },
+                    { "x-message-ttl", (1L << level) * 1000 },
                     { "x-dead-letter-exchange", level > 0 ? nextLevel : DeliveryExchange }
                 };
 
