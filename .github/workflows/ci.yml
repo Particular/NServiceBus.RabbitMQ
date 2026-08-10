@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup WSL
-        uses: Particular/setup-wsl-action@v1.1.0       
+        uses: Particular/setup-wsl-action@v1.2.0       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6.0.0
         with:
