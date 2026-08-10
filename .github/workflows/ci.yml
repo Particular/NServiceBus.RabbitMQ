@@ -32,8 +32,6 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - name: Setup WSL
-        uses: Particular/setup-wsl-action@v1.1.0       
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6.0.0
         with:
@@ -47,16 +45,13 @@ jobs:
           name: NuGet packages
           path: nugets/
           retention-days: 7
-      - name: Azure login
-        uses: azure/login@v3.0.1
-        with:
-          creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
-          enable-AzPSSession: true
+      - name: Setup WSL
+        uses: Particular/setup-wsl-action@v1.2.0
       - name: Setup RabbitMQ
         uses: Particular/setup-rabbitmq-action@v2.0.0
         with:
           connection-string-name: RabbitMQTransport_ConnectionString
-          tag: RabbitMQTransport
+          image-tag: 4-management
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
