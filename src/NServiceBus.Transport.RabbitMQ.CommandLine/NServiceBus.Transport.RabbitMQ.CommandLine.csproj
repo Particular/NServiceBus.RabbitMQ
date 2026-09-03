@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="10.2.8" />
+    <PackageReference Include="NServiceBus" Version="10.2.9" />
     <PackageReference Include="RabbitMQ.Client" Version="7.2.2" />
     <PackageReference Include="System.CommandLine" Version="2.0.11" />
   </ItemGroup>
