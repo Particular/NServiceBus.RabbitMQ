@@ -22,7 +22,7 @@ The [6 to 7 upgrade guide](https://docs.particular.net/transports/upgrades/rabbi
 
 ## Consequences
 
-- Delayed messages survive node failures and partitions, provided the broker meets the requirements. The transport enforces the requirements at startup. Users can disable the checks through `BrokerRequirementChecks`, which logs a warning that delayed delivery may not work.
+- Delayed messages survive node failures and partitions, provided the broker meets the requirements. The transport enforces the requirements at startup. Since 10.1 ([#1592](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1592)), users can disable the checks with `DisableBrokerRequirementChecks`, which logs a warning that delayed delivery may not work.
 - Brokers older than 3.10, or without the required feature flags, are no longer supported. This was accepted as part of the version 7 major release.
 - Upgrading requires an operator action for in-flight v1 messages. Mitigations: the two versions can coexist, the migration command recalculates each message's remaining delay from its headers, and messages it cannot process are moved to a poison queue instead of being dropped.
 - RabbitMQ documents that at-least-once dead lettering uses more memory and CPU. This cost was accepted without a recorded measurement for the delay levels.
