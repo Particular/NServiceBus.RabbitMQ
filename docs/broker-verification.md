@@ -27,7 +27,7 @@ Classic queues have no delivery limit and are skipped. `100000` is the value the
 
 ## Failure behavior and disabling checks
 
-Every failed check stops the endpoint from starting, with a message that explains how to fix the broker. Some environments cannot grant management API access. For those, [#1592](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1592) added `DisableBrokerRequirementChecks` (per check) and `ValidateDeliveryLimits = false`. Both log warnings that delayed delivery or retries may lose messages. When every check is disabled, the transport does not contact the management API at all.
+Every failed check stops the endpoint from starting, with a message that explains how to fix the broker. Some environments cannot grant management API access. For those, [#1592](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1592) (10.1) added `DisableBrokerRequirementChecks` (per check), and [#1512](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1512) (10.0) added `ValidateDeliveryLimits = false`. Both log warnings that delayed delivery or retries may lose messages. When every check is disabled, the transport does not contact the management API at all.
 
 ## Connecting to the management API
 

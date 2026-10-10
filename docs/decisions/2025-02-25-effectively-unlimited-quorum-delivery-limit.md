@@ -26,7 +26,7 @@ The public contract is documented in [delivery limit validation](https://docs.pa
 
 ## Consequences
 
-- The transport fails closed: an endpoint does not start while a configuration could silently delete messages. Startup now depends on management API availability. That dependency is accepted. For restricted environments, [#1592](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1592) (10.1) added `DisableBrokerRequirementChecks` and `DoNotValidateDeliveryLimits`, both documented as unsafe and logged as warnings.
+- The transport fails closed: an endpoint does not start while a configuration could silently delete messages. Startup now depends on management API availability. That dependency is accepted. For restricted environments, #1512 (10.0) added `ValidateDeliveryLimits = false`, and [#1592](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1592) (10.1) added `DisableBrokerRequirementChecks`. Both are documented as unsafe and logged as warnings.
 - Deployments need the management plugin, a reachable management endpoint, and credentials. Creating the policy needs `policymaker` permissions. Administrators can mitigate this by creating the policies in advance or by scripting validation with `rabbitmq-transport queue validate-delivery-limit`.
 - When an organization already applies its own policy to endpoint queues, the transport cannot add a second one. Operators must add `"delivery-limit": 100000` to their policy. This is documented.
 - `100000` is finite. *Inference:* accepted because no realistic recoverability configuration delivers a message that often.

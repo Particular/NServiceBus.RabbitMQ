@@ -16,7 +16,7 @@ Each message pump owns its connection, so consumer failures, concurrency changes
 
 Since [#1620](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1620), the provider lazily creates one publish channel and shares it. It replaces the channel under a semaphore when the channel closes. RabbitMQ.Client 7 channels are safe for concurrent publishing as long as they are not also used for consuming.
 
-Before version 10, the transport kept a pool of publish channels. The synchronous RabbitMQ.Client required that a channel not be used concurrently, and in practice the pool rarely needed more than one or two channels. With the asynchronous RabbitMQ.Client 7, concurrent dispatches made the pool create a channel per message and exhaust the broker's `channel_max` ([#1621](https://github.com/Particular/NServiceBus.RabbitMQ/issues/1621)).
+Before version 11, the transport kept a pool of publish channels. The synchronous RabbitMQ.Client required that a channel not be used concurrently, and in practice the pool rarely needed more than one or two channels. With the asynchronous RabbitMQ.Client 7, concurrent dispatches made the pool create a channel per message and exhaust the broker's `channel_max` ([#1621](https://github.com/Particular/NServiceBus.RabbitMQ/issues/1621)).
 
 ## Recovery
 
@@ -33,7 +33,7 @@ Before version 10, the transport kept a pool of publish channels. The synchronou
 ## Hosts, clusters, and security
 
 - A connection string names one host. `AddClusterNode` adds a cluster node with its own port and TLS setting, and the transport passes all nodes to the client as endpoint candidates. Connection strings with multiple hosts, `requestedHeartbeat`, `retryDelay`, or `certPath` are rejected with a message pointing to the replacement API ([`ConnectionConfiguration.cs`](../src/NServiceBus.Transport.RabbitMQ/Configuration/ConnectionConfiguration.cs)).
-- TLS is enabled with `amqps://` or `useTls=true`, and defaults to port 5671. Client certificates are configured in code with `ClientCertificate` or `SetClientCertificate`, not in the connection string (version 8).
+- TLS is enabled with `amqps://` or `useTls=true`, and defaults to port 5671. Client certificates are configured in code with `ClientCertificate` or `SetClientCertificate`, not in the connection string. Version 8 removed the `certPath` connection string option.
 - `ValidateRemoteCertificate = false` accepts any broker certificate, for both AMQP and the management API.
 - `AuthMechanisms` accepts any RabbitMQ.Client `IAuthMechanismFactory` and takes precedence over the obsolete `UseExternalAuthMechanism` ([#1742](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1742)).
 
