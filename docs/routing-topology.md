@@ -11,7 +11,7 @@ How endpoints map sends, publishes, subscriptions, and queue declarations onto R
 - declaring queues, exchanges, and bindings (`Initialize`);
 - binding an address to the delay infrastructure (`BindToDelayInfrastructure`).
 
-The interface reached that shape in steps:
+Three changes shaped the interface:
 
 - Exchange creation moved into the topologies in 2013 ([17e35d9e](https://github.com/Particular/NServiceBus.RabbitMQ/commit/17e35d9ed6ccc8c7323d657b60f74301986f73b5)), after queue creation had failed to create the exchange senders expected ([336e3dd5](https://github.com/Particular/NServiceBus.RabbitMQ/commit/336e3dd54eb6eed897224d71936193b76328431f)).
 - Queue declaration moved into the topology after a user needed to integrate the `rabbitmq-sharding` plugin, which must own the main queue ([#248](https://github.com/Particular/NServiceBus.RabbitMQ/issues/248), [#263](https://github.com/Particular/NServiceBus.RabbitMQ/pull/263)). Receiving and sending addresses deliberately stay separate parameters.
@@ -21,16 +21,20 @@ Custom topologies implement this public interface. Changing it is a breaking cha
 
 ## The built-in topologies
 
-Both topologies exist since the 1.x code base. All endpoints that communicate must use the same topology.
+Both topologies have existed since the 1.x code base. All endpoints that communicate must use the same topology.
 
-**Conventional** ([`ConventionalRoutingTopology.cs`](../src/NServiceBus.Transport.RabbitMQ/Routing/ConventionalRoutingTopology.cs)):
+### Conventional topology
 
-- Every endpoint queue has a fanout exchange of the same name, bound to it. Sends publish to that exchange.
+[`ConventionalRoutingTopology.cs`](../src/NServiceBus.Transport.RabbitMQ/Routing/ConventionalRoutingTopology.cs) implements it:
+
+- Every endpoint queue has a fanout exchange of the same name, bound to it. Sends go to that exchange.
 - Every event type, base class, and implemented interface gets a fanout exchange. Exchanges are bound child to parent, so a subscriber to a base type or an interface receives derived events.
 - Publishing creates the type hierarchy lazily, and caches which types are already configured.
-- This is the topology that supports polymorphic events fully. The public documentation recommends it.
+- It fully supports polymorphic events, and the public documentation recommends it.
 
-**Direct** ([`DirectRoutingTopology.cs`](../src/NServiceBus.Transport.RabbitMQ/Routing/DirectRoutingTopology.cs)):
+### Direct topology
+
+[`DirectRoutingTopology.cs`](../src/NServiceBus.Transport.RabbitMQ/Routing/DirectRoutingTopology.cs) implements it:
 
 - Sends go to the default exchange, with the queue name as routing key.
 - Events are published to one topic exchange (default `amq.topic`). The routing key is built by [`DefaultRoutingKeyConvention.cs`](../src/NServiceBus.Transport.RabbitMQ/Routing/DefaultRoutingKeyConvention.cs) from the type's non-system base classes and its first non-system interface.
@@ -40,13 +44,13 @@ Both topologies exist since the 1.x code base. All endpoints that communicate mu
 
 ## Explicit choices
 
-- **Topology.** Since version 5, endpoints must choose a topology explicitly. Previously the transport fell back to conventional ([#427](https://github.com/Particular/NServiceBus.RabbitMQ/issues/427), [#428](https://github.com/Particular/NServiceBus.RabbitMQ/pull/428)).
-- **Queue type.** Since version 7, the queue type (`QueueType.Classic` or `QueueType.Quorum`) is a required part of the topology configuration ([`RoutingTopology.cs`](../src/NServiceBus.Transport.RabbitMQ/Configuration/RoutingTopology.cs)). The transport does not assume a type for an existing broker:
+- Since version 5, endpoints must choose a topology explicitly. Previously the transport fell back to conventional ([#427](https://github.com/Particular/NServiceBus.RabbitMQ/issues/427), [#428](https://github.com/Particular/NServiceBus.RabbitMQ/pull/428)).
+- Since version 7, the queue type (`QueueType.Classic` or `QueueType.Quorum`) is a required part of the topology configuration ([`RoutingTopology.cs`](../src/NServiceBus.Transport.RabbitMQ/Configuration/RoutingTopology.cs)). The transport does not assume a type for an existing broker:
   - Quorum queues are declared with `x-queue-type=quorum` and are always durable. A non-durable setting is ignored with a warning.
   - RabbitMQ rejects a declaration whose queue type differs from an existing queue. Since version 7, installers surface that error instead of suppressing it ([6 to 7 upgrade guide](https://docs.particular.net/transports/upgrades/rabbitmq-6to7)).
   - Queue type cannot be changed in place. `rabbitmq-transport queue migrate-to-quorum` ([#1006](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1006)) moves messages through a holding queue, recreates the queue, and can be rerun after a failure. It does not support the direct topology ([classic to quorum migration](https://docs.particular.net/transports/upgrades/rabbitmq-classic-to-quorum-migration)).
   - Stream queues are recognized in management API responses but are not a supported endpoint queue type.
-- **Durability.** Entity durability (`useDurableEntities`) and message persistence are independent settings ([#443](https://github.com/Particular/NServiceBus.RabbitMQ/pull/443)).
+- Entity durability (`useDurableEntities`) and message persistence are independent settings ([#443](https://github.com/Particular/NServiceBus.RabbitMQ/pull/443)).
 
 ## Addresses
 

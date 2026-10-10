@@ -13,7 +13,7 @@ How AMQP messages map to NServiceBus messages in both directions, and the rules 
 
 ### Header values
 
-NServiceBus headers are strings, but AMQP header values are typed. Values are converted to strings:
+NServiceBus headers are strings, but AMQP header values are typed. `MessageConverter` converts each value to a string:
 
 - byte arrays as UTF-8;
 - tables as comma-separated `key=value` pairs;
@@ -35,7 +35,7 @@ The type information is lost. A system that needs exact AMQP types should read t
 
 ### Headers that are removed
 
-The delay-infrastructure headers (`NServiceBus.Transport.RabbitMQ.DelayInSeconds`, `x-death`, `x-first-death-*`), the confirmation and publish-sequence headers, and `x-delivery-count` are removed. A forwarded or audited message therefore does not carry stale broker state.
+The converter removes the delay-infrastructure headers (`NServiceBus.Transport.RabbitMQ.DelayInSeconds`, `x-death`, `x-first-death-*`), the confirmation and publish-sequence headers, and `x-delivery-count`. A forwarded or audited message therefore does not carry stale broker state.
 
 ## Outgoing messages
 

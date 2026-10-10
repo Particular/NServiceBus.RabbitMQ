@@ -17,7 +17,7 @@ With confirms disabled, a send could complete before the broker had rejected it,
 
 [#651](https://github.com/Particular/NServiceBus.RabbitMQ/pull/651) (merged in commit [5eea0090](https://github.com/Particular/NServiceBus.RabbitMQ/commit/5eea0090b25103a6b467f978593db3cb89335f61), released in version 6) removed `UsePublisherConfirms` and the related settings. Every publishing channel uses publisher confirms. In the pull request's words: "We generally don't think anyone should disable publisher confirms when using NServiceBus."
 
-Today every publish channel is created with confirmation tracking ([`ConfirmsAwareChannel.cs`](../../src/NServiceBus.Transport.RabbitMQ/Connection/ConfirmsAwareChannel.cs)), and [`MessageDispatcher.cs`](../../src/NServiceBus.Transport.RabbitMQ/Sending/MessageDispatcher.cs) completes a dispatch only after every operation has been confirmed. Unicast sends and sends to the delay infrastructure also set the AMQP `mandatory` flag, so an unroutable message is returned instead of being silently dropped. Publishes do not set it, because an event with no subscribers is not an error.
+The transport creates every publish channel with confirmation tracking ([`ConfirmsAwareChannel.cs`](../../src/NServiceBus.Transport.RabbitMQ/Connection/ConfirmsAwareChannel.cs)). [`MessageDispatcher.cs`](../../src/NServiceBus.Transport.RabbitMQ/Sending/MessageDispatcher.cs) completes a dispatch only after the broker confirms every operation. Unicast sends and sends to the delay infrastructure also set the AMQP `mandatory` flag, so an unroutable message is returned instead of being silently dropped. Publishes do not set it, because an event with no subscribers is not an error.
 
 ## Consequences
 
@@ -28,8 +28,8 @@ Today every publish channel is created with confirmation tracking ([`ConfirmsAwa
 
 ## Alternative approaches
 
-- **Keep confirms optional with a warning.** This was the state before version 6. #651 rejected it because a configuration that can lose messages silently is not one NServiceBus users should be able to choose.
-- **Detect unroutable messages without confirms**, using the `mandatory` flag or an [alternate exchange](https://www.rabbitmq.com/docs/ae). #135 rejected both as complete solutions. With the conventional topology, the destination exchange does not exist, so the broker closes the channel instead of returning the message, and an alternate exchange cannot be attached to an exchange that does not exist.
+- Keep confirms optional with a warning. This was the state before version 6. #651 rejected it because a configuration that can lose messages silently is not one NServiceBus users should be able to choose.
+- Detect unroutable messages without confirms, using the `mandatory` flag or an [alternate exchange](https://www.rabbitmq.com/docs/ae). #135 rejected both as complete solutions. With the conventional topology, the destination exchange does not exist, so the broker closes the channel instead of returning the message, and an alternate exchange cannot be attached to an exchange that does not exist.
 
 ## Open questions
 
