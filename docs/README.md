@@ -21,7 +21,7 @@ NServiceBus.RabbitMQ is the RabbitMQ transport for NServiceBus, producing the `N
 
 ## Architecture and design
 
-This section points to sources that explain why the repository is designed the way it is. Each entry says which question it answers. How-to material stays in the pages linked under Start here.
+This section points to sources that explain why the repository is designed the way it is. Each entry names the question its source answers. How-to material is in the pages linked under Start here.
 
 - [Delayed delivery](delayed-delivery.md) — how the broker-side delay chain works, and which invariants (fixed-width routing key, sender-side binding, versioned entity names) changes must keep
 - [Routing topology and queue declaration](routing-topology.md) — why `IRoutingTopology` owns the broker layout, how the conventional and direct topologies differ, and why topology and queue type are explicit choices
@@ -41,7 +41,7 @@ This section points to sources that explain why the repository is designed the w
 
 ### Decisions recorded in pull requests
 
-A pull request is listed here only when it is the canonical record for a decision area: it establishes a durable constraint or convention, or rejects an alternative likely to return, and no `docs/` file or ADR covers it. Bug fixes and routine changes are not listed; recover them from `git log` and `gh pr view`.
+A pull request is listed here only when it is the canonical record for a decision area: it establishes a durable constraint or convention, or rejects an alternative likely to return, and no `docs/` file or ADR covers it. Bug fixes and routine changes are not listed. Find them with `git log` and `gh pr view`.
 
 - A major RabbitMQ.Client upgrade is a transport major, because the public `IRoutingTopology` exposes client types — [#1446](https://github.com/Particular/NServiceBus.RabbitMQ/pull/1446)
 - Endpoints must choose a routing topology explicitly instead of defaulting to conventional — [#428](https://github.com/Particular/NServiceBus.RabbitMQ/pull/428), motivated in [#427](https://github.com/Particular/NServiceBus.RabbitMQ/issues/427)
