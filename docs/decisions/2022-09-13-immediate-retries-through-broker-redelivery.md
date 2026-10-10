@@ -33,4 +33,4 @@ The pump also logs a specific message when the channel was closed because the co
 ## Alternative approaches
 
 - Keep the in-process retry loop and require a larger consumer timeout. This was the documented workaround in #927. It was rejected as the default because the transport cannot control broker configuration, and a misconfigured broker caused infinite redelivery.
-- Count attempts only in memory for every queue type. This was the behavior implied by the old loop. #1071 rejected it because the broker's `x-delivery-count`, where available, survives requeues and moves between consumers.
+- Count attempts only in memory for every queue type. This was the behavior implied by the old loop. It was rejected in favor of the broker's `x-delivery-count` where available, because that count survives requeues and moves between consumers.
