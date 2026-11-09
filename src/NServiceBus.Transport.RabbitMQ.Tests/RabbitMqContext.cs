@@ -12,6 +12,8 @@
     {
         public virtual int MaximumConcurrency => 1;
 
+        public virtual TimeSpan? NetworkRecoveryInterval => null;
+
         [SetUp]
         public virtual async Task SetUp()
         {
@@ -26,6 +28,11 @@
                 // The startup costs for creating a policy for every test queue add up, and the tests shouldn't be impacted by the default delivery limit.
                 ValidateDeliveryLimits = false
             };
+
+            if (NetworkRecoveryInterval is { } networkRecoveryInterval)
+            {
+                transport.NetworkRecoveryInterval = networkRecoveryInterval;
+            }
 
             var connectionConfig = transport.ConnectionConfiguration;
 

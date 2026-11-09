@@ -37,6 +37,9 @@
         int maxConcurrency;
         long numberOfMessagesBeingProcessed;
         CancellationTokenSource? messagePumpCancellationTokenSource;
+        // Captured so a reconnect started after the source is disposed still sees the cancellation.
+        CancellationToken messagePumpCancellationToken;
+        Task reconnectTask = Task.CompletedTask;
         CancellationTokenSource? messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection? connection;
@@ -105,6 +108,7 @@
         public async Task StartReceive(CancellationToken cancellationToken = default)
         {
             messagePumpCancellationTokenSource = new CancellationTokenSource();
+            messagePumpCancellationToken = messagePumpCancellationTokenSource.Token;
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
 
             circuitBreaker.Dispose();
@@ -162,6 +166,9 @@
             }
 
             messagePumpCancellationTokenSource?.Cancel();
+
+            // A reconnect replaces the connection, so it has to end before the connection is closed.
+            await reconnectTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
 
             await using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
@@ -236,7 +243,7 @@
             {
                 //log entry handled by event handler registered in ConnectionFactory
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
+                StartReconnect();
             }
             else
             {
@@ -259,7 +266,7 @@
             {
                 Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
                 circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
+                StartReconnect();
             }
             else
             {
@@ -284,7 +291,7 @@
             {
                 Logger.WarnFormat("'{0}' consumer canceled by broker", name);
                 circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
+                StartReconnect();
             }
             else
             {
@@ -292,6 +299,12 @@
             }
 
             return Task.CompletedTask;
+        }
+
+        void StartReconnect()
+        {
+            var cancellationToken = messagePumpCancellationToken;
+            reconnectTask = Task.Run(() => Reconnect(cancellationToken), CancellationToken.None);
         }
 
         async Task Reconnect(CancellationToken cancellationToken)
@@ -315,6 +328,8 @@
                         await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
 
                         await ConnectToBroker(cancellationToken).ConfigureAwait(false);
+
+                        Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
                         break;
                     }
                     catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
@@ -322,8 +337,6 @@
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
                 }
-
-                Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
             }
             catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
             {
