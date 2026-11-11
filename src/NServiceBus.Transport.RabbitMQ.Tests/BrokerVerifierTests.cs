@@ -157,6 +157,7 @@ class BrokerVerifierTests
             Priority = 0
         };
 
+        await CreateQueue(oldQueueName);
         await CreateQueue(queueName);
         await managementClient.CreatePolicy(oldPolicyName, oldPolicy);
 
@@ -183,6 +184,29 @@ class BrokerVerifierTests
         if (deliveryLimit != -1)
         {
             Assert.Fail($"Old Policy '{oldPolicyName}' was not applied to queue '{queueName}'.");
+        }
+
+        await brokerVerifier.ValidateDeliveryLimit(oldQueueName);
+
+        bool oldPolicyUpdated = false;
+
+        for (int i = 0; i < attempts; i++)
+        {
+            var oldQueue = await managementClient.GetQueue(oldQueueName);
+            var queue = await managementClient.GetQueue(queueName);
+
+            if (oldQueue.GetDeliveryLimit() == Queue.BigValueInsteadOfActuallyUnlimited && oldQueue.AppliedPolicyName == oldPolicyName && queue.AppliedPolicyName != oldPolicyName)
+            {
+                oldPolicyUpdated = true;
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        if (!oldPolicyUpdated)
+        {
+            Assert.Fail($"Old Policy '{oldPolicyName}' was not updated to only match queue '{oldQueueName}'.");
         }
 
         await brokerVerifier.ValidateDeliveryLimit(queueName);
