@@ -199,6 +199,12 @@
                         // The connection will get disposed further down anyway.
                         connectionShutdownCompleted.TrySetResult();
                     }
+                    catch (AlreadyClosedException ex)
+                    {
+                        // The connection closed between the IsOpen check and CloseAsync, so no application shutdown event will complete the wait.
+                        Logger.DebugFormat("'{0}': Connection was already closed when stopping the receiver: {1}", name, ex);
+                        connectionShutdownCompleted.TrySetResult();
+                    }
                 }
                 else
                 {
