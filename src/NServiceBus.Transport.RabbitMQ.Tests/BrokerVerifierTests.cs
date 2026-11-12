@@ -144,7 +144,6 @@ class BrokerVerifierTests
         }
 
         var queueName = nameof(ValidateDeliveryLimit_Should_Update_Old_Overeager_Policy);
-        var policyName = $"nsb.{queueName}.delivery-limit";
 
         var oldQueueName = queueName[..^7];
         var oldPolicyName = $"nsb.{oldQueueName}.delivery-limit";
@@ -157,6 +156,7 @@ class BrokerVerifierTests
             Priority = 0
         };
 
+        await CreateQueue(oldQueueName);
         await CreateQueue(queueName);
         await managementClient.CreatePolicy(oldPolicyName, oldPolicy);
 
@@ -185,23 +185,23 @@ class BrokerVerifierTests
             Assert.Fail($"Old Policy '{oldPolicyName}' was not applied to queue '{queueName}'.");
         }
 
-        await brokerVerifier.ValidateDeliveryLimit(queueName);
+        await brokerVerifier.ValidateDeliveryLimit(oldQueueName);
 
         for (int i = 0; i < attempts; i++)
         {
+            var oldQueue = await managementClient.GetQueue(oldQueueName);
             var queue = await managementClient.GetQueue(queueName);
-            deliveryLimit = queue.GetDeliveryLimit();
 
-            if (deliveryLimit == Queue.BigValueInsteadOfActuallyUnlimited && queue.AppliedPolicyName == policyName)
+            if (oldQueue.GetDeliveryLimit() == Queue.BigValueInsteadOfActuallyUnlimited && oldQueue.AppliedPolicyName == oldPolicyName && queue.AppliedPolicyName != oldPolicyName)
             {
-                // Policy applied successfully
+                // Old policy now only matches its own queue
                 return;
             }
 
             await Task.Delay(TimeSpan.FromSeconds(3));
         }
 
-        Assert.Fail($"Policy '{policyName}' was not applied to queue '{queueName}'.");
+        Assert.Fail($"Old Policy '{oldPolicyName}' was not updated to only match queue '{oldQueueName}'.");
     }
 
     [Test]
