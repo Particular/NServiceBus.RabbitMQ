@@ -263,7 +263,7 @@
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
             await brokerVerifier.VerifyRequirements(cancellationToken).ConfigureAwait(false);
 
-            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology, TimeProvider);
             await channelProvider.Initialize(cancellationToken).ConfigureAwait(false);
 
             var converter = new MessageConverter(MessageIdStrategy);
