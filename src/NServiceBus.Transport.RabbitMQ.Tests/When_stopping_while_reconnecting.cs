@@ -6,6 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     using System.Net.Http;
     using System.Net.Http.Json;
     using System.Text.Json;
+    using System.Threading;
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using NUnit.Framework;
@@ -13,21 +14,33 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
     [TestFixture]
     class When_stopping_while_reconnecting : RabbitMqContext
     {
-        public override TimeSpan? NetworkRecoveryInterval => TimeSpan.FromSeconds(3);
+        PausedTimeProvider timeProvider = new();
+
+        public override TimeProvider TimeProvider => timeProvider;
+
+        public override Task SetUp()
+        {
+            timeProvider = new PausedTimeProvider();
+            return base.SetUp();
+        }
 
         [Test]
-        public async Task Should_not_reconnect_after_the_pump_stops()
+        public async Task Should_stop_waiting_to_reconnect()
         {
             await CloseConnectionFromBroker($"{ReceiverQueue} MessagePump");
 
-            // Gives the pump time to observe the lost connection and start waiting to reconnect.
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            // Paused timers never fire, so the pump keeps waiting to reconnect until it's stopped.
+            var reconnectWait = await timeProvider.TimerCreated.WaitAsync(TimeSpan.FromSeconds(30));
 
             await messagePump.StopReceive();
 
-            await Task.Delay(NetworkRecoveryInterval!.Value + TimeSpan.FromSeconds(2));
+            var consumerCount = await GetConsumerCount(ReceiverQueue);
 
-            Assert.That(await GetConsumerCount(ReceiverQueue), Is.Zero, "The pump reconnected and started consuming after it was stopped.");
+            Assert.Multiple(() =>
+            {
+                Assert.That(reconnectWait.IsDisposed, Is.True, "StopReceive returned while the pump was still waiting to reconnect.");
+                Assert.That(consumerCount, Is.Zero);
+            });
         }
 
         async Task CloseConnectionFromBroker(string connectionName)
@@ -88,6 +101,35 @@ namespace NServiceBus.Transport.RabbitMQ.Tests
             };
 
             return new HttpClient(handler) { BaseAddress = baseAddress };
+        }
+
+        sealed class PausedTimeProvider : TimeProvider
+        {
+            readonly TaskCompletionSource<PausedTimer> timerCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            public Task<PausedTimer> TimerCreated => timerCreated.Task;
+
+            public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+            {
+                var timer = new PausedTimer();
+                timerCreated.TrySetResult(timer);
+                return timer;
+            }
+        }
+
+        sealed class PausedTimer : ITimer
+        {
+            public bool IsDisposed { get; private set; }
+
+            public bool Change(TimeSpan dueTime, TimeSpan period) => !IsDisposed;
+
+            public void Dispose() => IsDisposed = true;
+
+            public ValueTask DisposeAsync()
+            {
+                Dispose();
+                return ValueTask.CompletedTask;
+            }
         }
     }
 }

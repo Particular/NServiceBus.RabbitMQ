@@ -199,6 +199,8 @@
             }
         } = TimeSpan.FromSeconds(10);
 
+        internal TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
         /// <summary>
         /// Adds an additional cluster node that the endpoint can use to connect to the broker.
         /// </summary>
@@ -278,7 +280,8 @@
                 TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation,
                 NetworkRecoveryInterval,
-                SupportsDelayedDelivery
+                SupportsDelayedDelivery,
+                TimeProvider
             );
 
             if (hostSettings.SetupInfrastructure)
