@@ -14,6 +14,7 @@
         readonly BrokerVerifier brokerVerifier;
         readonly IRoutingTopology routingTopology;
         readonly TimeSpan networkRecoveryInterval;
+        readonly TimeProvider timeProvider;
         readonly bool supportsDelayedDelivery;
 
         public RabbitMQTransportInfrastructure(HostSettings hostSettings, ReceiveSettings[] receiverSettings,
@@ -22,13 +23,14 @@
             BrokerVerifier brokerVerifier,
             Action<IOutgoingTransportOperation, IBasicProperties>? messageCustomization,
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker, PrefetchCountCalculation prefetchCountCalculation,
-            TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery)
+            TimeSpan networkRecoveryInterval, bool supportsDelayedDelivery, TimeProvider timeProvider)
         {
             this.connectionFactory = connectionFactory;
             this.routingTopology = routingTopology;
             this.channelProvider = channelProvider;
             this.brokerVerifier = brokerVerifier;
             this.networkRecoveryInterval = networkRecoveryInterval;
+            this.timeProvider = timeProvider;
             this.supportsDelayedDelivery = supportsDelayedDelivery;
 
             Dispatcher = new MessageDispatcher(channelProvider, messageCustomization, supportsDelayedDelivery);
@@ -40,7 +42,7 @@
         {
             var consumerTag = $"{hostSettings.HostDisplayName} - {hostSettings.Name}";
 
-            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, brokerVerifier, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval);
+            return new MessagePump(settings, connectionFactory, routingTopology, messageConverter, consumerTag, channelProvider, brokerVerifier, timeToWaitBeforeTriggeringCircuitBreaker, prefetchCountCalculation, hostSettings.CriticalErrorAction, networkRecoveryInterval, timeProvider);
         }
 
         internal async Task SetupInfrastructure(string[] sendingQueues, CancellationToken cancellationToken = default)
