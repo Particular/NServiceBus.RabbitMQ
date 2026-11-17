@@ -11,6 +11,8 @@
     {
         public virtual int MaximumConcurrency => 1;
 
+        public virtual TimeProvider TimeProvider => TimeProvider.System;
+
         [SetUp]
         public virtual async Task SetUp()
         {
@@ -23,7 +25,8 @@
             var transport = new RabbitMQTransport(RoutingTopology.Conventional(queueType), connectionString)
             {
                 // The startup costs for creating a policy for every test queue add up, and the tests shouldn't be impacted by the default delivery limit.
-                ValidateDeliveryLimits = false
+                ValidateDeliveryLimits = false,
+                TimeProvider = TimeProvider
             };
 
             var connectionConfig = transport.ConnectionConfiguration;
