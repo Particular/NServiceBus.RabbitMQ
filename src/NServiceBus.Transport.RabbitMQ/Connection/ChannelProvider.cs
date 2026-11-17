@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.RabbitMQ
     using global::RabbitMQ.Client.Events;
     using Logging;
 
-    class ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology)
+    class ChannelProvider(ConnectionFactory connectionFactory, TimeSpan retryDelay, IRoutingTopology routingTopology, TimeProvider timeProvider)
         : IAsyncDisposable
     {
         public async Task Initialize(CancellationToken cancellationToken = default) => connection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
@@ -44,7 +44,7 @@ namespace NServiceBus.Transport.RabbitMQ
 
                 try
                 {
-                    await DelayReconnect(cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(retryDelay, timeProvider, cancellationToken).ConfigureAwait(false);
 
                     var newConnection = await CreateConnectionWithShutdownListener(cancellationToken).ConfigureAwait(false);
 
@@ -77,8 +77,6 @@ namespace NServiceBus.Transport.RabbitMQ
         protected virtual void FireAndForget(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default) =>
             // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
             _ = Task.Run(() => action(cancellationToken), CancellationToken.None);
-
-        protected virtual Task DelayReconnect(CancellationToken cancellationToken = default) => Task.Delay(retryDelay, cancellationToken);
 
         public async ValueTask<ConfirmsAwareChannel> GetPublishChannel(CancellationToken cancellationToken = default)
         {

@@ -28,6 +28,7 @@
         readonly PrefetchCountCalculation prefetchCountCalculation;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly TimeSpan retryDelay;
+        readonly TimeProvider timeProvider;
         readonly string name;
         readonly FastConcurrentLru<string, int> deliveryAttempts = new(1_000);
         readonly FastConcurrentLru<string, bool> failedBasicAckMessages = new(1_000);
@@ -37,6 +38,8 @@
         int maxConcurrency;
         long numberOfMessagesBeingProcessed;
         CancellationTokenSource? messagePumpCancellationTokenSource;
+        readonly Lock reconnectLock = new();
+        Task reconnectTask = Task.CompletedTask;
         CancellationTokenSource? messageProcessingCancellationTokenSource;
         MessagePumpConnectionFailedCircuitBreaker circuitBreaker;
         IConnection? connection;
@@ -55,7 +58,8 @@
             TimeSpan timeToWaitBeforeTriggeringCircuitBreaker,
             PrefetchCountCalculation prefetchCountCalculation,
             Action<string, Exception, CancellationToken> criticalErrorAction,
-            TimeSpan retryDelay)
+            TimeSpan retryDelay,
+            TimeProvider timeProvider)
         {
             this.settings = settings;
             this.connectionFactory = connectionFactory;
@@ -67,6 +71,7 @@
             this.prefetchCountCalculation = prefetchCountCalculation;
             this.criticalErrorAction = criticalErrorAction;
             this.retryDelay = retryDelay;
+            this.timeProvider = timeProvider;
 
             ReceiveAddress = RabbitMQTransportInfrastructure.TranslateAddress(settings.ReceiveAddress);
 
@@ -114,7 +119,7 @@
                 timeToWaitBeforeTriggeringCircuitBreaker,
                 (message, exception) => criticalErrorAction(message, exception, messageProcessingCancellationTokenSource.Token));
 
-            await ConnectToBroker(cancellationToken).ConfigureAwait(false);
+            await ConnectToBroker(messagePumpCancellationTokenSource.Token, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task ChangeConcurrency(PushRuntimeSettings limitations, CancellationToken cancellationToken = default)
@@ -126,10 +131,13 @@
             await StartReceive(CancellationToken.None).ConfigureAwait(false);
         }
 
-        async Task ConnectToBroker(CancellationToken cancellationToken)
+        // Handlers capture the token of their receive cycle so callbacks from a stopped cycle can't reconnect the next one.
+#pragma warning disable PS0016 // The receive cycle token is only captured by the handlers; cancellationToken cancels connecting.
+        async Task ConnectToBroker(CancellationToken messagePumpCancellationToken, CancellationToken cancellationToken)
+#pragma warning restore PS0016
         {
             connection = await connectionFactory.CreateConnection(name, cancellationToken).ConfigureAwait(false);
-            connection.ConnectionShutdownAsync += Connection_ConnectionShutdown;
+            connection.ConnectionShutdownAsync += (_, e) => Connection_ConnectionShutdown(e, messagePumpCancellationToken);
 
             var prefetchCount = prefetchCountCalculation(maxConcurrency);
 
@@ -141,12 +149,12 @@
 
             var createChannelOptions = new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false, consumerDispatchConcurrency: (ushort)maxConcurrency);
             var channel = await connection.CreateChannelAsync(createChannelOptions, cancellationToken).ConfigureAwait(false);
-            channel.ChannelShutdownAsync += Channel_ModelShutdown;
+            channel.ChannelShutdownAsync += (_, e) => Channel_ModelShutdown(e, messagePumpCancellationToken);
             await channel.BasicQosAsync(0, (ushort)Math.Min(prefetchCount, ushort.MaxValue), false, cancellationToken).ConfigureAwait(false);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
 
-            consumer.UnregisteredAsync += Consumer_Unregistered;
+            consumer.UnregisteredAsync += (sender, _) => Consumer_Unregistered(sender, messagePumpCancellationToken);
             consumer.RegisteredAsync += Consumer_Registered;
             consumer.ReceivedAsync += Consumer_Received;
 
@@ -161,7 +169,17 @@
                 return;
             }
 
-            messagePumpCancellationTokenSource?.Cancel();
+            messagePumpCancellationTokenSource.Cancel();
+
+            // Reconnects start under this lock only while their cycle is not canceled, so no new one can follow this read.
+            Task runningReconnect;
+            lock (reconnectLock)
+            {
+                runningReconnect = reconnectTask;
+            }
+
+            // A reconnect replaces the connection, so it has to end before the connection is closed.
+            await runningReconnect.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
 
             await using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
@@ -230,54 +248,66 @@
             return Task.CompletedTask;
         }
 
-#pragma warning disable PS0018
-        Task Connection_ConnectionShutdown(object sender, ShutdownEventArgs e)
-#pragma warning restore PS0018
+        Task Connection_ConnectionShutdown(ShutdownEventArgs e, CancellationToken messagePumpCancellationToken)
         {
             if (e.Initiator == ShutdownInitiator.Application && e.ReplyCode == 200)
             {
                 connectionShutdownCompleted?.TrySetResult();
+                return Task.CompletedTask;
             }
-            else if (circuitBreaker.Disarmed)
+
+            lock (reconnectLock)
             {
-                //log entry handled by event handler registered in ConnectionFactory
-                circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
-            }
-            else
-            {
-                Logger.WarnFormat("'{0}' connection shutdown while reconnect already in progress: {1}", name, e);
+                if (messagePumpCancellationToken.IsCancellationRequested)
+                {
+                    return Task.CompletedTask;
+                }
+
+                if (circuitBreaker.Disarmed)
+                {
+                    //log entry handled by event handler registered in ConnectionFactory
+                    circuitBreaker.Failure(new Exception(e.ToString()));
+                    StartReconnect(messagePumpCancellationToken);
+                }
+                else
+                {
+                    Logger.WarnFormat("'{0}' connection shutdown while reconnect already in progress: {1}", name, e);
+                }
             }
 
             return Task.CompletedTask;
         }
 
-#pragma warning disable PS0018
-        Task Channel_ModelShutdown(object sender, ShutdownEventArgs e)
-#pragma warning restore PS0018
+        Task Channel_ModelShutdown(ShutdownEventArgs e, CancellationToken messagePumpCancellationToken)
         {
             if (e.Initiator == ShutdownInitiator.Application || e is { Initiator: ShutdownInitiator.Peer, ReplyCode: 404 })
             {
                 return Task.CompletedTask;
             }
 
-            if (circuitBreaker.Disarmed)
+            lock (reconnectLock)
             {
-                Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
-                circuitBreaker.Failure(new Exception(e.ToString()));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
-            }
-            else
-            {
-                Logger.WarnFormat("'{0}' channel shutdown while reconnect already in progress: {1}", name, e);
+                if (messagePumpCancellationToken.IsCancellationRequested)
+                {
+                    return Task.CompletedTask;
+                }
+
+                if (circuitBreaker.Disarmed)
+                {
+                    Logger.WarnFormat("'{0}' channel shutdown: {1}", name, e);
+                    circuitBreaker.Failure(new Exception(e.ToString()));
+                    StartReconnect(messagePumpCancellationToken);
+                }
+                else
+                {
+                    Logger.WarnFormat("'{0}' channel shutdown while reconnect already in progress: {1}", name, e);
+                }
             }
 
             return Task.CompletedTask;
         }
 
-#pragma warning disable PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
-        Task Consumer_Unregistered(object sender, ConsumerEventArgs e)
-#pragma warning restore PS0018 // A task-returning method should have a CancellationToken parameter unless it has a parameter implementing ICancellableContext
+        Task Consumer_Unregistered(object sender, CancellationToken messagePumpCancellationToken)
         {
             var consumer = (AsyncEventingBasicConsumer)sender;
 
@@ -286,19 +316,31 @@
                 return Task.CompletedTask;
             }
 
-            if (circuitBreaker.Disarmed)
+            lock (reconnectLock)
             {
-                Logger.WarnFormat("'{0}' consumer canceled by broker", name);
-                circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
-                _ = Task.Run(() => Reconnect(messageProcessingCancellationTokenSource?.Token ?? CancellationToken.None));
-            }
-            else
-            {
-                Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
+                if (messagePumpCancellationToken.IsCancellationRequested)
+                {
+                    return Task.CompletedTask;
+                }
+
+                if (circuitBreaker.Disarmed)
+                {
+                    Logger.WarnFormat("'{0}' consumer canceled by broker", name);
+                    circuitBreaker.Failure(new Exception($"'{name}' consumer canceled by broker"));
+                    StartReconnect(messagePumpCancellationToken);
+                }
+                else
+                {
+                    Logger.WarnFormat("'{0}' consumer canceled by broker while reconnect already in progress", name);
+                }
             }
 
             return Task.CompletedTask;
         }
+
+        // Callers hold reconnectLock so StopReceive sees every reconnect of its cycle.
+        void StartReconnect(CancellationToken messagePumpCancellationToken) =>
+            reconnectTask = Task.Run(() => Reconnect(messagePumpCancellationToken), CancellationToken.None);
 
         async Task Reconnect(CancellationToken cancellationToken)
         {
@@ -318,9 +360,11 @@
 
                         Logger.InfoFormat("'{0}': Attempting to reconnect in {1} seconds.", name, retryDelay.TotalSeconds);
 
-                        await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(retryDelay, timeProvider, cancellationToken).ConfigureAwait(false);
 
-                        await ConnectToBroker(cancellationToken).ConfigureAwait(false);
+                        await ConnectToBroker(cancellationToken, cancellationToken).ConfigureAwait(false);
+
+                        Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
                         break;
                     }
                     catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
@@ -328,8 +372,6 @@
                         Logger.InfoFormat("'{0}': Reconnecting to the broker failed: {1}", name, ex);
                     }
                 }
-
-                Logger.InfoFormat("'{0}': Connection to the broker reestablished successfully.", name);
             }
             catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
             {
