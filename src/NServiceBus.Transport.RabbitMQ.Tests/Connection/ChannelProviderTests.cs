@@ -6,6 +6,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
+    using Microsoft.Extensions.Time.Testing;
     using NUnit.Framework;
 
     [TestFixture]
@@ -20,9 +21,9 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
 
-            channelProvider.DelayTaskCompletionSource.SetResult();
-
-            await channelProvider.FireAndForgetAction(CancellationToken.None);
+            var reconnectTask = channelProvider.FireAndForgetAction(CancellationToken.None);
+            channelProvider.TimeProvider.Advance(TestableChannelProvider.RetryDelay);
+            await reconnectTask;
 
             var recoveredConnection = channelProvider.PublishConnections.Dequeue();
 
@@ -51,8 +52,7 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
 
-            // Deliberately not completing the delay task with channelProvider.DelayTaskCompletionSource.SetResult(); before disposing
-            // to simulate a pending delay task
+            // Deliberately not advancing time before disposing to simulate a pending retry delay
             await channelProvider.DisposeAsync();
 
             await channelProvider.FireAndForgetAction(CancellationToken.None);
@@ -70,13 +70,15 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             var publishConnection = channelProvider.PublishConnections.Dequeue();
             await publishConnection.RaiseConnectionShutdown(new ShutdownEventArgs(ShutdownInitiator.Library, 0, "Test"));
 
-            // This simulates the race of the reconnection loop being fired off with the delay task completed during
-            // the disposal of the channel provider. To achieve that it is necessary to kick off the reconnection loop
-            // and await its completion after the channel provider has been disposed.
+            // Simulates disposing the channel provider while the reconnection loop is creating a new connection
+            var releaseConnection = channelProvider.HoldConnectionCreation();
             var fireAndForgetTask = channelProvider.FireAndForgetAction(CancellationToken.None);
-            channelProvider.DelayTaskCompletionSource.SetResult();
+            channelProvider.TimeProvider.Advance(TestableChannelProvider.RetryDelay);
+            await channelProvider.ConnectionCreationStarted;
+
             await channelProvider.DisposeAsync();
 
+            releaseConnection.SetResult();
             await fireAndForgetTask;
 
             var recoveredConnection = channelProvider.PublishConnections.Dequeue();
@@ -85,30 +87,43 @@ namespace NServiceBus.Transport.RabbitMQ.Tests.ConnectionString
             Assert.That(recoveredConnection.WasDisposed, Is.True);
         }
 
-        class TestableChannelProvider() : ChannelProvider(null!, TimeSpan.Zero, null!)
+        class TestableChannelProvider(FakeTimeProvider timeProvider) : ChannelProvider(null!, RetryDelay, null!, timeProvider)
         {
-            public Queue<FakeConnection> PublishConnections { get; } = new();
+            public static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
 
-            public TaskCompletionSource DelayTaskCompletionSource { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            public TestableChannelProvider() : this(new FakeTimeProvider())
+            {
+            }
+
+            public FakeTimeProvider TimeProvider { get; } = timeProvider;
+
+            public Queue<FakeConnection> PublishConnections { get; } = new();
 
             public Func<CancellationToken, Task> FireAndForgetAction { get; private set; } = _ => Task.CompletedTask;
 
-            protected override Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default)
+            public Task ConnectionCreationStarted => connectionCreationStarted.Task;
+
+            public TaskCompletionSource HoldConnectionCreation() => connectionCreationGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            protected override async Task<IConnection> CreatePublishConnection(CancellationToken cancellationToken = default)
             {
                 var connection = new FakeConnection();
                 PublishConnections.Enqueue(connection);
 
-                return Task.FromResult((IConnection)connection);
+                if (connectionCreationGate is { } gate)
+                {
+                    connectionCreationStarted.TrySetResult();
+                    await gate.Task;
+                }
+
+                return connection;
             }
 
             protected override void FireAndForget(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
                 => FireAndForgetAction = _ => action(cancellationToken);
 
-            protected override async Task DelayReconnect(CancellationToken cancellationToken = default)
-            {
-                await using var _ = cancellationToken.Register(() => DelayTaskCompletionSource.TrySetCanceled(cancellationToken));
-                await DelayTaskCompletionSource.Task;
-            }
+            readonly TaskCompletionSource connectionCreationStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource? connectionCreationGate;
         }
 
         class FakeConnection : IConnection
