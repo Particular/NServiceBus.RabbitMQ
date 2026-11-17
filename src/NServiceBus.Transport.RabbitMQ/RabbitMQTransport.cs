@@ -199,6 +199,8 @@
             }
         } = TimeSpan.FromSeconds(10);
 
+        internal TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
         /// <summary>
         /// Adds an additional cluster node that the endpoint can use to connect to the broker.
         /// </summary>
@@ -261,7 +263,7 @@
             await brokerVerifier.Initialize(cancellationToken).ConfigureAwait(false);
             await brokerVerifier.VerifyRequirements(cancellationToken).ConfigureAwait(false);
 
-            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology);
+            var channelProvider = new ChannelProvider(connectionFactory, NetworkRecoveryInterval, RoutingTopology, TimeProvider);
             await channelProvider.Initialize(cancellationToken).ConfigureAwait(false);
 
             var converter = new MessageConverter(MessageIdStrategy);
@@ -278,7 +280,8 @@
                 TimeToWaitBeforeTriggeringCircuitBreaker,
                 PrefetchCountCalculation,
                 NetworkRecoveryInterval,
-                SupportsDelayedDelivery
+                SupportsDelayedDelivery,
+                TimeProvider
             );
 
             if (hostSettings.SetupInfrastructure)
